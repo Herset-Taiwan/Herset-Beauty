@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>新增商品 - HERSET BEAUTY</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    form {
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      background-color: #fff7f9;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    form h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-top: 12px;
+      font-weight: bold;
+    }
+    input[type="text"],
+    input[type="number"],
+    textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      box-sizing: border-box;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #e91e63;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <form method="POST" action="/add_product">
+    <h2>新增商品</h2>
+    
+    <label>商品名稱</label>
+    <input type="text" name="name" required>
+
+    <label>價格</label>
+    <input type="number" name="price" required>
+
+    <label>圖片網址</label>
+    <input type="text" name="image" required>
+
+    <label>商品介紹</label>
+    <textarea name="intro" rows="3" required></textarea>
+
+    <label>商品特色</label>
+    <textarea name="feature" rows="3" required></textarea>
+
+    <label>商品規格</label>
+    <textarea name="spec" rows="3" required></textarea>
+
+    <label>商品成分</label>
+    <textarea name="ingredient" rows="3" required></textarea>
+
+    <button type="submit">新增商品</button>
+  </form>
+
+</body>
+</html>

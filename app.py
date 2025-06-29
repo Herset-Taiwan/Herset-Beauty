@@ -32,7 +32,7 @@ def product_detail(product_id):
         return "找不到商品", 404
     return render_template("product.html", product=product)
 
-# ✅ 管理頁
+# ✅ 商品管理頁
 @app.route('/admin')
 def admin():
     conn = get_db_connection()
@@ -40,7 +40,7 @@ def admin():
     conn.close()
     return render_template("admin.html", products=products)
 
-# ✅ 表單提交新增商品
+# ✅ 新增商品
 @app.route('/add_product', methods=['POST'])
 def add_product():
     name = request.form['name']
@@ -58,8 +58,42 @@ def add_product():
     ''', (name, price, image, intro, feature, spec, ingredient))
     conn.commit()
     conn.close()
-
     return redirect('/admin')
+
+# ✅ 編輯商品
+@app.route('/edit/<int:product_id>', methods=['GET', 'POST'])
+def edit_product(product_id):
+    conn = get_db_connection()
+
+    if request.method == 'POST':
+        conn.execute('''
+            UPDATE products
+            SET name=?, price=?, image=?, intro=?, feature=?, spec=?, ingredient=?
+            WHERE id=?
+        ''', (
+            request.form['name'],
+            request.form['price'],
+            request.form['image'],
+            request.form['intro'],
+            request.form['feature'],
+            request.form['spec'],
+            request.form['ingredient'],
+            product_id
+        ))
+        conn.commit()
+        conn.close()
+        return redirect('/admin')
+
+    product = conn.execute('SELECT * FROM products WHERE id=?', (product_id,)).fetchone()
+    conn.close()
+    if product is None:
+        return "找不到商品", 404
+    return render_template("edit_product.html", product=product)
+
+@app.route('/admin/new')
+def new_product():
+    return render_template("new_product.html")
+
 
 if __name__ == '__main__':
     app.run(debug=True)

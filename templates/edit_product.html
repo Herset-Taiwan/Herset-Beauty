@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>編輯商品 - HERSET BEAUTY</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="form-container" style="max-width: 600px; margin: 50px auto;">
+    <h2>編輯商品</h2>
+    <form method="POST">
+      <label>名稱</label>
+      <input type="text" name="name" value="{{ product['name'] }}" required>
+
+      <label>價格</label>
+      <input type="number" name="price" value="{{ product['price'] }}" required>
+
+      <label>圖片連結</label>
+      <input type="text" name="image" value="{{ product['image'] }}" required>
+
+      <label>商品介紹</label>
+      <textarea name="intro">{{ product['intro'] }}</textarea>
+
+      <label>商品特色</label>
+      <textarea name="feature">{{ product['feature'] }}</textarea>
+
+      <label>商品規格</label>
+      <textarea name="spec">{{ product['spec'] }}</textarea>
+
+      <label>商品成分</label>
+      <textarea name="ingredient">{{ product['ingredient'] }}</textarea>
+
+      <button type="submit">儲存修改</button>
+    </form>
+  </div>
+</body>
+</html>
