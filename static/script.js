@@ -1,5 +1,5 @@
-document.querySelectorAll('.combo-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    alert(`你選擇了：${btn.textContent}`);
-  });
+document.querySelectorAll("button").forEach(btn => {
+    btn.addEventListener("click", () => {
+        alert("商品已加入購物車（僅前端示意）");
+    });
 });

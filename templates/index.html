@@ -2,10 +2,54 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>HERSET 首頁</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HERSET BEAUTY 商店</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1>🎉 恭喜你部署成功！</h1>
-    <p>這是來自 <strong>Flask + Render</strong> 的首頁。</p>
+    <header>
+        <div class="logo">HERSET BEAUTY</div>
+        <nav>
+            <a href="#">首頁</a>
+            <a href="#">商品</a>
+            <a href="#">關於我們</a>
+            <a href="#">聯絡我們</a>
+            <a href="#" class="cart-btn">🛒 購物車</a>
+        </nav>
+    </header>
+
+    <main>
+        <section class="banner">
+            <h1>自然呵護，極致純淨</h1>
+            <p>專為敏感肌設計的私密保養系列</p>
+        </section>
+
+        <section class="product-list">
+            <div class="product-card">
+                <img src="https://picsum.photos/seed/1/300/300" alt="商品1">
+                <h2>柔膚潔淨露</h2>
+                <p class="price">$850</p>
+                <button>加入購物車</button>
+            </div>
+            <div class="product-card">
+                <img src="https://picsum.photos/seed/2/300/300" alt="商品2">
+                <h2>草本私密油</h2>
+                <p class="price">$1200</p>
+                <button>加入購物車</button>
+            </div>
+            <div class="product-card">
+                <img src="https://picsum.photos/seed/3/300/300" alt="商品3">
+                <h2>護理舒緩噴霧</h2>
+                <p class="price">$980</p>
+                <button>加入購物車</button>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>© 2025 HERSET BEAUTY. All rights reserved.</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
