@@ -17,7 +17,7 @@ def get_db_connection():
         database="postgres",
         user="postgres",
         password="Gama168.net",  # <--- 你已填寫好
-        port=5432
+        port=6543
     )
     return conn
 
