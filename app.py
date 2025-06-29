@@ -142,6 +142,17 @@ def edit_product(product_id):
         if product is None:
             return "找不到商品", 404
         return render_template("edit_product.html", product=product)
+    
+@app.route('/delete/<int:product_id>', methods=['POST'])
+def delete_product(product_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('DELETE FROM products WHERE id = %s', (product_id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return redirect('/admin')
+
 
 # ✅ 模擬加入購物車
 @app.route('/add_to_cart', methods=['POST'])

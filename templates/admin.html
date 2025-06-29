@@ -30,11 +30,17 @@
     .product-info {
       flex: 1;
     }
-    .product-actions a {
-      margin-left: 10px;
+    .product-actions {
+      display: flex;
+      gap: 10px;
+    }
+    .product-actions a, .product-actions button {
       text-decoration: none;
       color: #e91e63;
       font-weight: bold;
+      background: none;
+      border: none;
+      cursor: pointer;
     }
     .add-btn {
       display: inline-block;
@@ -61,6 +67,9 @@
       </div>
       <div class="product-actions">
         <a href="/edit/{{ p['id'] }}">✏️ 編輯</a>
+        <form method="POST" action="/delete/{{ p['id'] }}" onsubmit="return confirm('確定要刪除這個商品嗎？')">
+  <button type="submit" class="delete-btn">🗑️ 刪除</button>
+</form>
       </div>
     </div>
     {% endfor %}
