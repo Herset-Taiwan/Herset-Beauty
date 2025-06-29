@@ -105,6 +105,13 @@ def edit_product(product_id):
         conn.commit()
         conn.close()
         return redirect('/admin')
+    
+@app.route('/add_to_cart', methods=['POST'])
+def add_to_cart():
+    product_id = request.form['product_id']
+    # 暫時模擬加入購物車，之後可擴充 session 或 DB
+    print(f"加入購物車：{product_id}")
+    return redirect('/')
 
     product = conn.execute('SELECT * FROM products WHERE id=?', (product_id,)).fetchone()
     conn.close()

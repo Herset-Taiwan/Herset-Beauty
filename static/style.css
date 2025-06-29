@@ -185,3 +185,17 @@ footer {
   color: #e91e63;
   font-weight: bold;
 }
+
+.add-btn, .view-btn {
+  background-color: #d44c7c;
+  color: white;
+  padding: 8px 12px;
+  border: none;
+  text-decoration: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.add-btn:hover, .view-btn:hover {
+  background-color: #b03c68;
+}

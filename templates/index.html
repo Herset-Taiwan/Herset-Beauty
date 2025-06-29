@@ -40,16 +40,20 @@
         </section>
 
         <section class="product-list">
-    {% for p in products %}
+  {% for p in products %}
     <div class="product-card">
-        <img src="{{ p['image'] }}" alt="{{ p['name'] }}">
-        <h2>{{ p['name'] }}</h2>
-        <p class="price">${{ p['price'] }}</p>
-        <a href="/product/{{ p['id'] }}">
-            <button>查看商品</button>
-        </a>
+      <img src="{{ p['image'] }}" alt="{{ p['name'] }}">
+      <h2>{{ p['name'] }}</h2>
+      <p class="price">${{ p['price'] }}</p>
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <form method="POST" action="/add_to_cart">
+          <input type="hidden" name="product_id" value="{{ p['id'] }}">
+          <button type="submit" class="add-btn">加入購物車</button>
+        </form>
+        <a href="/product/{{ p['id'] }}" class="view-btn">查看商品</a>
+      </div>
     </div>
-    {% endfor %}
+  {% endfor %}
 </section>
 
     </main>
