@@ -13,11 +13,11 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # ✅ PostgreSQL 連線設定
 def get_db_connection():
     conn = psycopg2.connect(
-        host="db.bwxvuvutmexzbynzhvsd.supabase.co",
+        host="aws-0-ap-southeast-1.pooler.supabase.com",  # ✅ 正確 host
         database="postgres",
         user="postgres",
-        password="Gama168.net",  # <--- 你已填寫好
-        port=6543
+        password="Gama168.net",
+        port=6543  # ✅ pooler port
     )
     return conn
 
