@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>商品詳細頁 - HERSET BEAUTY</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .tabs { display: flex; margin-top: 30px; }
+    .tabs button {
+      padding: 10px 20px;
+      margin-right: 10px;
+      border: 1px solid #ccc;
+      background: #f8f8f8;
+      cursor: pointer;
+    }
+    .tabs button.active {
+      background: #fff;
+      border-bottom: none;
+      font-weight: bold;
+    }
+    .tab-content {
+      border: 1px solid #ccc;
+      padding: 20px;
+      margin-top: -1px;
+    }
+    .tab-content > div { display: none; }
+    .tab-content > div.active { display: block; }
+  </style>
+</head>
+<body>
+
+  <div class="product-detail">
+    <h2>柔膚潔淨露</h2>
+    <img src="https://picsum.photos/300/300?random=1" alt="商品圖片">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="intro">商品介紹</button>
+      <button class="tab-btn" data-tab="feature">商品特色</button>
+      <button class="tab-btn" data-tab="spec">商品規格</button>
+      <button class="tab-btn" data-tab="ingredient">商品成分</button>
+    </div>
+
+    <div class="tab-content">
+      <div id="intro" class="active">這是柔膚潔淨露的溫和介紹內容。</div>
+      <div id="feature">植物配方，敏感肌專用。</div>
+      <div id="spec">容量：150ml｜保存期限：3年</div>
+      <div id="ingredient">玫瑰純露、椰油醯胺、乳酸菌精華</div>
+    </div>
+  </div>
+
+  <script>
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        // tab 按鈕
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        // tab 內容
+        document.querySelectorAll('.tab-content > div').forEach(div => div.classList.remove('active'));
+        document.getElementById(btn.dataset.tab).classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

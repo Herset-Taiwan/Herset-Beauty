@@ -14,5 +14,10 @@ def login():
 def cart():
     return render_template("cart.html")
 
+@app.route('/product/<product_id>')
+def product_detail(product_id):
+    return render_template("product.html")
+
+
 if __name__ == '__main__':
     app.run(debug=True)
