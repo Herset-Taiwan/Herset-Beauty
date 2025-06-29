@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>商品詳細頁 - HERSET BEAUTY</title>
+  <title>{{ product['name'] }} - HERSET BEAUTY</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
     .tabs { display: flex; margin-top: 30px; }
@@ -25,13 +25,19 @@
     }
     .tab-content > div { display: none; }
     .tab-content > div.active { display: block; }
+    .product-detail img {
+      max-width: 300px;
+      margin-top: 20px;
+      border-radius: 10px;
+    }
   </style>
 </head>
 <body>
 
-  <div class="product-detail">
-    <h2>柔膚潔淨露</h2>
-    <img src="https://picsum.photos/300/300?random=1" alt="商品圖片">
+  <div class="product-detail" style="max-width: 700px; margin: 0 auto;">
+    <h2>{{ product['name'] }}</h2>
+    <img src="{{ product['image'] }}" alt="{{ product['name'] }}">
+    
     <div class="tabs">
       <button class="tab-btn active" data-tab="intro">商品介紹</button>
       <button class="tab-btn" data-tab="feature">商品特色</button>
@@ -40,20 +46,18 @@
     </div>
 
     <div class="tab-content">
-      <div id="intro" class="active">這是柔膚潔淨露的溫和介紹內容。</div>
-      <div id="feature">植物配方，敏感肌專用。</div>
-      <div id="spec">容量：150ml｜保存期限：3年</div>
-      <div id="ingredient">玫瑰純露、椰油醯胺、乳酸菌精華</div>
+      <div id="intro" class="active">{{ product['intro'] }}</div>
+      <div id="feature">{{ product['feature'] }}</div>
+      <div id="spec">{{ product['spec'] }}</div>
+      <div id="ingredient">{{ product['ingredient'] }}</div>
     </div>
   </div>
 
   <script>
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        // tab 按鈕
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        // tab 內容
         document.querySelectorAll('.tab-content > div').forEach(div => div.classList.remove('active'));
         document.getElementById(btn.dataset.tab).classList.add('active');
       });

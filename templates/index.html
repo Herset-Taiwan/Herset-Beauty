@@ -40,25 +40,18 @@
         </section>
 
         <section class="product-list">
-            <div class="product-card">
-                <img src="https://picsum.photos/seed/1/300/300" alt="商品1">
-                <h2>柔膚潔淨露</h2>
-                <p class="price">$850</p>
-                <button>加入購物車</button>
-            </div>
-            <div class="product-card">
-                <img src="https://picsum.photos/seed/2/300/300" alt="商品2">
-                <h2>草本私密油</h2>
-                <p class="price">$1200</p>
-                <button>加入購物車</button>
-            </div>
-            <div class="product-card">
-                <img src="https://picsum.photos/seed/3/300/300" alt="商品3">
-                <h2>護理舒緩噴霧</h2>
-                <p class="price">$980</p>
-                <button>加入購物車</button>
-            </div>
-        </section>
+    {% for p in products %}
+    <div class="product-card">
+        <img src="{{ p['image'] }}" alt="{{ p['name'] }}">
+        <h2>{{ p['name'] }}</h2>
+        <p class="price">${{ p['price'] }}</p>
+        <a href="/product/{{ p['id'] }}">
+            <button>查看商品</button>
+        </a>
+    </div>
+    {% endfor %}
+</section>
+
     </main>
 
     <footer>

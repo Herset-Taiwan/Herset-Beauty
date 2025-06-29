@@ -1,0 +1,7 @@
+<h2>商品管理</h2>
+<a href="/admin/new">＋新增商品</a>
+<ul>
+  {% for p in products %}
+    <li>{{ p['name'] }}（${{ p['price'] }}）</li>
+  {% endfor %}
+</ul>
