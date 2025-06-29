@@ -1,7 +1,14 @@
 from flask import Flask, render_template, request, redirect
 import sqlite3
+import os
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
+
+# 設定圖片上傳路徑
+UPLOAD_FOLDER = 'static/uploads'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 def get_db_connection():
     conn = sqlite3.connect('db.sqlite')
@@ -40,12 +47,27 @@ def admin():
     conn.close()
     return render_template("admin.html", products=products)
 
-# ✅ 新增商品
+# ✅ 顯示新增商品頁
+@app.route('/admin/new')
+def new_product():
+    return render_template("new_product.html")
+
+# ✅ 新增商品（圖片網址或上傳圖片）
 @app.route('/add_product', methods=['POST'])
 def add_product():
     name = request.form['name']
     price = request.form['price']
-    image = request.form['image']
+    image_url = request.form.get('image_url', '')
+    image_file = request.files.get('image_file')
+
+    # 儲存圖片檔案（若有）
+    image_path = image_url
+    if image_file and image_file.filename:
+        filename = secure_filename(image_file.filename)
+        save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        image_file.save(save_path)
+        image_path = '/' + save_path.replace('\\', '/')
+
     intro = request.form['intro']
     feature = request.form['feature']
     spec = request.form['spec']
@@ -55,7 +77,7 @@ def add_product():
     conn.execute('''
         INSERT INTO products (name, price, image, intro, feature, spec, ingredient)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-    ''', (name, price, image, intro, feature, spec, ingredient))
+    ''', (name, price, image_path, intro, feature, spec, ingredient))
     conn.commit()
     conn.close()
     return redirect('/admin')
@@ -89,11 +111,6 @@ def edit_product(product_id):
     if product is None:
         return "找不到商品", 404
     return render_template("edit_product.html", product=product)
-
-@app.route('/admin/new')
-def new_product():
-    return render_template("new_product.html")
-
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -45,32 +45,33 @@
 </head>
 <body>
 
-  <form method="POST" action="/add_product">
-    <h2>新增商品</h2>
-    
-    <label>商品名稱</label>
-    <input type="text" name="name" required>
+  <form method="POST" action="/add_product" enctype="multipart/form-data">
+  <label>名稱</label><br>
+  <input type="text" name="name"><br><br>
 
-    <label>價格</label>
-    <input type="number" name="price" required>
+  <label>價格</label><br>
+  <input type="number" name="price"><br><br>
 
-    <label>圖片網址</label>
-    <input type="text" name="image" required>
+  <label>圖片網址（擇一）</label><br>
+  <input type="text" name="image_url"><br><br>
 
-    <label>商品介紹</label>
-    <textarea name="intro" rows="3" required></textarea>
+  <label>或上傳圖片</label><br>
+  <input type="file" name="image_file" accept="image/*"><br><br>
 
-    <label>商品特色</label>
-    <textarea name="feature" rows="3" required></textarea>
+  <label>商品介紹</label><br>
+  <textarea name="intro"></textarea><br><br>
 
-    <label>商品規格</label>
-    <textarea name="spec" rows="3" required></textarea>
+  <label>商品特色</label><br>
+  <textarea name="feature"></textarea><br><br>
 
-    <label>商品成分</label>
-    <textarea name="ingredient" rows="3" required></textarea>
+  <label>商品規格</label><br>
+  <textarea name="spec"></textarea><br><br>
 
-    <button type="submit">新增商品</button>
-  </form>
+  <label>商品成分</label><br>
+  <textarea name="ingredient"></textarea><br><br>
+
+  <button type="submit">新增</button>
+</form>
 
 </body>
 </html>
