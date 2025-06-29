@@ -138,3 +138,50 @@ footer {
 .main-nav ul li a:hover {
   color: #e91e63;
 }
+.form-container, .cart-container {
+  max-width: 400px;
+  margin: 80px auto;
+  padding: 30px;
+  background: #fff5f7;
+  border: 1px solid #f2c9d0;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.form-container h2,
+.cart-container h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.form-container form label {
+  display: block;
+  margin-top: 10px;
+}
+
+.form-container form input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.form-container form button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 20px;
+  background-color: #e91e63;
+  border: none;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.back-btn {
+  display: inline-block;
+  margin-top: 20px;
+  text-decoration: none;
+  color: #e91e63;
+  font-weight: bold;
+}
