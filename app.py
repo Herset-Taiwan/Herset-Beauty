@@ -17,8 +17,8 @@ def get_db_connection():
         host="aws-0-ap-southeast-1.pooler.supabase.com",
         port=5432,
         database="postgres",
-        user="postgres.bwxvuvutmexzbynzhvsd",
-        password="Gama168.net",
+        user="postgres.<your_project_ref>",
+        password=os.environ.get("SUPABASE_PW"),
         sslmode="require"
     )
     return conn
