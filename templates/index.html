@@ -2,7 +2,6 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HERSET BEAUTY 商店</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
@@ -19,130 +18,131 @@
       font-weight: bold;
       cursor: pointer;
     }
-    section.banner {
-      padding: 40px 10px;
-    }
     .product-card[data-category] {
       display: none;
     }
-    .cart-btn .count {
-      background: red;
+    .cart-count {
+      background-color: red;
       color: white;
+      font-size: 12px;
       border-radius: 50%;
       padding: 2px 6px;
-      margin-left: 6px;
-      font-size: 0.8rem;
+      position: absolute;
+      top: -5px;
+      right: -10px;
+    }
+    .cart-btn {
+      position: relative;
+    }
+    .add-success {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #4caf50;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      display: none;
+      z-index: 999;
     }
   </style>
 </head>
 <body>
 
-  <!-- 大橫向選單 -->
-  <header class="main-header">
-    <div class="logo-area">
-      <img src="{{ url_for('static', filename='uploads/logo_0.png') }}" alt="logo" class="logo">
-      <span>HERSET BEAUTY</span>
-    </div>
-    <nav class="main-nav">
-      <ul>
-        <li><a href="#">HOME</a></li>
-        <li><a href="#">Shop｜購物</a></li>
-        <li><a href="#" class="nav-extra">關於我們</a></li>
-        <li><a href="/login" class="nav-extra">👤 會員登入</a></li>
-        <li>
-          <a href="/cart" class="cart-btn">🛒 購物車
-            {% if cart_count > 0 %}
-              <span class="count">{{ cart_count }}</span>
-            {% endif %}
-          </a>
-        </li>
-      </ul>
-    </nav>
-  </header>
+<!-- ✅ 成功加入提示 -->
+<div class="add-success" id="add-success">已加入購物車！</div>
 
-  <!-- 分類選項 -->
-  <div class="sub-categories">
-    <a onclick="filterCategory('全部')">全部商品</a>
-    <a onclick="filterCategory('身體保養')">身體保養</a>
-    <a onclick="filterCategory('私密保養')">私密保養</a>
-    <a onclick="filterCategory('寵物友善')">寵物友善</a>
-    <a onclick="filterCategory('品牌嚴選')">品牌嚴選</a>
+<!-- ✅ 導覽列 -->
+<header class="main-header">
+  <div class="logo-area">
+    <img src="{{ url_for('static', filename='uploads/logo_0.png') }}" alt="logo" class="logo">
+    <span>HERSET BEAUTY</span>
   </div>
+  <nav class="main-nav">
+    <ul>
+      <li><a href="#">HOME</a></li>
+      <li><a href="#">Shop｜購物</a></li>
+      <li><a href="#" class="nav-extra">關於我們</a></li>
+      <li><a href="/login" class="nav-extra">👤 會員登入</a></li>
+      <li>
+        <a href="/cart" class="cart-btn">🛒 購物車
+          {% if cart_count > 0 %}
+            <span class="cart-count" id="cart-count">{{ cart_count }}</span>
+          {% else %}
+            <span class="cart-count" id="cart-count" style="display: none;">0</span>
+          {% endif %}
+        </a>
+      </li>
+    </ul>
+  </nav>
+</header>
 
-  <!-- 商品區塊 -->
-  <main>
-    <section class="banner">
-      <h1>自然呵護，極致純淨</h1>
-      <p>專為敏感肌設計的私密保養系列</p>
-    </section>
+<!-- ✅ 分類區塊 -->
+<div class="sub-categories">
+  <a onclick="filterCategory('全部')">全部商品</a>
+  <a onclick="filterCategory('身體保養')">身體保養</a>
+  <a onclick="filterCategory('私密保養')">私密保養</a>
+  <a onclick="filterCategory('寵物友善')">寵物友善</a>
+  <a onclick="filterCategory('品牌嚴選')">品牌嚴選</a>
+</div>
 
-    <section class="product-list">
-      {% for p in products %}
-      <div class="product-card" data-category="{{ p['category'] }}">
-        <img src="{{ p['image'] }}" alt="{{ p['name'] }}">
-        <h2>{{ p['name'] }}</h2>
-        <p class="price">${{ p['price'] }}</p>
-        <div style="display: flex; gap: 10px; justify-content: center;">
-          <form method="POST" action="/add_to_cart">
-            <input type="hidden" name="product_id" value="{{ p['id'] }}">
-            <button type="submit" class="add-btn">加入購物車</button>
-          </form>
-          <a href="/product/{{ p['id'] }}" class="view-btn">查看商品</a>
-        </div>
+<!-- ✅ 商品清單 -->
+<main>
+  <section class="banner">
+    <h1>自然呵護，極致純淨</h1>
+    <p>專為敏感肌設計的私密保養系列</p>
+  </section>
+
+  <section class="product-list">
+    {% for p in products %}
+    <div class="product-card" data-category="{{ p['category'] }}">
+      <img src="{{ p['images'][0] if p['images'] else '' }}" alt="{{ p['name'] }}">
+      <h2>{{ p['name'] }}</h2>
+      <p class="price">${{ p['price'] }}</p>
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <form onsubmit="addToCart(event, {{ p['id'] }})">
+          <button type="submit" class="add-btn">加入購物車</button>
+        </form>
+        <a href="/product/{{ p['id'] }}" class="view-btn">查看商品</a>
       </div>
-      {% endfor %}
-    </section>
-  </main>
+    </div>
+    {% endfor %}
+  </section>
+</main>
 
-  <footer>
-    <p>© 2025 HERSET BEAUTY. All rights reserved.</p>
-  </footer>
+<footer>
+  <p>© 2025 HERSET BEAUTY. All rights reserved.</p>
+</footer>
 
-  <script>
-    function filterCategory(category) {
-      const all = document.querySelectorAll(".product-card");
-      all.forEach(el => {
-        el.style.display = category === '全部' || el.dataset.category === category ? 'block' : 'none';
-      });
+<!-- ✅ 分類與加入購物車腳本 -->
+<script>
+function filterCategory(category) {
+  const all = document.querySelectorAll(".product-card");
+  all.forEach(el => {
+    el.style.display = category === '全部' || el.dataset.category === category ? 'block' : 'none';
+  });
+}
+filterCategory('全部');
+
+function addToCart(event, productId) {
+  event.preventDefault();
+  fetch('/add_to_cart', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `product_id=${productId}`
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      document.getElementById("cart-count").style.display = 'inline';
+      document.getElementById("cart-count").textContent = data.count;
+      const box = document.getElementById("add-success");
+      box.style.display = 'block';
+      setTimeout(() => { box.style.display = 'none'; }, 1500);
     }
-    filterCategory('全部');
+  });
+}
+</script>
 
-    document.querySelectorAll('form[action="/add_to_cart"]').forEach(form => {
-      form.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const formData = new FormData(form);
-        const btn = form.querySelector('button');
-        const original = btn.innerHTML;
-
-        try {
-          const res = await fetch('/add_to_cart', {
-            method: 'POST',
-            body: formData
-          });
-          const result = await res.json();
-          if (result.success) {
-            btn.innerHTML = '✔ 已加入';
-            setTimeout(() => { btn.innerHTML = original }, 1000);
-            updateCartCount(result.count);
-          }
-        } catch (err) {
-          console.error('加入購物車失敗', err);
-        }
-      });
-    });
-
-    function updateCartCount(count) {
-      let cartBtn = document.querySelector('.cart-btn');
-      let badge = cartBtn.querySelector('.count');
-      if (!badge) {
-        badge = document.createElement('span');
-        badge.className = 'count';
-        cartBtn.appendChild(badge);
-      }
-      badge.textContent = count;
-    }
-  </script>
-
-  <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
