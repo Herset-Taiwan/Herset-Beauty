@@ -43,45 +43,55 @@ def new_product():
 
 @app.route('/add_product', methods=['POST'])
 def add_product():
-    name = request.form['name']
-    price = request.form['price']
-    image_file = request.files.get('image_file')
-    image_url = request.form.get('image_url', '')
+    try:
+        name = request.form.get('name', '').strip()
+        price_str = request.form.get('price', '0').strip()
+        price = float(price_str) if price_str else 0.0
 
-    image_path = image_url
+        image_file = request.files.get('image_file')
+        image_url = request.form.get('image_url', '').strip()
 
-    if image_file and image_file.filename:
-        filename = secure_filename(image_file.filename)
-        storage_path = f"product_images/{filename}"
+        image_path = image_url
+        if image_file and image_file.filename:
+            filename = secure_filename(image_file.filename)
+            storage_path = f"product_images/{filename}"
 
-        with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            image_file.save(tmp.name)
+            with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                image_file.save(tmp.name)
+                try:
+                    supabase.storage.from_("images").upload(storage_path, tmp.name)
+                except Exception as e:
+                    print("❗️圖片上傳錯誤：", e)
 
-            try:
-                supabase.storage.from_("images").update(path=storage_path, file=tmp.name)
+            image_path = supabase.storage.from_("images").get_public_url(storage_path)
 
-            except Exception as e:
-                # 若已存在可跳過或使用 overwrite 覆蓋
-                print("❗️圖片上傳錯誤：", e)
+        intro = request.form.get('intro', '').strip()
+        feature = request.form.get('feature', '').strip()
+        spec = request.form.get('spec', '').strip()
+        ingredient = request.form.get('ingredient', '').strip()
 
-        image_path = supabase.storage.from_("images").get_public_url(storage_path)
+        # 插入資料
+        response = supabase.table("products").insert({
+            "name": name,
+            "price": price,
+            "image": image_path,
+            "intro": intro,
+            "feature": feature,
+            "spec": spec,
+            "ingredient": ingredient
+        }).execute()
 
-    intro = request.form['intro']
-    feature = request.form['feature']
-    spec = request.form['spec']
-    ingredient = request.form['ingredient']
+        # 檢查回應
+        if response.error:
+            print("⚠️ Supabase 錯誤：", response.error)
+            return f"資料寫入失敗：{response.error['message']}", 500
 
-    supabase.table("products").insert({
-        "name": name,
-        "price": price,
-        "image": image_path,
-        "intro": intro,
-        "feature": feature,
-        "spec": spec,
-        "ingredient": ingredient
-    }).execute()
+        return redirect('/admin')
 
-    return redirect('/admin')
+    except Exception as e:
+        print("🚨 新增商品錯誤：", e)
+        return f"新增商品時發生錯誤：{str(e)}", 500
+
 
 @app.route('/edit/<int:product_id>', methods=['GET', 'POST'])
 def edit_product(product_id):
