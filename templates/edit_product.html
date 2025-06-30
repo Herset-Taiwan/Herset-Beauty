@@ -4,19 +4,29 @@
   <meta charset="UTF-8">
   <title>編輯商品 - HERSET BEAUTY</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script>
+    function addOptionField() {
+      const container = document.getElementById('options-container');
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.name = 'options[]';
+      input.placeholder = '例：澄淨白茶感';
+      container.appendChild(input);
+    }
+  </script>
 </head>
 <body>
   <div class="form-container" style="max-width: 600px; margin: 50px auto;">
     <h2>編輯商品</h2>
-    <form method="POST">
+    <form method="POST" enctype="multipart/form-data">
       <label>名稱</label>
       <input type="text" name="name" value="{{ product['name'] }}" required>
 
       <label>價格</label>
       <input type="number" name="price" value="{{ product['price'] }}" required>
 
-      <label>圖片連結</label>
-      <input type="text" name="image" value="{{ product['image'] }}" required>
+      <label>上傳圖片（可多張）</label>
+      <input type="file" name="image_files" multiple>
 
       <label>商品介紹</label>
       <textarea name="intro">{{ product['intro'] }}</textarea>
@@ -24,12 +34,21 @@
       <label>商品特色</label>
       <textarea name="feature">{{ product['feature'] }}</textarea>
 
-      <label>商品規格</label>
+      <label>商品規格描述</label>
       <textarea name="spec">{{ product['spec'] }}</textarea>
 
       <label>商品成分</label>
       <textarea name="ingredient">{{ product['ingredient'] }}</textarea>
 
+      <label>商品規格（可新增多個）</label>
+      <div id="options-container">
+        {% for opt in product['options'] %}
+          <input type="text" name="options[]" value="{{ opt }}">
+        {% endfor %}
+      </div>
+      <button type="button" onclick="addOptionField()">+新增一個規格</button>
+
+      <br><br>
       <button type="submit">儲存修改</button>
     </form>
   </div>
