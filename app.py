@@ -56,11 +56,20 @@ def add_product():
     image_url = request.form.get('image_url', '')
     image_path = image_url
 
-    if image_file and image_file.filename:
-        filename = secure_filename(image_file.filename)
-        storage_path = f"product_images/{filename}"
-        supabase.storage.from_("images").upload(path=storage_path, file=image_file)
-        image_path = supabase.storage.from_("images").get_public_url(storage_path)
+    import tempfile
+
+if image_file and image_file.filename:
+    filename = secure_filename(image_file.filename)
+    storage_path = f"product_images/{filename}"
+
+    # 先把 image_file 儲存成暫存檔
+    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+        image_file.save(tmp.name)
+        # 再上傳這個檔案
+        supabase.storage.from_("images").upload(path=storage_path, file=tmp.name)
+
+    image_path = supabase.storage.from_("images").get_public_url(storage_path)
+
 
 
     data = {
