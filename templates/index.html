@@ -32,7 +32,7 @@
     <!-- 大橫向選單 -->
     <header class="main-header">
       <div class="logo-area">
-        <img src="https://www.lipintimatecare.tw/logo.png" alt="logo" class="logo">
+        <img src="{{ url_for('static', filename='uploads/logo_0.png') }}" alt="logo" class="logo">
         <span>HERSET BEAUTY</span>
       </div>
       <nav class="main-nav">
@@ -48,11 +48,12 @@
 
     <!-- 分類選項 -->
     <div class="sub-categories">
+      <a onclick="filterCategory('全部')">全部商品</a>
       <a onclick="filterCategory('身體保養')">身體保養</a>
       <a onclick="filterCategory('私密保養')">私密保養</a>
       <a onclick="filterCategory('寵物友善')">寵物友善</a>
       <a onclick="filterCategory('品牌嚴選')">品牌嚴選</a>
-      <a onclick="filterCategory('全部')">全部商品</a>
+      
     </div>
 
     <!-- 商品區塊 -->
