@@ -57,7 +57,6 @@
     .actions button:last-child {
       background-color: #888;
     }
-
     .tabs { display: flex; margin-top: 40px; }
     .tabs button {
       padding: 10px 20px;
@@ -115,7 +114,7 @@
     </div>
 
     <div class="actions">
-      <button onclick="alert('加入購物車功能尚未實作')">加入購物車</button>
+      <button onclick="addToCart({{ product['id'] }})">加入購物車</button>
       <button onclick="alert('立即結帳功能尚未實作')">立即結帳</button>
     </div>
   </div>
@@ -150,6 +149,32 @@
     const input = document.getElementById('qty');
     let val = parseInt(input.value) + n;
     input.value = val < 1 ? 1 : val;
+  }
+
+  function addToCart(productId) {
+    const qty = parseInt(document.getElementById('qty').value);
+    for (let i = 0; i < qty; i++) {
+      fetch('/add_to_cart', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: `product_id=${productId}`
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          const countEl = document.getElementById('cart-count');
+          if (countEl) countEl.innerText = data.count;
+        } else {
+          alert("加入購物車失敗");
+        }
+      })
+      .catch(err => {
+        alert("加入購物車失敗: " + err);
+      });
+    }
+    alert("✅ 已加入購物車");
   }
 </script>
 

@@ -66,6 +66,7 @@
       <li><a href="/login" class="nav-extra">👤 會員登入</a></li>
       <li>
         <a href="/cart" class="cart-btn">🛒 購物車
+          <span id="cart-count">{{ cart_count }}</span>
           {% if cart_count > 0 %}
             <span class="cart-count" id="cart-count">{{ cart_count }}</span>
           {% else %}
