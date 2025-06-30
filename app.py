@@ -64,7 +64,7 @@ def add_product():
 
         with tempfile.NamedTemporaryFile(delete=False) as tmp:
             image_file.save(tmp.name)
-            supabase.storage.from_("images").upload(path=storage_path, file=tmp.name)
+            supabase.storage.from_("images").upload_or_update(path=storage_path, file=tmp.name)
 
         image_path = supabase.storage.from_("images").get_public_url(storage_path)
 
@@ -75,7 +75,9 @@ def add_product():
 
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute('''
+    cur.execute('''git add .
+git commit -m "新增DB"
+git push
         INSERT INTO products (name, price, image, intro, feature, spec, ingredient)
         VALUES (%s, %s, %s, %s, %s, %s, %s)
     ''', (name, price, image_path, intro, feature, spec, ingredient))
