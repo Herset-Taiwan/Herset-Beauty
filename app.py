@@ -4,7 +4,7 @@ from supabase import create_client, Client
 import os
 import tempfile
 
-# ✅ 僅在本機開發環境時載入 .env
+# ✅ 只有在本機環境才載入 .env
 if os.environ.get("RENDER") != "true":
     from dotenv import load_dotenv
     load_dotenv()
@@ -15,8 +15,7 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# ✅ 印出 key 開頭協助除錯
-print("🔐 SUPABASE_KEY 開頭：", SUPABASE_KEY[:30])
+print("🔐 SUPABASE_KEY 開頭：", SUPABASE_KEY[:30])  # debug
 
 @app.route('/')
 def index():
@@ -92,9 +91,9 @@ def add_product():
         response = supabase.table("products").insert(data).execute()
         print("📥 插入結果：", response)
 
-        if response.error:
-            print("⚠️ Supabase 錯誤：", response.error)
-            return f"資料寫入失敗：{response.error['message']}", 500
+        if not response.data:
+            print("⚠️ Supabase 寫入失敗")
+            return "資料寫入失敗", 500
 
         return redirect('/admin')
 
