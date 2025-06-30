@@ -3,9 +3,11 @@ from werkzeug.utils import secure_filename
 from supabase import create_client, Client
 import os
 import tempfile
-from dotenv import load_dotenv  # ✅ 加這行
 
-load_dotenv()  # ✅ 這行會載入 .env 檔案的變數
+# ✅ 僅在本機開發環境時載入 .env
+if os.environ.get("RENDER") != "true":
+    from dotenv import load_dotenv
+    load_dotenv()
 
 app = Flask(__name__)
 
@@ -13,6 +15,8 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+# ✅ 印出 key 開頭協助除錯
+print("🔐 SUPABASE_KEY 開頭：", SUPABASE_KEY[:30])
 
 @app.route('/')
 def index():
@@ -74,7 +78,6 @@ def add_product():
         spec = request.form.get('spec', '').strip()
         ingredient = request.form.get('ingredient', '').strip()
 
-        # ✅ 將插入資料包成 dict
         data = {
             "name": name,
             "price": price,
@@ -85,16 +88,10 @@ def add_product():
             "ingredient": ingredient
         }
 
-        # ✅ 插入前印出送出資料
         print("📤 準備插入資料：", data)
-
-        # ✅ 執行插入
         response = supabase.table("products").insert(data).execute()
-
-        # ✅ 印出回傳結果
         print("📥 插入結果：", response)
 
-        # 錯誤處理
         if response.error:
             print("⚠️ Supabase 錯誤：", response.error)
             return f"資料寫入失敗：{response.error['message']}", 500
@@ -104,8 +101,6 @@ def add_product():
     except Exception as e:
         print("🚨 新增商品錯誤：", e)
         return f"新增商品時發生錯誤：{str(e)}", 500
-
-
 
 @app.route('/edit/<int:product_id>', methods=['GET', 'POST'])
 def edit_product(product_id):
