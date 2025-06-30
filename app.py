@@ -54,36 +54,37 @@ def add_product():
     price = request.form['price']
     image_file = request.files.get('image_file')
     image_url = request.form.get('image_url', '')
+
     image_path = image_url
 
-    import tempfile
+    if image_file and image_file.filename:
+        import tempfile
+        filename = secure_filename(image_file.filename)
+        storage_path = f"product_images/{filename}"
 
-if image_file and image_file.filename:
-    filename = secure_filename(image_file.filename)
-    storage_path = f"product_images/{filename}"
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            image_file.save(tmp.name)
+            supabase.storage.from_("images").upload(path=storage_path, file=tmp.name)
 
-    # 先把 image_file 儲存成暫存檔
-    with tempfile.NamedTemporaryFile(delete=False) as tmp:
-        image_file.save(tmp.name)
-        # 再上傳這個檔案
-        supabase.storage.from_("images").upload(path=storage_path, file=tmp.name)
+        image_path = supabase.storage.from_("images").get_public_url(storage_path)
 
-    image_path = supabase.storage.from_("images").get_public_url(storage_path)
+    intro = request.form['intro']
+    feature = request.form['feature']
+    spec = request.form['spec']
+    ingredient = request.form['ingredient']
 
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('''
+        INSERT INTO products (name, price, image, intro, feature, spec, ingredient)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+    ''', (name, price, image_path, intro, feature, spec, ingredient))
+    conn.commit()
+    cur.close()
+    conn.close()
 
+    return redirect('/admin')  # ⚠️ 確保這行在函式內有正確縮排
 
-    data = {
-        "name": name,
-        "price": price,
-        "image": image_path,
-        "intro": request.form["intro"],
-        "feature": request.form["feature"],
-        "spec": request.form["spec"],
-        "ingredient": request.form["ingredient"]
-    }
-
-    supabase.table("products").insert(data).execute()
-    return redirect("/admin")
 
 # ✅ 編輯商品
 @app.route('/edit/<int:product_id>', methods=['GET', 'POST'])
