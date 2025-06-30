@@ -1,15 +1,98 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <title>購物車 - HERSET BEAUTY</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="UTF-8">
+  <title>購物車 - HERSET BEAUTY</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .cart-container {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+    .cart-item {
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid #eee;
+      padding: 10px 0;
+    }
+    .cart-item img {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      margin-right: 20px;
+    }
+    .cart-info {
+      flex: 1;
+    }
+    .cart-actions {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+    .cart-actions form {
+      display: inline;
+    }
+    .total {
+      text-align: right;
+      font-size: 1.2rem;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+    .checkout-btn {
+      margin-top: 20px;
+      background-color: #e91e63;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      float: right;
+    }
+  </style>
 </head>
 <body>
-    <div class="cart-container">
-        <h2>🛒 我的購物車</h2>
-        <p>目前尚無商品。</p>
-        <a href="/" class="back-btn">繼續購物</a>
-    </div>
+  <div class="cart-container">
+    <h2>🛒 我的購物車</h2>
+
+    {% if products %}
+      {% for p in products %}
+      <div class="cart-item">
+        <img src="{{ p['images'][0] }}" alt="{{ p['name'] }}">
+        <div class="cart-info">
+          <strong>{{ p['name'] }}</strong><br>
+          ${{ p['price'] }} x {{ p['qty'] }} = ${{ p['subtotal'] }}
+        </div>
+        <div class="cart-actions">
+          <form method="POST">
+            <input type="hidden" name="product_id" value="{{ p['id'] }}">
+            <input type="hidden" name="action" value="decrease">
+            <button type="submit">−</button>
+          </form>
+          <form method="POST">
+            <input type="hidden" name="product_id" value="{{ p['id'] }}">
+            <input type="hidden" name="action" value="increase">
+            <button type="submit">＋</button>
+          </form>
+          <form method="POST">
+            <input type="hidden" name="product_id" value="{{ p['id'] }}">
+            <input type="hidden" name="action" value="remove">
+            <button type="submit">🗑️</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+
+      <div class="total">總金額：${{ total }}</div>
+
+      <form method="POST" action="/checkout">
+        <button type="submit" class="checkout-btn">結帳</button>
+      </form>
+    {% else %}
+      <p>目前尚無商品。</p>
+    {% endif %}
+
+    <a href="/" class="back-btn">← 繼續購物</a>
+  </div>
 </body>
 </html>

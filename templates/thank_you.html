@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>感謝您的訂購</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .thank-container {
+      max-width: 600px;
+      margin: 100px auto;
+      text-align: center;
+    }
+    .thank-container h2 {
+      color: #e91e63;
+    }
+    .thank-container a {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #e91e63;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="thank-container">
+    <h2>感謝您的訂購！</h2>
+    <p>我們已收到您的訂單，將盡快為您處理。</p>
+    <a href="/">回首頁</a>
+  </div>
+</body>
+</html>

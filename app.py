@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, session, url_for
 from werkzeug.utils import secure_filename
 from supabase import create_client, Client
 import os
@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
+app.secret_key = os.urandom(24)
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
@@ -23,9 +24,42 @@ def index():
 def login():
     return render_template("login.html")
 
-@app.route('/cart')
+@app.route('/cart', methods=['GET', 'POST'])
 def cart():
-    return render_template("cart.html")
+    if request.method == 'POST':
+        action = request.form.get('action')
+        product_id = int(request.form.get('product_id'))
+        cart = session.get('cart', [])
+        for item in cart:
+            if item['product_id'] == product_id:
+                if action == 'increase':
+                    item['qty'] += 1
+                elif action == 'decrease' and item['qty'] > 1:
+                    item['qty'] -= 1
+                elif action == 'remove':
+                    cart.remove(item)
+                break
+        session['cart'] = cart
+        return redirect(url_for('cart'))
+
+    cart_items = session.get('cart', [])
+    products = []
+    total = 0
+    for item in cart_items:
+        res = supabase.table("products").select("*").eq("id", item['product_id']).single().execute()
+        if res.data:
+            product = res.data
+            product['qty'] = item['qty']
+            product['subtotal'] = item['qty'] * product['price']
+            total += product['subtotal']
+            products.append(product)
+    return render_template("cart.html", products=products, total=total)
+
+@app.route('/checkout', methods=['POST'])
+def checkout():
+    cart_items = session.pop('cart', [])
+    print("✅ 結帳完成，內容：", cart_items)
+    return "感謝您的購買！訂單已送出。"
 
 @app.route('/product/<int:product_id>')
 def product_detail(product_id):
@@ -56,7 +90,6 @@ def add_product():
         ingredient = request.form.get('ingredient', '').strip()
         category = request.form.get('category', '').strip()
 
-        # 處理圖片
         image_files = request.files.getlist("image_files")
         image_urls = []
         for file in image_files:
@@ -72,17 +105,11 @@ def add_product():
                 url = supabase.storage.from_("images").get_public_url(storage_path)
                 image_urls.append(url)
 
-        # 商品規格
         options = request.form.getlist('options[]')
 
-        # 為了支援原本 image 欄位（非空限制），保留第一張圖片為主圖
-        cover_image = image_urls[0] if image_urls else ""
-
-        # 整理資料
         data = {
             "name": name,
             "price": price,
-            "image": cover_image,
             "images": image_urls,
             "intro": intro,
             "feature": feature,
@@ -106,20 +133,37 @@ def add_product():
         print("🚨 新增商品錯誤：", e)
         return f"新增商品時發生錯誤：{str(e)}", 500
 
-
 @app.route('/edit/<int:product_id>', methods=['GET', 'POST'])
 def edit_product(product_id):
     if request.method == 'POST':
         updated = {
             "name": request.form['name'],
-            "price": request.form['price'],
-            "image": request.form['image'],
+            "price": float(request.form['price']),
             "intro": request.form['intro'],
             "feature": request.form['feature'],
             "spec": request.form['spec'],
             "ingredient": request.form['ingredient'],
+            "options": request.form.getlist('options[]'),
             "category": request.form.get('category', '')
         }
+
+        image_files = request.files.getlist("image_files")
+        image_urls = []
+        for file in image_files:
+            if file and file.filename:
+                filename = secure_filename(file.filename)
+                storage_path = f"product_images/{filename}"
+                with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                    file.save(tmp.name)
+                    try:
+                        supabase.storage.from_("images").upload(storage_path, tmp.name)
+                    except Exception as e:
+                        print("❗️圖片上傳錯誤：", e)
+                url = supabase.storage.from_("images").get_public_url(storage_path)
+                image_urls.append(url)
+        if image_urls:
+            updated['images'] = image_urls
+
         supabase.table("products").update(updated).eq("id", product_id).execute()
         return redirect('/admin')
     else:
@@ -136,9 +180,17 @@ def delete_product(product_id):
 
 @app.route('/add_to_cart', methods=['POST'])
 def add_to_cart():
-    product_id = request.form['product_id']
-    print(f"加入購物車：{product_id}")
-    return redirect('/')
+    product_id = int(request.form['product_id'])
+    cart = session.get('cart', [])
+    for item in cart:
+        if item['product_id'] == product_id:
+            item['qty'] += 1
+            break
+    else:
+        cart.append({'product_id': product_id, 'qty': 1})
+    session['cart'] = cart
+    print("🛒 當前購物車：", cart)
+    return redirect(url_for('cart'))
 
 if __name__ == '__main__':
     app.run(debug=True)
