@@ -70,8 +70,8 @@ def add_product():
         spec = request.form.get('spec', '').strip()
         ingredient = request.form.get('ingredient', '').strip()
 
-        # 插入資料
-        response = supabase.table("products").insert({
+        # ✅ 將插入資料包成 dict
+        data = {
             "name": name,
             "price": price,
             "image": image_path,
@@ -79,9 +79,18 @@ def add_product():
             "feature": feature,
             "spec": spec,
             "ingredient": ingredient
-        }).execute()
+        }
 
-        # 檢查回應
+        # ✅ 插入前印出送出資料
+        print("📤 準備插入資料：", data)
+
+        # ✅ 執行插入
+        response = supabase.table("products").insert(data).execute()
+
+        # ✅ 印出回傳結果
+        print("📥 插入結果：", response)
+
+        # 錯誤處理
         if response.error:
             print("⚠️ Supabase 錯誤：", response.error)
             return f"資料寫入失敗：{response.error['message']}", 500
@@ -91,6 +100,7 @@ def add_product():
     except Exception as e:
         print("🚨 新增商品錯誤：", e)
         return f"新增商品時發生錯誤：{str(e)}", 500
+
 
 
 @app.route('/edit/<int:product_id>', methods=['GET', 'POST'])
