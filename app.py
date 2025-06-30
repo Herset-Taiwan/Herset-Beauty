@@ -14,11 +14,11 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 # ✅ PostgreSQL 連線設定
 def get_db_connection():
     conn = psycopg2.connect(
-        host="db.bwxvuvutmexzbynzhvsd.supabase.co",  # ✅ 這個改對
+        host="db.bwxvuvutmexzbynzhvsd.supabase.co",
         port=5432,
         database="postgres",
         user="postgres",
-        password=Gama168.net("SUPABASE_PW"),     # ✅ 密碼從環境變數讀取（建議）
+        password=os.environ.get("SUPABASE_PW"),  # ✅ 從環境變數抓密碼
         sslmode="require"
     )
     return conn
