@@ -50,38 +50,45 @@ def add_product():
         name = request.form.get('name', '').strip()
         price_str = request.form.get('price', '0').strip()
         price = float(price_str) if price_str else 0.0
-
-        image_file = request.files.get('image_file')
-        image_url = request.form.get('image_url', '').strip()
-
-        image_path = image_url
-        if image_file and image_file.filename:
-            filename = secure_filename(image_file.filename)
-            storage_path = f"product_images/{filename}"
-
-            with tempfile.NamedTemporaryFile(delete=False) as tmp:
-                image_file.save(tmp.name)
-                try:
-                    supabase.storage.from_("images").upload(storage_path, tmp.name)
-                except Exception as e:
-                    print("❗️圖片上傳錯誤：", e)
-
-            image_path = supabase.storage.from_("images").get_public_url(storage_path)
-
         intro = request.form.get('intro', '').strip()
         feature = request.form.get('feature', '').strip()
         spec = request.form.get('spec', '').strip()
         ingredient = request.form.get('ingredient', '').strip()
         category = request.form.get('category', '').strip()
 
+        # 處理圖片
+        image_files = request.files.getlist("image_files")
+        image_urls = []
+        for file in image_files:
+            if file and file.filename:
+                filename = secure_filename(file.filename)
+                storage_path = f"product_images/{filename}"
+                with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                    file.save(tmp.name)
+                    try:
+                        supabase.storage.from_("images").upload(storage_path, tmp.name)
+                    except Exception as e:
+                        print("❗️圖片上傳錯誤：", e)
+                url = supabase.storage.from_("images").get_public_url(storage_path)
+                image_urls.append(url)
+
+        # 商品規格
+        options = request.form.getlist('options[]')
+
+        # 為了支援原本 image 欄位（非空限制），保留第一張圖片為主圖
+        cover_image = image_urls[0] if image_urls else ""
+
+        # 整理資料
         data = {
             "name": name,
             "price": price,
-            "image": image_path,
+            "image": cover_image,
+            "images": image_urls,
             "intro": intro,
             "feature": feature,
             "spec": spec,
             "ingredient": ingredient,
+            "options": options,
             "category": category
         }
 
@@ -98,6 +105,7 @@ def add_product():
     except Exception as e:
         print("🚨 新增商品錯誤：", e)
         return f"新增商品時發生錯誤：{str(e)}", 500
+
 
 @app.route('/edit/<int:product_id>', methods=['GET', 'POST'])
 def edit_product(product_id):

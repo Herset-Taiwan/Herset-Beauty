@@ -24,7 +24,8 @@
     }
     input[type="text"],
     input[type="number"],
-    textarea {
+    textarea,
+    select {
       width: 100%;
       padding: 8px;
       margin-top: 5px;
@@ -68,6 +69,15 @@
     <label>價格</label>
     <input type="number" name="price" required>
 
+    <label>分類</label>
+    <select name="category" required>
+      <option value="">請選擇</option>
+      <option value="身體保養">身體保養</option>
+      <option value="私密保養">私密保養</option>
+      <option value="寵物友善">寵物友善</option>
+      <option value="品牌嚴選">品牌嚴選</option>
+    </select>
+
     <label>上傳圖片（可多張）</label>
     <input type="file" name="image_files" accept="image/*" multiple>
 
@@ -93,14 +103,6 @@
 
     <button type="submit">新增商品</button>
   </form>
-  <label>分類</label>
-<select name="category" required>
-  <option value="身體保養">身體保養</option>
-  <option value="私密保養">私密保養</option>
-  <option value="寵物友善">寵物友善</option>
-  <option value="品牌嚴選">品牌嚴選</option>
-</select>
-
 
   <script>
     function addOption() {
