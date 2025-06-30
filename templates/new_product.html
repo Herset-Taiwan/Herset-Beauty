@@ -50,6 +50,11 @@
       color: #777;
       margin-top: 3px;
     }
+    .option-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 5px;
+    }
   </style>
 </head>
 <body>
@@ -63,12 +68,8 @@
     <label>價格</label>
     <input type="number" name="price" required>
 
-    <label>圖片網址（擇一）</label>
-    <input type="text" name="image_url">
-    <div class="note">可直接貼入圖片連結，或以下傳檔擇一使用</div>
-
-    <label>或上傳圖片檔</label>
-    <input type="file" name="image_file" accept="image/*">
+    <label>上傳圖片（可多張）</label>
+    <input type="file" name="image_files" accept="image/*" multiple>
 
     <label>商品介紹</label>
     <textarea name="intro" rows="3"></textarea>
@@ -76,7 +77,15 @@
     <label>商品特色</label>
     <textarea name="feature" rows="3"></textarea>
 
-    <label>商品規格</label>
+    <label>商品規格（可新增多個）</label>
+    <div id="options-wrapper">
+      <div class="option-group">
+        <input type="text" name="options[]" placeholder="例：澄淨白茶感" />
+      </div>
+    </div>
+    <button type="button" onclick="addOption()">＋新增一個規格</button>
+
+    <label>商品規格描述</label>
     <textarea name="spec" rows="3"></textarea>
 
     <label>商品成分</label>
@@ -84,6 +93,16 @@
 
     <button type="submit">新增商品</button>
   </form>
+
+  <script>
+    function addOption() {
+      const wrapper = document.getElementById('options-wrapper');
+      const div = document.createElement('div');
+      div.className = 'option-group';
+      div.innerHTML = '<input type="text" name="options[]" placeholder="例：加強保濕" />';
+      wrapper.appendChild(div);
+    }
+  </script>
 
 </body>
 </html>
