@@ -60,7 +60,7 @@ def add_product():
                 image_urls.append(public_url)
 
         # 規格 options 處理（前端送成多個 options[]）
-        options = request.form.getlist('options[]')
+        options = [opt.strip() for opt in request.form.getlist('options[]') if opt.strip()]
 
         data = {
             "name": name,
@@ -70,7 +70,8 @@ def add_product():
             "feature": feature,
             "spec": spec,
             "ingredient": ingredient,
-            "options": options
+            "options": options,
+            "image": image_urls[0] if image_urls else None  # ⬅️ 為了滿足原本 image 欄位 NOT NULL
         }
 
         print("📤 準備插入資料：", data)
