@@ -42,9 +42,10 @@
 
       <label>商品規格（可新增多個）</label>
       <div id="options-container">
-        {% for opt in product['options'] %}
-          <input type="text" name="options[]" value="{{ opt }}">
+        {% for opt in product['options'] or [] %}
+         <input type="text" name="options[]" value="{{ opt }}">
         {% endfor %}
+
       </div>
       <button type="button" onclick="addOptionField()">+新增一個規格</button>
 
