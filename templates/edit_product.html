@@ -25,8 +25,24 @@
       <label>價格</label>
       <input type="number" name="price" value="{{ product['price'] }}" required>
 
+      <label>分類</label>
+      <select name="category">
+        <option value="">請選擇</option>
+        <option value="身體保養" {% if product['category'] == '身體保養' %}selected{% endif %}>身體保養</option>
+        <option value="私密保養" {% if product['category'] == '私密保養' %}selected{% endif %}>私密保養</option>
+        <option value="寵物友善" {% if product['category'] == '寵物友善' %}selected{% endif %}>寵物友善</option>
+        <option value="品牌嚴選" {% if product['category'] == '品牌嚴選' %}selected{% endif %}>品牌嚴選</option>
+      </select>
+
       <label>上傳圖片（可多張）</label>
       <input type="file" name="image_files" multiple>
+
+      {% if product['images'] %}
+        <p>現有圖片：</p>
+        {% for img in product['images'] %}
+          <img src="{{ img }}" style="max-width: 80px; margin-right: 8px;">
+        {% endfor %}
+      {% endif %}
 
       <label>商品介紹</label>
       <textarea name="intro">{{ product['intro'] }}</textarea>
@@ -43,11 +59,10 @@
       <label>商品規格（可新增多個）</label>
       <div id="options-container">
         {% for opt in product['options'] or [] %}
-         <input type="text" name="options[]" value="{{ opt }}">
+          <input type="text" name="options[]" value="{{ opt }}">
         {% endfor %}
-
       </div>
-      <button type="button" onclick="addOptionField()">+新增一個規格</button>
+      <button type="button" onclick="addOptionField()">＋新增一個規格</button>
 
       <br><br>
       <button type="submit">儲存修改</button>
