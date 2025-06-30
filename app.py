@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect
 from werkzeug.utils import secure_filename
 from supabase import create_client, Client
 import os
+import tempfile
 
 app = Flask(__name__)
 
@@ -17,12 +18,12 @@ def index():
     products = res.data
     return render_template("index.html", products=products)
 
-# ✅ 登入
+# ✅ 登入頁
 @app.route('/login')
 def login():
     return render_template("login.html")
 
-# ✅ 購物車
+# ✅ 購物車頁
 @app.route('/cart')
 def cart():
     return render_template("cart.html")
@@ -36,13 +37,13 @@ def product_detail(product_id):
         return "找不到商品", 404
     return render_template("product.html", product=product)
 
-# ✅ 商品管理
+# ✅ 管理頁
 @app.route('/admin')
 def admin():
     res = supabase.table("products").select("*").execute()
     return render_template("admin.html", products=res.data)
 
-# ✅ 新增商品畫面
+# ✅ 新增商品頁面
 @app.route('/admin/new')
 def new_product():
     return render_template("new_product.html")
@@ -50,15 +51,19 @@ def new_product():
 # ✅ 新增商品（含圖片上傳）
 @app.route('/add_product', methods=['POST'])
 def add_product():
-    name = request.form['name']
-    price = request.form['price']
-    image_file = request.files.get('image_file')
+    name = request.form.get('name', '')
+    price = request.form.get('price', '')
+    intro = request.form.get('intro', '')
+    feature = request.form.get('feature', '')
+    spec = request.form.get('spec', '')
+    ingredient = request.form.get('ingredient', '')
     image_url = request.form.get('image_url', '')
 
+    image_file = request.files.get('image_file')
     image_path = image_url
 
-    if image_file and image_file.filename:
-        import tempfile
+    # ✅ 若有上傳檔案，則上傳至 Supabase Storage
+    if image_file and getattr(image_file, 'filename', ''):
         filename = secure_filename(image_file.filename)
         storage_path = f"product_images/{filename}"
 
@@ -66,40 +71,34 @@ def add_product():
             image_file.save(tmp.name)
             supabase.storage.from_("images").upload_or_update(path=storage_path, file=tmp.name)
 
+        # ✅ 拿到公開圖片網址
         image_path = supabase.storage.from_("images").get_public_url(storage_path)
 
-    intro = request.form['intro']
-    feature = request.form['feature']
-    spec = request.form['spec']
-    ingredient = request.form['ingredient']
+    # ✅ 將商品資料存入 Supabase DB
+    supabase.table("products").insert({
+        "name": name,
+        "price": price,
+        "image": image_path,
+        "intro": intro,
+        "feature": feature,
+        "spec": spec,
+        "ingredient": ingredient
+    }).execute()
 
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute('''git add .
-git commit -m "新增DB"
-git push
-        INSERT INTO products (name, price, image, intro, feature, spec, ingredient)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
-    ''', (name, price, image_path, intro, feature, spec, ingredient))
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    return redirect('/admin')  # ⚠️ 確保這行在函式內有正確縮排
-
+    return redirect('/admin')
 
 # ✅ 編輯商品
 @app.route('/edit/<int:product_id>', methods=['GET', 'POST'])
 def edit_product(product_id):
     if request.method == 'POST':
         updated = {
-            "name": request.form['name'],
-            "price": request.form['price'],
-            "image": request.form['image'],
-            "intro": request.form['intro'],
-            "feature": request.form['feature'],
-            "spec": request.form['spec'],
-            "ingredient": request.form['ingredient']
+            "name": request.form.get('name', ''),
+            "price": request.form.get('price', ''),
+            "image": request.form.get('image', ''),
+            "intro": request.form.get('intro', ''),
+            "feature": request.form.get('feature', ''),
+            "spec": request.form.get('spec', ''),
+            "ingredient": request.form.get('ingredient', '')
         }
         supabase.table("products").update(updated).eq("id", product_id).execute()
         return redirect('/admin')
