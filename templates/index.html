@@ -5,28 +5,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HERSET BEAUTY 商店</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+      .sub-categories {
+        background-color: #f8e9f0;
+        padding: 10px 0;
+        text-align: center;
+        font-size: 1rem;
+      }
+      .sub-categories a {
+        margin: 0 15px;
+        text-decoration: none;
+        color: #c2185b;
+        font-weight: bold;
+      }
+      section.banner {
+        padding: 40px 10px;
+      }
+    </style>
 </head>
 <body>
 
     <!-- 大橫向選單 -->
     <header class="main-header">
-  <div class="logo-area">
-    <img src="https://www.lipintimatecare.tw/logo.png" alt="logo" class="logo">
-    <span>HERSET BEAUTY</span>
-  </div>
-  <nav class="main-nav">
-    <ul>
-      <li><a href="#">HOME</a></li>
-      <li><a href="#">Shop｜購物</a></li>
-      <li><a href="#" class="nav-extra">關於我們</a></li>
-      <li><a href="/login" class="nav-extra">👤 會員登入</a></li>
-      <li><a href="/cart" class="cart-btn">🛒 購物車</a></li>
-    </ul>
-  </nav>
-</header>
+      <div class="logo-area">
+        <img src="https://www.lipintimatecare.tw/logo.png" alt="logo" class="logo">
+        <span>HERSET BEAUTY</span>
+      </div>
+      <nav class="main-nav">
+        <ul>
+          <li><a href="#">HOME</a></li>
+          <li><a href="#">Shop｜購物</a></li>
+          <li><a href="#" class="nav-extra">關於我們</a></li>
+          <li><a href="/login" class="nav-extra">👤 會員登入</a></li>
+          <li><a href="/cart" class="cart-btn">🛒 購物車</a></li>
+        </ul>
+      </nav>
+    </header>
 
+    <!-- 分類選項 -->
+    <div class="sub-categories">
+      <a href="#">身體保養</a>
+      <a href="#">私密保養</a>
+      <a href="#">寵物友善</a>
+      <a href="#">品牌嚴選</a>
+    </div>
 
-    <!-- 你原本的內容保留 -->
+    <!-- 商品區塊 -->
     <main>
         <section class="banner">
             <h1>自然呵護，極致純淨</h1>
@@ -34,21 +58,21 @@
         </section>
 
         <section class="product-list">
-  {% for p in products %}
-    <div class="product-card">
-      <img src="{{ p['image'] }}" alt="{{ p['name'] }}">
-      <h2>{{ p['name'] }}</h2>
-      <p class="price">${{ p['price'] }}</p>
-      <div style="display: flex; gap: 10px; justify-content: center;">
-        <form method="POST" action="/add_to_cart">
-          <input type="hidden" name="product_id" value="{{ p['id'] }}">
-          <button type="submit" class="add-btn">加入購物車</button>
-        </form>
-        <a href="/product/{{ p['id'] }}" class="view-btn">查看商品</a>
-      </div>
-    </div>
-  {% endfor %}
-</section>
+      {% for p in products %}
+        <div class="product-card">
+          <img src="{{ p['image'] }}" alt="{{ p['name'] }}">
+          <h2>{{ p['name'] }}</h2>
+          <p class="price">${{ p['price'] }}</p>
+          <div style="display: flex; gap: 10px; justify-content: center;">
+            <form method="POST" action="/add_to_cart">
+              <input type="hidden" name="product_id" value="{{ p['id'] }}">
+              <button type="submit" class="add-btn">加入購物車</button>
+            </form>
+            <a href="/product/{{ p['id'] }}" class="view-btn">查看商品</a>
+          </div>
+        </div>
+      {% endfor %}
+    </section>
 
     </main>
 
