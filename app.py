@@ -14,7 +14,7 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-print("\U0001f511 SUPABASE_KEY 開頭：", SUPABASE_KEY[:30])
+print("🔑 SUPABASE_KEY 開頭：", SUPABASE_KEY[:30])
 
 @app.route('/')
 def index():
@@ -31,19 +31,6 @@ def admin():
 def new_product():
     return render_template("new_product.html")
 
-@app.route('/product/<int:product_id>')
-def product_detail(product_id):
-    try:
-        res = supabase.table("products").select("*").eq("id", product_id).single().execute()
-        product = res.data
-        if not product:
-            return "找不到商品", 404
-        return render_template("product.html", product=product)
-    except Exception as e:
-        print("❗️載入商品失敗：", e)
-        return "載入商品時發生錯誤", 500
-
-
 @app.route('/add_product', methods=['POST'])
 def add_product():
     try:
@@ -55,7 +42,6 @@ def add_product():
         spec = request.form.get('spec', '').strip()
         ingredient = request.form.get('ingredient', '').strip()
 
-        # 多圖處理
         image_files = request.files.getlist('image_files')
         image_urls = []
 
@@ -72,7 +58,6 @@ def add_product():
                 public_url = supabase.storage.from_("images").get_public_url(storage_path)
                 image_urls.append(public_url)
 
-        # 規格 options 處理（前端送成多個 options[]）
         options = [opt.strip() for opt in request.form.getlist('options[]') if opt.strip()]
 
         data = {
@@ -84,7 +69,7 @@ def add_product():
             "spec": spec,
             "ingredient": ingredient,
             "options": options,
-            "image": image_urls[0] if image_urls else None  # ⬅️ 為了滿足原本 image 欄位 NOT NULL
+            "image": image_urls[0] if image_urls else None
         }
 
         print("📤 準備插入資料：", data)
@@ -113,9 +98,25 @@ def edit_product(product_id):
             spec = request.form.get('spec', '').strip()
             ingredient = request.form.get('ingredient', '').strip()
 
+            image_files = request.files.getlist('image_files')
+            image_urls = []
+
+            for img in image_files:
+                if img and img.filename:
+                    filename = secure_filename(img.filename)
+                    storage_path = f"product_images/{filename}"
+                    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                        img.save(tmp.name)
+                        try:
+                            supabase.storage.from_("images").upload(storage_path, tmp.name)
+                        except Exception as e:
+                            print("❗️圖片上傳錯誤：", e)
+                    public_url = supabase.storage.from_("images").get_public_url(storage_path)
+                    image_urls.append(public_url)
+
             options = [opt.strip() for opt in request.form.getlist('options[]') if opt.strip()]
 
-            updated_data = {
+            updated = {
                 "name": name,
                 "price": price,
                 "intro": intro,
@@ -125,10 +126,17 @@ def edit_product(product_id):
                 "options": options
             }
 
-            supabase.table("products").update(updated_data).eq("id", product_id).execute()
+            if image_urls:
+                updated["images"] = image_urls
+                updated["image"] = image_urls[0]
+
+            supabase.table("products").update(updated).eq("id", product_id).execute()
             return redirect('/admin')
+
         except Exception as e:
+            print("🚨 編輯商品錯誤：", e)
             return f"編輯商品時發生錯誤：{str(e)}", 500
+
     else:
         res = supabase.table("products").select("*").eq("id", product_id).single().execute()
         product = res.data
@@ -136,15 +144,36 @@ def edit_product(product_id):
             return "找不到商品", 404
         return render_template("edit_product.html", product=product)
 
-
 @app.route('/delete/<int:product_id>', methods=['POST'])
 def delete_product(product_id):
     try:
         supabase.table("products").delete().eq("id", product_id).execute()
         return redirect('/admin')
     except Exception as e:
+        print("🚨 刪除商品錯誤：", e)
         return f"刪除商品時發生錯誤：{str(e)}", 500
 
+@app.route('/product/<int:product_id>')
+def product_detail(product_id):
+    res = supabase.table("products").select("*").eq("id", product_id).single().execute()
+    product = res.data
+    if not product:
+        return "找不到商品", 404
+    return render_template("product.html", product=product)
+
+@app.route('/cart')
+def cart():
+    return render_template("cart.html")
+
+@app.route('/login')
+def login():
+    return render_template("login.html")
+
+@app.route('/add_to_cart', methods=['POST'])
+def add_to_cart():
+    product_id = request.form['product_id']
+    print(f"加入購物車：{product_id}")
+    return redirect('/')
 
 if __name__ == '__main__':
     app.run(debug=True)
