@@ -3,12 +3,16 @@ from werkzeug.utils import secure_filename
 from supabase import create_client, Client
 import os
 import tempfile
+from dotenv import load_dotenv  # ✅ 加這行
+
+load_dotenv()  # ✅ 這行會載入 .env 檔案的變數
 
 app = Flask(__name__)
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
 
 @app.route('/')
 def index():
