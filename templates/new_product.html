@@ -32,46 +32,58 @@
       border-radius: 5px;
       border: 1px solid #ccc;
     }
+    input[type="file"] {
+      margin-top: 8px;
+    }
     button {
-      margin-top: 20px;
+      margin-top: 25px;
       padding: 10px 20px;
       background-color: #e91e63;
       color: white;
       border: none;
       border-radius: 5px;
       cursor: pointer;
+      width: 100%;
+    }
+    .note {
+      font-size: 13px;
+      color: #777;
+      margin-top: 3px;
     }
   </style>
 </head>
 <body>
 
   <form method="POST" action="/add_product" enctype="multipart/form-data">
-  <label>名稱</label><br>
-  <input type="text" name="name"><br><br>
+    <h2>新增商品</h2>
 
-  <label>價格</label><br>
-  <input type="number" name="price"><br><br>
+    <label>名稱</label>
+    <input type="text" name="name" required>
 
-  <label>圖片網址（擇一）</label><br>
-  <input type="text" name="image_url"><br><br>
+    <label>價格</label>
+    <input type="number" name="price" required>
 
-  <label>或上傳圖片</label><br>
-  <input type="file" name="image_file" accept="image/*"><br><br>
+    <label>圖片網址（擇一）</label>
+    <input type="text" name="image_url">
+    <div class="note">可直接貼入圖片連結，或以下傳檔擇一使用</div>
 
-  <label>商品介紹</label><br>
-  <textarea name="intro"></textarea><br><br>
+    <label>或上傳圖片檔</label>
+    <input type="file" name="image_file" accept="image/*">
 
-  <label>商品特色</label><br>
-  <textarea name="feature"></textarea><br><br>
+    <label>商品介紹</label>
+    <textarea name="intro" rows="3"></textarea>
 
-  <label>商品規格</label><br>
-  <textarea name="spec"></textarea><br><br>
+    <label>商品特色</label>
+    <textarea name="feature" rows="3"></textarea>
 
-  <label>商品成分</label><br>
-  <textarea name="ingredient"></textarea><br><br>
+    <label>商品規格</label>
+    <textarea name="spec" rows="3"></textarea>
 
-  <button type="submit">新增</button>
-</form>
+    <label>商品成分</label>
+    <textarea name="ingredient" rows="3"></textarea>
+
+    <button type="submit">新增商品</button>
+  </form>
 
 </body>
 </html>

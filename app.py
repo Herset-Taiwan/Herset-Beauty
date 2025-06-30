@@ -2,13 +2,14 @@ from flask import Flask, render_template, request, redirect
 import psycopg2
 import os
 from werkzeug.utils import secure_filename
+from supabase import create_client, Client
 
 app = Flask(__name__)
 
-# 設定圖片上傳路徑
-UPLOAD_FOLDER = 'static/uploads'
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+# ✅ Supabase Storage 設定
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # ✅ PostgreSQL 連線設定
 def get_db_connection():
@@ -17,7 +18,7 @@ def get_db_connection():
         port=5432,
         database="postgres",
         user="postgres.bwxvuvutmexzbynzhvsd",
-        password="Gama168.net",  # 換成你自己的 Supabase 密碼
+        password="Gama168.net",
         sslmode="require"
     )
     return conn
@@ -82,20 +83,22 @@ def admin():
 def new_product():
     return render_template("new_product.html")
 
-# ✅ 新增商品處理
+# ✅ 新增商品處理（整合 Supabase Storage）
 @app.route('/add_product', methods=['POST'])
 def add_product():
     name = request.form['name']
     price = request.form['price']
-    image_url = request.form.get('image_url', '')
     image_file = request.files.get('image_file')
+    image_url = request.form.get('image_url', '')
 
+    # 預設圖片路徑為手動填入
     image_path = image_url
+
     if image_file and image_file.filename:
         filename = secure_filename(image_file.filename)
-        save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        image_file.save(save_path)
-        image_path = '/' + save_path.replace('\\', '/')
+        storage_path = f"product_images/{filename}"
+        supabase.storage.from_("images").upload(file=image_file, path=storage_path, upsert=True)
+        image_path = supabase.storage.from_("images").get_public_url(storage_path)
 
     intro = request.form['intro']
     feature = request.form['feature']
@@ -142,7 +145,8 @@ def edit_product(product_id):
         if product is None:
             return "找不到商品", 404
         return render_template("edit_product.html", product=product)
-    
+
+# ✅ 刪除商品
 @app.route('/delete/<int:product_id>', methods=['POST'])
 def delete_product(product_id):
     conn = get_db_connection()
@@ -152,7 +156,6 @@ def delete_product(product_id):
     cur.close()
     conn.close()
     return redirect('/admin')
-
 
 # ✅ 模擬加入購物車
 @app.route('/add_to_cart', methods=['POST'])
