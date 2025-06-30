@@ -101,5 +101,50 @@ def add_product():
         print("🚨 新增商品錯誤：", e)
         return f"新增商品時發生錯誤：{str(e)}", 500
 
+@app.route('/edit/<int:product_id>', methods=['GET', 'POST'])
+def edit_product(product_id):
+    if request.method == 'POST':
+        try:
+            name = request.form.get('name', '').strip()
+            price_str = request.form.get('price', '0').strip()
+            price = float(price_str) if price_str else 0.0
+            intro = request.form.get('intro', '').strip()
+            feature = request.form.get('feature', '').strip()
+            spec = request.form.get('spec', '').strip()
+            ingredient = request.form.get('ingredient', '').strip()
+
+            options = [opt.strip() for opt in request.form.getlist('options[]') if opt.strip()]
+
+            updated_data = {
+                "name": name,
+                "price": price,
+                "intro": intro,
+                "feature": feature,
+                "spec": spec,
+                "ingredient": ingredient,
+                "options": options
+            }
+
+            supabase.table("products").update(updated_data).eq("id", product_id).execute()
+            return redirect('/admin')
+        except Exception as e:
+            return f"編輯商品時發生錯誤：{str(e)}", 500
+    else:
+        res = supabase.table("products").select("*").eq("id", product_id).single().execute()
+        product = res.data
+        if not product:
+            return "找不到商品", 404
+        return render_template("edit_product.html", product=product)
+
+
+@app.route('/delete/<int:product_id>', methods=['POST'])
+def delete_product(product_id):
+    try:
+        supabase.table("products").delete().eq("id", product_id).execute()
+        return redirect('/admin')
+    except Exception as e:
+        return f"刪除商品時發生錯誤：{str(e)}", 500
+
+
 if __name__ == '__main__':
     app.run(debug=True)
