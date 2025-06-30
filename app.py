@@ -14,11 +14,11 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 # ✅ PostgreSQL 連線設定
 def get_db_connection():
     conn = psycopg2.connect(
-        host="aws-0-ap-southeast-1.pooler.supabase.com",
+        host="db.bwxvuvutmexzbynzhvsd.supabase.co",  # ✅ 這個改對
         port=5432,
         database="postgres",
-        user="postgres.<your_project_ref>",
-        password=os.environ.get("SUPABASE_PW"),
+        user="postgres",
+        password=Gama168.net("SUPABASE_PW"),     # ✅ 密碼從環境變數讀取（建議）
         sslmode="require"
     )
     return conn
