@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, url_for
+from flask import Flask, render_template, request, redirect, session, url_for, jsonify
 from werkzeug.utils import secure_filename
 from supabase import create_client, Client
 import os
@@ -18,7 +18,9 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 def index():
     res = supabase.table("products").select("*").execute()
     products = res.data
-    return render_template("index.html", products=products)
+    cart = session.get('cart', [])
+    cart_count = sum(item['qty'] for item in cart)
+    return render_template("index.html", products=products, cart_count=cart_count)
 
 @app.route('/login')
 def login():
@@ -59,7 +61,11 @@ def cart():
 def checkout():
     cart_items = session.pop('cart', [])
     print("✅ 結帳完成，內容：", cart_items)
-    return "感謝您的購買！訂單已送出。"
+    return redirect(url_for('thank_you'))
+
+@app.route('/thank-you')
+def thank_you():
+    return render_template("thank_you.html")
 
 @app.route('/product/<int:product_id>')
 def product_detail(product_id):
@@ -190,7 +196,7 @@ def add_to_cart():
         cart.append({'product_id': product_id, 'qty': 1})
     session['cart'] = cart
     print("🛒 當前購物車：", cart)
-    return redirect(url_for('cart'))
+    return jsonify(success=True, count=sum(item['qty'] for item in cart))
 
 if __name__ == '__main__':
     app.run(debug=True)

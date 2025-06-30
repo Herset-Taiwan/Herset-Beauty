@@ -2,33 +2,37 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>感謝您的訂購</title>
+  <title>感謝您的訂購 - HERSET BEAUTY</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    .thank-container {
-      max-width: 600px;
-      margin: 100px auto;
+    .thankyou-container {
       text-align: center;
+      padding: 60px 20px;
     }
-    .thank-container h2 {
+    .thankyou-container h2 {
+      font-size: 2rem;
       color: #e91e63;
     }
-    .thank-container a {
+    .thankyou-container p {
+      font-size: 1.2rem;
+      margin-top: 10px;
+    }
+    .thankyou-container a {
       display: inline-block;
-      margin-top: 20px;
+      margin-top: 30px;
       padding: 10px 20px;
       background-color: #e91e63;
       color: white;
       text-decoration: none;
-      border-radius: 5px;
+      border-radius: 6px;
     }
   </style>
 </head>
 <body>
-  <div class="thank-container">
-    <h2>感謝您的訂購！</h2>
-    <p>我們已收到您的訂單，將盡快為您處理。</p>
-    <a href="/">回首頁</a>
+  <div class="thankyou-container">
+    <h2>🎉 感謝您的訂購！</h2>
+    <p>我們已收到您的訂單，將儘快為您處理。</p>
+    <a href="/">返回首頁</a>
   </div>
 </body>
 </html>
