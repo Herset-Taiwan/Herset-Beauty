@@ -57,10 +57,10 @@ def add_product():
     image_path = image_url
 
     if image_file and image_file.filename:
-        filename = secure_filename(image_file.filename)
-        path = f"product_images/{filename}"
-        supabase.storage.from_("images").upload(path, image_file, upsert=True)
-        image_path = supabase.storage.from_("images").get_public_url(path)
+    filename = secure_filename(image_file.filename)
+    storage_path = f"product_images/{filename}"
+    supabase.storage.from_("images").upload(path=storage_path, file=image_file)
+    image_path = supabase.storage.from_("images").get_public_url(storage_path)
 
     data = {
         "name": name,
