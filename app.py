@@ -58,7 +58,8 @@ def add_product():
             image_file.save(tmp.name)
 
             try:
-                supabase.storage.from_("images").upload(storage_path, tmp.name)
+                supabase.storage.from_("images").update(path=storage_path, file=tmp.name)
+
             except Exception as e:
                 # 若已存在可跳過或使用 overwrite 覆蓋
                 print("❗️圖片上傳錯誤：", e)
