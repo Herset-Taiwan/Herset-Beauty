@@ -31,6 +31,19 @@ def admin():
 def new_product():
     return render_template("new_product.html")
 
+@app.route('/product/<int:product_id>')
+def product_detail(product_id):
+    try:
+        res = supabase.table("products").select("*").eq("id", product_id).single().execute()
+        product = res.data
+        if not product:
+            return "找不到商品", 404
+        return render_template("product.html", product=product)
+    except Exception as e:
+        print("❗️載入商品失敗：", e)
+        return "載入商品時發生錯誤", 500
+
+
 @app.route('/add_product', methods=['POST'])
 def add_product():
     try:

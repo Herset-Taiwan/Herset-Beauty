@@ -5,7 +5,60 @@
   <title>{{ product['name'] }} - HERSET BEAUTY</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    .tabs { display: flex; margin-top: 30px; }
+    .product-container {
+      display: flex;
+      max-width: 900px;
+      margin: 0 auto;
+      gap: 40px;
+    }
+    .gallery {
+      flex: 1;
+    }
+    .gallery-main img {
+      width: 100%;
+      border-radius: 10px;
+    }
+    .gallery-thumbs {
+      display: flex;
+      margin-top: 10px;
+      gap: 10px;
+    }
+    .gallery-thumbs img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border: 2px solid #ccc;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    .info {
+      flex: 1;
+    }
+    .info h2 { margin-top: 0; }
+    .price { color: #c00; font-size: 22px; margin: 10px 0; }
+    .options, .qty, .actions { margin-top: 20px; }
+    .qty button {
+      padding: 0 10px;
+      font-size: 18px;
+    }
+    .qty input {
+      width: 50px;
+      text-align: center;
+      margin: 0 10px;
+    }
+    .actions button {
+      padding: 10px 20px;
+      margin-right: 10px;
+      background-color: #c33;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .actions button:last-child {
+      background-color: #888;
+    }
+
+    .tabs { display: flex; margin-top: 40px; }
     .tabs button {
       padding: 10px 20px;
       margin-right: 10px;
@@ -25,43 +78,80 @@
     }
     .tab-content > div { display: none; }
     .tab-content > div.active { display: block; }
-    .product-detail img {
-      max-width: 300px;
-      margin-top: 20px;
-      border-radius: 10px;
-    }
   </style>
 </head>
 <body>
 
-  <div class="product-detail" style="max-width: 700px; margin: 0 auto;">
-    <h2>{{ product['name'] }}</h2>
-    <img src="{{ product['image'] }}" alt="{{ product['name'] }}">
-    
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="intro">商品介紹</button>
-      <button class="tab-btn" data-tab="feature">商品特色</button>
-      <button class="tab-btn" data-tab="spec">商品規格</button>
-      <button class="tab-btn" data-tab="ingredient">商品成分</button>
+<div class="product-container">
+  <!-- 左側圖片輪播 -->
+  <div class="gallery">
+    <div class="gallery-main">
+      <img id="main-img" src="{{ product['images'][0] if product['images'] else product['image'] }}" alt="product">
     </div>
-
-    <div class="tab-content">
-      <div id="intro" class="active">{{ product['intro'] }}</div>
-      <div id="feature">{{ product['feature'] }}</div>
-      <div id="spec">{{ product['spec'] }}</div>
-      <div id="ingredient">{{ product['ingredient'] }}</div>
+    <div class="gallery-thumbs">
+      {% for img in product['images'] %}
+      <img src="{{ img }}" onclick="document.getElementById('main-img').src='{{ img }}'">
+      {% endfor %}
     </div>
   </div>
 
-  <script>
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        document.querySelectorAll('.tab-content > div').forEach(div => div.classList.remove('active'));
-        document.getElementById(btn.dataset.tab).classList.add('active');
-      });
+  <!-- 右側資訊 -->
+  <div class="info">
+    <h2>{{ product['name'] }}</h2>
+    <div class="price">NT${{ "%.0f"|format(product['price']) }}</div>
+
+    <div class="options">
+      <label>選項：</label><br>
+      {% for opt in product['options'] %}
+      <button>{{ opt }}</button>
+      {% endfor %}
+    </div>
+
+    <div class="qty">
+      <label>數量：</label>
+      <button onclick="adjustQty(-1)">-</button>
+      <input type="number" id="qty" value="1" min="1">
+      <button onclick="adjustQty(1)">+</button>
+    </div>
+
+    <div class="actions">
+      <button onclick="alert('加入購物車功能尚未實作')">加入購物車</button>
+      <button onclick="alert('立即結帳功能尚未實作')">立即結帳</button>
+    </div>
+  </div>
+</div>
+
+<!-- 下方內容切換 -->
+<div class="tabs" style="max-width: 900px; margin: 40px auto 0;">
+  <button class="tab-btn active" data-tab="intro">商品介紹</button>
+  <button class="tab-btn" data-tab="feature">商品特色</button>
+  <button class="tab-btn" data-tab="spec">商品規格</button>
+  <button class="tab-btn" data-tab="ingredient">商品成分</button>
+</div>
+
+<div class="tab-content" style="max-width: 900px; margin: 0 auto;">
+  <div id="intro" class="active">{{ product['intro'] }}</div>
+  <div id="feature">{{ product['feature'] }}</div>
+  <div id="spec">{{ product['spec'] }}</div>
+  <div id="ingredient">{{ product['ingredient'] }}</div>
+</div>
+
+<script>
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.tab-content > div').forEach(div => div.classList.remove('active'));
+      document.getElementById(btn.dataset.tab).classList.add('active');
     });
-  </script>
+  });
+
+  function adjustQty(n) {
+    const input = document.getElementById('qty');
+    let val = parseInt(input.value) + n;
+    input.value = val < 1 ? 1 : val;
+  }
+</script>
+
 </body>
 </html>
