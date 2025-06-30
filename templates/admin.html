@@ -67,9 +67,9 @@
       </div>
       <div class="product-actions">
         <a href="/edit/{{ p['id'] }}">✏️ 編輯</a>
-        <form action="/delete/{{ product.id }}" method="post" style="display:inline;">
-  <button type="submit" onclick="return confirm('確定要刪除這個商品嗎？')">🗑️ 刪除</button>
-</form>
+        <form action="/delete/{{ p['id'] }}" method="post" style="display:inline;">
+          <button type="submit" onclick="return confirm('確定要刪除這個商品嗎？')">🗑️ 刪除</button>
+        </form>
       </div>
     </div>
     {% endfor %}
