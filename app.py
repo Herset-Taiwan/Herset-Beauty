@@ -313,19 +313,16 @@ def update_profile():
     note = request.form.get('note')
 
     try:
-        member_id = str(UUID(session['member_id']))  # 確保是 UUID 字串
-
+        member_id = str(UUID(session['member_id']))
         print("👤 會員ID：", member_id)
+        print("📦 更新內容：", {"name": name, "phone": phone, "address": address, "note": note})
 
-        result = supabase.table("members") \
-            .update({
-                "name": name,
-                "phone": phone,
-                "address": address,
-                "note": note
-            }) \
-            .eq("id", member_id) \
-            .execute()
+        result = supabase.table("members").update({
+            "name": name,
+            "phone": phone,
+            "address": address,
+            "note": note
+        }).filter("id", "eq", member_id).execute()
 
         print("✅ Supabase 回傳：", result)
         session['profile_updated'] = True
@@ -335,19 +332,7 @@ def update_profile():
 
     return redirect('/')
 
-@app.route('/debug_member')
-def debug_member():
-    if 'member_id' not in session:
-        return "❌ No member ID in session"
-    
-    try:
-        member_id = str(UUID(session['member_id']))
-        print("🧪 測試會員ID：", member_id)
 
-        res = supabase.table("members").select("*").eq("id", member_id).execute()
-        return f"<pre>🔍 查詢結果：{res.data}</pre>"
-    except Exception as e:
-        return f"🚨 查詢錯誤：{e}"
 
 
 
