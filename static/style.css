@@ -405,3 +405,13 @@ body {
       display: none;
       z-index: 999;
     }
+
+    .product-card .add-btn,
+.product-card .view-btn {
+  width: 140px;
+  height: 45px;
+  display: inline-block;
+  text-align: center;
+  font-size: 16px;
+  font-weight: bold;
+}
