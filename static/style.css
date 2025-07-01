@@ -88,10 +88,12 @@ footer {
 /* ===== 商品清單 ===== */
 .product-list {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: 30px;
-  padding: 40px 20px;
-  flex-wrap: wrap;
+  max-width: 100%; /* ✅ 放寬限制 */
+  margin: 40px auto;
+  padding: 0 20px;
 }
 
 .product-card {
