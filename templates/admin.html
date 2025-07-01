@@ -137,7 +137,7 @@
     </ul>
     <strong>訂單金額：</strong>${{ o['total_amount'] }}<br>
     <strong>會員帳號：</strong>{{ o['member']['account'] }}<br>
-    <strong>購買人：</strong>{{ o['member']['username'] }}<br>
+    <strong>購買人：</strong>{{ o['member']['name'] }}<br>
     <strong>電話：</strong>{{ o['member']['phone'] }}<br>
     <strong>地址：</strong>{{ o['member']['address'] }}<br>
     <form method="POST" action="/admin/orders/update_status/{{ o['id'] }}" style="margin-top: 5px;">
