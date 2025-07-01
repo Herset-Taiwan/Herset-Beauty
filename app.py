@@ -58,24 +58,39 @@ def register():
         password = request.form['password']
         username = account
 
+        # 檢查帳號是否已存在
         exist = supabase.table("members").select("account").eq("account", account).execute()
         if exist.data:
             return render_template("register.html", error="此帳號已被使用")
 
         try:
-            supabase.table("members").insert({
+            # 不給 id，讓 Supabase 自動產生
+            response = supabase.table("members").insert({
                 "account": account,
                 "email": email,
                 "password": password,
                 "username": username,
                 "created_at": datetime.utcnow().isoformat()
             }).execute()
-            # 🟢 改為顯示 success 畫面
+
+            # 🔍 印出結果確認
+            print("✅ 註冊成功：", response)
+
+            # 直接登入（可選）
+            session['user'] = {
+                'account': account,
+                'email': email
+            }
+            session['member_id'] = response.data[0]['id']  # 🟢 儲存真正由 Supabase 產生的 ID
+
             return render_template("register_success.html")
+
         except Exception as e:
             print("🚨 註冊錯誤：", e)
             return render_template("register.html", error="註冊失敗，請稍後再試")
+
     return render_template("register.html")
+
 
 
 
