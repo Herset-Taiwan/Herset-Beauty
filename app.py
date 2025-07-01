@@ -38,10 +38,10 @@ def login():
             .eq("account", account).execute()
 
         if res.data and res.data[0]['password'] == password:
-            # 登入成功，導回首頁或其他頁面
-            session['user'] = res.data[0] 
-            session['member_id'] = res.data[0]['id'] 
-            return redirect('/')
+             session['user'] = res.data[0] 
+             session['member_id'] = res.data[0]['id']  # 🟢 這行非常重要！
+             return redirect('/')
+
         else:
             return render_template("login.html", error="帳號或密碼錯誤")
 
