@@ -100,6 +100,11 @@ def logout():
     session.clear()
     return redirect('/')
 
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
+
 @app.route('/cart', methods=['GET', 'POST'])
 def cart():
     if request.method == 'POST':
