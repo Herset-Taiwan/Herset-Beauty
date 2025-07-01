@@ -2,18 +2,22 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>商品管理 - HERSET BEAUTY</title>
+  <title>管理後台 - HERSET BEAUTY</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
+    body { font-family: sans-serif; }
     .admin-list {
-      max-width: 900px;
+      max-width: 1000px;
       margin: 50px auto;
     }
-    .admin-list h2 {
+    h2 {
+      margin-top: 50px;
       text-align: center;
-      margin-bottom: 20px;
     }
-    .product-row {
+    .section {
+      margin-bottom: 50px;
+    }
+    .product-row, .member-row, .order-row {
       display: flex;
       align-items: center;
       border: 1px solid #eee;
@@ -27,14 +31,14 @@
       object-fit: cover;
       margin-right: 20px;
     }
-    .product-info {
+    .info {
       flex: 1;
     }
-    .product-actions {
+    .actions {
       display: flex;
       gap: 10px;
     }
-    .product-actions a, .product-actions button {
+    .actions a, .actions button {
       text-decoration: none;
       color: #e91e63;
       font-weight: bold;
@@ -51,28 +55,67 @@
       text-decoration: none;
       border-radius: 5px;
     }
+    .search-form input {
+      padding: 5px;
+      margin-right: 10px;
+    }
   </style>
 </head>
 <body>
   <div class="admin-list">
-    <h2>商品管理</h2>
-    <a href="/admin/new" class="add-btn">＋ 新增商品</a>
 
-    {% for p in products %}
-    <div class="product-row">
-      <img src="{{ p['image'] }}" alt="{{ p['name'] }}">
-      <div class="product-info">
-        <strong>{{ p['name'] }}</strong><br>
-        價格：${{ p['price'] }}
+    <!-- 商品管理 -->
+    <div class="section">
+      <h2>商品管理</h2>
+      <a href="/admin/new" class="add-btn">＋ 新增商品</a>
+      {% for p in products %}
+      <div class="product-row">
+        <img src="{{ p['image'] }}" alt="{{ p['name'] }}">
+        <div class="info">
+          <strong>{{ p['name'] }}</strong><br>
+          價格：${{ p['price'] }}
+        </div>
+        <div class="actions">
+          <a href="/edit/{{ p['id'] }}">✏️ 編輯</a>
+          <form action="/delete/{{ p['id'] }}" method="post" style="display:inline;">
+            <button type="submit" onclick="return confirm('確定要刪除這個商品嗎？')">🗑️ 刪除</button>
+          </form>
+        </div>
       </div>
-      <div class="product-actions">
-        <a href="/edit/{{ p['id'] }}">✏️ 編輯</a>
-        <form action="/delete/{{ p['id'] }}" method="post" style="display:inline;">
-          <button type="submit" onclick="return confirm('確定要刪除這個商品嗎？')">🗑️ 刪除</button>
-        </form>
-      </div>
+      {% endfor %}
     </div>
-    {% endfor %}
+
+    <!-- 會員系統管理 -->
+    <div class="section">
+      <h2>會員系統管理</h2>
+      <form class="search-form" method="GET" action="/admin/members">
+        <input type="text" name="keyword" placeholder="輸入帳號、姓名、電話或Email...">
+        <button type="submit">搜尋</button>
+      </form>
+      {% for m in members %}
+      <div class="member-row">
+        <div class="info">
+          <strong>{{ m['username'] }}</strong>（{{ m['account'] }}）<br>
+          電話：{{ m['phone'] or '—' }}，Email：{{ m['email'] }}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- 訂單管理系統 -->
+    <div class="section">
+      <h2>訂單管理系統</h2>
+      {% for o in orders %}
+      <div class="order-row">
+        <div class="info">
+          訂單編號：#{{ o['id'] }}<br>
+          會員ID：{{ o['member_id'] }}<br>
+          金額：${{ o['total_amount'] }}，狀態：{{ o['status'] }}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
   </div>
 </body>
 </html>

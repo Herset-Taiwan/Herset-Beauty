@@ -193,8 +193,26 @@ def product_detail(product_id):
 
 @app.route('/admin')
 def admin():
-    res = supabase.table("products").select("*").execute()
-    return render_template("admin.html", products=res.data)
+    products = supabase.table("products").select("*").execute().data
+    members = supabase.table("members").select("id, username, account, phone, email").limit(10).execute().data
+    orders = supabase.table("orders").select("*").order("created_at", desc=True).limit(10).execute().data
+    return render_template("admin.html", products=products, members=members, orders=orders)
+
+@app.route('/admin/members')
+def search_members():
+    keyword = request.args.get("keyword", "").strip()
+    query = supabase.table("members").select("id, username, account, phone, email")
+
+    if keyword:
+        query = query.or_(
+            f"account.ilike.%{keyword}%,username.ilike.%{keyword}%,phone.ilike.%{keyword}%,email.ilike.%{keyword}%"
+        )
+
+    members = query.execute().data
+    products = supabase.table("products").select("*").limit(0).execute().data  # 空值避免報錯
+    orders = supabase.table("orders").select("*").limit(0).execute().data
+    return render_template("admin.html", products=products, members=members, orders=orders)
+
 
 @app.route('/admin/new')
 def new_product():
