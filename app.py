@@ -40,6 +40,7 @@ def login():
         if res.data and res.data[0]['password'] == password:
             # 登入成功，導回首頁或其他頁面
             session['user'] = res.data[0] 
+            session['member_id'] = res.data[0]['id'] 
             return redirect('/')
         else:
             return render_template("login.html", error="帳號或密碼錯誤")
@@ -327,27 +328,6 @@ def update_profile():
     except Exception as e:
         print("🚨 更新失敗：", e)
 
-    return redirect('/')
-
-
-@app.route('/update_profile', methods=['POST'])
-def update_profile():
-    if 'member_id' not in session:
-        return redirect('/login')
-
-    name = request.form['name']
-    phone = request.form['phone']
-    address = request.form['address']
-    note = request.form['note']
-
-    supabase.table("members").update({
-        "name": name,
-        "phone": phone,
-        "address": address,
-        "note": note
-    }).eq("id", session['member_id']).execute()
-
-    session['profile_updated'] = True
     return redirect('/')
 
 
