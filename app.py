@@ -47,7 +47,7 @@ def register():
         password = request.form['password']
 
         # 檢查是否已有相同帳號
-        exist = supabase.table("members").select("*").eq("account", account).execute()
+        exist = supabase.table("members").select("account").eq("account", account).execute()
         if exist.data:
             return render_template("register.html", error="此帳號已被使用")
 
