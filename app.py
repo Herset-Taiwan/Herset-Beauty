@@ -313,18 +313,23 @@ def update_profile():
     note = request.form.get('note')
 
     try:
-        member_id = str(UUID(session['member_id']))
+        member_id = str(UUID(session['member_id']))  # 確保是 UUID 字串
+
         print("👤 會員ID：", member_id)
 
-        result = supabase.table("members").update({
-            "name": name,
-            "phone": phone,
-            "address": address,
-            "note": note
-        }).filter("id", "eq", member_id).execute()
+        result = supabase.table("members") \
+            .update({
+                "name": name,
+                "phone": phone,
+                "address": address,
+                "note": note
+            }) \
+            .eq("id", member_id) \
+            .execute()
 
         print("✅ Supabase 回傳：", result)
         session['profile_updated'] = True
+
     except Exception as e:
         print("🚨 更新失敗：", e)
 
