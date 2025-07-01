@@ -316,6 +316,26 @@ def profile():
     session['profile_updated'] = True
     return redirect("/")
 
+@app.route('/update_profile', methods=['POST'])
+def update_profile():
+    if 'member_id' not in session:
+        return redirect('/login')
+
+    name = request.form['name']
+    phone = request.form['phone']
+    address = request.form['address']
+    note = request.form['note']
+
+    supabase.table("members").update({
+        "name": name,
+        "phone": phone,
+        "address": address,
+        "note": note
+    }).eq("id", session['member_id']).execute()
+
+    session['profile_updated'] = True
+    return redirect('/')
+
 
 
 if __name__ == '__main__':
