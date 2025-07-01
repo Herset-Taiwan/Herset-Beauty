@@ -230,20 +230,16 @@ footer {
 }
 
 .add-btn, .view-btn {
-  display: inline-block;
-  width: 110px;
+  width: 140px;
   height: 40px;
+  font-size: 16px;
   background-color: #CDAFA1;
+  color: white;
   border: none;
-  color: #FFFFFF;
-  font-size: 14px;
-  font-weight: bold;
-  text-align: center;
-  line-height: 40px;
   border-radius: 6px;
+  font-weight: bold;
   cursor: pointer;
-  text-decoration: none;
-  transition: background-color 0.3s;
+  transition: background-color 0.3s ease;
 }
 
 .add-btn:hover,
