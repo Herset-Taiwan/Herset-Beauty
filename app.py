@@ -304,25 +304,23 @@ def add_to_cart():
 @app.route('/profile', methods=['POST'])
 def update_profile():
     if 'member_id' not in session:
-        print("❌ 沒有 session['member_id']")
         return redirect('/login')
 
-    name = request.form.get('name')
-    phone = request.form.get('phone')
-    address = request.form.get('address')
-    note = request.form.get('note')
+    name = request.form['name']
+    phone = request.form['phone']
+    address = request.form['address']
+    note = request.form['note']
 
     print("📝 更新資料：", name, phone, address, note)
     print("👤 會員ID：", session['member_id'])
 
     try:
         result = supabase.table("members").update({
-    "name": name,
-    "phone": phone,
-    "address": address,
-    "note": note
-}).filter("id", "eq", session['member_id']).execute()
-
+            "name": name,
+            "phone": phone,
+            "address": address,
+            "note": note
+        }).filter("id", "eq", str(uuid.UUID(session['member_id']))).execute()
 
         print("✅ Supabase 回傳：", result)
         session['profile_updated'] = True
