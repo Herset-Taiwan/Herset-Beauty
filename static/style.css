@@ -95,7 +95,7 @@ footer {
 }
 
 .product-card {
-  width: 250px;       /* 加寬一點 */
+  width: 300px;       /* 加寬一點 */
   height: 400px;      /* 加高一點，避免按鈕太擠 */
   background-color: #F9F0F3; /* ✅ 6. 卡片底色 */
   border: 1px solid #C7A7A3; /* ✅ 6. 卡片邊框 */
