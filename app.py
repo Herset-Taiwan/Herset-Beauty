@@ -204,9 +204,9 @@ def admin():
 
     # 取得所有訂單
     orders_raw = supabase.table("orders").select("*").order("created_at", desc=True).execute().data
+
     # 取得所有會員
     members = supabase.table("members").select("id, account, username, name, phone, email, address").execute().data
-
     member_dict = {m['id']: m for m in members}
 
     # 取得所有 order_items
@@ -216,25 +216,24 @@ def admin():
         item_group.setdefault(item['order_id'], []).append(item)
 
     # 整合訂單資訊
-    # 整合訂單資訊
-orders = []
-for o in orders_raw:
-    o['items'] = item_group.get(o['id'], [])
+    orders = []
+    for o in orders_raw:
+        o['items'] = item_group.get(o['id'], [])
 
-    member = member_dict.get(o['member_id'])
+        member = member_dict.get(o['member_id'])
 
-    o['member'] = {
-        'account': member['account'] if member else 'guest',
-        'name': member['name'] if member and 'name' in member else '訪客',
-        'phone': member['phone'] if member and 'phone' in member else '—',
-        'address': member['address'] if member and 'address' in member else '—',
-    }
+        o['member'] = {
+            'account': member['account'] if member else 'guest',
+            'name': member['name'] if member and 'name' in member else '訪客',
+            'phone': member['phone'] if member and 'phone' in member else '—',
+            'address': member['address'] if member and 'address' in member else '—',
+        }
 
-    orders.append(o)
-
+        orders.append(o)
 
     members_display = members  # 給會員頁籤用
     return render_template("admin.html", products=products, members=members_display, orders=orders)
+
 
 
 
