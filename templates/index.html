@@ -61,10 +61,10 @@
     <img src="{{ p['images'][0] if p['images'] else '' }}" alt="{{ p['name'] }}">
     <h2>{{ p['name'] }}</h2>
     <p class="price">${{ p['price'] }}</p>
-    <div style="display: flex; gap: 10px; justify-content: center;">
-      <button onclick="addToCart(event, {{ p['id'] }})" class="add-btn">加入購物車</button>
-      <a href="/product/{{ p['id'] }}" class="view-btn">查看商品</a>
-    </div>
+<div class="btn-group">
+  <button onclick="addToCart(event, {{ p['id'] }})">加入購物車</button>
+  <a href="/product/{{ p['id'] }}" class="view-btn">查看商品</a>
+</div>
   </div>
   {% endfor %}
 </section>

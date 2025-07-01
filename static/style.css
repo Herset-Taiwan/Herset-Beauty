@@ -98,28 +98,31 @@ footer {
 
 
 .product-card {
-  width: 380px;             /* ⬅️ 放大寬度 */
+  width: 320px;
   background-color: #F9F0F3;
   border: 1px solid #C7A7A3;
-  border-radius: 10px;
-  padding: 24px 20px 30px;  /* ⬅️ 底部 padding 多一點避免按鈕被擠 */
+  border-radius: 12px;
+  padding: 20px;
   text-align: center;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
   box-sizing: border-box;
 }
 
 
 
+
 .product-card img {
   width: 100%;
-  height: 260px;         /* 可以自行調整圖片高度 */
-  object-fit: cover;     /* ✅ 讓圖片填滿並裁切，避免留白 */
-  border-radius: 0px;    /* ✅ 拿掉圖片本身的圓角 */
-  margin: 0;             /* ✅ 拿掉 margin 才會貼齊 */
-  display: block;        /* ✅ 防止 inline 預設多留空白 */
+  height: 260px;
+  object-fit: contain;
+  border-radius: 10px;
+  margin-bottom: 15px;
+  padding: 0 10px;
+  box-sizing: border-box;
 }
+
 
 
 .product-card h2 {
@@ -437,3 +440,54 @@ body {
   background-color: #E2B6A2;
 }
 
+.btn-group {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn-group button,
+.btn-group .view-btn {
+  width: 120px;
+  height: 38px;
+  font-size: 15px;
+  background-color: #CDAFA1;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn-group button:hover,
+.btn-group .view-btn:hover {
+  background-color: #E2B6A2;
+}
+
+
+.product-card .btn-group {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.product-card button,
+.product-card .view-btn {
+  width: 120px;
+  height: 38px;
+  font-size: 15px;
+  background-color: #CDAFA1;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.product-card button:hover,
+.product-card .view-btn:hover {
+  background-color: #E2B6A2;
+}
