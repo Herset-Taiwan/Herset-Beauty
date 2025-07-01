@@ -303,16 +303,19 @@ def add_to_cart():
 
 @app.route('/profile', methods=['POST'])
 def update_profile():
+    import uuid
+
     if 'member_id' not in session:
         return redirect('/login')
 
-    name = request.form['name']
-    phone = request.form['phone']
-    address = request.form['address']
-    note = request.form['note']
+    name = request.form.get('name')
+    phone = request.form.get('phone')
+    address = request.form.get('address')
+    note = request.form.get('note')
+    member_id = str(uuid.UUID(session['member_id']))
 
     print("📝 更新資料：", name, phone, address, note)
-    print("👤 會員ID：", session['member_id'])
+    print("👤 會員ID：", member_id)
 
     try:
         result = supabase.table("members").update({
@@ -320,7 +323,7 @@ def update_profile():
             "phone": phone,
             "address": address,
             "note": note
-        }).filter("id", "eq", str(uuid.UUID(session['member_id']))).execute()
+        }).filter("id", "eq", member_id).execute()
 
         print("✅ Supabase 回傳：", result)
         session['profile_updated'] = True
@@ -328,6 +331,7 @@ def update_profile():
         print("🚨 更新失敗：", e)
 
     return redirect('/')
+
 
 
 
