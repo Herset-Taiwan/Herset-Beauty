@@ -110,12 +110,16 @@ footer {
   border-radius: 12px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   box-sizing: border-box;
-  padding: 20px;
+
+  /* ✅ 原本是 padding: 20px; 這裡改小一點 */
+  padding: 12px 16px;
+
   text-align: center;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
 }
+
 
 .product-card img {
   width: 100%;
