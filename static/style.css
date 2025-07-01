@@ -1,13 +1,13 @@
 body {
   margin: 0;
   font-family: 'Segoe UI', sans-serif;
-  background: #F9F0F3; /* ✅ 1. 主背景色 */
+  background: #F3E5E1; /* ✅ 1. 主背景色 */
   color: #3C3C3C;
 }
 
 /* ===== 導覽列與頁尾 ===== */
 header, footer {
-  background: #EADDD6; /* ✅ 2. 奶茶米色 */
+  background: #F3E5E1; /* ✅ 2. 奶茶米色 */
   color: #5A4B45;       /* ✅ 3. 摩卡棕標題文字色 */
 }
 
