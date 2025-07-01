@@ -175,13 +175,23 @@
 
   <script>
     function switchTab(tabId) {
-      const tabs = document.querySelectorAll('.tab-content');
-      const buttons = document.querySelectorAll('.tab-btn');
-      tabs.forEach(t => t.classList.remove('active'));
-      buttons.forEach(b => b.classList.remove('active'));
-      document.getElementById(tabId).classList.add('active');
-      event.target.classList.add('active');
+    const tabs = document.querySelectorAll('.tab-content');
+    const buttons = document.querySelectorAll('.tab-btn');
+    tabs.forEach(t => t.classList.remove('active'));
+    buttons.forEach(b => b.classList.remove('active'));
+
+    document.getElementById(tabId).classList.add('active');
+    document.querySelector(`.tab-btn[onclick*="${tabId}"]`).classList.add('active');
+  }
+
+  // ✅ 根據 URL 決定預設頁籤
+  window.onload = function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tab = urlParams.get('tab');
+    if (tab) {
+      switchTab(tab);
     }
+  };
   </script>
 </body>
 </html>
