@@ -230,21 +230,29 @@ footer {
 }
 
 .add-btn, .view-btn {
-  background-color: #CDAFA1;
+  display: inline-block;
+  width: 110px;
+  height: 40px;
+  background-color: #CDAFA1; /* 玫瑰裸棕 */
   border: none;
-  color: white;
-  width: 110px;           /* ✅ 固定寬度 */
-  height: 40px;           /* ✅ 固定高度 */
-  font-size: 14px;        /* ✅ 統一字體大小 */
+  color: #FFFFFF; /* 白字 */
+  font-size: 14px;
   font-weight: bold;
-  padding: 0;
-  margin: 5px;
-  border-radius: 5px;
-  cursor: pointer;
   text-align: center;
-  line-height: 40px;      /* ✅ 垂直置中 */
+  line-height: 40px;  /* 垂直置中 */
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.3s;
 }
 
-.add-btn:hover, .view-btn:hover {
-  background-color: #E2B6A2;
+.add-btn:hover,
+.view-btn:hover {
+  background-color: #E2B6A2; /* Hover 陶土裸橘 */
+}
+
+
+.add-btn:hover,
+.view-btn:hover {
+  background-color: #E2B6A2; /* Hover 陶土裸橘 */
 }
