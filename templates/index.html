@@ -63,7 +63,18 @@
       <li><a href="#">HOME</a></li>
       <li><a href="#">Shop｜購物</a></li>
       <li><a href="#" class="nav-extra">關於我們</a></li>
-      <li><a href="/login" class="nav-extra">👤 會員登入</a></li>
+      {% if session.get('user') %}
+<li class="dropdown">
+  <button class="dropbtn">👤 會員中心</button>
+  <div class="dropdown-content">
+    <a href="#" onclick="openProfileModal()">會員資料管理</a>
+    <a href="/logout">會員登出</a>
+  </div>
+</li>
+{% else %}
+<li><a href="/login" class="nav-extra">👤 會員登入</a></li>
+{% endif %}
+
       <li>
         <a href="/cart" class="cart-btn">🛒 購物車
       
@@ -142,6 +153,71 @@ function addToCart(event, productId) {
       setTimeout(() => { box.style.display = 'none'; }, 1500);
     }
   });
+}
+</script>
+<div id="profileModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeProfileModal()">&times;</span>
+    <h3>會員資料管理</h3>
+    <form id="profileForm" method="POST" action="/profile">
+      <input type="text" name="name" placeholder="姓名" required>
+      <input type="tel" name="phone" placeholder="電話" required>
+      <input type="text" name="address" placeholder="訂單地址" required>
+      <textarea name="note" placeholder="訂單備註" rows="4"></textarea>
+      <button type="submit">儲存資料</button>
+    </form>
+  </div>
+</div>
+
+<style>
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+}
+.modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  margin: 10% auto;
+  width: 90%;
+  max-width: 500px;
+  position: relative;
+}
+.modal-content input,
+.modal-content textarea {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid #ccc;
+}
+.modal-content button {
+  margin-top: 20px;
+  width: 100%;
+  padding: 10px;
+  background-color: #e91e63;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.close {
+  position: absolute;
+  top: 10px; right: 15px;
+  font-size: 24px;
+  cursor: pointer;
+}
+</style>
+
+<script>
+function openProfileModal() {
+  document.getElementById("profileModal").style.display = "block";
+}
+function closeProfileModal() {
+  document.getElementById("profileModal").style.display = "none";
 }
 </script>
 

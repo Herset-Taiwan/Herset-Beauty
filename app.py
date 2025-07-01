@@ -299,5 +299,22 @@ def add_to_cart():
     print("🛒 當前購物車：", cart)
     return jsonify(success=True, count=sum(item['qty'] for item in cart))
 
+@app.route('/profile', methods=['POST'])
+def profile():
+    if 'user' not in session:
+        return redirect('/login')
+
+    data = {
+        "name": request.form.get("name"),
+        "phone": request.form.get("phone"),
+        "address": request.form.get("address"),
+        "note": request.form.get("note")
+    }
+    user_id = session['user']['id']
+
+    supabase.table("members").update(data).eq("id", user_id).execute()
+    return redirect("/")
+
+
 if __name__ == '__main__':
     app.run(debug=True)
