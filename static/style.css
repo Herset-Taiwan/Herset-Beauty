@@ -438,7 +438,7 @@ body {
 .btn-group button,
 .btn-group .view-btn {
   width: 120px;
-  height: 38px;
+  height: 40px;
   font-size: 15px;
   background-color: #CDAFA1;
   color: white;
@@ -446,6 +446,10 @@ body {
   border-radius: 6px;
   font-weight: bold;
   cursor: pointer;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: background-color 0.3s ease;
 }
 
