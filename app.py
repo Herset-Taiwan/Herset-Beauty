@@ -280,22 +280,32 @@ def add_product():
         image_urls = []
         for file in image_files:
             if file and file.filename:
+                # ✅ 自動加上 UUID 前綴避免檔名重複
                 filename = secure_filename(file.filename)
-                storage_path = f"product_images/{filename}"
+                unique_filename = f"{uuid.uuid4()}_{filename}"
+                storage_path = f"product_images/{unique_filename}"
+
                 with tempfile.NamedTemporaryFile(delete=False) as tmp:
                     file.save(tmp.name)
                     try:
                         supabase.storage.from_("images").upload(storage_path, tmp.name)
                     except Exception as e:
                         print("❗️圖片上傳錯誤：", e)
+                        continue  # 跳過失敗圖片
+
                 url = supabase.storage.from_("images").get_public_url(storage_path)
                 image_urls.append(url)
+
+        # ✅ 確保至少有一張主圖片
+        if not image_urls:
+            return "請上傳至少一張圖片", 400
 
         options = request.form.getlist('options[]')
 
         data = {
             "name": name,
             "price": price,
+            "image": image_urls[0],  # ✅ 這是主圖片，必要欄位
             "images": image_urls,
             "intro": intro,
             "feature": feature,
@@ -313,11 +323,12 @@ def add_product():
             print("⚠️ Supabase 錯誤：", response.error)
             return f"資料寫入失敗：{response.error['message']}", 500
 
-        return redirect('/admin')
+        return redirect('/admin?tab=products')  # 回商品頁籤
 
     except Exception as e:
         print("🚨 新增商品錯誤：", e)
         return f"新增商品時發生錯誤：{str(e)}", 500
+
 
 @app.route('/edit/<int:product_id>', methods=['GET', 'POST'])
 def edit_product(product_id):
@@ -338,26 +349,33 @@ def edit_product(product_id):
         for file in image_files:
             if file and file.filename:
                 filename = secure_filename(file.filename)
-                storage_path = f"product_images/{filename}"
+                unique_filename = f"{uuid.uuid4()}_{filename}"
+                storage_path = f"product_images/{unique_filename}"
                 with tempfile.NamedTemporaryFile(delete=False) as tmp:
                     file.save(tmp.name)
                     try:
                         supabase.storage.from_("images").upload(storage_path, tmp.name)
                     except Exception as e:
                         print("❗️圖片上傳錯誤：", e)
+                        continue  # 跳過上傳失敗
+
                 url = supabase.storage.from_("images").get_public_url(storage_path)
                 image_urls.append(url)
+
         if image_urls:
             updated['images'] = image_urls
+            updated['image'] = image_urls[0]  # ✅ 主圖也更新
 
         supabase.table("products").update(updated).eq("id", product_id).execute()
-        return redirect('/admin')
+        return redirect('/admin?tab=products')
+
     else:
         res = supabase.table("products").select("*").eq("id", product_id).single().execute()
         product = res.data
         if not product:
             return "找不到商品", 404
         return render_template("edit_product.html", product=product)
+
 
 @app.route('/delete/<int:product_id>', methods=['POST'])
 def delete_product(product_id):

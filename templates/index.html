@@ -56,12 +56,11 @@
 <header class="main-header">
   <div class="logo-area">
     <img src="{{ url_for('static', filename='uploads/logo_0.png') }}" alt="logo" class="logo">
-    <span>HERSET BEAUTY</span>
+    <span>HERSET</span>
   </div>
   <nav class="main-nav">
     <ul>
       <li><a href="#">HOME</a></li>
-      <li><a href="#">Shop｜購物</a></li>
       <li><a href="#" class="nav-extra">關於我們</a></li>
       {% if session.get('user') %}
 <li class="dropdown">
