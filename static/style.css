@@ -222,3 +222,23 @@ footer {
   display: none;
   z-index: 999;
 }
+
+.add-btn, .view-btn {
+  background-color: #CDAFA1;
+  border: none;
+  color: white;
+  width: 110px;           /* ✅ 固定寬度 */
+  height: 40px;           /* ✅ 固定高度 */
+  font-size: 14px;        /* ✅ 統一字體大小 */
+  font-weight: bold;
+  padding: 0;
+  margin: 5px;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: center;
+  line-height: 40px;      /* ✅ 垂直置中 */
+}
+
+.add-btn:hover, .view-btn:hover {
+  background-color: #E2B6A2;
+}
