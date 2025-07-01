@@ -39,6 +39,7 @@ def login():
 
         if res.data and res.data[0]['password'] == password:
             # 登入成功，導回首頁或其他頁面
+            session['user'] = res.data[0] 
             return redirect('/')
         else:
             return render_template("login.html", error="帳號或密碼錯誤")
@@ -311,9 +312,10 @@ def profile():
         "note": request.form.get("note")
     }
     user_id = session['user']['id']
-
     supabase.table("members").update(data).eq("id", user_id).execute()
+    session['profile_updated'] = True
     return redirect("/")
+
 
 
 if __name__ == '__main__':

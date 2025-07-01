@@ -219,6 +219,13 @@ function openProfileModal() {
 function closeProfileModal() {
   document.getElementById("profileModal").style.display = "none";
 }
+
+window.onload = function() {
+  {% if session.get('profile_updated') %}
+  alert("✅ 資料已成功儲存！");
+  {% set _ = session.pop('profile_updated') %}
+  {% endif %}
+};
 </script>
 
 </body>
