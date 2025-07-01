@@ -6,6 +6,13 @@ body {
   color: #3C3C3C;
 }
 
+.logo-area img {
+  height: 40px;
+  width: auto;
+  max-width: 100px;
+  object-fit: contain;
+}
+
 /* ===== 導覽列與頁尾 ===== */
 header, footer {
   background: #F9F0F3;
@@ -25,6 +32,8 @@ footer {
   justify-content: space-between;
   align-items: center;
   border-bottom: 2px solid #C7A7A3;
+  max-height: 80px; /* ✅ 避免 logo 撐開整個區塊 */
+  overflow: hidden;
 }
 
 .logo-area {
