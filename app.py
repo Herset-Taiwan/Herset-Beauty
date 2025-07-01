@@ -166,7 +166,7 @@ def checkout():
         'status': 'pending',
         'created_at': datetime.utcnow().isoformat()
     }
-
+    print("✅ order_data：", order_data)
     result = supabase.table('orders').insert(order_data).execute()
     order_id = result.data[0]['id']
 
