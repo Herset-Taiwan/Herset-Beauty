@@ -60,6 +60,7 @@ def register():
             }).execute()
             return redirect('/login')
         except Exception as e:
+            print("🚨 註冊錯誤：", e)
             return render_template("register.html", error="註冊失敗，請稍後再試")
     return render_template("register.html")
 
