@@ -317,11 +317,12 @@ def update_profile():
 
     try:
         result = supabase.table("members").update({
-            "name": name,
-            "phone": phone,
-            "address": address,
-            "note": note
-        }).eq("id", session['member_id']).execute()
+    "name": name,
+    "phone": phone,
+    "address": address,
+    "note": note
+}).filter("id", "eq", session['member_id']).execute()
+
 
         print("✅ Supabase 回傳：", result)
         session['profile_updated'] = True
