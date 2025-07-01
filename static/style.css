@@ -97,7 +97,6 @@ footer {
 }
 
 
-.product-card {
   width: 320px;
   background-color: #F9F0F3;
   border: 1px solid #C7A7A3;
@@ -113,7 +112,6 @@ footer {
 
 
 
-.product-card img {
   width: 100%;
   height: 260px;
   object-fit: contain;
@@ -125,7 +123,6 @@ footer {
 
 
 
-.product-card h2 {
   font-size: 20px;
   color: #5A4B45; /* ✅ 商品名稱 */
   margin: 10px 0;
@@ -138,7 +135,6 @@ footer {
 }
 
 /* ===== 按鈕樣式 ===== */
-.add-btn, .view-btn, .product-card button {
   background-color: #CDAFA1; /* ✅ 主要按鈕底色 */
   color: white;
   padding: 8px 12px;
@@ -147,7 +143,6 @@ footer {
   border-radius: 5px;
   cursor: pointer;
 }
-.add-btn:hover, .view-btn:hover, .product-card button:hover {
   background-color: #E2B6A2; /* ✅ Hover 陶土裸橘 */
 }
 
@@ -326,7 +321,6 @@ body {
     margin: 60px auto;
   }
 
-    .product-card {
   width: 340px;
   background-color: #fff;
   border: 1px solid #C7A7A3;
@@ -341,7 +335,6 @@ body {
 }
 
 
-.product-card img {
   width: 100%;
   height: 240px;       /* ✅ 從原本的 200px 稍微加大 */
   object-fit: contain; /* ✅ 保持圖片比例 */
@@ -353,7 +346,6 @@ body {
 
 
 
-   .product-card h2 {
     font-size: 20px;
     margin: 10px 0;
     color: #5A4B45;
@@ -416,8 +408,6 @@ body {
       z-index: 999;
     }
 
-.product-card .add-btn,
-.product-card .view-btn {
   width: 140px;
   height: 45px;
   font-size: 16px;
@@ -435,8 +425,6 @@ body {
   text-decoration: none;
 }
 
-.product-card .add-btn:hover,
-.product-card .view-btn:hover {
   background-color: #E2B6A2;
 }
 
@@ -467,14 +455,11 @@ body {
 }
 
 
-.product-card .btn-group {
   display: flex;
   justify-content: center;
   gap: 10px;
 }
 
-.product-card button,
-.product-card .view-btn {
   width: 120px;
   height: 38px;
   font-size: 15px;
@@ -487,7 +472,46 @@ body {
   transition: background-color 0.3s ease;
 }
 
-.product-card button:hover,
-.product-card .view-btn:hover {
   background-color: #E2B6A2;
+}
+
+.product-card {
+  width: 340px;
+  height: 480px;
+  background-color: #fff;
+  border: 1px solid #C7A7A3;
+  border-radius: 12px;
+  box-sizing: border-box;
+  padding: 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.product-card img {
+  width: 100%;
+  height: 220px;
+  object-fit: contain;
+  border-radius: 10px;
+  margin-bottom: 15px;
+}
+
+.product-card h2 {
+  font-size: 20px;
+  margin: 10px 0 5px;
+  color: #5A4B45;
+}
+
+.price {
+  color: #CDAFA1;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.product-card .btn-group {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: auto;
 }
