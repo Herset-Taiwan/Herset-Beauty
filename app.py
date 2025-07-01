@@ -3,6 +3,7 @@ from werkzeug.utils import secure_filename
 from supabase import create_client, Client
 import os
 import tempfile
+import uuid
 from dotenv import load_dotenv
 from datetime import datetime
 
@@ -51,8 +52,8 @@ def register():
             return render_template("register.html", error="此帳號已被使用")
 
         try:
-            # 寫入資料表
             supabase.table("members").insert({
+                "id": str(uuid.uuid4()),  # 👈 加上這行
                 "account": account,
                 "email": email,
                 "password": password,
