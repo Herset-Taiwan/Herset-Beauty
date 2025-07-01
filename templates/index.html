@@ -190,14 +190,13 @@
     <h2>{{ p['name'] }}</h2>
     <p class="price">${{ p['price'] }}</p>
     <div style="display: flex; gap: 10px; justify-content: center;">
-      <form onsubmit="addToCart(event, {{ p['id'] }})">
-        <button type="submit" class="add-btn">加入購物車</button>
-      </form>
+      <button onclick="addToCart(event, {{ p['id'] }})" class="add-btn">加入購物車</button>
       <a href="/product/{{ p['id'] }}" class="view-btn">查看商品</a>
     </div>
   </div>
   {% endfor %}
 </section>
+
 
 <!-- 頁尾 -->
 <footer>
