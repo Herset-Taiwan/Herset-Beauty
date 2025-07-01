@@ -5,8 +5,43 @@
   <title>HERSET BEAUTY 商店</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
+    body {
+      background-color: #F3E5E1; /* 主色 */
+      font-family: sans-serif;
+      color: #3C3C3C; /* 字體主色 */
+      margin: 0;
+    }
+    .main-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 30px;
+      background-color: #F9F0F3; /* 輔色A */
+      border-bottom: 2px solid #CDAFA1; /* 點綴色 */
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+    }
+    .logo-area img {
+      height: 40px;
+      margin-right: 10px;
+    }
+    .main-nav ul {
+      list-style: none;
+      display: flex;
+      gap: 20px;
+      padding: 0;
+      margin: 0;
+    }
+    .main-nav a {
+      text-decoration: none;
+      color: #3C3C3C;
+      font-weight: bold;
+    }
+
     .sub-categories {
-      background-color: #f8e9f0;
+      background-color: #F9F0F3;
       padding: 10px 0;
       text-align: center;
       font-size: 1rem;
@@ -14,15 +49,58 @@
     .sub-categories a {
       margin: 0 15px;
       text-decoration: none;
-      color: #c2185b;
+      color: #CDAFA1; /* 點綴色 */
       font-weight: bold;
       cursor: pointer;
     }
-    .product-card[data-category] {
-      display: none;
+
+    .banner {
+      text-align: center;
+      padding: 60px 20px;
+      background-color: #EADDD6; /* 輔色B */
     }
+
+    .product-list {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 40px 20px;
+      gap: 30px;
+    }
+
+    .product-card {
+      width: 200px;
+      background-color: white;
+      border-radius: 10px;
+      padding: 15px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    .product-card img {
+      width: 100%;
+      border-radius: 8px;
+    }
+
+    .price {
+      color: #CDAFA1;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+
+    .add-btn, .view-btn {
+      background-color: #CDAFA1;
+      border: none;
+      color: white;
+      padding: 8px 12px;
+      margin: 5px;
+      cursor: pointer;
+      border-radius: 5px;
+      text-decoration: none;
+    }
+
     .cart-count {
-      background-color: red;
+      background-color: #CDAFA1;
       color: white;
       font-size: 12px;
       border-radius: 50%;
@@ -31,14 +109,23 @@
       top: -5px;
       right: -10px;
     }
+
     .cart-btn {
       position: relative;
     }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      background-color: #F9F0F3;
+      color: #3C3C3C;
+    }
+
     .add-success {
       position: fixed;
       top: 20px;
       right: 20px;
-      background: #4caf50;
+      background: #CDAFA1;
       color: white;
       padding: 10px 20px;
       border-radius: 5px;
@@ -49,34 +136,26 @@
 </head>
 <body>
 
-<!-- ✅ 成功加入提示 -->
 <div class="add-success" id="add-success">已加入購物車！</div>
 
-<!-- ✅ 導覽列 -->
+<!-- 導覽列 -->
 <header class="main-header">
   <div class="logo-area">
-    <img src="{{ url_for('static', filename='uploads/logo_0.png') }}" alt="logo" class="logo">
+    <img src="{{ url_for('static', filename='uploads/logo_0.png') }}" alt="logo">
     <span>HERSET</span>
   </div>
   <nav class="main-nav">
     <ul>
-      <li><a href="#">HOME</a></li>
-      <li><a href="/about" class="nav-extra">關於我們</a></li>
+      <li><a href="/">HOME</a></li>
+      <li><a href="/about">關於我們</a></li>
       {% if session.get('user') %}
-<li class="dropdown">
-  <button class="dropbtn">👤 會員中心</button>
-  <div class="dropdown-content">
-    <a href="#" onclick="openProfileModal()">會員資料管理</a>
-    <a href="/logout">會員登出</a>
-  </div>
-</li>
-{% else %}
-<li><a href="/login" class="nav-extra">👤 會員登入</a></li>
-{% endif %}
-
+        <li><a href="#" onclick="openProfileModal()">👤 會員中心</a></li>
+        <li><a href="/logout">登出</a></li>
+      {% else %}
+        <li><a href="/login">👤 會員登入</a></li>
+      {% endif %}
       <li>
         <a href="/cart" class="cart-btn">🛒 購物車
-      
           {% if cart_count > 0 %}
             <span class="cart-count" id="cart-count">{{ cart_count }}</span>
           {% else %}
@@ -88,7 +167,7 @@
   </nav>
 </header>
 
-<!-- ✅ 分類區塊 -->
+<!-- 分類區塊 -->
 <div class="sub-categories">
   <a onclick="filterCategory('全部')">全部商品</a>
   <a onclick="filterCategory('身體保養')">身體保養</a>
@@ -97,35 +176,35 @@
   <a onclick="filterCategory('品牌嚴選')">品牌嚴選</a>
 </div>
 
-<!-- ✅ 商品清單 -->
-<main>
-  <section class="banner">
-    <h1>自然呵護，極致純淨</h1>
-    <p>專為敏感肌設計的私密保養系列</p>
-  </section>
+<!-- Banner -->
+<section class="banner">
+  <h1>自然呵護，極致純淨</h1>
+  <p>專為敏感肌設計的私密保養系列</p>
+</section>
 
-  <section class="product-list">
-    {% for p in products %}
-    <div class="product-card" data-category="{{ p['category'] }}">
-      <img src="{{ p['images'][0] if p['images'] else '' }}" alt="{{ p['name'] }}">
-      <h2>{{ p['name'] }}</h2>
-      <p class="price">${{ p['price'] }}</p>
-      <div style="display: flex; gap: 10px; justify-content: center;">
-        <form onsubmit="addToCart(event, {{ p['id'] }})">
-          <button type="submit" class="add-btn">加入購物車</button>
-        </form>
-        <a href="/product/{{ p['id'] }}" class="view-btn">查看商品</a>
-      </div>
+<!-- 商品清單 -->
+<section class="product-list">
+  {% for p in products %}
+  <div class="product-card" data-category="{{ p['category'] }}">
+    <img src="{{ p['images'][0] if p['images'] else '' }}" alt="{{ p['name'] }}">
+    <h2>{{ p['name'] }}</h2>
+    <p class="price">${{ p['price'] }}</p>
+    <div style="display: flex; gap: 10px; justify-content: center;">
+      <form onsubmit="addToCart(event, {{ p['id'] }})">
+        <button type="submit" class="add-btn">加入購物車</button>
+      </form>
+      <a href="/product/{{ p['id'] }}" class="view-btn">查看商品</a>
     </div>
-    {% endfor %}
-  </section>
-</main>
+  </div>
+  {% endfor %}
+</section>
 
+<!-- 頁尾 -->
 <footer>
   <p>© 2025 HERSET BEAUTY. All rights reserved.</p>
 </footer>
 
-<!-- ✅ 分類與加入購物車腳本 -->
+<!-- JS：分類與加入購物車 -->
 <script>
 function filterCategory(category) {
   const all = document.querySelectorAll(".product-card");
@@ -153,94 +232,6 @@ function addToCart(event, productId) {
     }
   });
 }
-</script>
-<div id="profileModal" class="modal">
-  <div class="modal-content">
-    <span class="close" onclick="closeProfileModal()">&times;</span>
-    <h3>會員資料管理</h3>
-    <form id="profileForm" method="POST" action="/profile">
-      <label for="name">姓名</label>
-      <input type="text" name="name" placeholder="姓名" required>
-      <label for="phone">電話</label>
-      <input type="tel" name="phone" placeholder="電話" required>
-       <label for="address">訂單地址</label>
-      <input type="text" name="address" placeholder="訂單地址" required>
-      <label for="note">訂單備註</label>
-      <textarea name="note" placeholder="訂單備註" rows="4"></textarea>
-      <button type="submit">儲存資料</button>
-    </form>
-  </div>
-</div>
-
-<style>
-.modal {
-  display: none;
-  position: fixed;
-  z-index: 9999;
-  left: 0; top: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.5);
-}
-.modal-content {
-  background: white;
-  padding: 30px;
-  border-radius: 10px;
-  margin: 10% auto;
-  width: 90%;
-  max-width: 500px;
-  position: relative;
-}
-.modal-content input,
-.modal-content textarea {
-  width: 100%;
-  margin-top: 10px;
-  padding: 10px;
-  border: 1px solid #ccc;
-}
-.modal-content button {
-  margin-top: 20px;
-  width: 100%;
-  padding: 10px;
-  background-color: #e91e63;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-.close {
-  position: absolute;
-  top: 10px; right: 15px;
-  font-size: 24px;
-  cursor: pointer;
-}
-</style>
-
-<script>
-function openProfileModal() {
-  fetch('/profile-data')
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        const d = data.data;
-        document.querySelector("input[name='name']").value = d.name || '';
-        document.querySelector("input[name='phone']").value = d.phone || '';
-        document.querySelector("input[name='address']").value = d.address || '';
-        document.querySelector("textarea[name='note']").value = d.note || '';
-      }
-      document.getElementById("profileModal").style.display = "block";
-    });
-}
-
-function closeProfileModal() {
-  document.getElementById("profileModal").style.display = "none";
-}
-
-window.onload = function() {
-  {% if session.get('profile_updated') %}
-  alert("✅ 資料已成功儲存！");
-  {% set _ = session.pop('profile_updated') %}
-  {% endif %}
-};
 </script>
 
 </body>
