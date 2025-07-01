@@ -67,8 +67,14 @@ footer {
 .sub-categories a {
   margin: 0 15px;
   text-decoration: none;
-  color: #CDAFA1; /* ✅ 點綴色 */
+  color: #5A4B45; /* 原始字色（摩卡棕） */
   font-weight: bold;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.sub-categories a:hover {
+  color: #E2B6A2; /* 滑鼠移入變成陶土裸橘 */
 }
 
 /* ===== Banner 區塊 ===== */
