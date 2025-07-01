@@ -323,26 +323,30 @@ body {
     margin: 60px auto;
   }
 
-     .product-card {
-    width: 380px;  /* ✅ 放大卡片寬度 */
-    background-color: white;
-    border-radius: 10px;
-    padding: 24px 20px 30px;  /* 底部多一點空間放按鈕 */
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    text-align: center;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
+    .product-card {
+  width: 340px;
+  background-color: #fff;
+  border: 1px solid #C7A7A3;
+  border-radius: 10px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+  padding: 0; /* ✅ 取消內邊距 */
+  overflow: hidden; /* ✅ 防止圖片溢出圓角 */
+}
 
-     .product-card img {
-    width: 100%;
-    height: 250px;  /* ✅ 放大圖片高度 */
-    object-fit: contain;
-    border-radius: 8px;
-    margin-bottom: 15px;
-  }
+
+ .product-card img {
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+  margin: 0;
+  display: block;
+  border-radius: 0;
+}
+
 
    .product-card h2 {
     font-size: 20px;
