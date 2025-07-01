@@ -406,12 +406,27 @@ body {
       z-index: 999;
     }
 
-    .product-card .add-btn,
+.product-card .add-btn,
 .product-card .view-btn {
   width: 140px;
   height: 45px;
-  display: inline-block;
-  text-align: center;
   font-size: 16px;
   font-weight: bold;
+  display: inline-block;        /* ✅ 關鍵：讓 <a> 也變成塊狀 */
+  text-align: center;
+  line-height: 45px;            /* ✅ 讓文字垂直置中 */
+  box-sizing: border-box;
+  background-color: #CDAFA1;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  margin: 0 5px;
+  cursor: pointer;
+  text-decoration: none;
 }
+
+.product-card .add-btn:hover,
+.product-card .view-btn:hover {
+  background-color: #E2B6A2;
+}
+
