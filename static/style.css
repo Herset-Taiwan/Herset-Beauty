@@ -1,237 +1,224 @@
 body {
-  /* ✅ 1. 主背景色 */
-  color: #3C3C3C
-  background: #F9F0F3
-  font-family: 'Segoe UI', sans-serif
   margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: #F9F0F3; /* ✅ 1. 主背景色 */
+  color: #3C3C3C;
 }
 
 /* ===== 導覽列與頁尾 ===== */
 header, footer {
-  /* ✅ 2. 奶茶米色 */
-  color: #3C3C3C
-  /* ✅ 3. 摩卡棕標題文字色 */
-  background: #F9F0F3;
+  background: #F9F0F3; /* ✅ 2. 奶茶米色 */
+  color: #3C3C3C;       /* ✅ 3. 摩卡棕標題文字色 */
 }
 
 footer {
-  font-size: 14px
-  padding: 20px
   text-align: center;
+  padding: 20px;
+  font-size: 14px;
 }
 
 /* ===== 導覽列內容 ===== */
 .main-header {
-  /* ✅ 6. 乾燥玫瑰邊框 */
-  align-items: center
-  border-bottom: 2px solid #C7A7A3
-  display: flex
-  justify-content: space-between
   padding: 15px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #C7A7A3; /* ✅ 6. 乾燥玫瑰邊框 */
 }
 
 .logo-area {
-  align-items: center
-  display: flex
-  font-size: 20px
+  display: flex;
+  align-items: center;
   font-weight: bold;
+  font-size: 20px;
 }
 
 .logo-area img.logo {
-  height: 36px
-  margin-right: 10px
   width: 36px;
+  height: 36px;
+  margin-right: 10px;
 }
 
 .main-nav ul {
-  display: flex
-  gap: 25px
-  list-style: none
-  margin: 0
+  display: flex;
+  gap: 25px;
+  list-style: none;
+  margin: 0;
   padding: 0;
 }
 
 .main-nav a {
-  /* ✅ 3. 摩卡棕 */
-  font-weight: bold
-  color: #3C3C3C
   text-decoration: none;
+  color: #3C3C3C;  /* ✅ 3. 摩卡棕 */
+  font-weight: bold;
 }
 
 .main-nav a:hover {
-  /* ✅ 點綴效果 */
-  color: #CDAFA1;
+  color: #CDAFA1; /* ✅ 點綴效果 */
 }
 
 /* ===== 商品分類區 ===== */
 .sub-categories {
-  /* ✅ header/footer 一致 */
-  padding: 10px 0
-  background-color: #F9F0F3
-  font-size: 1rem
+  background-color: #F9F0F3; /* ✅ header/footer 一致 */
+  padding: 10px 0;
   text-align: center;
+  font-size: 1rem;
 }
-
 .sub-categories a {
-  /* 原始字色（摩卡棕） */
-  font-weight: bold
-  color: #5A4B45
-  cursor: pointer
-  margin: 0 15px
-  text-decoration: none
+  margin: 0 15px;
+  text-decoration: none;
+  color: #5A4B45; /* 原始字色（摩卡棕） */
+  font-weight: bold;
+  cursor: pointer;
   transition: color 0.3s ease;
 }
 
 .sub-categories a:hover {
-  /* 滑鼠移入變成陶土裸橘 */
-  color: #E2B6A2;
+  color: #E2B6A2; /* 滑鼠移入變成陶土裸橘 */
 }
 
 /* ===== Banner 區塊 ===== */
 .banner {
-  /* ✅ 裝飾插圖：霧感蜜桃 */
-  color: #5A4B45
-  background-color: #F2CFC0
-  padding: 60px 20px
   text-align: center;
+  padding: 60px 20px;
+  background-color: #F2CFC0; /* ✅ 裝飾插圖：霧感蜜桃 */
+  color: #5A4B45;
 }
 
 /* ===== 商品清單 ===== */
 .product-list {
-  /* ✅ 放寬最大寬度 */
-  margin: 60px auto
-  display: flex
-  flex-wrap: wrap
-  gap: 40px
-  justify-content: center
-  max-width: 1400px
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 40px;
+  max-width: 1400px;  /* ✅ 放寬最大寬度 */
+  margin: 60px auto;
   padding: 0 40px;
 }
 
+
 .product-card {
-  background-color: #F9F0F3
-  border-radius: 12px
-  border: 1px solid #C7A7A3
-  box-sizing: border-box
-  display: flex
-  flex-direction: column
-  justify-content: flex-start
-  padding: 20px
-  text-align: center
   width: 320px;
+  background-color: #F9F0F3;
+  border: 1px solid #C7A7A3;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  box-sizing: border-box;
 }
+
+
+
 
 .product-card img {
-  border-radius: 10px
-  box-sizing: border-box
-  height: 260px
-  margin-bottom: 15px
-  object-fit: contain
-  padding: 0 10px
   width: 100%;
+  height: 260px;
+  object-fit: contain;
+  border-radius: 10px;
+  margin-bottom: 15px;
+  padding: 0 10px;
+  box-sizing: border-box;
 }
 
+
+
 .product-card h2 {
-  /* ✅ 商品名稱 */
-  margin: 10px 0
-  color: #5A4B45
   font-size: 20px;
+  color: #5A4B45; /* ✅ 商品名稱 */
+  margin: 10px 0;
 }
 
 .price {
-  /* ✅ 副標顏色 */
-  font-weight: bold
-  color: #888888
+  color: #888888; /* ✅ 副標顏色 */
+  font-weight: bold;
   margin-bottom: 10px;
 }
 
 /* ===== 按鈕樣式 ===== */
 .add-btn, .view-btn, .product-card button {
-  /* ✅ 主要按鈕底色 */
-  color: white
-  background-color: #CDAFA1
-  border-radius: 5px
-  border: none
-  cursor: pointer
-  padding: 8px 12px
+  background-color: #CDAFA1; /* ✅ 主要按鈕底色 */
+  color: white;
+  padding: 8px 12px;
+  border: none;
   text-decoration: none;
+  border-radius: 5px;
+  cursor: pointer;
 }
-
 .add-btn:hover, .view-btn:hover, .product-card button:hover {
-  /* ✅ Hover 陶土裸橘 */
-  background-color: #E2B6A2;
+  background-color: #E2B6A2; /* ✅ Hover 陶土裸橘 */
 }
 
 /* ===== 購物車數量圓點 ===== */
 .cart-count {
-  background-color: #CDAFA1
-  border-radius: 50%
-  color: white
-  font-size: 12px
-  padding: 2px 6px
-  position: absolute
-  right: -10px
+  background-color: #CDAFA1;
+  color: white;
+  font-size: 12px;
+  border-radius: 50%;
+  padding: 2px 6px;
+  position: absolute;
   top: -5px;
+  right: -10px;
 }
 
 /* ===== 表單 / Modal ===== */
 .form-container, .cart-container {
-  background: #FFF
-  border-radius: 10px
-  border: 1px solid #C7A7A3
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05)
-  margin: 80px auto
-  max-width: 400px
+  max-width: 400px;
+  margin: 80px auto;
   padding: 30px;
+  background: #FFF;
+  border: 1px solid #C7A7A3;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
 }
 
 .form-container h2,
 .cart-container h2 {
-  color: #5A4B45
-  margin-bottom: 20px
   text-align: center;
+  margin-bottom: 20px;
+  color: #5A4B45;
 }
 
 .form-container form input,
 .form-container form textarea {
-  border-radius: 5px
-  border: 1px solid #ddd
-  margin-top: 8px
-  padding: 10px
   width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
 }
 
 /* ===== 下拉選單 ===== */
 .dropbtn {
-  background-color: #CDAFA1
-  border-radius: 5px
-  border: none
-  color: white
-  cursor: pointer
+  background-color: #CDAFA1;
+  color: white;
   padding: 8px 16px;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
 }
-
 .dropbtn:hover {
   background-color: #E2B6A2;
 }
 
 .dropdown-content {
-  background-color: #fff
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2)
-  display: none
-  min-width: 160px
-  position: absolute
-  right: 0
+  display: none;
+  position: absolute;
+  right: 0;
+  background-color: #fff;
+  min-width: 160px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   z-index: 1000;
 }
 
 .dropdown-content a {
-  color: #5A4B45
-  display: block
-  padding: 10px 16px
+  color: #5A4B45;
+  padding: 10px 16px;
   text-decoration: none;
+  display: block;
 }
-
 .dropdown-content a:hover {
   background-color: #F9F0F3;
 }
@@ -242,31 +229,31 @@ footer {
 
 /* ===== 提示成功加入購物車 ===== */
 .add-success {
-  background: #CDAFA1
-  border-radius: 5px
-  color: white
-  display: none
-  padding: 10px 20px
-  position: fixed
-  right: 20px
-  top: 20px
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #CDAFA1;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  display: none;
   z-index: 999;
 }
 
 .add-btn, .view-btn {
-  /* ⬅️ 放寬按鈕寬度 */
-  height: 42px
-  background-color: #CDAFA1
-  border-radius: 6px
-  border: none
-  color: white
-  cursor: pointer
-  font-size: 16px
-  font-weight: bold
-  margin: 0 6px
-  transition: background-color 0.3s ease
-  width: 140px;
+  width: 140px;          /* ⬅️ 放寬按鈕寬度 */
+  height: 42px;
+  font-size: 16px;
+  background-color: #CDAFA1;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin: 0 6px;
 }
+
 
 .add-btn:hover,
 .view-btn:hover {
@@ -275,105 +262,177 @@ footer {
 
 /* === 以下為從 index.html 移植的樣式 === */
 body {
-  /* 主色 */
-      font-family: sans-serif
-  /* 字體主色 */
-      margin: 0
-  background-color: #F9F0F3
-  color: #3C3C3C;
-}
+      background-color: #F9F0F3; /* 主色 */
+      font-family: sans-serif;
+      color: #3C3C3C; /* 字體主色 */
+      margin: 0;
+    }
+    .main-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 30px;
+      background-color: #F9F0F3; /* 輔色A */
+      border-bottom: 2px solid #CDAFA1; /* 點綴色 */
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+    }
+    .logo-area img {
+      height: 40px;
+      margin-right: 10px;
+    }
+    .main-nav ul {
+      list-style: none;
+      display: flex;
+      gap: 20px;
+      padding: 0;
+      margin: 0;
+    }
+    .main-nav a {
+      text-decoration: none;
+      color: #3C3C3C;
+      font-weight: bold;
+    }
 
-.main-header {
-  /* 輔色A */
-      border-bottom: 2px solid #CDAFA1
-  /* 點綴色 */
-  align-items: center
-  background-color: #F9F0F3
-  display: flex
-  justify-content: space-between
-  padding: 15px 30px;
-}
+    .sub-categories {
+      background-color: #F9F0F3;
+      padding: 10px 0;
+      text-align: center;
+      font-size: 1rem;
+    }
+    .sub-categories a {
+      margin: 0 15px;
+      text-decoration: none;
+      color: #CDAFA1; /* 點綴色 */
+      font-weight: bold;
+      cursor: pointer;
+    }
 
-.logo-area img {
-  height: 40px
-  margin-right: 10px;
-}
+    .banner {
+      text-align: center;
+      padding: 60px 20px;
+      background-color: #EADDD6; /* 輔色B */
+    }
 
-.sub-categories {
-  background-color: #F9F0F3
-  font-size: 1rem
-  padding: 10px 0
+     .product-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 40px 20px;
+    gap: 40px;
+    max-width: 1400px;
+    margin: 60px auto;
+  }
+
+    .product-card {
+  width: 340px;
+  background-color: #fff;
+  border: 1px solid #C7A7A3;
+  border-radius: 10px;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+  padding: 0; /* ✅ 取消內邊距 */
+  overflow: hidden; /* ✅ 防止圖片溢出圓角 */
 }
 
-.banner {
-  /* 輔色B */
-  background-color: #EADDD6
-  padding: 60px 20px
-  text-align: center;
+
+.product-card img {
+  width: 100%;
+  height: 240px;       /* ✅ 從原本的 200px 稍微加大 */
+  object-fit: contain; /* ✅ 保持圖片比例 */
+  border-radius: 8px;
+  margin-bottom: 10px;
+  padding: 0 10px;     /* ✅ 保留左右空間，不貼齊邊 */
+  box-sizing: border-box;
 }
 
-.product-list {
-  display: flex
-  flex-wrap: wrap
-  gap: 40px
-  justify-content: center
-  margin: 60px auto
-  max-width: 1400px
-  padding: 40px 20px;
-}
 
-.add-btn:hover,
+
+   .product-card h2 {
+    font-size: 20px;
+    margin: 10px 0;
+    color: #5A4B45;
+  }
+
+  .price {
+    color: #CDAFA1;
+    font-weight: bold;
+    margin: 10px 0;
+  }
+
+   .add-btn, .view-btn {
+    width: 140px;
+    height: 42px;
+    font-size: 16px;
+    background-color: #CDAFA1;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin: 0 5px;
+  }
+  .add-btn:hover,
   .view-btn:hover {
-  background-color: #E2B6A2;
-}
+    background-color: #E2B6A2;
+  }
+    .cart-count {
+      background-color: #CDAFA1;
+      color: white;
+      font-size: 12px;
+      border-radius: 50%;
+      padding: 2px 6px;
+      position: absolute;
+      top: -5px;
+      right: -10px;
+    }
 
-.cart-count {
-  background-color: #CDAFA1
-  border-radius: 50%
-  color: white
-  font-size: 12px
-  padding: 2px 6px
-  position: absolute
-  right: -10px
-  top: -5px;
-}
+    .cart-btn {
+      position: relative;
+    }
 
-.cart-btn {
-  position: relative;
-}
+    footer {
+      text-align: center;
+      padding: 20px;
+      background-color: #F9F0F3;
+      color: #3C3C3C;
+    }
 
-.add-success {
-  background: #CDAFA1
-  border-radius: 5px
-  color: white
-  display: none
-  padding: 10px 20px
-  position: fixed
-  right: 20px
-  top: 20px
-  z-index: 999;
-}
+    .add-success {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #CDAFA1;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      display: none;
+      z-index: 999;
+    }
 
 .product-card .add-btn,
 .product-card .view-btn {
-  /* ✅ 讓文字垂直置中 */
-  box-sizing: border-box
-  /* ✅ 關鍵：讓 <a> 也變成塊狀 */
-  text-align: center
-  background-color: #CDAFA1
-  border-radius: 6px
-  border: none
-  color: white
-  cursor: pointer
-  display: inline-block
-  font-size: 16px
-  font-weight: bold
-  height: 45px
-  line-height: 45px
-  margin: 0 5px
-  text-decoration: none
   width: 140px;
+  height: 45px;
+  font-size: 16px;
+  font-weight: bold;
+  display: inline-block;        /* ✅ 關鍵：讓 <a> 也變成塊狀 */
+  text-align: center;
+  line-height: 45px;            /* ✅ 讓文字垂直置中 */
+  box-sizing: border-box;
+  background-color: #CDAFA1;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  margin: 0 5px;
+  cursor: pointer;
+  text-decoration: none;
 }
 
 .product-card .add-btn:hover,
@@ -382,24 +441,24 @@ body {
 }
 
 .btn-group {
-  display: flex
-  gap: 10px
-  justify-content: center
+  display: flex;
+  justify-content: center;
+  gap: 10px;
   margin-top: 10px;
 }
 
 .btn-group button,
 .btn-group .view-btn {
-  background-color: #CDAFA1
-  border-radius: 6px
-  border: none
-  color: white
-  cursor: pointer
-  font-size: 15px
-  font-weight: bold
-  height: 38px
-  transition: background-color 0.3s ease
   width: 120px;
+  height: 38px;
+  font-size: 15px;
+  background-color: #CDAFA1;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
 .btn-group button:hover,
@@ -407,24 +466,25 @@ body {
   background-color: #E2B6A2;
 }
 
+
 .product-card .btn-group {
-  display: flex
-  gap: 10px
+  display: flex;
   justify-content: center;
+  gap: 10px;
 }
 
 .product-card button,
 .product-card .view-btn {
-  background-color: #CDAFA1
-  border-radius: 6px
-  border: none
-  color: white
-  cursor: pointer
-  font-size: 15px
-  font-weight: bold
-  height: 38px
-  transition: background-color 0.3s ease
   width: 120px;
+  height: 38px;
+  font-size: 15px;
+  background-color: #CDAFA1;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
 .product-card button:hover,
