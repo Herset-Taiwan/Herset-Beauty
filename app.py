@@ -347,6 +347,18 @@ def update_profile():
 
     return redirect('/')
 
+@app.route('/profile-data')
+def profile_data():
+    if 'member_id' not in session:
+        return jsonify(success=False, message="Not logged in")
+
+    member_id = session['member_id']
+    res = supabase.table("members").select("name, phone, address, note").eq("id", member_id).execute()
+
+    if not res.data:
+        return jsonify(success=False, message="No data found")
+
+    return jsonify(success=True, data=res.data[0])
 
 
 

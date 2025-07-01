@@ -214,8 +214,20 @@ function addToCart(event, productId) {
 
 <script>
 function openProfileModal() {
-  document.getElementById("profileModal").style.display = "block";
+  fetch('/profile-data')
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        const d = data.data;
+        document.querySelector("input[name='name']").value = d.name || '';
+        document.querySelector("input[name='phone']").value = d.phone || '';
+        document.querySelector("input[name='address']").value = d.address || '';
+        document.querySelector("textarea[name='note']").value = d.note || '';
+      }
+      document.getElementById("profileModal").style.display = "block";
+    });
 }
+
 function closeProfileModal() {
   document.getElementById("profileModal").style.display = "none";
 }
