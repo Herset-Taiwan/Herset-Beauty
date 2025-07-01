@@ -27,14 +27,22 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-        try:
-            result = supabase.auth.sign_in_with_password({"email": email, "password": password})
-            session['member_id'] = result.user.id
+        account = request.form.get('account')
+        password = request.form.get('password')
+
+        if not account or not password:
+            return render_template("login.html", error="請輸入帳號與密碼")
+
+        res = supabase.table("members") \
+            .select("id, account, password") \
+            .eq("account", account).execute()
+
+        if res.data and res.data[0]['password'] == password:
+            # 登入成功，導回首頁或其他頁面
             return redirect('/')
-        except Exception as e:
-            return render_template("login.html", error="登入失敗，請檢查帳號密碼")
+        else:
+            return render_template("login.html", error="帳號或密碼錯誤")
+
     return render_template("login.html")
 
 
