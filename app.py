@@ -68,7 +68,6 @@ def checkout():
     total = 0
     items = []
 
-    # 整理每項商品詳細資訊
     for item in cart_items:
         res = supabase.table("products").select("*").eq("id", item['product_id']).single().execute()
         product = res.data
@@ -78,12 +77,11 @@ def checkout():
             items.append({
                 'product_id': str(product['id']),
                 'product_name': product['name'],
-                'price': product['price'],
                 'qty': item['qty'],
+                'price': product['price'],
                 'subtotal': subtotal
             })
 
-    # 寫入 orders 表
     order_data = {
         'member_id': member_id,
         'total_amount': total,
@@ -93,15 +91,12 @@ def checkout():
     result = supabase.table('orders').insert(order_data).execute()
     order_id = result.data[0]['id']
 
-    # 寫入 order_items 表
     for item in items:
         item['order_id'] = order_id
     supabase.table('order_items').insert(items).execute()
 
-    # 清空購物車
     session['cart'] = []
     return redirect(url_for('thank_you'))
-
 
 @app.route('/thank-you')
 def thank_you():
