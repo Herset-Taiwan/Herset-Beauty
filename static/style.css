@@ -95,7 +95,7 @@ footer {
 }
 
 .product-card {
-  width: 360px;         /* ⬅️ 加寬 */
+  width: 500px;         /* ⬅️ 加寬 */
   height: auto;         /* ⬅️ 高度自動，不會越拉越長 */
   background-color: #F9F0F3;
   border: 1px solid #C7A7A3;
