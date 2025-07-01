@@ -60,45 +60,66 @@
       background-color: #EADDD6; /* 輔色B */
     }
 
-    .product-list {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      padding: 40px 20px;
-      gap: 30px;
-    }
+     .product-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 40px 20px;
+    gap: 40px;
+    max-width: 1400px;
+    margin: 60px auto;
+  }
 
-    .product-card {
-      width: 200px;
-      background-color: white;
-      border-radius: 10px;
-      padding: 15px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      text-align: center;
-    }
+     .product-card {
+    width: 380px;  /* ✅ 放大卡片寬度 */
+    background-color: white;
+    border-radius: 10px;
+    padding: 24px 20px 30px;  /* 底部多一點空間放按鈕 */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    text-align: center;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
 
-    .product-card img {
-      width: 100%;
-      border-radius: 8px;
-    }
+     .product-card img {
+    width: 100%;
+    height: 250px;  /* ✅ 放大圖片高度 */
+    object-fit: contain;
+    border-radius: 8px;
+    margin-bottom: 15px;
+  }
 
-    .price {
-      color: #CDAFA1;
-      font-weight: bold;
-      margin: 10px 0;
-    }
+   .product-card h2 {
+    font-size: 20px;
+    margin: 10px 0;
+    color: #5A4B45;
+  }
 
-    .add-btn, .view-btn {
-      background-color: #CDAFA1;
-      border: none;
-      color: white;
-      padding: 8px 12px;
-      margin: 5px;
-      cursor: pointer;
-      border-radius: 5px;
-      text-decoration: none;
-    }
+  .price {
+    color: #CDAFA1;
+    font-weight: bold;
+    margin: 10px 0;
+  }
 
+   .add-btn, .view-btn {
+    width: 140px;
+    height: 42px;
+    font-size: 16px;
+    background-color: #CDAFA1;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin: 0 5px;
+  }
+  .add-btn:hover,
+  .view-btn:hover {
+    background-color: #E2B6A2;
+  }
     .cart-count {
       background-color: #CDAFA1;
       color: white;

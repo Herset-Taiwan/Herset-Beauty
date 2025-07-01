@@ -98,11 +98,11 @@ footer {
 
 
 .product-card {
-  width: 300px;  /* 適中寬度，不會太寬或太窄 */
+  width: 380px;             /* ⬅️ 放大寬度 */
   background-color: #F9F0F3;
   border: 1px solid #C7A7A3;
   border-radius: 10px;
-  padding: 20px;
+  padding: 24px 20px 30px;  /* ⬅️ 底部 padding 多一點避免按鈕被擠 */
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -111,13 +111,15 @@ footer {
 }
 
 
+
 .product-card img {
   width: 100%;
-  height: 200px;          /* ✅ 不要太高，避免整個拉長 */
-  object-fit: contain;    /* ✅ 保持圖片比例不變形 */
+  height: 250px;         /* ⬅️ 放大圖片高度 */
+  object-fit: contain;
   border-radius: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 }
+
 
 .product-card h2 {
   font-size: 20px;
@@ -235,9 +237,9 @@ footer {
 }
 
 .add-btn, .view-btn {
-  width: 120px;
-  height: 36px;
-  font-size: 15px;
+  width: 140px;          /* ⬅️ 放寬按鈕寬度 */
+  height: 42px;
+  font-size: 16px;
   background-color: #CDAFA1;
   color: white;
   border: none;
@@ -245,8 +247,9 @@ footer {
   font-weight: bold;
   cursor: pointer;
   transition: background-color 0.3s ease;
-  margin: 0 5px;
+  margin: 0 6px;
 }
+
 
 .add-btn:hover,
 .view-btn:hover {
