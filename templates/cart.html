@@ -64,22 +64,22 @@
           ${{ p['price'] }} x {{ p['qty'] }} = ${{ p['subtotal'] }}
         </div>
         <div class="cart-actions">
-          <form method="POST">
-            <input type="hidden" name="product_id" value="{{ p['id'] }}">
-            <input type="hidden" name="action" value="decrease">
-            <button type="submit">−</button>
-          </form>
-          <form method="POST">
-            <input type="hidden" name="product_id" value="{{ p['id'] }}">
-            <input type="hidden" name="action" value="increase">
-            <button type="submit">＋</button>
-          </form>
-          <form method="POST">
-            <input type="hidden" name="product_id" value="{{ p['id'] }}">
-            <input type="hidden" name="action" value="remove">
-            <button type="submit">🗑️</button>
-          </form>
-        </div>
+  <form method="POST">
+    <input type="hidden" name="product_id" value="{{ p['id'] }}">
+    <input type="hidden" name="action" value="decrease">
+    <button type="submit" title="減少數量">−</button>
+  </form>
+  <form method="POST">
+    <input type="hidden" name="product_id" value="{{ p['id'] }}">
+    <input type="hidden" name="action" value="increase">
+    <button type="submit" title="增加數量">＋</button>
+  </form>
+  <form method="POST" style="margin-left: 10px;">
+    <input type="hidden" name="product_id" value="{{ p['id'] }}">
+    <input type="hidden" name="action" value="remove">
+    <button type="submit" title="從購物車中移除這項商品">🗑️ 移除</button>
+  </form>
+</div>
       </div>
       {% endfor %}
 
