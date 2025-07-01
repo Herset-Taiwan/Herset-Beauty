@@ -81,6 +81,16 @@
 </head>
 <body>
   <div class="admin-container">
+    {% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul style="color: green;">
+      {% for message in messages %}
+        <li>{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('products')">商品管理</button>
       <button class="tab-btn" onclick="switchTab('members')">會員系統管理</button>
@@ -141,13 +151,16 @@
     <strong>電話：</strong>{{ o['member']['phone'] }}<br>
     <strong>地址：</strong>{{ o['member']['address'] }}<br>
     <form method="POST" action="/admin/orders/update_status/{{ o['id'] }}" style="margin-top: 5px;">
-      <strong>狀態：</strong>
-      <select name="status" onchange="this.form.submit()">
-        <option value="pending" {% if o['status'] == 'pending' %}selected{% endif %}>待處理</option>
-        <option value="paid" {% if o['status'] == 'paid' %}selected{% endif %}>已付款</option>
-        <option value="shipped" {% if o['status'] == 'shipped' %}selected{% endif %}>已出貨</option>
-      </select>
-    </form>
+      <strong>目前狀態：</strong>{{ o['status'] }}<br>
+<form method="POST" action="/admin/orders/update_status/{{ o['id'] }}" style="margin-top: 5px;">
+  <strong>修改狀態：</strong>
+  <select name="status" onchange="this.form.submit()">
+    <option value="pending" {% if o['status'] == 'pending' %}selected{% endif %}>待處理</option>
+    <option value="paid" {% if o['status'] == 'paid' %}selected{% endif %}>已付款</option>
+    <option value="shipped" {% if o['status'] == 'shipped' %}selected{% endif %}>已出貨</option>
+  </select>
+</form>
+
   </div>
   <div class="actions">
     <form action="/admin/orders/delete/{{ o['id'] }}" method="post" onsubmit="return confirm('確定要刪除訂單？')">
