@@ -335,6 +335,19 @@ def update_profile():
 
     return redirect('/')
 
+@app.route('/debug_member')
+def debug_member():
+    if 'member_id' not in session:
+        return "❌ No member ID in session"
+    
+    try:
+        member_id = str(UUID(session['member_id']))
+        print("🧪 測試會員ID：", member_id)
+
+        res = supabase.table("members").select("*").eq("id", member_id).execute()
+        return f"<pre>🔍 查詢結果：{res.data}</pre>"
+    except Exception as e:
+        return f"🚨 查詢錯誤：{e}"
 
 
 
