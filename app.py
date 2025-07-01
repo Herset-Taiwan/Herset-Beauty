@@ -46,17 +46,21 @@ def register():
         email = request.form['email']
         password = request.form['password']
 
-        # 檢查是否已有相同帳號
+        # 🔧 假如沒有 username 欄位，就先用 account 代替
+        username = account
+
+        # 檢查帳號是否重複
         exist = supabase.table("members").select("account").eq("account", account).execute()
         if exist.data:
             return render_template("register.html", error="此帳號已被使用")
 
         try:
+            # 寫入資料表
             supabase.table("members").insert({
-                "id": str(uuid.uuid4()),  # 👈 加上這行
                 "account": account,
                 "email": email,
                 "password": password,
+                "username": username,
                 "created_at": datetime.utcnow().isoformat()
             }).execute()
             return redirect('/login')
@@ -64,6 +68,7 @@ def register():
             print("🚨 註冊錯誤：", e)
             return render_template("register.html", error="註冊失敗，請稍後再試")
     return render_template("register.html")
+
 
 
 
