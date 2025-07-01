@@ -7,6 +7,7 @@ import uuid
 from dotenv import load_dotenv
 from datetime import datetime
 from uuid import UUID
+from flask import flash
 
 load_dotenv()
 
@@ -132,11 +133,16 @@ def cart():
 
 @app.route('/checkout', methods=['POST'])
 def checkout():
+    # ✅ 檢查是否已登入會員（有 member_id）
+    if 'member_id' not in session:
+        flash("請先登入會員才能結帳")
+        return redirect('/cart')
+
     cart_items = session.get('cart', [])
     if not cart_items:
         return redirect('/cart')
 
-    member_id = session.get('member_id', 'guest')
+    member_id = session.get('member_id')
     total = 0
     items = []
 
@@ -160,6 +166,7 @@ def checkout():
         'status': 'pending',
         'created_at': datetime.utcnow().isoformat()
     }
+
     result = supabase.table('orders').insert(order_data).execute()
     order_id = result.data[0]['id']
 

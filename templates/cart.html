@@ -54,7 +54,16 @@
 <body>
   <div class="cart-container">
     <h2>🛒 我的購物車</h2>
-
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <div style="background-color: #ffe6e6; color: #c00; padding: 10px; margin: 10px 0; border-radius: 5px;">
+        {% for message in messages %}
+          <p>{{ message }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+  
     {% if products %}
       {% for p in products %}
       <div class="cart-item">
