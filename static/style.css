@@ -90,15 +90,16 @@ footer {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 30px;
-  max-width: 100%; /* ✅ 放寬限制 */
-  margin: 40px auto;
-  padding: 0 20px;
+  gap: 40px;
+  max-width: 1400px;  /* ✅ 放寬最大寬度 */
+  margin: 60px auto;
+  padding: 0 40px;
 }
 
+
 .product-card {
-  width: 500px;         /* ⬅️ 加寬 */
-  height: auto;         /* ⬅️ 高度自動，不會越拉越長 */
+  width: 420px;       /* ✅ 放大卡片寬度 */
+  height: auto;
   background-color: #F9F0F3;
   border: 1px solid #C7A7A3;
   border-radius: 10px;
@@ -110,10 +111,11 @@ footer {
 }
 
 
+
 .product-card img {
   width: 100%;
-  height: 260px;        /* ⬅️ 固定圖片高度更穩定 */
-  object-fit: contain;  /* ⬅️ 保持比例置中縮放 */
+  height: 300px;     /* ✅ 放大商品圖片 */
+  object-fit: contain;
   border-radius: 8px;
 }
 
