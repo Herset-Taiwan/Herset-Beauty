@@ -23,9 +23,35 @@ def index():
     cart_count = sum(item['qty'] for item in cart)
     return render_template("index.html", products=products, cart_count=cart_count)
 
-@app.route('/login')
+@app.route('/login', methods=['GET', 'POST'])
 def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        try:
+            result = supabase.auth.sign_in_with_password({"email": email, "password": password})
+            session['member_id'] = result.user.id
+            return redirect('/')
+        except Exception as e:
+            return render_template("login.html", error="登入失敗，請檢查帳號密碼")
     return render_template("login.html")
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        try:
+            result = supabase.auth.sign_up({"email": email, "password": password})
+            return redirect('/login')
+        except Exception as e:
+            return render_template("register.html", error="註冊失敗，請稍後再試")
+    return render_template("register.html")
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/')
 
 @app.route('/cart', methods=['GET', 'POST'])
 def cart():

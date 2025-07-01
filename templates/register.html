@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>登入 - HERSET BEAUTY</title>
+  <title>註冊 - HERSET BEAUTY</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
     .form-container {
@@ -22,7 +22,7 @@
       margin-top: 20px;
       width: 100%;
       padding: 10px;
-      background-color: #e91e63;
+      background-color: #4CAF50;
       color: white;
       border: none;
       border-radius: 5px;
@@ -36,15 +36,15 @@
 </head>
 <body>
   <div class="form-container">
-    <h2>登入帳號</h2>
+    <h2>註冊帳號</h2>
     {% if error %}<p style="color:red;">{{ error }}</p>{% endif %}
     <form method="POST">
       <input type="email" name="email" placeholder="Email" required>
       <input type="password" name="password" placeholder="密碼" required>
-      <button type="submit">登入</button>
+      <button type="submit">註冊</button>
     </form>
     <div class="link">
-      尚未註冊？<a href="/register">註冊新帳號</a>
+      已有帳號？<a href="/login">登入</a>
     </div>
   </div>
 </body>
