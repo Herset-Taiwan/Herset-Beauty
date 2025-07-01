@@ -95,8 +95,8 @@ footer {
 }
 
 .product-card {
-  width: 400px;         /* ⬅️ 更寬 */
-  height: 480px;        /* ⬅️ 更高 */
+  width: 360px;         /* ⬅️ 加寬 */
+  height: auto;         /* ⬅️ 高度自動，不會越拉越長 */
   background-color: #F9F0F3;
   border: 1px solid #C7A7A3;
   border-radius: 10px;
@@ -106,6 +106,7 @@ footer {
   flex-direction: column;
   justify-content: space-between;
 }
+
 
 .product-card img {
   width: 100%;
