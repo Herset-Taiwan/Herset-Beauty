@@ -116,16 +116,31 @@ footer {
   margin-right: 10px;
 }
 
+/* 導覽列容器 */
 .main-nav ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
   display: flex;
-  flex-wrap: wrap;
+  justify-content: flex-end;  /* 讓項目往右對齊 */
+  align-items: center;
+  gap: 25px;  /* 項目之間的間距 */
+  margin: 0;
+  padding: 0 20px;
+  list-style: none;
+  height: 60px;
 }
 
+/* 每個項目統一設定 */
 .main-nav ul li {
-  margin-left: 20px;
+  display: flex;
+  align-items: center;
+}
+
+/* 會員中心下拉選單按鈕 */
+.main-nav .dropbtn {
+  background: none;
+  border: none;
+  font: inherit;
+  cursor: pointer;
+  color: #6a1b9a;
 }
 
 .main-nav ul li a {
@@ -238,14 +253,15 @@ footer {
   cursor: pointer;
   border-radius: 5px;
 }
+/* 下拉選單區塊 */
 .dropdown-content {
   display: none;
   position: absolute;
   background-color: white;
-  box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
-  z-index: 1;
-  min-width: 160px;
-  border-radius: 5px;
+  min-width: 140px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+  z-index: 1000;
+  top: 60px;
 }
 .dropdown-content a {
   color: black;
@@ -284,7 +300,7 @@ footer {
 
 .dropdown-content a {
   color: #333;
-  padding: 12px 16px;
+  padding: 10px 16px;
   text-decoration: none;
   display: block;
 }
