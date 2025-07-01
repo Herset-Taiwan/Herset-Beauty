@@ -104,7 +104,8 @@ footer {
 
 .product-card {
   width: 340px;
-  height: 460px;
+  min-height: 440px;
+  height: auto;
   background-color: #ffffff;
   border: 1px solid #C7A7A3;
   border-radius: 12px;
@@ -122,7 +123,14 @@ footer {
   height: 200px;
   object-fit: contain;
   border-radius: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+}
+
+.product-card .btn-group {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 12px;
 }
 
 .product-card h2 {
@@ -137,12 +145,6 @@ footer {
   margin-bottom: 15px;
 }
 
-.product-card .btn-group {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 16px;
-}
 
 /* ===== 按鈕樣式 ===== */
 .btn-group button,
