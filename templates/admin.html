@@ -56,7 +56,7 @@
       display: flex;
       gap: 10px;
     }
-    .actions a, .actions button {
+    .actions a, .actions button, .actions select {
       text-decoration: none;
       color: #e91e63;
       font-weight: bold;
@@ -133,6 +133,14 @@
           金額：${{ o['total_amount'] }}，狀態：{{ o['status'] }}
         </div>
         <div class="actions">
+          <form action="/admin/orders/update/{{ o['id'] }}" method="post">
+            <select name="status" onchange="this.form.submit()">
+              <option value="pending" {% if o['status'] == 'pending' %}selected{% endif %}>待處理</option>
+              <option value="paid" {% if o['status'] == 'paid' %}selected{% endif %}>已付款</option>
+              <option value="shipped" {% if o['status'] == 'shipped' %}selected{% endif %}>已出貨</option>
+              <option value="cancelled" {% if o['status'] == 'cancelled' %}selected{% endif %}>已取消</option>
+            </select>
+          </form>
           <form action="/admin/orders/delete/{{ o['id'] }}" method="post">
             <button type="submit" onclick="return confirm('確定要刪除此訂單嗎？')">❌ 刪除</button>
           </form>

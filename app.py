@@ -181,6 +181,13 @@ def checkout():
 def thank_you():
     return render_template("thank_you.html")
 
+@app.route('/admin/orders/update/<int:order_id>', methods=['POST'])
+def update_order_status(order_id):
+    new_status = request.form.get("status")
+    if new_status:
+        supabase.table("orders").update({"status": new_status}).eq("id", order_id).execute()
+    return redirect("/admin")
+
 @app.route('/product/<int:product_id>')
 def product_detail(product_id):
     res = supabase.table("products").select("*").eq("id", product_id).single().execute()
