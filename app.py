@@ -195,23 +195,28 @@ def product_detail(product_id):
 def admin():
     products = supabase.table("products").select("*").execute().data
     members = supabase.table("members").select("id, username, account, phone, email").limit(10).execute().data
-    orders = supabase.table("orders").select("*").order("created_at", desc=True).limit(10).execute().data
+    orders = supabase.table("orders").select("*").order("created_at", desc=True).limit(20).execute().data
     return render_template("admin.html", products=products, members=members, orders=orders)
+
 
 @app.route('/admin/members')
 def search_members():
     keyword = request.args.get("keyword", "").strip()
     query = supabase.table("members").select("id, username, account, phone, email")
-
     if keyword:
         query = query.or_(
             f"account.ilike.%{keyword}%,username.ilike.%{keyword}%,phone.ilike.%{keyword}%,email.ilike.%{keyword}%"
         )
-
     members = query.execute().data
-    products = supabase.table("products").select("*").limit(0).execute().data  # 空值避免報錯
-    orders = supabase.table("orders").select("*").limit(0).execute().data
+    products = []
+    orders = []
     return render_template("admin.html", products=products, members=members, orders=orders)
+
+@app.route('/admin/orders/delete/<int:order_id>', methods=['POST'])
+def delete_order(order_id):
+    supabase.table("orders").delete().eq("id", order_id).execute()
+    supabase.table("order_items").delete().eq("order_id", order_id).execute()  # 一併清除
+    return redirect('/admin')
 
 
 @app.route('/admin/new')
