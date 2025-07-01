@@ -4,6 +4,7 @@ from supabase import create_client, Client
 import os
 import tempfile
 from dotenv import load_dotenv
+from datetime import datetime
 
 load_dotenv()
 
@@ -59,9 +60,48 @@ def cart():
 
 @app.route('/checkout', methods=['POST'])
 def checkout():
-    cart_items = session.pop('cart', [])
-    print("✅ 結帳完成，內容：", cart_items)
+    cart_items = session.get('cart', [])
+    if not cart_items:
+        return redirect('/cart')
+
+    member_id = session.get('member_id', 'guest')
+    total = 0
+    items = []
+
+    # 整理每項商品詳細資訊
+    for item in cart_items:
+        res = supabase.table("products").select("*").eq("id", item['product_id']).single().execute()
+        product = res.data
+        if product:
+            subtotal = item['qty'] * product['price']
+            total += subtotal
+            items.append({
+                'product_id': str(product['id']),
+                'product_name': product['name'],
+                'price': product['price'],
+                'qty': item['qty'],
+                'subtotal': subtotal
+            })
+
+    # 寫入 orders 表
+    order_data = {
+        'member_id': member_id,
+        'total_amount': total,
+        'status': 'pending',
+        'created_at': datetime.utcnow().isoformat()
+    }
+    result = supabase.table('orders').insert(order_data).execute()
+    order_id = result.data[0]['id']
+
+    # 寫入 order_items 表
+    for item in items:
+        item['order_id'] = order_id
+    supabase.table('order_items').insert(items).execute()
+
+    # 清空購物車
+    session['cart'] = []
     return redirect(url_for('thank_you'))
+
 
 @app.route('/thank-you')
 def thank_you():
@@ -73,7 +113,9 @@ def product_detail(product_id):
     product = res.data
     if not product:
         return "找不到商品", 404
-    return render_template("product.html", product=product)
+    cart = session.get('cart', [])
+    cart_count = sum(item['qty'] for item in cart)
+    return render_template("product.html", product=product, cart_count=cart_count)
 
 @app.route('/admin')
 def admin():
@@ -187,13 +229,23 @@ def delete_product(product_id):
 @app.route('/add_to_cart', methods=['POST'])
 def add_to_cart():
     product_id = int(request.form['product_id'])
+    res = supabase.table("products").select("*").eq("id", product_id).single().execute()
+    if not res.data:
+        return jsonify(success=False)
+
+    product = res.data
     cart = session.get('cart', [])
     for item in cart:
         if item['product_id'] == product_id:
             item['qty'] += 1
             break
     else:
-        cart.append({'product_id': product_id, 'qty': 1})
+        cart.append({
+            'product_id': product_id,
+            'name': product['name'],
+            'price': product['price'],
+            'qty': 1
+        })
     session['cart'] = cart
     print("🛒 當前購物車：", cart)
     return jsonify(success=True, count=sum(item['qty'] for item in cart))
