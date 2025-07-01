@@ -6,14 +6,14 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
     body {
-      background-color: #F3E5E1; /* 奶油裸粉主色 */
+      background-color: #F3E5E1;
       font-family: "微軟正黑體", sans-serif;
-      color: #3C3C3C; /* 深灰文字色 */
+      color: #3C3C3C;
       margin: 0;
       padding: 0;
     }
     header.main-header {
-      background-color: #F9F0F3; /* 淡玫裸粉 */
+      background-color: #F9F0F3;
       padding: 10px 20px;
       display: flex;
       justify-content: space-between;
@@ -40,7 +40,7 @@
       font-weight: bold;
     }
     .main-nav a:hover {
-      color: #CDAFA1; /* 點綴色 */
+      color: #CDAFA1;
     }
     .about-container {
       max-width: 900px;
@@ -49,9 +49,9 @@
       background-color: #FFFFFF;
       border-radius: 12px;
       box-shadow: 0 0 10px rgba(0,0,0,0.08);
+      text-align: center; /* ✅ 將整塊文字置中 */
     }
     .about-container h2 {
-      text-align: center;
       color: #CDAFA1;
       margin-bottom: 20px;
     }
@@ -69,7 +69,7 @@
       font-weight: bold;
       padding: 8px 16px;
       border-radius: 5px;
-      background-color: #EADDD6; /* 奶茶米色 */
+      background-color: #EADDD6;
       display: block;
       width: fit-content;
     }
@@ -81,7 +81,7 @@
 </head>
 <body>
 
-  <!-- 導覽列（首頁樣式） -->
+  <!-- 導覽列 -->
   <header class="main-header">
     <div class="logo-area">
       <img src="{{ url_for('static', filename='uploads/logo_0.png') }}" alt="logo">
@@ -118,10 +118,10 @@
       我們相信，真正好的東西，不是說出來的，是感受得出來的。
     </p>
     <p>
-      如果你也正在尋找一個讓你覺得「終於找到」的品牌，
+      如果你也正在尋找一個讓你覺得「終於找到」的品牌，<br>
       那 HERSET，可能就是那個地方。
-      不，其實不是地方，是一種感覺——像家的那種感覺。
     </p>
+    <p>不，其實不是地方，是一種感覺——像家的那種感覺。</p>
     <p>
       若您對產品、合作或網站有任何問題，歡迎隨時聯繫我們。
     </p>
