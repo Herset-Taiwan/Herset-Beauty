@@ -201,9 +201,34 @@ def product_detail(product_id):
 @app.route('/admin')
 def admin():
     products = supabase.table("products").select("*").execute().data
-    members = supabase.table("members").select("id, username, account, phone, email").limit(10).execute().data
-    orders = supabase.table("orders").select("*").order("created_at", desc=True).limit(20).execute().data
-    return render_template("admin.html", products=products, members=members, orders=orders)
+
+    # 取得所有訂單
+    orders_raw = supabase.table("orders").select("*").order("created_at", desc=True).execute().data
+    # 取得所有會員
+    members = supabase.table("members").select("id, account, username, phone, address").execute().data
+    member_dict = {m['id']: m for m in members}
+
+    # 取得所有 order_items
+    items = supabase.table("order_items").select("*").execute().data
+    item_group = {}
+    for item in items:
+        item_group.setdefault(item['order_id'], []).append(item)
+
+    # 整合訂單資訊
+    orders = []
+    for o in orders_raw:
+        o['items'] = item_group.get(o['id'], [])
+        o['member'] = member_dict.get(o['member_id'], {
+            'account': 'guest',
+            'username': '訪客',
+            'phone': '—',
+            'address': '—'
+        })
+        orders.append(o)
+
+    members_display = members  # 給會員頁籤用
+    return render_template("admin.html", products=products, members=members_display, orders=orders)
+
 
 
 @app.route('/admin/members')
