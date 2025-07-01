@@ -134,8 +134,16 @@
     </div>
 
     <div class="actions">
+      <!-- 加入購物車 (AJAX) -->
       <button onclick="addToCart({{ product['id'] }})">加入購物車</button>
-      <button onclick="alert('立即結帳功能尚未實作')">立即結帳</button>
+
+      <!-- 立即結帳 (表單跳轉) -->
+      <form action="/add_to_cart" method="post" style="display:inline;">
+        <input type="hidden" name="product_id" value="{{ product['id'] }}">
+        <input type="hidden" name="qty" id="qty-input-checkout" value="1">
+        <input type="hidden" name="action" value="checkout">
+        <button type="submit">立即結帳</button>
+      </form>
     </div>
   </div>
 </div>
@@ -167,7 +175,9 @@
   function adjustQty(n) {
     const input = document.getElementById('qty');
     let val = parseInt(input.value) + n;
-    input.value = val < 1 ? 1 : val;
+    if (val < 1) val = 1;
+    input.value = val;
+    document.getElementById('qty-input-checkout').value = val;
   }
 
   function addToCart(productId) {
@@ -175,9 +185,7 @@
     for (let i = 0; i < qty; i++) {
       fetch('/add_to_cart', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `product_id=${productId}`
       })
       .then(res => res.json())
@@ -185,6 +193,7 @@
         if (data.success) {
           const countEl = document.getElementById('cart-count');
           if (countEl) countEl.innerText = data.count;
+          alert("✅ 已加入購物車");
         } else {
           alert("加入購物車失敗");
         }
@@ -193,8 +202,12 @@
         alert("加入購物車失敗: " + err);
       });
     }
-    alert("✅ 已加入購物車");
   }
+
+  // 同步更新 qty 到 checkout 表單
+  document.getElementById('qty').addEventListener('input', function() {
+    document.getElementById('qty-input-checkout').value = this.value;
+  });
 </script>
 
 </body>

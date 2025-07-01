@@ -385,6 +385,7 @@ def delete_product(product_id):
 @app.route('/add_to_cart', methods=['POST'])
 def add_to_cart():
     product_id = int(request.form['product_id'])
+    action = request.form.get('action', 'add')  # 🆕 取得動作類型
     res = supabase.table("products").select("*").eq("id", product_id).single().execute()
     if not res.data:
         return jsonify(success=False)
@@ -404,7 +405,13 @@ def add_to_cart():
         })
     session['cart'] = cart
     print("🛒 當前購物車：", cart)
-    return jsonify(success=True, count=sum(item['qty'] for item in cart))
+
+    # ✅ 根據按鈕導向
+    if action == 'checkout':
+        return redirect('/cart')
+    else:
+        return jsonify(success=True, count=sum(item['qty'] for item in cart))
+
 
 @app.route('/profile', methods=['POST'])
 def update_profile():
