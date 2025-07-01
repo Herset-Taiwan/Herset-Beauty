@@ -255,3 +255,153 @@ footer {
 .view-btn:hover {
   background-color: #E2B6A2;
 }
+
+/* === 以下為從 index.html 移植的樣式 === */
+body {
+      background-color: #F9F0F3; /* 主色 */
+      font-family: sans-serif;
+      color: #3C3C3C; /* 字體主色 */
+      margin: 0;
+    }
+    .main-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 30px;
+      background-color: #F9F0F3; /* 輔色A */
+      border-bottom: 2px solid #CDAFA1; /* 點綴色 */
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+    }
+    .logo-area img {
+      height: 40px;
+      margin-right: 10px;
+    }
+    .main-nav ul {
+      list-style: none;
+      display: flex;
+      gap: 20px;
+      padding: 0;
+      margin: 0;
+    }
+    .main-nav a {
+      text-decoration: none;
+      color: #3C3C3C;
+      font-weight: bold;
+    }
+
+    .sub-categories {
+      background-color: #F9F0F3;
+      padding: 10px 0;
+      text-align: center;
+      font-size: 1rem;
+    }
+    .sub-categories a {
+      margin: 0 15px;
+      text-decoration: none;
+      color: #CDAFA1; /* 點綴色 */
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .banner {
+      text-align: center;
+      padding: 60px 20px;
+      background-color: #EADDD6; /* 輔色B */
+    }
+
+     .product-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 40px 20px;
+    gap: 40px;
+    max-width: 1400px;
+    margin: 60px auto;
+  }
+
+     .product-card {
+    width: 380px;  /* ✅ 放大卡片寬度 */
+    background-color: white;
+    border-radius: 10px;
+    padding: 24px 20px 30px;  /* 底部多一點空間放按鈕 */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    text-align: center;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+     .product-card img {
+    width: 100%;
+    height: 250px;  /* ✅ 放大圖片高度 */
+    object-fit: contain;
+    border-radius: 8px;
+    margin-bottom: 15px;
+  }
+
+   .product-card h2 {
+    font-size: 20px;
+    margin: 10px 0;
+    color: #5A4B45;
+  }
+
+  .price {
+    color: #CDAFA1;
+    font-weight: bold;
+    margin: 10px 0;
+  }
+
+   .add-btn, .view-btn {
+    width: 140px;
+    height: 42px;
+    font-size: 16px;
+    background-color: #CDAFA1;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin: 0 5px;
+  }
+  .add-btn:hover,
+  .view-btn:hover {
+    background-color: #E2B6A2;
+  }
+    .cart-count {
+      background-color: #CDAFA1;
+      color: white;
+      font-size: 12px;
+      border-radius: 50%;
+      padding: 2px 6px;
+      position: absolute;
+      top: -5px;
+      right: -10px;
+    }
+
+    .cart-btn {
+      position: relative;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      background-color: #F9F0F3;
+      color: #3C3C3C;
+    }
+
+    .add-success {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #CDAFA1;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      display: none;
+      z-index: 999;
+    }
