@@ -6,6 +6,7 @@ import tempfile
 import uuid
 from dotenv import load_dotenv
 from datetime import datetime
+from uuid import UUID
 
 load_dotenv()
 
@@ -303,8 +304,6 @@ def add_to_cart():
 
 @app.route('/profile', methods=['POST'])
 def update_profile():
-    import uuid
-
     if 'member_id' not in session:
         return redirect('/login')
 
@@ -312,12 +311,11 @@ def update_profile():
     phone = request.form.get('phone')
     address = request.form.get('address')
     note = request.form.get('note')
-    member_id = str(uuid.UUID(session['member_id']))
-
-    print("📝 更新資料：", name, phone, address, note)
-    print("👤 會員ID：", member_id)
 
     try:
+        member_id = str(UUID(session['member_id']))
+        print("👤 會員ID：", member_id)
+
         result = supabase.table("members").update({
             "name": name,
             "phone": phone,
