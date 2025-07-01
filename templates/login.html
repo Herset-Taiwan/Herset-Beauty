@@ -39,7 +39,7 @@
     <h2>登入帳號</h2>
     {% if error %}<p style="color:red;">{{ error }}</p>{% endif %}
     <form method="POST">
-      <input type="email" name="email" placeholder="Email" required>
+      <input type="text" name="account" placeholder="帳號" required>
       <input type="password" name="password" placeholder="密碼" required>
       <button type="submit">登入</button>
     </form>

@@ -36,17 +36,34 @@ def login():
             return render_template("login.html", error="登入失敗，請檢查帳號密碼")
     return render_template("login.html")
 
+
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
+        account = request.form['account']
         email = request.form['email']
         password = request.form['password']
+
+        # 檢查是否已有相同帳號
+        exist = supabase.table("members").select("*").eq("account", account).execute()
+        if exist.data:
+            return render_template("register.html", error="此帳號已被使用")
+
         try:
-            result = supabase.auth.sign_up({"email": email, "password": password})
+            # 寫入資料表
+            supabase.table("members").insert({
+                "account": account,
+                "email": email,
+                "password": password,
+                "created_at": datetime.utcnow().isoformat()
+            }).execute()
             return redirect('/login')
         except Exception as e:
             return render_template("register.html", error="註冊失敗，請稍後再試")
     return render_template("register.html")
+
+
 
 @app.route('/logout')
 def logout():
