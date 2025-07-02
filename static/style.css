@@ -417,3 +417,12 @@ footer {
   z-index: 1;
 }
 /* 首頁照片輪播相關結束 */
+
+/* 我的歷史訂單文字 */
+.center-title {
+  text-align: center;
+  margin-top: -10px;
+  margin-bottom: 30px;
+  font-size: 24px;
+}
+

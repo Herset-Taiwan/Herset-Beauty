@@ -41,7 +41,7 @@
 <body>
 
   <a href="/" class="back-btn">← 返回首頁</a>
-  <h2>🧾 我的歷史訂單</h2>
+  <h2 class="center-title">🧾 我的歷史訂單</h2>
 
   {% set pending_orders = orders | selectattr("status", "ne", "shipped") | list %}
   {% set completed_orders = orders | selectattr("status", "equalto", "shipped") | list %}
