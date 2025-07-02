@@ -305,19 +305,19 @@ def search_members():
             f"account.ilike.%{keyword}%,username.ilike.%{keyword}%,phone.ilike.%{keyword}%,email.ilike.%{keyword}%"
         )
     members = query.execute().data
+
+    # 🟢 加入註冊時間格式處理
     from pytz import timezone
-from dateutil import parser
+    from dateutil import parser
+    tz = timezone("Asia/Taipei")
+    for m in members:
+        try:
+            utc_dt = parser.parse(m['created_at'])
+            m['created_local'] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
+        except:
+            m['created_local'] = m.get('created_at', '—')
 
-tz = timezone("Asia/Taipei")
-for m in members:
-    try:
-        utc_dt = parser.parse(m['created_at'])
-        m['created_local'] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
-    except:
-        m['created_local'] = m.get('created_at', '—')
-
-
-    # 🟢 補上其他頁籤需要的資料，否則頁面會空白
+    # 補上其他頁籤資料
     products = supabase.table("products").select("*").execute().data or []
 
     res = supabase.table("orders").select("*").order("created_at", desc=True).execute()
@@ -330,10 +330,6 @@ for m in members:
 
     res = supabase.table("members").select("*").execute()
     member_dict = {m['id']: m for m in res.data or []}
-
-    from pytz import timezone
-    from dateutil import parser
-    tz = timezone("Asia/Taipei")
 
     orders = []
     for o in orders_raw:
@@ -354,6 +350,7 @@ for m in members:
         orders.append(o)
 
     return render_template("admin.html", products=products, members=members, orders=orders, tab="members")
+
 
 
 @app.route('/admin/orders/delete/<int:order_id>', methods=['POST'])
