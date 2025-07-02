@@ -203,8 +203,9 @@ def update_order_status(order_id):
 
 
 
-@app.route('/product/<int:product_id>')
+@app.route('/product/<product_id>')
 def product_detail(product_id):
+
     res = supabase.table("products").select("*").eq("id", product_id).single().execute()
     product = res.data
     if not product:
@@ -411,14 +412,15 @@ def edit_product(product_id):
         return render_template("edit_product.html", product=product)
 
 
-@app.route('/delete/<int:product_id>', methods=['POST'])
+@app.route('/delete/<product_id>', methods=['POST'])
 def delete_product(product_id):
+
     supabase.table("products").delete().eq("id", product_id).execute()
     return redirect('/admin')
 
 @app.route('/add_to_cart', methods=['POST'])
 def add_to_cart():
-    product_id = int(request.form['product_id'])
+    product_id = request.form['product_id']
     action = request.form.get('action', 'add')  # 🆕 取得動作類型
     res = supabase.table("products").select("*").eq("id", product_id).single().execute()
     if not res.data:
