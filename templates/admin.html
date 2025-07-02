@@ -2,261 +2,98 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>管理後台 - HERSET BEAUTY</title>
+  <title>HERSET 管理後台</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <style>
-    body { font-family: sans-serif; }
-    .admin-container {
-      max-width: 1000px;
-      margin: 50px auto;
-    }
-    .tabs {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 30px;
-    }
-    .tab-btn {
-      padding: 10px 20px;
-      border: none;
-      background: #eee;
-      cursor: pointer;
-      font-weight: bold;
-      border-radius: 5px 5px 0 0;
-      margin-right: 5px;
-    }
-    .tab-btn.active {
-      background: #e91e63;
-      color: white;
-    }
-    .tab-content {
-      display: none;
-    }
-    .tab-content.active {
-      display: block;
-    }
-    .section { margin-bottom: 40px; }
-    .product-row, .member-row, .order-row {
-      display: flex;
-      align-items: center;
-      border: 1px solid #eee;
-      padding: 10px;
-      margin-bottom: 10px;
-      background-color: #fafafa;
-    }
-    .product-row img {
-      width: 80px;
-      height: 80px;
-      object-fit: cover;
-      margin-right: 20px;
-    }
-    .info {
-      flex: 1;
-    }
-    .actions {
-      display: flex;
-      gap: 10px;
-    }
-    .actions a, .actions button, .actions select {
-      text-decoration: none;
-      color: #e91e63;
-      font-weight: bold;
-      background: none;
-      border: none;
-      cursor: pointer;
-    }
-    .add-btn {
-      display: inline-block;
-      margin-bottom: 20px;
-      padding: 8px 16px;
-      background-color: #e91e63;
-      color: white;
-      text-decoration: none;
-      border-radius: 5px;
-    }
-    .search-form input {
-      padding: 5px;
-      margin-right: 10px;
-    }
-  </style>
 </head>
 <body>
-  <div class="admin-container">
-    {% with messages = get_flashed_messages() %}
-  {% if messages %}
-    <ul style="color: green;">
-      {% for message in messages %}
-        <li>{{ message }}</li>
-      {% endfor %}
-    </ul>
-  {% endif %}
-{% endwith %}
+  <header>
+    <h1>HERSET 管理後台</h1>
+    <nav>
+      <a href="/admin">商品管理</a>
+      <a href="/admin?tab=members">會員系統管理</a>
+      <a href="/admin?tab=orders">訂單管理系統</a>
+    </nav>
+  </header>
 
-    <div class="tab-buttons">
-  <a href="/admin?tab=products" class="{{ 'active' if tab == 'products' else '' }}">商品管理</a>
-  <a href="/admin?tab=members" class="{{ 'active' if tab == 'members' else '' }}">會員系統管理</a>
-  <a href="/admin?tab=orders" class="{{ 'active' if tab == 'orders' else '' }}">訂單管理系統</a>
-</div>
-
-
-    <div id="products" class="tab-content active">
+  <main>
+    <!-- 商品列表 -->
+    {% if products %}
+    <section>
       <h2>商品管理</h2>
-      <a href="/admin/new" class="add-btn">＋ 新增商品</a>
-      {% for p in products %}
-      <div class="product-row">
-        <img src="{{ p['image'] }}" alt="{{ p['name'] }}">
-        <div class="info">
-          <strong>{{ p['name'] }}</strong><br>
-          價格：${{ p['price'] }}
-        </div>
-        <div class="actions">
-          <a href="/edit/{{ p['id'] }}">✏️ 編輯</a>
-          <form action="/delete/{{ p['id'] }}" method="post" style="display:inline;">
-            <button type="submit" onclick="return confirm('確定要刪除這個商品嗎？')">🗑️ 刪除</button>
+      <a href="/admin/new" class="add-btn">＋新增商品</a>
+      <ul>
+        {% for p in products %}
+        <li>
+          {{ p.name }} - ${{ p.price }}
+          <a href="/edit/{{ p.id }}">編輯</a>
+          <form action="/delete/{{ p.id }}" method="post" style="display:inline;">
+            <button type="submit">刪除</button>
           </form>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-
-    <div id="members" class="tab-content">
-      <h2>會員系統管理</h2>
-      <form method="get" action="/admin">
-  <input type="hidden" name="tab" value="members">
-  <input type="text" name="keyword" placeholder="輸入帳號、姓名、電話或Email">
-  <button type="submit">搜尋</button>
-</form>
-      <div id="member-list">
-  {% for m in members %}
-    <div class="member-card" style="display: none;">
-      <strong>帳號：</strong>{{ m.account }}<br>
-      <strong>信箱：</strong>{{ m.email }}<br>
-      <strong>姓名：</strong>{{ m.name or '—' }}<br>
-      <strong>電話：</strong>{{ m.phone or '—' }}<br>
-      <strong>地址：</strong>{{ m.address or '—' }}<br>
-      <strong>訂單備註：</strong>{{ m.note or '—' }}
-    </div>
-  {% endfor %}
-</div>
-
-    </div>
-
-    <div id="orders" class="tab-content">
-      <h2>訂單管理系統</h2>
-      {% for o in orders %}
-<div class="order-row">
-  <div class="info">
-    <strong>訂單編號：</strong>#{{ o['id'] }}<br>
-
-    {% if o['created_local'] %}
-      <strong>訂單時間：</strong>{{ o['created_local'] }}<br>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
     {% endif %}
 
-    <strong>購買商品：</strong>
-    <ul>
-      {% for item in o['items'] %}
-        <li>{{ item['product_name'] }} x {{ item['qty'] }}（${{ item['price'] }}）</li>
+    <!-- 會員列表 -->
+    {% if members %}
+    <section>
+      <h2>會員系統管理</h2>
+      <form method="get" action="/admin/members">
+        <input type="text" name="keyword" placeholder="輸入帳號、姓名、電話或Email">
+        <button type="submit">搜尋</button>
+      </form>
+      <ul>
+        {% for m in members %}
+        <li>
+          <strong>{{ m.username }}</strong> ({{ m.account }})<br>
+          電話：{{ m.phone or '—' }}、Email：{{ m.email or '—' }}
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
+    <!-- 訂單列表 -->
+    {% if orders %}
+    <section>
+      <h2>訂單管理系統</h2>
+      {% for o in orders %}
+      <div class="order-row">
+        <strong>訂單編號：</strong>#{{ o.id }}<br>
+        <strong>購買商品：</strong>
+        <ul>
+          {% for item in o.items %}
+          <li>{{ item.product_name }} x {{ item.qty }} (${{ item.price }})</li>
+          {% endfor %}
+        </ul>
+        <strong>訂單金額：</strong>${{ o.total_amount }}<br>
+        <strong>會員帳號：</strong>{{ o.member.account }}<br>
+        <strong>購買人：</strong>{{ o.member.name }}<br>
+        <strong>電話：</strong>{{ o.member.phone }}<br>
+        <strong>地址：</strong>{{ o.member.address }}<br>
+        <strong>目前狀態：</strong>{{ o.status }}<br>
+        <form action="/admin/orders/update_status/{{ o.id }}" method="post">
+          <label>修改狀態：
+            <select name="status">
+              <option value="pending" {% if o.status == 'pending' %}selected{% endif %}>待處理</option>
+              <option value="paid" {% if o.status == 'paid' %}selected{% endif %}>已付款</option>
+              <option value="shipped" {% if o.status == 'shipped' %}selected{% endif %}>已出貨</option>
+            </select>
+          </label>
+          <button type="submit">更新</button>
+        </form>
+        <form action="/admin/orders/delete/{{ o.id }}" method="post">
+          <button type="submit">🗑 刪除</button>
+        </form>
+      </div>
       {% endfor %}
-    </ul>
-    <strong>訂單金額：</strong>${{ o['total_amount'] }}<br>
-    <strong>會員帳號：</strong>{{ o['member']['account'] }}<br>
-    <strong>購買人：</strong>{{ o['member']['name'] }}<br>
-    <strong>電話：</strong>{{ o['member']['phone'] }}<br>
-    <strong>地址：</strong>{{ o['member']['address'] }}<br>
-    <form method="POST" action="/admin/orders/update_status/{{ o['id'] }}" style="margin-top: 5px;">
-      <strong>目前狀態：</strong>{{ o['status'] }}<br>
-<form method="POST" action="/admin/orders/update_status/{{ o['id'] }}" style="margin-top: 5px;">
-  <strong>修改狀態：</strong>
-  <select name="status" onchange="this.form.submit()">
-    <option value="pending" {% if o['status'] == 'pending' %}selected{% endif %}>待處理</option>
-    <option value="paid" {% if o['status'] == 'paid' %}selected{% endif %}>已付款</option>
-    <option value="shipped" {% if o['status'] == 'shipped' %}selected{% endif %}>已出貨</option>
-  </select>
-</form>
+    </section>
+    {% endif %}
+  </main>
 
-  </div>
-  <div class="actions">
-    <form action="/admin/orders/delete/{{ o['id'] }}" method="post" onsubmit="return confirm('確定要刪除訂單？')">
-      <button type="submit">🗑️ 刪除</button>
-    </form>
-  </div>
-</div>
-{% endfor %}
-
-    </div>
-  </div>
-
-  <script>
-    function switchTab(tabId) {
-    const tabs = document.querySelectorAll('.tab-content');
-    const buttons = document.querySelectorAll('.tab-btn');
-    tabs.forEach(t => t.classList.remove('active'));
-    buttons.forEach(b => b.classList.remove('active'));
-
-    document.getElementById(tabId).classList.add('active');
-    document.querySelector(`.tab-btn[onclick*="${tabId}"]`).classList.add('active');
-  }
-
-  // ✅ 根據 URL 決定預設頁籤
-  window.onload = function () {
-    const urlParams = new URLSearchParams(window.location.search);
-    const tab = urlParams.get('tab');
-    if (tab) {
-      switchTab(tab);
-    }
-  };
-  </script>
-
-  <script>
-window.addEventListener('DOMContentLoaded', function () {
-  const allCards = Array.from(document.querySelectorAll(".member-card"));
-  const pageSize = 10;
-  let currentPage = 1;
-
-  function renderPage(page) {
-    allCards.forEach((card, i) => {
-      card.style.display = (i >= (page - 1) * pageSize && i < page * pageSize) ? "block" : "none";
-    });
-    document.getElementById("pagination-info").textContent = `第 ${page} 頁 / 共 ${Math.ceil(allCards.length / pageSize)} 頁`;
-  }
-
-  function createPagination() {
-    const container = document.createElement("div");
-    container.style.textAlign = "center";
-    container.style.margin = "20px 0";
-
-    const prevBtn = document.createElement("button");
-    prevBtn.textContent = "上一頁";
-    prevBtn.onclick = () => {
-      if (currentPage > 1) {
-        currentPage--;
-        renderPage(currentPage);
-      }
-    };
-
-    const nextBtn = document.createElement("button");
-    nextBtn.textContent = "下一頁";
-    nextBtn.onclick = () => {
-      if (currentPage < Math.ceil(allCards.length / pageSize)) {
-        currentPage++;
-        renderPage(currentPage);
-      }
-    };
-
-    const info = document.createElement("span");
-    info.id = "pagination-info";
-    info.style.margin = "0 10px";
-
-    container.appendChild(prevBtn);
-    container.appendChild(info);
-    container.appendChild(nextBtn);
-
-    document.getElementById("member-list").after(container);
-    renderPage(currentPage);
-  }
-
-  createPagination();
-});
-</script>
-
+  <footer>
+    <p>© 2025 HERSET 管理系統</p>
+  </footer>
 </body>
 </html>
