@@ -120,10 +120,11 @@
 
     <div id="members" class="tab-content">
       <h2>會員系統管理</h2>
-      <form class="search-form" method="GET" action="/admin/members">
-        <input type="text" name="keyword" placeholder="輸入帳號、姓名、電話或Email...">
-        <button type="submit">搜尋</button>
-      </form>
+      <form method="get" action="/admin">
+  <input type="hidden" name="tab" value="members">
+  <input type="text" name="keyword" placeholder="輸入帳號、姓名、電話或Email">
+  <button type="submit">搜尋</button>
+</form>
       <div id="member-list">
   {% for m in members %}
     <div class="member-card" style="display: none;">
