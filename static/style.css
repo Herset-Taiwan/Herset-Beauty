@@ -261,3 +261,47 @@ footer {
   font-weight: bold;
   cursor: pointer;
 }
+/* 會員資料填寫表單開始 */
+.profile-form {
+  width: 400px;
+  padding: 30px;
+  font-size: 16px;
+}
+
+.profile-form .form-group {
+  margin-bottom: 15px;
+}
+
+.profile-form label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: bold;
+  color: #3C3C3C;
+}
+
+.profile-form input,
+.profile-form textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 15px;
+  box-sizing: border-box;
+}
+
+.save-btn {
+  background-color: #CDAFA1;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-weight: bold;
+  color: #3C3C3C;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.save-btn:hover {
+  background-color: #E2B6A2;
+}
+/* 會員資料填寫表單結束 */
