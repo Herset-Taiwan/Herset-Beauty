@@ -122,9 +122,53 @@
 
 
 <!-- 頁尾 -->
-<footer>
-  <p>© 2025 HERSET BEAUTY. All rights reserved.</p>
+<footer style="background: #f4d8cc; padding: 40px 20px; font-family: sans-serif; font-size: 14px;">
+  <div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
+    
+    <div style="max-width: 300px;">
+      <h3 style="font-weight: bold;">made<br>by women,<br>for women.</h3>
+      <p style="margin-top: 10px;"><strong>( Intimate & proud )</strong></p>
+      <p style="margin-top: 10px;">LIP Intimate Care 全商品已投保新光產品責任險2000萬，提供給您更安心的品質與保障</p>
+    </div>
+
+    <div style="min-width: 200px;">
+      <h4 style="margin-bottom: 10px;">關注我們</h4>
+      <div style="display: flex; gap: 10px;">
+        <img src="{{ url_for('static', filename='icons/facebook.png') }}" width="24">
+        <img src="{{ url_for('static', filename='icons/instagram.png') }}" width="24">
+        <img src="{{ url_for('static', filename='icons/line.png') }}" width="24">
+        <img src="{{ url_for('static', filename='icons/youtube.png') }}" width="24">
+      </div>
+    </div>
+
+    <div style="min-width: 200px;">
+      <h4 style="margin-bottom: 10px;">訂購問題</h4>
+      <ul style="list-style: none; padding: 0;">
+        <li>購買商品</li>
+        <li>付款方式</li>
+        <li>配送方式</li>
+        <li>退貨退款</li>
+        <li>聯絡我們</li>
+        <li>銷售據點</li>
+        <li>產品常見FAQ</li>
+      </ul>
+    </div>
+
+    <div style="min-width: 200px;">
+      <h4 style="margin-bottom: 10px;">支付方式</h4>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        <img src="{{ url_for('static', filename='icons/visa.png') }}" width="40">
+        <img src="{{ url_for('static', filename='icons/mastercard.png') }}" width="40">
+        <img src="{{ url_for('static', filename='icons/linepay.png') }}" width="60">
+        <img src="{{ url_for('static', filename='icons/sinopac.png') }}" width="60">
+        <img src="{{ url_for('static', filename='icons/paypal.png') }}" width="50">
+        <img src="{{ url_for('static', filename='icons/jkopay.png') }}" width="50">
+        <img src="{{ url_for('static', filename='icons/aftee.png') }}" width="50">
+      </div>
+    </div>
+  </div>
 </footer>
+
 
 <!-- JS：分類與加入購物車 -->
 <script>
