@@ -304,4 +304,18 @@ footer {
 .save-btn:hover {
   background-color: #E2B6A2;
 }
+
+.save-success {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #CDAFA1;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  display: none;
+  z-index: 999;
+  font-weight: bold;
+}
+
 /* 會員資料填寫表單結束 */

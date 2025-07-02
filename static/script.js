@@ -28,3 +28,16 @@ function closeProfileModal() {
     modal.style.display = "none";
   }
 }
+
+window.addEventListener('DOMContentLoaded', () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get("profile_saved") === "1") {
+    const box = document.getElementById("save-success");
+    if (box) {
+      box.style.display = 'block';
+      setTimeout(() => {
+        box.style.display = 'none';
+      }, 2000);
+    }
+  }
+});

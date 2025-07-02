@@ -446,7 +446,7 @@ def update_profile():
     except Exception as e:
         print("🚨 更新失敗：", e)
 
-    return redirect('/')
+    return redirect('/?profile_saved=1')
 
 @app.route('/profile-data')
 def profile_data():
