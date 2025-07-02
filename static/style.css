@@ -1,4 +1,11 @@
-/* ===== 商品卡片（最終調整）===== */
+
+/* ===== 主體 ===== */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: #F3E5E1; /* 奶油裸粉 - 網站主背景 */
+  color: #3C3C3C;
+}
 
 .logo-area img {
   height: 40px;
@@ -7,62 +14,146 @@
   object-fit: contain;
 }
 
+/* ===== 導覽列與頁尾 ===== */
+header, footer {
+  background: #EADDD6; /* 奶茶米色 - 導覽列背景 */
+  color: #3C3C3C;
+}
+
+footer {
+  text-align: center;
+  padding: 20px;
+  font-size: 14px;
+}
+
+/* ===== 導覽列內容 ===== */
+.main-header {
+  padding: 15px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #C7A7A3; /* 乾燥玫瑰 */
+  max-height: 80px;
+  overflow: hidden;
+}
+
+.logo-area {
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  font-size: 20px;
+}
+.logo-area img.logo {
+  width: 36px;
+  height: 36px;
+  margin-right: 10px;
+}
+
+.main-nav ul {
+  display: flex;
+  gap: 25px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.main-nav a {
+  text-decoration: none;
+  color: #3C3C3C;
+  font-weight: bold;
+}
+.main-nav a:hover {
+  color: #CDAFA1;
+}
+
+/* ===== 商品分類 ===== */
+.sub-categories {
+  background-color: #F3E5E1;
+  padding: 10px 0;
+  text-align: center;
+  font-size: 1rem;
+}
+.sub-categories a {
+  margin: 0 15px;
+  text-decoration: none;
+  color: #5A4B45;
+  font-weight: bold;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+.sub-categories a:hover {
+  color: #E2B6A2; /* 陶土裸橘 */
+}
+
+/* ===== Banner 區塊 ===== */
+.banner {
+  text-align: center;
+  padding: 60px 20px;
+  background-color: #F2CFC0; /* 霧感蜜桃 */
+  color: #5A4B45;
+}
+
+/* ===== 商品清單 ===== */
+.product-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 40px;
+  max-width: 1400px;
+  margin: 60px auto;
+  padding: 0 40px;
+}
+
 .product-card {
   width: 340px;
   min-height: 440px;
   height: auto;
   background-color: #ffffff;
-  border: 1px solid #C7A7A3;
+  border: 1px solid #C7A7A3; /* 乾燥玫瑰 */
   border-radius: 12px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   box-sizing: border-box;
-  padding: 10px 14px; /* ✅ 稍微緊湊一點 */
+  padding: 12px 16px;
   text-align: center;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
 }
 
-/* ✅ 商品圖片區：比例拉大 */
 .product-card img {
   width: 100%;
-  height: 240px;  /* ✅ 原本 200 改成 240，更吸睛 */
+  height: 200px;
   object-fit: contain;
   border-radius: 10px;
-  margin-bottom: 10px;
-}
-
-/* ✅ 商品名稱 */
-.product-card h2 {
-  font-size: 20px;
-  margin: 10px 0 5px;
-  color: #3C3C3C;
-}
-
-/* ✅ 價格 */
-.price {
-  color: #888888;
-  font-weight: bold;
   margin-bottom: 12px;
 }
 
-/* ✅ 按鈕區塊 */
 .product-card .btn-group {
   display: flex;
   justify-content: center;
   gap: 10px;
-  margin-top: 8px;     /* ✅ 原本 12px，改小一點 */
-  margin-bottom: 0;    /* ✅ 移除多餘底部空白 */
+  margin-top: 12px;
 }
 
-/* ✅ 按鈕樣式 */
+.product-card h2 {
+  font-size: 20px;
+  margin: 10px 0 5px;
+  color: #3C3C3C; /* 商品名稱字色 */
+}
+
+.price {
+  color: #888888; /* 副標文字色 */
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+/* ===== 按鈕樣式 ===== */
 .btn-group button,
 .btn-group .view-btn {
   width: 120px;
   height: 40px;
   font-size: 15px;
-  background-color: #CDAFA1;
-  color: #3C3C3C;
+  background-color: #CDAFA1; /* 玫瑰裸棕 */
+  color: #3C3C3C;             /* 深灰字色 */
   border: none;
   border-radius: 6px;
   font-weight: bold;
@@ -73,8 +164,35 @@
   justify-content: center;
   transition: background-color 0.3s ease;
 }
-
 .btn-group button:hover,
 .btn-group .view-btn:hover {
-  background-color: #E2B6A2;
+  background-color: #E2B6A2; /* 陶土裸橘 */
+}
+
+/* ===== 購物車數量圓點 ===== */
+.cart-count {
+  background-color: #CDAFA1;
+  color: white;
+  font-size: 12px;
+  border-radius: 50%;
+  padding: 2px 6px;
+  position: absolute;
+  top: -5px;
+  right: -10px;
+}
+.cart-btn {
+  position: relative;
+}
+
+/* ===== 加入購物車成功提示 ===== */
+.add-success {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #CDAFA1;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  display: none;
+  z-index: 999;
 }
