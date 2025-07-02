@@ -5,3 +5,4 @@ Werkzeug
 supabase
 python-dotenv
 pytz
+python-dateutil
