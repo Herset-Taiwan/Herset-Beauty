@@ -2,6 +2,7 @@ from pytz import timezone
 tz = timezone('Asia/Taipei')
 from datetime import datetime
 from pytz import timezone
+from dateutil import parser
 
 from flask import Flask, render_template, request, redirect, session, url_for, jsonify
 from werkzeug.utils import secure_filename
@@ -249,11 +250,12 @@ def admin():
 
         # ✅ 加入台灣時間欄位
         try:
-            utc_dt = parser.parse(o['created_at'])
-            o['created_local'] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
+           utc_dt = parser.parse(o['created_at'])
+           o['created_local'] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
         except Exception as e:
-            print("⚠️ 時間格式錯誤：", o['created_at'], e)
-            o['created_local'] = o['created_at']  # fallback
+          print("⚠️ 時間格式錯誤：", o['created_at'], e)
+          o['created_local'] = o['created_at']  # fallback
+
 
         orders.append(o)
         tab = request.args.get("tab", "products")  # 預設為商品管理
