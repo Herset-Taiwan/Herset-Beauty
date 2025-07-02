@@ -1,3 +1,6 @@
+from pytz import timezone
+tz = timezone('Asia/Taipei')
+
 from flask import Flask, render_template, request, redirect, session, url_for, jsonify
 from werkzeug.utils import secure_filename
 from supabase import create_client, Client
@@ -71,7 +74,7 @@ def register():
                 "email": email,
                 "password": password,
                 "username": username,
-                "created_at": datetime.utcnow().isoformat()
+                "created_at": datetime.now(tz).isoformat()
             }).execute()
 
             # 🔍 印出結果確認
@@ -169,7 +172,7 @@ def checkout():
         'member_id': member_id,
         'total_amount': total,
         'status': 'pending',
-        'created_at': datetime.utcnow().isoformat()
+        'created_at': datetime.now(tz).isoformat()
     }
     print("✅ order_data：", order_data)
     result = supabase.table('orders').insert(order_data).execute()
