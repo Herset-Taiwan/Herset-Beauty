@@ -1,60 +1,321 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
-<head>
-  <meta charset="UTF-8">
-  <title>付款方式 - HERSET BEAUTY</title>
-  <link rel="stylesheet" href="static/style.css">
-  <style>
-    body { font-family: sans-serif; background: #f4e8e4; padding: 40px; }
-    .container { max-width: 1000px; margin: 0 auto; background: white; padding: 40px; border-radius: 10px; }
-    footer { margin-top: 60px; background: #f0cfc1; padding: 40px; }
-    footer .footer-columns { display: flex; justify-content: space-between; flex-wrap: wrap; }
-    footer h4 { margin-bottom: 10px; }
-    footer ul { list-style: none; padding-left: 0; }
-    footer ul li { margin-bottom: 5px; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h2>付款方式</h2>
-    
-<p>ATM轉帳：系統將生成一組專用的「繳費帳號」，請於訂購後1天內轉帳，逾期視同取消。</p>
-<p>信用卡：全站接受VISA／MASTER／JCB 等刷卡服務，分期付款（三期）僅限永豐銀行發佈帳金額NT$10,000以上使用。</p>
-<p><strong>請安心選購：</strong>永豐銀行使用RSA 2048 Bits SSL 最格安全加密機制・敬</p>
-<p>LINE PAY：LINE Pay綁定信用卡後，消費時僅需輸入專屬密碼即可完成付款。</p>
-<p>街口支付：街口支付綁定信用卡後，消費時僅需掃描街口APP即可完成付款。</p>
-<p>PayPal：國外消費者可使用PayPal付款。</p>
-<p>ATFEE先享後付：輸入電話號碼接收驗證簡訊，完成認證後即完成購買。享受延後付款。</p>
-<p><a href="#">點我瞭解更多付款說明</a></p>
-
+ <head>
+  <meta charset="utf-8"/>
+  <title>
+   付款方式 - HERSET BEAUTY
+  </title>
+  <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet"/>
+ </head>
+ <body>
+  <div class="add-success" id="add-success">
+   已加入購物車！
   </div>
-  <footer>
-    <div class="footer-columns">
-      <div>
-        <img src="static/uploads/logo_0.png" alt="logo" style="width:180px;margin-bottom:10px;"><br>
-        <p>made<br>by women,<br>for women.<br><small>(Intimate & proud)</small></p>
-        <p style="margin-top:10px;">LIP Intimate Care 全商品已投保新光產品責任險2000萬，提供給您更安心的品質與保障</p>
-      </div>
-      <div>
-        <h4>關注我們</h4>
-        <p>📘 📸 👶 ▶</p>
-      </div>
-      <div>
-        <h4>訂購問題</h4>
-        <ul>
-          <li><a href="payment.html">購買商品</a></li>
-          <li><a href="payment.html">付款方式</a></li>
-          <li><a href="delivery.html">配送方式</a></li>
-          <li><a href="return.html">退貨退款</a></li>
-          <li><a href="contact.html">聯絡我們</a></li>
-        </ul>
-      </div>
-      <div>
-        <h4>支付方式</h4>
-        <img src="static/uploads/pay_methods.png" alt="支付方式">
-      </div>
+  <div class="save-success" id="save-success">
+   資料已更新完成！
+  </div>
+  <!-- 導覽列 -->
+  <header class="main-header">
+   <div class="logo-area">
+    <img alt="logo" src="{{ url_for('static', filename='uploads/logo_0.png') }}"/>
+    <span>
+     HERSET
+    </span>
+   </div>
+   <nav class="main-nav">
+    <ul>
+     <li>
+      <a href="/">
+       HOME
+      </a>
+     </li>
+     <li>
+      <a href="/about">
+       關於我們
+      </a>
+     </li>
+     {% if session.get('user') %}
+     <li class="dropdown">
+      <a href="#">
+       👤 會員中心
+      </a>
+      <ul class="dropdown-menu">
+       <li>
+        <a href="/order-history">
+         歷史訂單
+        </a>
+       </li>
+       <li>
+        <a href="#" onclick="openProfileModal()">
+         會員資料
+        </a>
+       </li>
+       <li>
+        <a href="/logout">
+         登出
+        </a>
+       </li>
+      </ul>
+     </li>
+     {% else %}
+     <li>
+      <a href="/login">
+       👤 會員登入
+      </a>
+     </li>
+     {% endif %}
+     <li>
+      <a class="cart-btn" href="/cart">
+       🛒 購物車
+          {% if cart_count &gt; 0 %}
+       <span class="cart-count" id="cart-count">
+        {{ cart_count }}
+       </span>
+       {% else %}
+       <span class="cart-count" id="cart-count" style="display: none;">
+        0
+       </span>
+       {% endif %}
+      </a>
+     </li>
+    </ul>
+   </nav>
+  </header>
+  <!-- 首頁輪播圖 -->
+  <div class="carousel-container">
+   <div class="carousel">
+    <img class="carousel-img active" src="{{ url_for('static', filename='uploads/banner1.jpg') }}"/>
+    <img class="carousel-img" src="{{ url_for('static', filename='uploads/banner2.jpg') }}"/>
+    <img class="carousel-img" src="{{ url_for('static', filename='uploads/banner3.jpg') }}"/>
+    <img class="carousel-img" src="{{ url_for('static', filename='uploads/banner4.jpg') }}"/>
+   </div>
+  </div>
+  <!-- 分類區塊 -->
+  <div class="sub-categories">
+   <a onclick="filterCategory('全部')">
+    全部商品
+   </a>
+   <a onclick="filterCategory('身體保養')">
+    身體保養
+   </a>
+   <a onclick="filterCategory('私密保養')">
+    私密保養
+   </a>
+   <a onclick="filterCategory('寵物友善')">
+    寵物友善
+   </a>
+   <a onclick="filterCategory('品牌嚴選')">
+    品牌嚴選
+   </a>
+  </div>
+  <!-- Banner -->
+  <section class="banner">
+   <h1>
+    自然呵護，極致純淨
+   </h1>
+   <p>
+    專為敏感肌設計的私密保養系列
+   </p>
+  </section>
+  <section class="custom-content" style="padding: 40px; max-width: 1000px; margin: 0 auto; background: white; border-radius: 10px;">
+   <h2>
+    付款方式
+   </h2>
+   <p>
+    ATM轉帳：系統將生成一組專用的「繳費帳號」，請於訂購後1天內轉帳，逾期視同取消。
+   </p>
+   <p>
+    信用卡：全站接受VISA／MASTER／JCB 等刷卡服務，分期付款（三期）僅限永豐銀行發佈帳金額NT$10,000以上使用。
+   </p>
+   <p>
+    <strong>
+     請安心選購：
+    </strong>
+    永豐銀行使用RSA 2048 Bits SSL 最格安全加密機制・敬
+   </p>
+   <p>
+    LINE PAY：LINE Pay綁定信用卡後，消費時僅需輸入專屬密碼即可完成付款。
+   </p>
+   <p>
+    街口支付：街口支付綁定信用卡後，消費時僅需掃描街口APP即可完成付款。
+   </p>
+   <p>
+    PayPal：國外消費者可使用PayPal付款。
+   </p>
+   <p>
+    ATFEE先享後付：輸入電話號碼接收驗證簡訊，完成認證後即完成購買。享受延後付款。
+   </p>
+   <p>
+    <a href="#">
+     點我瞭解更多付款說明
+    </a>
+   </p>
+  </section>
+  <!-- 商品清單 -->
+  <div class="modal" id="profile-modal">
+   <div class="modal-content profile-form">
+    <span class="close-btn" onclick="closeProfileModal()">
+     ×
+    </span>
+    <h2>
+     會員資料
+    </h2>
+    <form action="/profile" method="POST">
+     <div class="form-group">
+      <label for="name">
+       姓名：
+      </label>
+      <input id="name" name="name" required="" type="text"/>
+     </div>
+     <div class="form-group">
+      <label for="phone">
+       電話：
+      </label>
+      <input id="phone" name="phone" required="" type="text"/>
+     </div>
+     <div class="form-group">
+      <label for="address">
+       地址：
+      </label>
+      <input id="address" name="address" type="text"/>
+     </div>
+     <div class="form-group">
+      <label for="note">
+       訂單備註：
+      </label>
+      <textarea id="note" name="note" rows="3"></textarea>
+     </div>
+     <div style="text-align:center; margin-top: 20px;">
+      <button class="save-btn" type="submit">
+       儲存資料
+      </button>
+     </div>
+    </form>
+   </div>
+  </div>
+  <!-- 頁尾 -->
+  <footer style="background: #f4d8cc; padding: 40px 20px; font-family: sans-serif; font-size: 14px;">
+   <div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
+    <div style="max-width: 300px;">
+     <h3 style="font-weight: bold;">
+      made
+      <br/>
+      by women,
+      <br/>
+      for women.
+     </h3>
+     <p style="margin-top: 10px;">
+      <strong>
+       ( Intimate &amp; proud )
+      </strong>
+     </p>
+     <p style="margin-top: 10px;">
+      LIP Intimate Care 全商品已投保新光產品責任險2000萬，提供給您更安心的品質與保障
+     </p>
     </div>
+    <div style="min-width: 200px;">
+     <h4 style="margin-bottom: 10px;">
+      關注我們
+     </h4>
+     <div style="display: flex; gap: 10px;">
+      <img src="{{ url_for('static', filename='icons/facebook.png') }}" width="24"/>
+      <img src="{{ url_for('static', filename='icons/instagram.png') }}" width="24"/>
+      <img src="{{ url_for('static', filename='icons/line.png') }}" width="24"/>
+      <img src="{{ url_for('static', filename='icons/youtube.png') }}" width="24"/>
+     </div>
+    </div>
+    <div style="min-width: 200px;">
+     <h4 style="margin-bottom: 10px;">
+      訂購問題
+     </h4>
+     <ul style="list-style: none; padding: 0;">
+      <li>
+       <a href="/about">
+        關於我們
+       </a>
+      </li>
+      <li>
+       <a href="/payment">
+        付款方式
+       </a>
+      </li>
+      <li>
+       <a href="/delivery">
+        配送方式
+       </a>
+      </li>
+      <li>
+       <a href="/return">
+        退貨退款
+       </a>
+      </li>
+      <li>
+       <a href="/contact">
+        聯絡我們
+       </a>
+      </li>
+      <li>
+       銷售據點
+      </li>
+      <li>
+       產品常見FAQ
+      </li>
+     </ul>
+    </div>
+    <div style="min-width: 200px;">
+     <h4 style="margin-bottom: 10px;">
+      支付方式
+     </h4>
+     <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+      <img src="{{ url_for('static', filename='icons/visa.png') }}" width="40"/>
+      <img src="{{ url_for('static', filename='icons/mastercard.png') }}" width="40"/>
+      <img src="{{ url_for('static', filename='icons/linepay.png') }}" width="60"/>
+      <img src="{{ url_for('static', filename='icons/sinopac.png') }}" width="60"/>
+      <img src="{{ url_for('static', filename='icons/paypal.png') }}" width="50"/>
+      <img src="{{ url_for('static', filename='icons/jkopay.png') }}" width="50"/>
+      <img src="{{ url_for('static', filename='icons/aftee.png') }}" width="50"/>
+     </div>
+    </div>
+   </div>
   </footer>
-</body>
+  <!-- JS：分類與加入購物車 -->
+  <script>
+   function filterCategory(category) {
+  const all = document.querySelectorAll(".product-card");
+  all.forEach(el => {
+    el.style.display = category === '全部' || el.dataset.category === category ? 'block' : 'none';
+  });
+}
+filterCategory('全部');
+
+function addToCart(event, productId) {
+  event.preventDefault();
+  fetch('/add_to_cart', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `product_id=${productId}`
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      document.getElementById("cart-count").style.display = 'inline';
+      document.getElementById("cart-count").textContent = data.count;
+      const box = document.getElementById("add-success");
+      box.style.display = 'block';
+      setTimeout(() => { box.style.display = 'none'; }, 1500);
+    }
+  });
+}
+// 輪播圖切換
+let cur = 0;
+const banners = document.querySelectorAll('.carousel-img');
+setInterval(() => {
+  banners[cur].classList.remove('active');
+  cur = (cur + 1) % banners.length;
+  banners[cur].classList.add('active');
+}, 5000);
+  </script>
+  <script src="{{ url_for('static', filename='script.js') }}">
+  </script>
+ </body>
 </html>
