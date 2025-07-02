@@ -1,8 +1,9 @@
+
 /* ===== 主體 ===== */
 body {
   margin: 0;
   font-family: 'Segoe UI', sans-serif;
-  background: #F9F0F3;
+  background: #F3E5E1; /* 奶油裸粉 - 網站主背景 */
   color: #3C3C3C;
 }
 
@@ -15,7 +16,7 @@ body {
 
 /* ===== 導覽列與頁尾 ===== */
 header, footer {
-  background: #F9F0F3;
+  background: #EADDD6; /* 奶茶米色 - 導覽列背景 */
   color: #3C3C3C;
 }
 
@@ -31,8 +32,8 @@ footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 2px solid #C7A7A3;
-  max-height: 80px; /* ✅ 避免 logo 撐開整個區塊 */
+  border-bottom: 2px solid #C7A7A3; /* 乾燥玫瑰 */
+  max-height: 80px;
   overflow: hidden;
 }
 
@@ -66,7 +67,7 @@ footer {
 
 /* ===== 商品分類 ===== */
 .sub-categories {
-  background-color: #F9F0F3;
+  background-color: #F3E5E1;
   padding: 10px 0;
   text-align: center;
   font-size: 1rem;
@@ -80,14 +81,14 @@ footer {
   transition: color 0.3s ease;
 }
 .sub-categories a:hover {
-  color: #E2B6A2;
+  color: #E2B6A2; /* 陶土裸橘 */
 }
 
 /* ===== Banner 區塊 ===== */
 .banner {
   text-align: center;
   padding: 60px 20px;
-  background-color: #F2CFC0;
+  background-color: #F2CFC0; /* 霧感蜜桃 */
   color: #5A4B45;
 }
 
@@ -107,7 +108,7 @@ footer {
   min-height: 440px;
   height: auto;
   background-color: #ffffff;
-  border: 1px solid #C7A7A3;
+  border: 1px solid #C7A7A3; /* 乾燥玫瑰 */
   border-radius: 12px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   box-sizing: border-box;
@@ -136,15 +137,14 @@ footer {
 .product-card h2 {
   font-size: 20px;
   margin: 10px 0 5px;
-  color: #5A4B45;
+  color: #3C3C3C; /* 商品名稱字色 */
 }
 
 .price {
-  color: #CDAFA1;
+  color: #888888; /* 副標文字色 */
   font-weight: bold;
   margin-bottom: 15px;
 }
-
 
 /* ===== 按鈕樣式 ===== */
 .btn-group button,
@@ -152,8 +152,8 @@ footer {
   width: 120px;
   height: 40px;
   font-size: 15px;
-  background-color: #CDAFA1;
-  color: white;
+  background-color: #CDAFA1; /* 玫瑰裸棕 */
+  color: #3C3C3C;             /* 深灰字色 */
   border: none;
   border-radius: 6px;
   font-weight: bold;
@@ -166,7 +166,7 @@ footer {
 }
 .btn-group button:hover,
 .btn-group .view-btn:hover {
-  background-color: #E2B6A2;
+  background-color: #E2B6A2; /* 陶土裸橘 */
 }
 
 /* ===== 購物車數量圓點 ===== */
