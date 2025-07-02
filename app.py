@@ -704,6 +704,24 @@ def reorder(order_id):
     session['cart'] = cart
     return redirect('/cart')
 
+# 首頁最下方關於我、付款方式、配送方式等路由
+@app.route('/payment')
+def payment():
+    return render_template("payment.html")
+
+@app.route('/delivery')
+def delivery():
+    return render_template("delivery.html")
+
+@app.route('/return')
+def return_policy():
+    return render_template("return.html")
+
+@app.route('/contact')
+def contact():
+    return render_template("contact.html")
+
+
 
 
 if __name__ == '__main__':
