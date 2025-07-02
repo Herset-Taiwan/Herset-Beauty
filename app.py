@@ -1,5 +1,7 @@
 from pytz import timezone
 tz = timezone('Asia/Taipei')
+from datetime import datetime
+from pytz import timezone
 
 from flask import Flask, render_template, request, redirect, session, url_for, jsonify
 from werkzeug.utils import secure_filename
@@ -174,6 +176,7 @@ def checkout():
         'status': 'pending',
         'created_at': datetime.now(tz).isoformat()
     }
+    print("✅ 寫入的訂單時間（台灣時間）:", order_data['created_at'])
     print("✅ order_data：", order_data)
     result = supabase.table('orders').insert(order_data).execute()
     order_id = result.data[0]['id']
@@ -211,6 +214,10 @@ def product_detail(product_id):
 
 @app.route('/admin')
 def admin():
+    from datetime import datetime
+    from pytz import timezone
+    tz = timezone("Asia/Taipei")
+
     products = supabase.table("products").select("*").execute().data
 
     # 取得所有訂單
@@ -240,11 +247,18 @@ def admin():
             'address': member['address'] if member and 'address' in member else '—',
         }
 
+        # ✅ 加入台灣時間欄位
+        try:
+            utc_dt = datetime.fromisoformat(o['created_at'].replace("Z", "+00:00"))
+            o['created_local'] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
+        except Exception as e:
+            print("⚠️ 時間格式錯誤：", o['created_at'], e)
+            o['created_local'] = o['created_at']  # fallback
+
         orders.append(o)
 
     members_display = members  # 給會員頁籤用
     return render_template("admin.html", products=products, members=members_display, orders=orders)
-
 
 
 

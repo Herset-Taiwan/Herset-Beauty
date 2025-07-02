@@ -139,9 +139,10 @@
 <div class="order-row">
   <div class="info">
     <strong>訂單編號：</strong>#{{ o['id'] }}<br>
-    {% if o['created_at'] %}
-  <strong>訂單時間：</strong>{{ o['created_at'].replace("T", " ")[:19] }}<br>
-{% endif %}
+
+    {% if o['created_local'] %}
+      <strong>訂單時間：</strong>{{ o['created_local'] }}<br>
+    {% endif %}
 
     <strong>購買商品：</strong>
     <ul>
