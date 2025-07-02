@@ -625,6 +625,39 @@ def order_detail(order_id):
 
     return render_template("order_detail.html", order=order, items=items, member=member)
 
+@app.route('/order-history')
+def order_history():
+    if 'member_id' not in session:
+        return redirect('/login?next=order-history')
+
+    member_id = session['member_id']
+
+    tz = timezone("Asia/Taipei")
+
+    # 查詢該會員的所有訂單
+    res = supabase.table("orders").select("*").eq("member_id", member_id).order("created_at", desc=True).execute()
+    orders_raw = res.data or []
+
+    # 查詢所有訂單項目（一次撈取，加快效能）
+    res = supabase.table("order_items").select("*").execute()
+    items = res.data or []
+    item_group = {}
+    for item in items:
+        item_group.setdefault(item['order_id'], []).append(item)
+
+    # 整合資料 + 時區轉換
+    orders = []
+    for o in orders_raw:
+        o['items'] = item_group.get(o['id'], [])
+        try:
+            utc_dt = parser.parse(o['created_at'])
+            o['created_local'] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
+        except:
+            o['created_local'] = o['created_at']
+        orders.append(o)
+
+    return render_template("order_history.html", orders=orders)
+
 # 會員重新下單路由
 @app.route('/reorder/<int:order_id>')
 def reorder(order_id):
