@@ -648,18 +648,31 @@ def order_history():
     for item in items:
         item_group.setdefault(item['order_id'], []).append(item)
 
-    # 整合資料 + 台灣時區轉換
+    # 整合資料 + 台灣時區轉換 + 狀態中文化
     orders = []
     for o in orders_raw:
         o['items'] = item_group.get(o['id'], [])
+
+        # 狀態轉換為中文
+        if o['status'] == 'pending':
+            o['status_text'] = '待處理'
+        elif o['status'] == 'paid':
+            o['status_text'] = '已付款'
+        elif o['status'] == 'shipped':
+            o['status_text'] = '已出貨'
+        else:
+            o['status_text'] = o['status']  # fallback 顯示原文
+
         try:
             utc_dt = parser.parse(o['created_at'])
             o['created_local'] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
         except:
             o['created_local'] = o['created_at']
+
         orders.append(o)
 
     return render_template("order_history.html", orders=orders)
+
 
 # 會員重新下單路由
 @app.route('/reorder/<int:order_id>')
