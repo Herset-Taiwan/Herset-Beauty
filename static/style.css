@@ -1,4 +1,12 @@
 /* ===== 商品卡片（最終調整）===== */
+
+.logo-area img {
+  height: 40px;
+  width: auto;
+  max-width: 100px;
+  object-fit: contain;
+}
+
 .product-card {
   width: 340px;
   min-height: 440px;
