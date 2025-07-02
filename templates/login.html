@@ -5,39 +5,83 @@
   <title>登入 - HERSET BEAUTY</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
+    body {
+      background-color: #f4e8e4; /* 奶油裸粉背景 */
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
     .form-container {
       max-width: 400px;
-      margin: 60px auto;
-      padding: 30px;
+      margin: 100px auto;
+      padding: 40px 30px;
+      border-radius: 12px;
+      background: #ffffff;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      text-align: center;
+    }
+
+    .form-container h2 {
+      margin-bottom: 25px;
+      color: #3C3C3C;
+      font-size: 24px;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
       border: 1px solid #ccc;
-      border-radius: 10px;
-      background: #fff;
+      border-radius: 8px;
+      font-size: 16px;
+      box-sizing: border-box;
     }
-    input {
-      width: 100%;
-      margin-top: 10px;
-      padding: 10px;
-    }
+
     button {
-      margin-top: 20px;
       width: 100%;
-      padding: 10px;
-      background-color: #e91e63;
+      padding: 12px;
+      font-size: 16px;
+      background-color: #C6456C; /* 玫瑰裸棕主色 */
       color: white;
       border: none;
-      border-radius: 5px;
+      border-radius: 8px;
+      font-weight: bold;
       cursor: pointer;
+      transition: background-color 0.3s ease;
     }
+
+    button:hover {
+      background-color: #E85E82; /* 陶土裸橘 hover */
+    }
+
     .link {
-      margin-top: 15px;
-      text-align: center;
+      margin-top: 20px;
+      font-size: 15px;
+      color: #5A4B45;
+    }
+
+    .link a {
+      color: #6B3E58;
+      font-weight: bold;
+      text-decoration: none;
+    }
+
+    .link a:hover {
+      text-decoration: underline;
+    }
+
+    .error-message {
+      color: red;
+      margin-bottom: 15px;
     }
   </style>
 </head>
 <body>
   <div class="form-container">
     <h2>登入帳號</h2>
-    {% if error %}<p style="color:red;">{{ error }}</p>{% endif %}
+    {% if error %}<div class="error-message">{{ error }}</div>{% endif %}
     <form method="POST">
       <input type="text" name="account" placeholder="帳號" required>
       <input type="password" name="password" placeholder="密碼" required>
