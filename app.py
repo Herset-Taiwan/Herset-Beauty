@@ -215,26 +215,44 @@ def product_detail(product_id):
 
 @app.route('/admin')
 def admin():
-    from datetime import datetime
     from pytz import timezone
+    from dateutil import parser
     tz = timezone("Asia/Taipei")
 
-    tab = request.args.get("tab", "products")  # ⬅️ 移到這邊
+    tab = request.args.get("tab", "products")  # 🟢 移到最外層，確保不會因為錯誤被跳過
 
-    products = supabase.table("products").select("*").execute().data
-    orders_raw = supabase.table("orders").select("*").order("created_at", desc=True).execute().data
-    members = supabase.table("members").select("id, account, username, name, phone, email, address").execute().data
+    # 查詢商品
+    res = supabase.table("products").select("*").execute()
+    if hasattr(res, 'error') and res.error:
+        print("❌ 商品查詢失敗：", res.error)
+        products = []
+    else:
+        products = res.data or []
+    print("✅ 商品筆數：", len(products))
+
+    # 查詢訂單
+    res = supabase.table("orders").select("*").order("created_at", desc=True).execute()
+    orders_raw = res.data or []
+
+    # 查詢會員
+    res = supabase.table("members").select("id, account, username, name, phone, email, address").execute()
+    members = res.data or []
     member_dict = {m['id']: m for m in members}
-    items = supabase.table("order_items").select("*").execute().data
 
+    # 查詢訂單項目
+    res = supabase.table("order_items").select("*").execute()
+    items = res.data or []
     item_group = {}
     for item in items:
         item_group.setdefault(item['order_id'], []).append(item)
 
+    # 整合訂單資料
     orders = []
     for o in orders_raw:
         o['items'] = item_group.get(o['id'], [])
+
         member = member_dict.get(o['member_id'])
+
         o['member'] = {
             'account': member['account'] if member else 'guest',
             'name': member['name'] if member and 'name' in member else '訪客',
@@ -247,11 +265,12 @@ def admin():
             o['created_local'] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
         except Exception as e:
             print("⚠️ 時間格式錯誤：", o['created_at'], e)
-            o['created_local'] = o['created_at']
+            o['created_local'] = o['created_at']  # fallback
 
         orders.append(o)
 
     return render_template("admin.html", products=products, members=members, orders=orders, tab=tab)
+
 
 
 
