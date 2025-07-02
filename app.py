@@ -123,8 +123,9 @@ def about():
 def cart():
     if request.method == 'POST':
         action = request.form.get('action')
-        product_id = int(request.form.get('product_id'))
+        product_id = request.form.get('product_id')  # 不轉 int！
         cart = session.get('cart', [])
+
         for item in cart:
             if item['product_id'] == product_id:
                 if action == 'increase':
@@ -134,9 +135,11 @@ def cart():
                 elif action == 'remove':
                     cart.remove(item)
                 break
+
         session['cart'] = cart
         return redirect(url_for('cart'))
 
+    # GET 顯示購物車內容
     cart_items = session.get('cart', [])
     products = []
     total = 0
@@ -146,9 +149,11 @@ def cart():
             product = res.data
             product['qty'] = item['qty']
             product['subtotal'] = item['qty'] * product['price']
-            total += product['subtotal']
             products.append(product)
+            total += product['subtotal']
+
     return render_template("cart.html", products=products, total=total)
+
 
 @app.route('/checkout', methods=['POST'])
 def checkout():
