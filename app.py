@@ -364,7 +364,7 @@ def add_product():
         return f"新增商品時發生錯誤：{str(e)}", 500
 
 
-@app.route('/edit/<int:product_id>', methods=['GET', 'POST'])
+@app.route('/edit/<product_id>', methods=['GET', 'POST'])
 def edit_product(product_id):
     if request.method == 'POST':
         updated = {
