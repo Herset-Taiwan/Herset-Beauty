@@ -56,10 +56,16 @@ footer {
   padding: 0;
 }
 .main-nav a {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
   text-decoration: none;
   color: #3C3C3C;
   font-weight: bold;
+  padding: 6px 12px;
+  line-height: 1.2;
 }
+
 .main-nav a:hover {
   color: #CDAFA1;
 }
