@@ -114,6 +114,7 @@ footer {
   display: flex;
   flex-direction: column;
   justify-content: space-between; /* 把內容撐開填滿卡片 */
+  align-items: center;  /* ✅ 元素垂直居中 */
 }
 
 .product-card img {
@@ -135,12 +136,14 @@ footer {
   font-size: 20px;
   margin: 10px 0 5px;
   color: #3C3C3C; /* 商品名稱字色 */
+  text-align: center;/* 商品名稱置中 */
 }
 
 .price {
   color: #888888; /* 副標文字色 */
   font-weight: bold;
   margin-bottom: 15px;
+  text-align: center;/* 商品金額置中 */
 }
 
 /* ===== 按鈕樣式 ===== */
