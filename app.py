@@ -241,7 +241,7 @@ def admin():
     from dateutil import parser
     tz = timezone("Asia/Taipei")
 
-    tab = request.args.get("tab", "products")  # 🟢 移到最外層，確保不會因為錯誤被跳過
+    tab = request.args.get("tab", "products")  # 🟢 預設 tab
 
     # 查詢商品
     res = supabase.table("products").select("*").execute()
@@ -256,10 +256,20 @@ def admin():
     res = supabase.table("orders").select("*").order("created_at", desc=True).execute()
     orders_raw = res.data or []
 
-    # 查詢會員
+    # 查詢會員（補上 created_at）
     res = supabase.table("members").select("id, account, username, name, phone, email, address, note, created_at").execute()
-
     members = res.data or []
+
+    # 🟢 加入會員註冊時間轉換
+    for m in members:
+        try:
+            if 'created_at' in m and m['created_at']:
+                utc_dt = parser.parse(m['created_at'])
+                m['created_at'] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
+        except Exception as e:
+            print("⚠️ 會員註冊時間轉換錯誤：", m.get('created_at'), e)
+            m['created_at'] = m.get('created_at') or '—'
+
     member_dict = {m['id']: m for m in members}
 
     # 查詢訂單項目
@@ -275,7 +285,6 @@ def admin():
         o['items'] = item_group.get(o['id'], [])
 
         member = member_dict.get(o['member_id'])
-
         o['member'] = {
             'account': member['account'] if member else 'guest',
             'name': member['name'] if member and 'name' in member else '訪客',
@@ -287,13 +296,12 @@ def admin():
             utc_dt = parser.parse(o['created_at'])
             o['created_local'] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
         except Exception as e:
-            print("⚠️ 時間格式錯誤：", o['created_at'], e)
-            o['created_local'] = o['created_at']  # fallback
+            print("⚠️ 訂單時間轉換錯誤：", o['created_at'], e)
+            o['created_local'] = o['created_at']
 
         orders.append(o)
 
     return render_template("admin.html", products=products, members=members, orders=orders, tab=tab)
-
 
 
 
