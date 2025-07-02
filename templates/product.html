@@ -181,28 +181,33 @@
   }
 
   function addToCart(productId) {
-    const qty = parseInt(document.getElementById('qty').value);
-    for (let i = 0; i < qty; i++) {
-      fetch('/add_to_cart', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `product_id=${productId}`
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          const countEl = document.getElementById('cart-count');
-          if (countEl) countEl.innerText = data.count;
-          alert("✅ 已加入購物車");
-        } else {
-          alert("加入購物車失敗");
-        }
-      })
-      .catch(err => {
-        alert("加入購物車失敗: " + err);
-      });
+  const qty = parseInt(document.getElementById('qty').value);
+  fetch('/add_to_cart', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `product_id=${productId}&qty=${qty}`
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      const countEl = document.getElementById('cart-count');
+      if (countEl) countEl.innerText = data.count;
+      // ✅ 改為網頁上提示
+      const tip = document.createElement('div');
+      tip.className = 'add-success';
+      tip.textContent = '✅ 已加入購物車';
+      document.body.appendChild(tip);
+      setTimeout(() => tip.remove(), 3000);
+    } else {
+      alert("加入購物車失敗");
     }
-  }
+  })
+  .catch(err => {
+    alert("加入購物車失敗: " + err);
+  });
+}
+
+  
 
   // 同步更新 qty 到 checkout 表單
   document.getElementById('qty').addEventListener('input', function() {

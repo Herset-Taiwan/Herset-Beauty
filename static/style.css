@@ -191,10 +191,17 @@ footer {
   right: 20px;
   background: #CDAFA1;
   color: white;
-  padding: 10px 20px;
-  border-radius: 5px;
-  display: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: bold;
   z-index: 999;
+  animation: fadeOut 3s forwards;
+}
+
+@keyframes fadeOut {
+  0% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { opacity: 0; display: none; }
 }
 /* 下拉選單外層 */
 .main-nav li.dropdown {

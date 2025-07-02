@@ -441,35 +441,33 @@ def delete_product(product_id):
     supabase.table("products").delete().eq("id", product_id).execute()
     return redirect('/admin')
 
-@app.route('/add_to_cart', methods=['POST'])
+@app.route("/add_to_cart", methods=["POST"])
 def add_to_cart():
-    product_id = request.form['product_id']
-    action = request.form.get('action', 'add')  # 🆕 取得動作類型
+    product_id = request.form["product_id"]
+    qty = int(request.form.get("qty", 1))  # ✅ 支援 qty
+
     res = supabase.table("products").select("*").eq("id", product_id).single().execute()
     if not res.data:
         return jsonify(success=False)
 
     product = res.data
-    cart = session.get('cart', [])
+    cart = session.get("cart", [])
+
     for item in cart:
-        if item['product_id'] == product_id:
-            item['qty'] += 1
+        if item["product_id"] == product_id:
+            item["qty"] += qty
             break
     else:
         cart.append({
-            'product_id': product_id,
-            'name': product['name'],
-            'price': product['price'],
-            'qty': 1
+            "product_id": product_id,
+            "name": product["name"],
+            "price": product["price"],
+            "qty": qty
         })
-    session['cart'] = cart
-    print("🛒 當前購物車：", cart)
 
-    # ✅ 根據按鈕導向
-    if action == 'checkout':
-        return redirect('/cart')
-    else:
-        return jsonify(success=True, count=sum(item['qty'] for item in cart))
+    session["cart"] = cart
+    return jsonify(success=True, count=sum([x["qty"] for x in cart]))
+
 
 
 @app.route('/profile', methods=['POST'])
