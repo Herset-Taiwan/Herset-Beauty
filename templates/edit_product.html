@@ -4,6 +4,103 @@
   <meta charset="UTF-8">
   <title>編輯商品 - HERSET BEAUTY</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .form-container {
+      max-width: 800px;
+      margin: 50px auto;
+      background: #fff;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    }
+
+    h2 {
+      color: #CDAFA1;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+      color: #3C3C3C;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 10px;
+      font-size: 15px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
+      margin-top: 5px;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .image-preview {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .image-preview img {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+
+    .options-container input {
+      display: block;
+      width: 100%;
+      margin-bottom: 8px;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    .add-option-btn {
+      margin-top: 10px;
+      background-color: #CDAFA1;
+      color: #3C3C3C;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .add-option-btn:hover {
+      background-color: #E2B6A2;
+    }
+
+    .save-btn {
+      margin-top: 30px;
+      background-color: #CDAFA1;
+      color: #3C3C3C;
+      font-size: 16px;
+      font-weight: bold;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .save-btn:hover {
+      background-color: #E2B6A2;
+    }
+  </style>
+
   <script>
     function addOptionField() {
       const container = document.getElementById('options-container');
@@ -16,33 +113,23 @@
   </script>
 </head>
 <body>
-  <div class="form-container" style="max-width: 600px; margin: 50px auto;">
+  <div class="form-container">
     <h2>編輯商品</h2>
     <form method="POST" enctype="multipart/form-data">
-      <label>名稱</label>
+      <label>商品名稱</label>
       <input type="text" name="name" value="{{ product['name'] }}" required>
 
       <label>價格</label>
       <input type="number" name="price" value="{{ product['price'] }}" required>
 
       <label>分類</label>
-      <select name="category">
+      <select name="category" required>
         <option value="">請選擇</option>
         <option value="身體保養" {% if product['category'] == '身體保養' %}selected{% endif %}>身體保養</option>
         <option value="私密保養" {% if product['category'] == '私密保養' %}selected{% endif %}>私密保養</option>
         <option value="寵物友善" {% if product['category'] == '寵物友善' %}selected{% endif %}>寵物友善</option>
         <option value="品牌嚴選" {% if product['category'] == '品牌嚴選' %}selected{% endif %}>品牌嚴選</option>
       </select>
-
-      <label>上傳圖片（可多張）</label>
-      <input type="file" name="image_files" multiple>
-
-      {% if product['images'] %}
-        <p>現有圖片：</p>
-        {% for img in product['images'] %}
-          <img src="{{ img }}" style="max-width: 80px; margin-right: 8px;">
-        {% endfor %}
-      {% endif %}
 
       <label>商品介紹</label>
       <textarea name="intro">{{ product['intro'] }}</textarea>
@@ -57,15 +144,26 @@
       <textarea name="ingredient">{{ product['ingredient'] }}</textarea>
 
       <label>商品規格（可新增多個）</label>
-      <div id="options-container">
+      <div id="options-container" class="options-container">
         {% for opt in product['options'] or [] %}
           <input type="text" name="options[]" value="{{ opt }}">
         {% endfor %}
       </div>
-      <button type="button" onclick="addOptionField()">＋新增一個規格</button>
+      <button type="button" class="add-option-btn" onclick="addOptionField()">＋ 新增一個規格</button>
 
-      <br><br>
-      <button type="submit">儲存修改</button>
+      <label>上傳圖片（可多張）</label>
+      <input type="file" name="image_files" multiple>
+
+      {% if product['images'] %}
+        <label>現有圖片：</label>
+        <div class="image-preview">
+          {% for img in product['images'] %}
+            <img src="{{ img }}">
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <button type="submit" class="save-btn">儲存修改</button>
     </form>
   </div>
 </body>
