@@ -299,15 +299,51 @@ def admin():
 @app.route('/admin/members')
 def search_members():
     keyword = request.args.get("keyword", "").strip()
-    query = supabase.table("members").select("id, username, account, phone, email")
+    query = supabase.table("members").select("id, username, account, phone, email, address, note")
     if keyword:
         query = query.or_(
             f"account.ilike.%{keyword}%,username.ilike.%{keyword}%,phone.ilike.%{keyword}%,email.ilike.%{keyword}%"
         )
     members = query.execute().data
-    products = []
+
+    # 🟢 補上其他頁籤需要的資料，否則頁面會空白
+    products = supabase.table("products").select("*").execute().data or []
+
+    res = supabase.table("orders").select("*").order("created_at", desc=True).execute()
+    orders_raw = res.data or []
+    res = supabase.table("order_items").select("*").execute()
+    items = res.data or []
+    item_group = {}
+    for item in items:
+        item_group.setdefault(item['order_id'], []).append(item)
+
+    res = supabase.table("members").select("*").execute()
+    member_dict = {m['id']: m for m in res.data or []}
+
+    from pytz import timezone
+    from dateutil import parser
+    tz = timezone("Asia/Taipei")
+
     orders = []
-    return render_template("admin.html", products=products, members=members, orders=orders)
+    for o in orders_raw:
+        o['items'] = item_group.get(o['id'], [])
+        member = member_dict.get(o['member_id'])
+        o['member'] = {
+            'account': member['account'] if member else 'guest',
+            'name': member.get('name') if member else '訪客',
+            'phone': member.get('phone') if member else '—',
+            'address': member.get('address') if member else '—'
+        }
+        try:
+            utc_dt = parser.parse(o['created_at'])
+            o['created_local'] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
+        except:
+            o['created_local'] = o['created_at']
+
+        orders.append(o)
+
+    return render_template("admin.html", products=products, members=members, orders=orders, tab="members")
+
 
 @app.route('/admin/orders/delete/<int:order_id>', methods=['POST'])
 def delete_order(order_id):
