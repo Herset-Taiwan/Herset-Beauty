@@ -76,11 +76,14 @@ footer {
   text-decoration: none;
   color: #5A4B45;
   font-weight: bold;
+  font-size: 20px; /* 🟢 新增這行放大字體 */
   cursor: pointer;
   transition: color 0.3s ease;
 }
+
 .sub-categories a:hover {
   color: #E2B6A2; /* 陶土裸橘 */
+  text-decoration: underline;
 }
 
 /* ===== Banner 區塊 ===== */
