@@ -81,16 +81,6 @@
 </head>
 <body>
   <div class="admin-container">
-    {% with messages = get_flashed_messages() %}
-  {% if messages %}
-    <ul style="color: green;">
-      {% for message in messages %}
-        <li>{{ message }}</li>
-      {% endfor %}
-    </ul>
-  {% endif %}
-{% endwith %}
-
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('products')">商品管理</button>
       <button class="tab-btn" onclick="switchTab('members')">會員系統管理</button>
@@ -118,28 +108,20 @@
     </div>
 
     <div id="members" class="tab-content">
-  <h2>會員系統管理</h2>
-  <form class="search-form" method="GET" action="/admin/members">
-    <input type="text" name="keyword" placeholder="輸入帳號、姓名、電話或Email...">
-    <button type="submit">搜尋</button>
-  </form>
-
-  <div id="member-list">
-    {% for m in members %}
-    <div class="member-row" style="display: none;">
-      <div class="info">
-        <strong>帳號：</strong>{{ m['account'] }}<br>
-        <strong>信箱：</strong>{{ m['email'] or '—' }}<br><br>
-        <strong>姓名：</strong>{{ m['name'] or m['username'] or '—' }}<br>
-        <strong>電話：</strong>{{ m['phone'] or '—' }}<br>
-        <strong>地址：</strong>{{ m['address'] or '—' }}<br>
-        <strong>訂單備註：</strong>{{ m['note'] or '—' }}
+      <h2>會員系統管理</h2>
+      <form class="search-form" method="GET" action="/admin/members">
+        <input type="text" name="keyword" placeholder="輸入帳號、姓名、電話或Email...">
+        <button type="submit">搜尋</button>
+      </form>
+      {% for m in members %}
+      <div class="member-row">
+        <div class="info">
+          <strong>{{ m['username'] }}</strong>（{{ m['account'] }}）<br>
+          電話：{{ m['phone'] or '—' }}，Email：{{ m['email'] }}
+        </div>
       </div>
+      {% endfor %}
     </div>
-    {% endfor %}
-  </div>
-</div>
-
 
     <div id="orders" class="tab-content">
       <h2>訂單管理系統</h2>
@@ -147,8 +129,6 @@
 <div class="order-row">
   <div class="info">
     <strong>訂單編號：</strong>#{{ o['id'] }}<br>
-    <strong>訂單時間：</strong>{{ o['created_local'] }}<br>
-
     <strong>購買商品：</strong>
     <ul>
       {% for item in o['items'] %}
@@ -161,16 +141,13 @@
     <strong>電話：</strong>{{ o['member']['phone'] }}<br>
     <strong>地址：</strong>{{ o['member']['address'] }}<br>
     <form method="POST" action="/admin/orders/update_status/{{ o['id'] }}" style="margin-top: 5px;">
-      <strong>目前狀態：</strong>{{ o['status'] }}<br>
-<form method="POST" action="/admin/orders/update_status/{{ o['id'] }}" style="margin-top: 5px;">
-  <strong>修改狀態：</strong>
-  <select name="status" onchange="this.form.submit()">
-    <option value="pending" {% if o['status'] == 'pending' %}selected{% endif %}>待處理</option>
-    <option value="paid" {% if o['status'] == 'paid' %}selected{% endif %}>已付款</option>
-    <option value="shipped" {% if o['status'] == 'shipped' %}selected{% endif %}>已出貨</option>
-  </select>
-</form>
-
+      <strong>狀態：</strong>
+      <select name="status" onchange="this.form.submit()">
+        <option value="pending" {% if o['status'] == 'pending' %}selected{% endif %}>待處理</option>
+        <option value="paid" {% if o['status'] == 'paid' %}selected{% endif %}>已付款</option>
+        <option value="shipped" {% if o['status'] == 'shipped' %}selected{% endif %}>已出貨</option>
+      </select>
+    </form>
   </div>
   <div class="actions">
     <form action="/admin/orders/delete/{{ o['id'] }}" method="post" onsubmit="return confirm('確定要刪除訂單？')">
@@ -185,75 +162,13 @@
 
   <script>
     function switchTab(tabId) {
-    const tabs = document.querySelectorAll('.tab-content');
-    const buttons = document.querySelectorAll('.tab-btn');
-    tabs.forEach(t => t.classList.remove('active'));
-    buttons.forEach(b => b.classList.remove('active'));
-
-    document.getElementById(tabId).classList.add('active');
-    document.querySelector(`.tab-btn[onclick*="${tabId}"]`).classList.add('active');
-  }
-
-  // ✅ 根據 URL 決定預設頁籤
-  window.onload = function () {
-    const urlParams = new URLSearchParams(window.location.search);
-    const tab = urlParams.get('tab');
-    if (tab) {
-      switchTab(tab);
+      const tabs = document.querySelectorAll('.tab-content');
+      const buttons = document.querySelectorAll('.tab-btn');
+      tabs.forEach(t => t.classList.remove('active'));
+      buttons.forEach(b => b.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      event.target.classList.add('active');
     }
-  };
   </script>
-
-  <script>
-  // 保留原 switchTab...
-
-  // 會員每頁顯示 10 筆
-  window.addEventListener('DOMContentLoaded', () => {
-    const allMembers = Array.from(document.querySelectorAll("#member-list .member-row"));
-    const pageSize = 10;
-    let currentPage = 1;
-
-    function renderPage(page) {
-      allMembers.forEach((el, i) => {
-        el.style.display = (i >= (page - 1) * pageSize && i < page * pageSize) ? "block" : "none";
-      });
-      document.getElementById("page-info").textContent = `第 ${page} 頁 / 共 ${Math.ceil(allMembers.length / pageSize)} 頁`;
-    }
-
-    const nav = document.createElement("div");
-    nav.style.textAlign = "center";
-    nav.style.marginTop = "15px";
-
-    const prev = document.createElement("button");
-    prev.textContent = "← 上一頁";
-    prev.onclick = () => {
-      if (currentPage > 1) {
-        currentPage--;
-        renderPage(currentPage);
-      }
-    };
-
-    const next = document.createElement("button");
-    next.textContent = "下一頁 →";
-    next.onclick = () => {
-      if (currentPage < Math.ceil(allMembers.length / pageSize)) {
-        currentPage++;
-        renderPage(currentPage);
-      }
-    };
-
-    const info = document.createElement("span");
-    info.id = "page-info";
-    info.style.margin = "0 10px";
-
-    nav.appendChild(prev);
-    nav.appendChild(info);
-    nav.appendChild(next);
-
-    document.getElementById("member-list").after(nav);
-    renderPage(currentPage);
-  });
-</script>
-
 </body>
 </html>
