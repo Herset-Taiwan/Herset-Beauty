@@ -123,11 +123,13 @@ def about():
 def cart():
     if request.method == 'POST':
         action = request.form.get('action')
-        product_id = request.form.get('product_id')  # 不轉 int！
+        product_id = request.form.get('product_id')
         cart = session.get('cart', [])
 
         for item in cart:
-            if item['product_id'] == product_id:
+            # 加入防呆：有些舊資料可能是 'id' 而不是 'product_id'
+            pid = item.get('product_id') or item.get('id')
+            if pid == product_id:
                 if action == 'increase':
                     item['qty'] += 1
                 elif action == 'decrease' and item['qty'] > 1:
@@ -143,16 +145,22 @@ def cart():
     cart_items = session.get('cart', [])
     products = []
     total = 0
+
     for item in cart_items:
-        res = supabase.table("products").select("*").eq("id", item['product_id']).single().execute()
+        pid = item.get('product_id') or item.get('id')
+        if not pid:
+            continue  # 避免錯誤
+
+        res = supabase.table("products").select("*").eq("id", pid).single().execute()
         if res.data:
             product = res.data
-            product['qty'] = item['qty']
-            product['subtotal'] = item['qty'] * product['price']
+            product['qty'] = item.get('qty', 1)
+            product['subtotal'] = product['qty'] * product['price']
             products.append(product)
             total += product['subtotal']
 
     return render_template("cart.html", products=products, total=total)
+
 
 
 @app.route('/checkout', methods=['POST'])
@@ -462,14 +470,14 @@ def add_to_cart():
     # 檢查是否已存在
     found = False
     for item in cart:
-        if item['id'] == product_id:
+        if item.get('product_id') == product_id:
             item['qty'] += qty
             found = True
             break
 
     if not found:
         cart.append({
-            'id': product_id,
+            'product_id': product_id,
             'name': product['name'],
             'price': product['price'],
             'images': product['images'],
