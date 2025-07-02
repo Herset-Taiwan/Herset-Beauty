@@ -192,12 +192,15 @@
     if (data.success) {
       const countEl = document.getElementById('cart-count');
       if (countEl) countEl.innerText = data.count;
-      // ✅ 改為網頁上提示
-      const tip = document.createElement('div');
-      tip.className = 'add-success';
-      tip.textContent = '✅ 已加入購物車';
-      document.body.appendChild(tip);
-      setTimeout(() => tip.remove(), 3000);
+
+      // ✅ 顯示上方固定提示
+      const tip = document.getElementById('cart-tip');
+      if (tip) {
+        tip.style.display = 'block';
+        setTimeout(() => {
+          tip.style.display = 'none';
+        }, 2000);
+      }
     } else {
       alert("加入購物車失敗");
     }
@@ -207,6 +210,7 @@
   });
 }
 
+
   
 
   // 同步更新 qty 到 checkout 表單
@@ -214,6 +218,20 @@
     document.getElementById('qty-input-checkout').value = this.value;
   });
 </script>
-
+<div id="cart-tip" style="
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #CDAFA1;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 0 0 8px 8px;
+  font-weight: bold;
+  display: none;
+  z-index: 999;
+">
+  ✅ 已加入購物車！
+</div>
 </body>
 </html>
