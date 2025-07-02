@@ -139,8 +139,8 @@
         <strong>姓名：</strong>{{ m['name'] or m['username'] or '—' }}<br>
         <strong>電話：</strong>{{ m['phone'] or '—' }}<br>
         <strong>地址：</strong>{{ m['address'] or '—' }}<br>
-        <strong>訂單備註：</strong>{{ m['note'] or '—' }}
-        <strong>註冊時間：</strong>{{ m.created_local or "—" }}
+        <strong>訂單備註：</strong>{{ m['note'] or '—' }}<br>
+        <strong>註冊時間：</strong>{{ m.created_at or "—" }}
       </div>
     </div>
     {% endfor %}
