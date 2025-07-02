@@ -19,13 +19,17 @@
     }
 
     .member-info {
-      margin-bottom: 20px;
-      font-size: 16px;
-      color: #5A4B45;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+    margin-bottom: 20px;
+    font-size: 16px;
+    color: #5A4B45;
+}
+
+.member-info .account {
+    font-weight: bold;
+    color: #CDAFA1;
+    margin-left: 4px;
+}
+
 
     .member-info span {
       font-weight: bold;
@@ -140,14 +144,14 @@
   <div class="cart-container">
     <h2>🛒 我的購物車</h2>
 
-    <div class="member-info">
-      {% if session.member_id %}
-        您好：會員 <span>{{ session.user['account'] }}</span>
-      {% else %}
-        <div>您尚未登入會員，請先登入會員才可結帳。</div>
-        <a class="login-btn" href="/login?next=cart">登入會員</a>
-      {% endif %}
-    </div>
+   <div class="member-info">
+  {% if session.member_id %}
+    <p>您好：會員 <span class="account">{{ session.user['account'] }}</span></p>
+  {% else %}
+    <div>您尚未登入會員，請先登入會員才可結帳。</div>
+    <a class="login-btn" href="/login?next=cart">登入會員</a>
+  {% endif %}
+</div>
 
     {% with messages = get_flashed_messages() %}
       {% if messages %}
