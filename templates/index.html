@@ -80,14 +80,32 @@
   {% endfor %}
 </section>
 
-<!-- 會員中心 Modal -->
 <div id="profile-modal" class="modal">
   <div class="modal-content">
     <span class="close-btn" onclick="closeProfileModal()">&times;</span>
     <h2>會員資料</h2>
-    <p>這裡可以顯示會員資訊或表單</p>
+    <form action="/profile" method="POST">
+      <div style="margin-bottom: 10px;">
+        <label for="name">姓名：</label><br>
+        <input type="text" name="name" id="name" required>
+      </div>
+      <div style="margin-bottom: 10px;">
+        <label for="phone">電話：</label><br>
+        <input type="text" name="phone" id="phone" required>
+      </div>
+      <div style="margin-bottom: 10px;">
+        <label for="address">地址：</label><br>
+        <input type="text" name="address" id="address">
+      </div>
+      <div style="margin-bottom: 10px;">
+        <label for="note">訂單備註：</label><br>
+        <textarea name="note" id="note" rows="3"></textarea>
+      </div>
+      <button type="submit" class="view-btn">儲存資料</button>
+    </form>
   </div>
 </div>
+
 
 <!-- 頁尾 -->
 <footer>
