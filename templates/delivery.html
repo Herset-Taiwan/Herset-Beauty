@@ -1,275 +1,171 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
- <head>
-  <meta charset="utf-8"/>
-  <title>
-   配送方式 - HERSET BEAUTY
-  </title>
-  <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet"/>
- </head>
- <body>
-  <div class="add-success" id="add-success">
-   已加入購物車！
+<head>
+  <meta charset="UTF-8">
+  <title>HERSET BEAUTY 商店</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  
+</head>
+<body>
+<div class="add-success" id="add-success">已加入購物車！</div>
+<div class="save-success" id="save-success">資料已更新完成！</div>
+<!-- 導覽列 -->
+<header class="main-header">
+  <div class="logo-area">
+    <img src="{{ url_for('static', filename='uploads/logo_0.png') }}" alt="logo">
+    <span>HERSET</span>
   </div>
-  <div class="save-success" id="save-success">
-   資料已更新完成！
-  </div>
-  <!-- 導覽列 -->
-  <header class="main-header">
-   <div class="logo-area">
-    <img alt="logo" src="{{ url_for('static', filename='uploads/logo_0.png') }}"/>
-    <span>
-     HERSET
-    </span>
-   </div>
-   <nav class="main-nav">
+  <nav class="main-nav">
     <ul>
-     <li>
-      <a href="/">
-       HOME
-      </a>
-     </li>
-     <li>
-      <a href="/about">
-       關於我們
-      </a>
-     </li>
-     {% if session.get('user') %}
-     <li class="dropdown">
-      <a href="#">
-       👤 會員中心
-      </a>
-      <ul class="dropdown-menu">
-       <li>
-        <a href="/order-history">
-         歷史訂單
-        </a>
-       </li>
-       <li>
-        <a href="#" onclick="openProfileModal()">
-         會員資料
-        </a>
-       </li>
-       <li>
-        <a href="/logout">
-         登出
-        </a>
-       </li>
-      </ul>
-     </li>
-     {% else %}
-     <li>
-      <a href="/login">
-       👤 會員登入
-      </a>
-     </li>
-     {% endif %}
-     <li>
-      <a class="cart-btn" href="/cart">
-       🛒 購物車
-          {% if cart_count &gt; 0 %}
-       <span class="cart-count" id="cart-count">
-        {{ cart_count }}
-       </span>
-       {% else %}
-       <span class="cart-count" id="cart-count" style="display: none;">
-        0
-       </span>
-       {% endif %}
-      </a>
-     </li>
+      <li><a href="/">HOME</a></li>
+      <li><a href="/about">關於我們</a></li>
+      {% if session.get('user') %}
+        <li class="dropdown">
+  <a href="#">👤 會員中心</a>
+  <ul class="dropdown-menu">
+    <li><a href="/order-history">歷史訂單</a></li>
+    <li><a href="#" onclick="openProfileModal()">會員資料</a></li>
+    <li><a href="/logout">登出</a></li>
+  </ul>
+</li>
+
+      {% else %}
+        <li><a href="/login">👤 會員登入</a></li>
+      {% endif %}
+      <li>
+        <a href="/cart" class="cart-btn">🛒 購物車
+  {% if cart_count is defined and cart_count > 0 %}
+    <span class="cart-count" id="cart-count">{{ cart_count }}</span>
+  {% else %}
+    <span class="cart-count" id="cart-count" style="display: none;">0</span>
+  {% endif %}
+</a>
+      </li>
     </ul>
-   </nav>
-  </header>
-  <!-- 首頁輪播圖 -->
-  <div class="carousel-container">
-   <div class="carousel">
-    <img class="carousel-img active" src="{{ url_for('static', filename='uploads/banner1.jpg') }}"/>
-    <img class="carousel-img" src="{{ url_for('static', filename='uploads/banner2.jpg') }}"/>
-    <img class="carousel-img" src="{{ url_for('static', filename='uploads/banner3.jpg') }}"/>
-    <img class="carousel-img" src="{{ url_for('static', filename='uploads/banner4.jpg') }}"/>
-   </div>
+  </nav>
+</header>
+
+
+<!-- 首頁輪播圖 -->
+<div class="carousel-container">
+  <div class="carousel">
+    <img src="{{ url_for('static', filename='uploads/banner1.jpg') }}" class="carousel-img active">
+    <img src="{{ url_for('static', filename='uploads/banner2.jpg') }}" class="carousel-img">
+    <img src="{{ url_for('static', filename='uploads/banner3.jpg') }}" class="carousel-img">
+    <img src="{{ url_for('static', filename='uploads/banner4.jpg') }}" class="carousel-img">
   </div>
-  <!-- 分類區塊 -->
-  <div class="sub-categories">
-   <a onclick="filterCategory('全部')">
-    全部商品
-   </a>
-   <a onclick="filterCategory('身體保養')">
-    身體保養
-   </a>
-   <a onclick="filterCategory('私密保養')">
-    私密保養
-   </a>
-   <a onclick="filterCategory('寵物友善')">
-    寵物友善
-   </a>
-   <a onclick="filterCategory('品牌嚴選')">
-    品牌嚴選
-   </a>
+</div>
+
+<!-- 分類區塊 -->
+<div class="sub-categories">
+  <a onclick="filterCategory('全部')">全部商品</a>
+  <a onclick="filterCategory('身體保養')">身體保養</a>
+  <a onclick="filterCategory('私密保養')">私密保養</a>
+  <a onclick="filterCategory('寵物友善')">寵物友善</a>
+  <a onclick="filterCategory('品牌嚴選')">品牌嚴選</a>
+</div>
+
+<!-- Banner -->
+<section class="banner">
+  <h1>自然呵護，極致純淨</h1>
+  <p>專為敏感肌設計的私密保養系列</p>
+</section>
+
+<div class="container">
+    <h2>配送方式</h2>
+    
+<p>出貨時間：收到訂單款項後，3個工作天內出貨，如有同時下單現貨和預購商品，一律等預購商品時間到貨後一併寄送。</p>
+<p>配送方式：宅配和超商取貨(7-11/全家)。</p>
+<p>運費說明：台灣地區運費NT$70，消費金額超過NT$1,500免運費。</p>
+<p>中國港澳地區運費NT$250，消費金額超過NT$5,000免運費。</p>
+<p>國外運費說明：新加坡、馬來西亞、越南、菲律賓、泰國運費NT$500，消費金額超過NT$8,000免運費。</p>
+<p>日本、韓國運費NT$700，紐西蘭、澳洲運費NT$800，美國、加拿大、英國、法國運費NT$1,000。其他國家請另外詢問運費。</p>
+
   </div>
-  <!-- Banner -->
-  <section class="banner">
-   <h1>
-    自然呵護，極致純淨
-   </h1>
-   <p>
-    專為敏感肌設計的私密保養系列
-   </p>
-  </section>
-  <section class="custom-content" style="padding: 40px; max-width: 1000px; margin: 0 auto; background: white; border-radius: 10px;">
-   <h2>
-    配送方式
-   </h2>
-   <p>
-    出貨時間：收到訂單款項後，3個工作天內出貨，如有同時下單現貨和預購商品，一律等預購商品時間到貨後一併寄送。
-   </p>
-   <p>
-    配送方式：宅配和超商取貨(7-11/全家)。
-   </p>
-   <p>
-    運費說明：台灣地區運費NT$70，消費金額超過NT$1,500免運費。
-   </p>
-   <p>
-    中國港澳地區運費NT$250，消費金額超過NT$5,000免運費。
-   </p>
-   <p>
-    國外運費說明：新加坡、馬來西亞、越南、菲律賓、泰國運費NT$500，消費金額超過NT$8,000免運費。
-   </p>
-   <p>
-    日本、韓國運費NT$700，紐西蘭、澳洲運費NT$800，美國、加拿大、英國、法國運費NT$1,000。其他國家請另外詢問運費。
-   </p>
-  </section>
-  <!-- 商品清單 -->
-  <div class="modal" id="profile-modal">
-   <div class="modal-content profile-form">
-    <span class="close-btn" onclick="closeProfileModal()">
-     ×
-    </span>
-    <h2>
-     會員資料
-    </h2>
+
+
+<div id="profile-modal" class="modal">
+  <div class="modal-content profile-form">
+    <span class="close-btn" onclick="closeProfileModal()">&times;</span>
+    <h2>會員資料</h2>
     <form action="/profile" method="POST">
-     <div class="form-group">
-      <label for="name">
-       姓名：
-      </label>
-      <input id="name" name="name" required="" type="text"/>
-     </div>
-     <div class="form-group">
-      <label for="phone">
-       電話：
-      </label>
-      <input id="phone" name="phone" required="" type="text"/>
-     </div>
-     <div class="form-group">
-      <label for="address">
-       地址：
-      </label>
-      <input id="address" name="address" type="text"/>
-     </div>
-     <div class="form-group">
-      <label for="note">
-       訂單備註：
-      </label>
-      <textarea id="note" name="note" rows="3"></textarea>
-     </div>
-     <div style="text-align:center; margin-top: 20px;">
-      <button class="save-btn" type="submit">
-       儲存資料
-      </button>
-     </div>
+      <div class="form-group">
+        <label for="name">姓名：</label>
+        <input type="text" id="name" name="name" required>
+      </div>
+      <div class="form-group">
+        <label for="phone">電話：</label>
+        <input type="text" id="phone" name="phone" required>
+      </div>
+      <div class="form-group">
+        <label for="address">地址：</label>
+        <input type="text" id="address" name="address">
+      </div>
+      <div class="form-group">
+        <label for="note">訂單備註：</label>
+        <textarea id="note" name="note" rows="3"></textarea>
+      </div>
+      <div style="text-align:center; margin-top: 20px;">
+        <button type="submit" class="save-btn">儲存資料</button>
+
+      </div>
     </form>
-   </div>
   </div>
-  <!-- 頁尾 -->
-  <footer style="background: #f4d8cc; padding: 40px 20px; font-family: sans-serif; font-size: 14px;">
-   <div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
+</div>
+
+
+<!-- 頁尾 -->
+<footer style="background: #f4d8cc; padding: 40px 20px; font-family: sans-serif; font-size: 14px;">
+  <div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
+    
     <div style="max-width: 300px;">
-     <h3 style="font-weight: bold;">
-      made
-      <br/>
-      by women,
-      <br/>
-      for women.
-     </h3>
-     <p style="margin-top: 10px;">
-      <strong>
-       ( Intimate &amp; proud )
-      </strong>
-     </p>
-     <p style="margin-top: 10px;">
-      LIP Intimate Care 全商品已投保新光產品責任險2000萬，提供給您更安心的品質與保障
-     </p>
+      <h3 style="font-weight: bold;">made<br>by women,<br>for women.</h3>
+      <p style="margin-top: 10px;"><strong>( Intimate & proud )</strong></p>
+      <p style="margin-top: 10px;">LIP Intimate Care 全商品已投保新光產品責任險2000萬，提供給您更安心的品質與保障</p>
     </div>
+
     <div style="min-width: 200px;">
-     <h4 style="margin-bottom: 10px;">
-      關注我們
-     </h4>
-     <div style="display: flex; gap: 10px;">
-      <img src="{{ url_for('static', filename='icons/facebook.png') }}" width="24"/>
-      <img src="{{ url_for('static', filename='icons/instagram.png') }}" width="24"/>
-      <img src="{{ url_for('static', filename='icons/line.png') }}" width="24"/>
-      <img src="{{ url_for('static', filename='icons/youtube.png') }}" width="24"/>
-     </div>
+      <h4 style="margin-bottom: 10px;">關注我們</h4>
+      <div style="display: flex; gap: 10px;">
+        <img src="{{ url_for('static', filename='icons/facebook.png') }}" width="24">
+        <img src="{{ url_for('static', filename='icons/instagram.png') }}" width="24">
+        <img src="{{ url_for('static', filename='icons/line.png') }}" width="24">
+        <img src="{{ url_for('static', filename='icons/youtube.png') }}" width="24">
+      </div>
     </div>
+
     <div style="min-width: 200px;">
-     <h4 style="margin-bottom: 10px;">
-      訂購問題
-     </h4>
-     <ul style="list-style: none; padding: 0;">
-      <li>
-       <a href="/about">
-        關於我們
-       </a>
-      </li>
-      <li>
-       <a href="/payment">
-        付款方式
-       </a>
-      </li>
-      <li>
-       <a href="/delivery">
-        配送方式
-       </a>
-      </li>
-      <li>
-       <a href="/return">
-        退貨退款
-       </a>
-      </li>
-      <li>
-       <a href="/contact">
-        聯絡我們
-       </a>
-      </li>
-      <li>
-       銷售據點
-      </li>
-      <li>
-       產品常見FAQ
-      </li>
-     </ul>
+      <h4 style="margin-bottom: 10px;">訂購問題</h4>
+      <ul style="list-style: none; padding: 0;">
+        <li><a href="/about">關於我們</a></li>
+        <li><a href="/payment">付款方式</a></li>
+        <li><a href="/delivery">配送方式</a></li>
+        <li><a href="/return">退貨退款</a></li>
+        <li><a href="/contact">聯絡我們</a></li>
+        <li>銷售據點</li>
+        <li>產品常見FAQ</li>
+      </ul>
     </div>
+
     <div style="min-width: 200px;">
-     <h4 style="margin-bottom: 10px;">
-      支付方式
-     </h4>
-     <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-      <img src="{{ url_for('static', filename='icons/visa.png') }}" width="40"/>
-      <img src="{{ url_for('static', filename='icons/mastercard.png') }}" width="40"/>
-      <img src="{{ url_for('static', filename='icons/linepay.png') }}" width="60"/>
-      <img src="{{ url_for('static', filename='icons/sinopac.png') }}" width="60"/>
-      <img src="{{ url_for('static', filename='icons/paypal.png') }}" width="50"/>
-      <img src="{{ url_for('static', filename='icons/jkopay.png') }}" width="50"/>
-      <img src="{{ url_for('static', filename='icons/aftee.png') }}" width="50"/>
-     </div>
+      <h4 style="margin-bottom: 10px;">支付方式</h4>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        <img src="{{ url_for('static', filename='icons/visa.png') }}" width="40">
+        <img src="{{ url_for('static', filename='icons/mastercard.png') }}" width="40">
+        <img src="{{ url_for('static', filename='icons/linepay.png') }}" width="60">
+        <img src="{{ url_for('static', filename='icons/sinopac.png') }}" width="60">
+        <img src="{{ url_for('static', filename='icons/paypal.png') }}" width="50">
+        <img src="{{ url_for('static', filename='icons/jkopay.png') }}" width="50">
+        <img src="{{ url_for('static', filename='icons/aftee.png') }}" width="50">
+      </div>
     </div>
-   </div>
-  </footer>
-  <!-- JS：分類與加入購物車 -->
-  <script>
-   function filterCategory(category) {
+  </div>
+</footer>
+
+
+<!-- JS：分類與加入購物車 -->
+<script>
+function filterCategory(category) {
   const all = document.querySelectorAll(".product-card");
   all.forEach(el => {
     el.style.display = category === '全部' || el.dataset.category === category ? 'block' : 'none';
@@ -303,8 +199,9 @@ setInterval(() => {
   cur = (cur + 1) % banners.length;
   banners[cur].classList.add('active');
 }, 5000);
-  </script>
-  <script src="{{ url_for('static', filename='script.js') }}">
-  </script>
- </body>
+
+</script>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
 </html>
