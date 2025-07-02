@@ -123,14 +123,19 @@
         <input type="text" name="keyword" placeholder="輸入帳號、姓名、電話或Email...">
         <button type="submit">搜尋</button>
       </form>
-      {% for m in members %}
-      <div class="member-row">
-        <div class="info">
-          <strong>{{ m['username'] }}</strong>（{{ m['account'] }}）<br>
-          電話：{{ m['phone'] or '—' }}，Email：{{ m['email'] }}
-        </div>
-      </div>
-      {% endfor %}
+      <div id="member-list">
+  {% for m in members %}
+    <div class="member-card" style="display: none;">
+      <strong>帳號：</strong>{{ m.account }}<br>
+      <strong>信箱：</strong>{{ m.email }}<br>
+      <strong>姓名：</strong>{{ m.username or '—' }}<br>
+      <strong>電話：</strong>{{ m.phone or '—' }}<br>
+      <strong>地址：</strong>{{ m.address or '—' }}<br>
+      <strong>訂單備註：</strong>{{ m.note or '—' }}
+    </div>
+  {% endfor %}
+</div>
+
     </div>
 
     <div id="orders" class="tab-content">
@@ -198,5 +203,58 @@
     }
   };
   </script>
+
+  <script>
+window.addEventListener('DOMContentLoaded', function () {
+  const allCards = Array.from(document.querySelectorAll(".member-card"));
+  const pageSize = 10;
+  let currentPage = 1;
+
+  function renderPage(page) {
+    allCards.forEach((card, i) => {
+      card.style.display = (i >= (page - 1) * pageSize && i < page * pageSize) ? "block" : "none";
+    });
+    document.getElementById("pagination-info").textContent = `第 ${page} 頁 / 共 ${Math.ceil(allCards.length / pageSize)} 頁`;
+  }
+
+  function createPagination() {
+    const container = document.createElement("div");
+    container.style.textAlign = "center";
+    container.style.margin = "20px 0";
+
+    const prevBtn = document.createElement("button");
+    prevBtn.textContent = "上一頁";
+    prevBtn.onclick = () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderPage(currentPage);
+      }
+    };
+
+    const nextBtn = document.createElement("button");
+    nextBtn.textContent = "下一頁";
+    nextBtn.onclick = () => {
+      if (currentPage < Math.ceil(allCards.length / pageSize)) {
+        currentPage++;
+        renderPage(currentPage);
+      }
+    };
+
+    const info = document.createElement("span");
+    info.id = "pagination-info";
+    info.style.margin = "0 10px";
+
+    container.appendChild(prevBtn);
+    container.appendChild(info);
+    container.appendChild(nextBtn);
+
+    document.getElementById("member-list").after(container);
+    renderPage(currentPage);
+  }
+
+  createPagination();
+});
+</script>
+
 </body>
 </html>
