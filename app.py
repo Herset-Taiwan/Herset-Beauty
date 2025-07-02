@@ -221,26 +221,20 @@ def admin():
 
     products = supabase.table("products").select("*").execute().data
 
-    # 取得所有訂單
     orders_raw = supabase.table("orders").select("*").order("created_at", desc=True).execute().data
-
-    # 取得所有會員
     members = supabase.table("members").select("id, account, username, name, phone, email, address").execute().data
     member_dict = {m['id']: m for m in members}
-
-    # 取得所有 order_items
     items = supabase.table("order_items").select("*").execute().data
+
     item_group = {}
     for item in items:
         item_group.setdefault(item['order_id'], []).append(item)
 
-    # 整合訂單資訊
     orders = []
     for o in orders_raw:
         o['items'] = item_group.get(o['id'], [])
 
         member = member_dict.get(o['member_id'])
-
         o['member'] = {
             'account': member['account'] if member else 'guest',
             'name': member['name'] if member and 'name' in member else '訪客',
@@ -248,20 +242,20 @@ def admin():
             'address': member['address'] if member and 'address' in member else '—',
         }
 
-        # ✅ 加入台灣時間欄位
         try:
-           utc_dt = parser.parse(o['created_at'])
-           o['created_local'] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
+            utc_dt = parser.parse(o['created_at'])
+            o['created_local'] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
         except Exception as e:
-          print("⚠️ 時間格式錯誤：", o['created_at'], e)
-          o['created_local'] = o['created_at']  # fallback
-
+            print("⚠️ 時間格式錯誤：", o['created_at'], e)
+            o['created_local'] = o['created_at']
 
         orders.append(o)
-        tab = request.args.get("tab", "products")  # 預設為商品管理
 
-    members_display = members  # 給會員頁籤用
-    return render_template("admin.html", products=products, members=members_display, orders=orders, tab=tab)
+    # ✅ 移到這裡
+    tab = request.args.get("tab", "products")
+
+    return render_template("admin.html", products=products, members=members, orders=orders, tab=tab)
+
 
 @app.route('/admin/members')
 def search_members():
