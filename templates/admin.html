@@ -91,11 +91,12 @@
   {% endif %}
 {% endwith %}
 
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('products')">商品管理</button>
-      <button class="tab-btn" onclick="switchTab('members')">會員系統管理</button>
-      <button class="tab-btn" onclick="switchTab('orders')">訂單管理系統</button>
-    </div>
+    <div class="tab-buttons">
+  <a href="/admin?tab=products" class="{{ 'active' if tab == 'products' else '' }}">商品管理</a>
+  <a href="/admin?tab=members" class="{{ 'active' if tab == 'members' else '' }}">會員系統管理</a>
+  <a href="/admin?tab=orders" class="{{ 'active' if tab == 'orders' else '' }}">訂單管理系統</a>
+</div>
+
 
     <div id="products" class="tab-content active">
       <h2>商品管理</h2>

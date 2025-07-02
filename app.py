@@ -256,9 +256,11 @@ def admin():
             o['created_local'] = o['created_at']  # fallback
 
         orders.append(o)
+        tab = request.args.get("tab", "products")  # 預設為商品管理
 
     members_display = members  # 給會員頁籤用
-    return render_template("admin.html", products=products, members=members_display, orders=orders)
+    return render_template("admin.html", products=products, members=members_display, orders=orders, tab=tab)
+
 
 
 
