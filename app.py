@@ -215,64 +215,40 @@ def product_detail(product_id):
 
 @app.route('/admin')
 def admin():
-    from datetime import datetime
-    from pytz import timezone
-    from dateutil import parser
-    tz = timezone("Asia/Taipei")
+    products = supabase.table("products").select("*").execute().data
 
-    try:
-        # 取得商品資料
-        products = supabase.table("products").select("*").execute().data
-        print("✅ 商品數量：", len(products))
+    # 取得所有訂單
+    orders_raw = supabase.table("orders").select("*").order("created_at", desc=True).execute().data
 
-        # 取得訂單原始資料
-        orders_raw = supabase.table("orders").select("*").order("created_at", desc=True).execute().data
+    # 取得所有會員
+    members = supabase.table("members").select("id, account, username, name, phone, email, address").execute().data
+    member_dict = {m['id']: m for m in members}
 
-        # 取得會員資料
-        members = supabase.table("members").select("id, account, username, name, phone, email, address").execute().data
-        member_dict = {m['id']: m for m in members}
+    # 取得所有 order_items
+    items = supabase.table("order_items").select("*").execute().data
+    item_group = {}
+    for item in items:
+        item_group.setdefault(item['order_id'], []).append(item)
 
-        # 取得 order_items
-        items = supabase.table("order_items").select("*").execute().data
-        item_group = {}
-        for item in items:
-            item_group.setdefault(item['order_id'], []).append(item)
+    # 整合訂單資訊
+    orders = []
+    for o in orders_raw:
+        o['items'] = item_group.get(o['id'], [])
 
-        # 整合訂單資訊
-        orders = []
-        for o in orders_raw:
-            o['items'] = item_group.get(o['id'], [])
+        member = member_dict.get(o['member_id'])
 
-            member = member_dict.get(o['member_id'])
-            o['member'] = {
-                'account': member['account'] if member else 'guest',
-                'name': member['name'] if member and 'name' in member else '訪客',
-                'phone': member['phone'] if member and 'phone' in member else '—',
-                'address': member['address'] if member and 'address' in member else '—',
-            }
+        o['member'] = {
+            'account': member['account'] if member else 'guest',
+            'name': member['name'] if member and 'name' in member else '訪客',
+            'phone': member['phone'] if member and 'phone' in member else '—',
+            'address': member['address'] if member and 'address' in member else '—',
+        }
 
-            try:
-                if o.get('created_at'):
-                    utc_dt = parser.parse(o['created_at'])
-                    o['created_local'] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
-                else:
-                    o['created_local'] = "—"
-            except Exception as e:
-                print("⚠️ 時間格式錯誤：", o.get('created_at'), e)
-                o['created_local'] = "—"
+        orders.append(o)
 
-            orders.append(o)
+    members_display = members  # 給會員頁籤用
+    return render_template("admin.html", products=products, members=members_display, orders=orders)
 
-        print("✅ 訂單數量：", len(orders))
-
-        # 頁籤參數處理（注意：要放在 for 迴圈外！）
-        tab = request.args.get("tab", "products")
-
-        return render_template("admin.html", products=products, members=members, orders=orders, tab=tab)
-
-    except Exception as e:
-        print("❗️後台出錯：", e)
-        return "後台頁面載入錯誤，請查看伺服器 log。", 500
 
 
 
