@@ -58,14 +58,19 @@
 <section class="product-list">
   {% for p in products %}
   <div class="product-card" data-category="{{ p['category'] }}">
-    <img src="{{ p['images'][0] if p['images'] else '' }}" alt="{{ p['name'] }}">
+  <img src="{{ p['images'][0] if p['images'] else '' }}" alt="{{ p['name'] }}">
+  
+  <div class="product-info">
     <h2>{{ p['name'] }}</h2>
     <p class="price">${{ p['price'] }}</p>
-<div class="btn-group">
-  <button onclick="addToCart(event, {{ p['id'] }})">加入購物車</button>
-  <a href="/product/{{ p['id'] }}" class="view-btn">查看商品</a>
-</div>
   </div>
+
+  <div class="btn-group">
+    <button onclick="addToCart(event, {{ p['id'] }})">加入購物車</button>
+    <a href="/product/{{ p['id'] }}" class="view-btn">查看商品</a>
+  </div>
+</div>
+
   {% endfor %}
 </section>
 

@@ -105,26 +105,24 @@ footer {
 
 .product-card {
   width: 340px;
-  min-height: 440px;
-  height: auto;
+  min-height: 480px; /* 原本是 440，增加高度空間 */
   background-color: #ffffff;
-  border: 1px solid #C7A7A3; /* 乾燥玫瑰 */
+  border: 1px solid #C7A7A3;
   border-radius: 12px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   box-sizing: border-box;
-  padding: 12px 16px;
-  text-align: center;
+  padding: 16px; /* 原本 12px 16px，統一成內縮空間 */
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  justify-content: space-between; /* 把內容撐開填滿卡片 */
 }
 
 .product-card img {
   width: 100%;
-  height: 200px;
+  height: 260px; /* 原本是 200px，圖片放大 */
   object-fit: contain;
   border-radius: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .product-card .btn-group {
