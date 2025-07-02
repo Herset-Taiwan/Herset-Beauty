@@ -52,6 +52,14 @@
   <a onclick="filterCategory('寵物友善')">寵物友善</a>
   <a onclick="filterCategory('品牌嚴選')">品牌嚴選</a>
 </div>
+<!-- 首頁輪播圖 -->
+<div class="carousel-container">
+  <div class="carousel">
+    <img src="{{ url_for('static', filename='uploads/banner1.jpg') }}" class="carousel-img active">
+    <img src="{{ url_for('static', filename='uploads/banner2.jpg') }}" class="carousel-img">
+    <img src="{{ url_for('static', filename='uploads/banner3.jpg') }}" class="carousel-img">
+  </div>
+</div>
 
 <!-- Banner -->
 <section class="banner">
@@ -142,6 +150,14 @@ function addToCart(event, productId) {
     }
   });
 }
+// 輪播圖切換
+let cur = 0;
+const banners = document.querySelectorAll('.carousel-img');
+setInterval(() => {
+  banners[cur].classList.remove('active');
+  cur = (cur + 1) % banners.length;
+  banners[cur].classList.add('active');
+}, 5000);
 
 </script>
 <script src="{{ url_for('static', filename='script.js') }}"></script>

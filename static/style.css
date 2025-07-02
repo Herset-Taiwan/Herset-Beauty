@@ -332,6 +332,7 @@ footer {
 }
 
 /* 會員資料填寫表單結束 */
+
 /* 後台會員資料 */
 .member-card {
   background: #fff;
@@ -340,3 +341,35 @@ footer {
   border-radius: 6px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
+
+/* 首頁照片輪播相關 */
+.carousel-container {
+  width: 100%;
+  max-height: 400px;
+  overflow: hidden;
+  position: relative;
+  margin: 0 auto 40px;
+}
+
+.carousel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.carousel-img {
+  width: 100%;
+  height: 400px;
+  object-fit: cover;
+  position: absolute;
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+  border-radius: 0;
+}
+
+.carousel-img.active {
+  opacity: 1;
+  position: relative;
+  z-index: 1;
+}
+/* 首頁照片輪播相關結束 */
