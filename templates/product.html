@@ -5,24 +5,38 @@
   <title>{{ product['name'] }} - HERSET BEAUTY</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
+    /* ✅ 商品頁專用樣式 */
+    body.product-page {
+      background: white;
+      padding-bottom: 60px;
+    }
+
     .product-container {
       display: flex;
       max-width: 900px;
-      margin: 0 auto;
+      margin: 20px auto 0;
       gap: 40px;
+      background: white;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
+
     .gallery {
       flex: 1;
     }
+
     .gallery-main img {
       width: 100%;
       border-radius: 10px;
     }
+
     .gallery-thumbs {
       display: flex;
       margin-top: 10px;
       gap: 10px;
     }
+
     .gallery-thumbs img {
       width: 60px;
       height: 60px;
@@ -31,52 +45,96 @@
       cursor: pointer;
       border-radius: 5px;
     }
+
     .info {
       flex: 1;
     }
+
     .info h2 { margin-top: 0; }
-    .price { color: #c00; font-size: 22px; margin: 10px 0; }
+
+    .price {
+      color: #C04848;
+      font-size: 22px;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+
     .options, .qty, .actions { margin-top: 20px; }
+
+    .options button {
+      background: #f5f5f5;
+      border: 1px solid #ccc;
+      border-radius: 20px;
+      padding: 6px 14px;
+      margin: 6px 4px;
+      cursor: pointer;
+    }
+
+    .options button:hover {
+      background: #eee;
+    }
+
     .qty button {
       padding: 0 10px;
       font-size: 18px;
     }
+
     .qty input {
       width: 50px;
       text-align: center;
       margin: 0 10px;
     }
+
     .actions button {
       padding: 10px 20px;
       margin-right: 10px;
-      background-color: #c33;
+      background-color: #5E3C2C;
       color: white;
       border: none;
+      border-radius: 8px;
       cursor: pointer;
     }
-    .actions button:last-child {
-      background-color: #888;
+
+    .actions button:hover {
+      background-color: #7A4F3D;
     }
-    .tabs { display: flex; margin-top: 40px; }
+
+    .tabs {
+      display: flex;
+      margin: 40px auto 0;
+      max-width: 900px;
+    }
+
     .tabs button {
       padding: 10px 20px;
       margin-right: 10px;
       border: 1px solid #ccc;
-      background: #f8f8f8;
+      background: #f0eae6;
+      border-radius: 6px 6px 0 0;
       cursor: pointer;
     }
+
     .tabs button.active {
-      background: #fff;
-      border-bottom: none;
+      background: #ffffff;
+      border-bottom: 1px solid white;
       font-weight: bold;
     }
+
     .tab-content {
       border: 1px solid #ccc;
       padding: 20px;
       margin-top: -1px;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+      background: white;
+      border-radius: 0 0 8px 8px;
+      box-shadow: 0 0 6px rgba(0,0,0,0.05);
     }
+
     .tab-content > div { display: none; }
     .tab-content > div.active { display: block; }
+
     .header-bar {
       display: flex;
       justify-content: space-between;
@@ -84,6 +142,7 @@
       max-width: 900px;
       margin: 20px auto;
     }
+
     .back-btn {
       background: #eee;
       border: none;
@@ -91,12 +150,14 @@
       border-radius: 5px;
       cursor: pointer;
     }
+
     .cart-indicator {
       font-size: 1.2rem;
     }
   </style>
 </head>
-<body>
+
+<body class="product-page">
 
 <div class="header-bar">
   <button class="back-btn" onclick="history.back()">← 返回首頁</button>
@@ -134,10 +195,7 @@
     </div>
 
     <div class="actions">
-      <!-- 加入購物車 (AJAX) -->
       <button onclick="addToCart({{ product['id'] }})">加入購物車</button>
-
-      <!-- 立即結帳 (表單跳轉) -->
       <form action="/add_to_cart" method="post" style="display:inline;">
         <input type="hidden" name="product_id" value="{{ product['id'] }}">
         <input type="hidden" name="qty" id="qty-input-checkout" value="1">
@@ -148,14 +206,14 @@
   </div>
 </div>
 
-<div class="tabs" style="max-width: 900px; margin: 40px auto 0;">
+<div class="tabs">
   <button class="tab-btn active" data-tab="intro">商品介紹</button>
   <button class="tab-btn" data-tab="feature">商品特色</button>
   <button class="tab-btn" data-tab="spec">商品規格</button>
   <button class="tab-btn" data-tab="ingredient">商品成分</button>
 </div>
 
-<div class="tab-content" style="max-width: 900px; margin: 0 auto;">
+<div class="tab-content">
   <div id="intro" class="active">{{ product['intro'] }}</div>
   <div id="feature">{{ product['feature'] }}</div>
   <div id="spec">{{ product['spec'] }}</div>
@@ -181,43 +239,39 @@
   }
 
   function addToCart(productId) {
-  const qty = parseInt(document.getElementById('qty').value);
-  fetch('/add_to_cart', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: `product_id=${productId}&qty=${qty}`
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.success) {
-      const countEl = document.getElementById('cart-count');
-      if (countEl) countEl.innerText = data.count;
+    const qty = parseInt(document.getElementById('qty').value);
+    fetch('/add_to_cart', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `product_id=${productId}&qty=${qty}`
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        const countEl = document.getElementById('cart-count');
+        if (countEl) countEl.innerText = data.count;
 
-      // ✅ 顯示上方固定提示
-      const tip = document.getElementById('cart-tip');
-      if (tip) {
-        tip.style.display = 'block';
-        setTimeout(() => {
-          tip.style.display = 'none';
-        }, 2000);
+        const tip = document.getElementById('cart-tip');
+        if (tip) {
+          tip.style.display = 'block';
+          setTimeout(() => {
+            tip.style.display = 'none';
+          }, 2000);
+        }
+      } else {
+        alert("加入購物車失敗");
       }
-    } else {
-      alert("加入購物車失敗");
-    }
-  })
-  .catch(err => {
-    alert("加入購物車失敗: " + err);
-  });
-}
+    })
+    .catch(err => {
+      alert("加入購物車失敗: " + err);
+    });
+  }
 
-
-  
-
-  // 同步更新 qty 到 checkout 表單
   document.getElementById('qty').addEventListener('input', function() {
     document.getElementById('qty-input-checkout').value = this.value;
   });
 </script>
+
 <div id="cart-tip" style="
   position: fixed;
   top: 0;
@@ -233,5 +287,6 @@
 ">
   ✅ 已加入購物車！
 </div>
+
 </body>
 </html>
