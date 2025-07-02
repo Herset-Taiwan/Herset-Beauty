@@ -5,6 +5,31 @@
   <title>編輯商品 - HERSET BEAUTY</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
+
+    .image-box {
+    position: relative;
+    display: inline-block;
+  }
+  .image-box img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+  }
+  .delete-img-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #e91e63;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 14px;
+    cursor: pointer;
+  }
     .form-container {
       max-width: 800px;
       margin: 50px auto;
@@ -156,11 +181,16 @@
 
       {% if product['images'] %}
         <label>現有圖片：</label>
-        <div class="image-preview">
-          {% for img in product['images'] %}
-            <img src="{{ img }}">
-          {% endfor %}
-        </div>
+<div class="image-preview" id="image-preview">
+  {% for img in product['images'] %}
+    <div class="image-box">
+      <img src="{{ img }}">
+      <input type="hidden" name="existing_images[]" value="{{ img }}">
+      <button type="button" class="delete-img-btn" onclick="this.parentNode.remove()">✖</button>
+    </div>
+  {% endfor %}
+</div>
+
       {% endif %}
 
       <button type="submit" class="save-btn">儲存修改</button>

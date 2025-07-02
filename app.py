@@ -379,6 +379,10 @@ def edit_product(product_id):
             "category": request.form.get('category', '')
         }
 
+        # ✅ 使用者保留的舊圖
+        kept_images = request.form.getlist('existing_images[]')
+
+        # ✅ 新上傳的圖片
         image_files = request.files.getlist("image_files")
         image_urls = []
         for file in image_files:
@@ -392,24 +396,30 @@ def edit_product(product_id):
                         supabase.storage.from_("images").upload(storage_path, tmp.name)
                     except Exception as e:
                         print("❗️圖片上傳錯誤：", e)
-                        continue  # 跳過上傳失敗
+                        continue
 
                 url = supabase.storage.from_("images").get_public_url(storage_path)
                 image_urls.append(url)
 
-        if image_urls:
-            updated['images'] = image_urls
-            updated['image'] = image_urls[0]  # ✅ 主圖也更新
+        # ✅ 合併舊圖與新圖
+        updated['images'] = kept_images + image_urls
 
+        # ✅ 設定主圖為第一張
+        if updated['images']:
+            updated['image'] = updated['images'][0]
+
+        # ✅ 寫入資料庫
         supabase.table("products").update(updated).eq("id", product_id).execute()
         return redirect('/admin?tab=products')
 
     else:
+        # GET：載入原始商品
         res = supabase.table("products").select("*").eq("id", product_id).single().execute()
         product = res.data
         if not product:
             return "找不到商品", 404
         return render_template("edit_product.html", product=product)
+
 
 
 @app.route('/delete/<product_id>', methods=['POST'])
