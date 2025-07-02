@@ -140,6 +140,7 @@
         <strong>電話：</strong>{{ m['phone'] or '—' }}<br>
         <strong>地址：</strong>{{ m['address'] or '—' }}<br>
         <strong>訂單備註：</strong>{{ m['note'] or '—' }}
+        <strong>註冊時間：</strong>{{ m.created_local or "—" }}
       </div>
     </div>
     {% endfor %}

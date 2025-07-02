@@ -299,12 +299,23 @@ def admin():
 @app.route('/admin/members')
 def search_members():
     keyword = request.args.get("keyword", "").strip()
-    query = supabase.table("members").select("id, username, account, phone, email, address, note")
+    query = supabase.table("members").select("id, username, account, phone, email, address, note, created_at")
     if keyword:
         query = query.or_(
             f"account.ilike.%{keyword}%,username.ilike.%{keyword}%,phone.ilike.%{keyword}%,email.ilike.%{keyword}%"
         )
     members = query.execute().data
+    from pytz import timezone
+from dateutil import parser
+
+tz = timezone("Asia/Taipei")
+for m in members:
+    try:
+        utc_dt = parser.parse(m['created_at'])
+        m['created_local'] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
+    except:
+        m['created_local'] = m.get('created_at', '—')
+
 
     # 🟢 補上其他頁籤需要的資料，否則頁面會空白
     products = supabase.table("products").select("*").execute().data or []
