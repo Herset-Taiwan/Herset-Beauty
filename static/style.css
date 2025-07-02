@@ -426,3 +426,18 @@ footer {
   font-size: 24px;
 }
 
+/* 首頁下方的關於我文字 */
+footer ul li a {
+  text-decoration: none;       /* 移除底線 */
+  color: #000;                  /* 黑色字體 */
+  font-weight: bold;           /* 粗體 */
+}
+
+footer ul li a:hover {
+  text-decoration: underline;  /* 滑鼠移過時加底線，可改成變色也行 */
+  color: #c47c6e;               /* 滑鼠移過時顏色（自訂） */
+}
+
+footer ul li a:visited {
+  color: #000;                 /* 已點過的也維持黑色，不要紫色 */
+}
