@@ -80,6 +80,14 @@
   {% endfor %}
 </section>
 
+<!-- 會員中心 Modal -->
+<div id="profile-modal" class="modal">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeProfileModal()">&times;</span>
+    <h2>會員資料</h2>
+    <p>這裡可以顯示會員資訊或表單</p>
+  </div>
+</div>
 
 <!-- 頁尾 -->
 <footer>
@@ -114,7 +122,9 @@ function addToCart(event, productId) {
     }
   });
 }
+
 </script>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
 
 </body>
 </html>
