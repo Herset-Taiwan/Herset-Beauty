@@ -249,7 +249,7 @@ def admin():
 
         # ✅ 加入台灣時間欄位
         try:
-            utc_dt = datetime.fromisoformat(o['created_at'].replace("Z", "+00:00"))
+            utc_dt = parser.parse(o['created_at'])
             o['created_local'] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
         except Exception as e:
             print("⚠️ 時間格式錯誤：", o['created_at'], e)
