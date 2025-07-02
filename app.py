@@ -34,6 +34,8 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    next_page = request.args.get('next')  # 例如 cart
+
     if request.method == 'POST':
         account = request.form.get('account')
         password = request.form.get('password')
@@ -46,14 +48,20 @@ def login():
             .eq("account", account).execute()
 
         if res.data and res.data[0]['password'] == password:
-             session['user'] = res.data[0] 
-             session['member_id'] = res.data[0]['id']  # 🟢 這行非常重要！
-             return redirect('/')
+            session['user'] = res.data[0]
+            session['member_id'] = res.data[0]['id']
+
+            # ✅ 根據 next 決定跳轉頁面
+            if next_page == 'cart':
+                return redirect('/cart')
+            else:
+                return redirect('/')
 
         else:
             return render_template("login.html", error="帳號或密碼錯誤")
 
     return render_template("login.html")
+
 
 
 

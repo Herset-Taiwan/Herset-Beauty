@@ -5,90 +5,185 @@
   <title>購物車 - HERSET BEAUTY</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    .cart-container {
-      max-width: 800px;
-      margin: 40px auto;
-      padding: 20px;
+    body {
+      background-color: #f9f5f5;
     }
+
+    .cart-container {
+      max-width: 900px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    }
+
+    .member-info {
+      margin-bottom: 20px;
+      font-size: 16px;
+      color: #5A4B45;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .member-info span {
+      font-weight: bold;
+      color: #CDAFA1;
+    }
+
+    .login-btn {
+      background: #CDAFA1;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-weight: bold;
+      text-decoration: none;
+    }
+
+    h2 {
+      color: #3C3C3C;
+      margin-bottom: 20px;
+    }
+
     .cart-item {
       display: flex;
       align-items: center;
       border-bottom: 1px solid #eee;
-      padding: 10px 0;
+      padding: 15px 0;
     }
+
     .cart-item img {
       width: 80px;
       height: 80px;
       object-fit: cover;
       margin-right: 20px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
     }
+
     .cart-info {
       flex: 1;
     }
+
     .cart-actions {
       display: flex;
-      gap: 5px;
+      gap: 6px;
       align-items: center;
     }
+
     .cart-actions form {
       display: inline;
     }
+
+    .cart-actions button {
+      padding: 5px 10px;
+      font-size: 15px;
+      border: 1px solid #ccc;
+      background-color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .cart-actions button:hover {
+      background-color: #eee;
+    }
+
     .total {
       text-align: right;
-      font-size: 1.2rem;
-      margin-top: 20px;
+      font-size: 1.3rem;
       font-weight: bold;
+      margin-top: 30px;
+      color: #3C3C3C;
     }
+
     .checkout-btn {
       margin-top: 20px;
       background-color: #e91e63;
       color: white;
-      padding: 10px 20px;
+      padding: 12px 24px;
       border: none;
-      border-radius: 5px;
-      cursor: pointer;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: bold;
       float: right;
+      cursor: pointer;
+    }
+
+    .checkout-btn:hover {
+      background-color: #d81b60;
+    }
+
+    .back-btn {
+      display: inline-block;
+      margin-top: 40px;
+      color: #5A4B45;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .back-btn:hover {
+      text-decoration: underline;
+    }
+
+    .flash-message {
+      background-color: #ffe6e6;
+      color: #c00;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
     }
   </style>
 </head>
 <body>
   <div class="cart-container">
     <h2>🛒 我的購物車</h2>
+
+    <div class="member-info">
+      {% if session.member_id %}
+        您好：會員 <span>{{ session.user['account'] }}</span>
+      {% else %}
+        <div>您尚未登入會員，請先登入會員才可結帳。</div>
+        <a class="login-btn" href="/login?next=cart">登入會員</a>
+      {% endif %}
+    </div>
+
     {% with messages = get_flashed_messages() %}
-    {% if messages %}
-      <div style="background-color: #ffe6e6; color: #c00; padding: 10px; margin: 10px 0; border-radius: 5px;">
-        {% for message in messages %}
-          <p>{{ message }}</p>
-        {% endfor %}
-      </div>
-    {% endif %}
-  {% endwith %}
-  
+      {% if messages %}
+        <div class="flash-message">
+          {% for message in messages %}
+            <p>{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
     {% if products %}
       {% for p in products %}
       <div class="cart-item">
         <img src="{{ p['images'][0] }}" alt="{{ p['name'] }}">
         <div class="cart-info">
           <strong>{{ p['name'] }}</strong><br>
-          ${{ p['price'] }} x {{ p['qty'] }} = ${{ p['subtotal'] }}
+          ${{ p['price'] }} × {{ p['qty'] }} = ${{ p['subtotal'] }}
         </div>
         <div class="cart-actions">
-  <form method="POST">
-    <input type="hidden" name="product_id" value="{{ p['id'] }}">
-    <input type="hidden" name="action" value="decrease">
-    <button type="submit" title="減少數量">−</button>
-  </form>
-  <form method="POST">
-    <input type="hidden" name="product_id" value="{{ p['id'] }}">
-    <input type="hidden" name="action" value="increase">
-    <button type="submit" title="增加數量">＋</button>
-  </form>
-  <form method="POST" style="margin-left: 10px;">
-    <input type="hidden" name="product_id" value="{{ p['id'] }}">
-    <input type="hidden" name="action" value="remove">
-    <button type="submit" title="從購物車中移除這項商品">🗑️ 移除</button>
-  </form>
-</div>
+          <form method="POST">
+            <input type="hidden" name="product_id" value="{{ p['id'] }}">
+            <input type="hidden" name="action" value="decrease">
+            <button type="submit">−</button>
+          </form>
+          <form method="POST">
+            <input type="hidden" name="product_id" value="{{ p['id'] }}">
+            <input type="hidden" name="action" value="increase">
+            <button type="submit">＋</button>
+          </form>
+          <form method="POST">
+            <input type="hidden" name="product_id" value="{{ p['id'] }}">
+            <input type="hidden" name="action" value="remove">
+            <button type="submit">🗑️ 移除</button>
+          </form>
+        </div>
       </div>
       {% endfor %}
 
