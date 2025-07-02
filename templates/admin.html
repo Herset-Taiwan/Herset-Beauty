@@ -131,20 +131,20 @@
 </form>
 
   <div id="member-list">
-    {% for m in members %}
-    <div class="member-row" style="display: none;">
-      <div class="info">
-        <strong>帳號：</strong>{{ m['account'] }}<br>
-        <strong>信箱：</strong>{{ m['email'] or '—' }}<br><br>
-        <strong>姓名：</strong>{{ m['name'] or m['username'] or '—' }}<br>
-        <strong>電話：</strong>{{ m['phone'] or '—' }}<br>
-        <strong>地址：</strong>{{ m['address'] or '—' }}<br>
-        <strong>訂單備註：</strong>{{ m['note'] or '—' }}<br>
-        <strong>註冊時間：</strong>{{ m.created_at or "—" }}
-      </div>
+  {% for m in members %}
+  <div class="member-row" style="display: none;">
+    <div class="info">
+      <strong>帳號：</strong>{{ m['account'] }}<br>
+      <strong>信箱：</strong>{{ m['email'] or '—' }}<br><br>
+      <strong>姓名：</strong>{{ m['name'] or m['username'] or '—' }}<br>
+      <strong>電話：</strong>{{ m['phone'] or '—' }}<br>
+      <strong>地址：</strong>{{ m['address'] or '—' }}<br>
+      <strong>訂單備註：</strong>{{ m['note'] or '—' }}<br>
+      <strong>註冊時間：</strong>{{ m['created_at'] or '—' }}
     </div>
-    {% endfor %}
   </div>
+  {% endfor %}
+</div>
 </div>
 
 
