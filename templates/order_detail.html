@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>訂單詳細資訊 - HERSET BEAUTY</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #F3E5E1;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: #fff;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #5A4B45;
+      margin-bottom: 30px;
+    }
+
+    .info {
+      margin-bottom: 20px;
+    }
+
+    .info strong {
+      display: inline-block;
+      width: 100px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #F2CFC0;
+    }
+
+    .btn {
+      display: block;
+      margin: 30px auto 0;
+      background-color: #CDAFA1;
+      color: #3C3C3C;
+      font-weight: bold;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: center;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: #E2B6A2;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>訂單詳細資訊</h2>
+
+    <div class="info">
+      <p><strong>訂單編號：</strong>#{{ order['id'] }}</p>
+      <p><strong>下單時間：</strong>{{ order['created_local'] }}</p>
+      <p><strong>總金額：</strong>${{ order['total_amount'] }}</p>
+    </div>
+
+    <div class="info">
+      <p><strong>收件人：</strong>{{ member.get('name') or '—' }}</p>
+      <p><strong>電話：</strong>{{ member.get('phone') or '—' }}</p>
+      <p><strong>地址：</strong>{{ member.get('address') or '—' }}</p>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>商品名稱</th>
+          <th>數量</th>
+          <th>單價</th>
+          <th>小計</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>{{ item['product_name'] }}</td>
+          <td>{{ item['qty'] }}</td>
+          <td>${{ item['price'] }}</td>
+          <td>${{ item['subtotal'] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <a class="btn" href="/reorder/{{ order['id'] }}">🛒 重新下單</a>
+  </div>
+</body>
+</html>

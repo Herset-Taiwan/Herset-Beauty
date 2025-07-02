@@ -592,6 +592,68 @@ def profile_data():
 
     return jsonify(success=True, data=res.data[0])
 
+# 會員歷史訂單路由
+@app.route('/order/<int:order_id>')
+def order_detail(order_id):
+    from pytz import timezone
+    from dateutil import parser
+    tz = timezone("Asia/Taipei")
+
+    # 查詢訂單
+    res = supabase.table("orders").select("*").eq("id", order_id).single().execute()
+    order = res.data
+    if not order:
+        return "找不到訂單", 404
+
+    # 查詢會員
+    member_id = order.get("member_id")
+    member = {}
+    if member_id:
+        res = supabase.table("members").select("username, name, phone, address").eq("id", member_id).single().execute()
+        member = res.data or {}
+
+    # 查詢項目
+    res = supabase.table("order_items").select("*").eq("order_id", order_id).execute()
+    items = res.data or []
+
+    # 時間轉換
+    try:
+        utc_dt = parser.parse(order['created_at'])
+        order['created_local'] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
+    except:
+        order['created_local'] = order['created_at']
+
+    return render_template("order_detail.html", order=order, items=items, member=member)
+
+# 會員重新下單路由
+@app.route('/reorder/<int:order_id>')
+def reorder(order_id):
+    # 查詢訂單商品
+    res = supabase.table("order_items").select("*").eq("order_id", order_id).execute()
+    items = res.data or []
+
+    # 初始化購物車
+    cart = []
+    for item in items:
+        product_id = item['product_id']
+        qty = item['qty']
+
+        # 查詢商品
+        product_res = supabase.table('products').select('*').eq('id', product_id).single().execute()
+        if not product_res.data:
+            continue
+        product = product_res.data
+
+        cart.append({
+            'product_id': product_id,
+            'name': product['name'],
+            'price': product['price'],
+            'images': product['images'],
+            'qty': qty
+        })
+
+    session['cart'] = cart
+    return redirect('/cart')
 
 
 
