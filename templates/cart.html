@@ -18,18 +18,23 @@
       box-shadow: 0 4px 10px rgba(0,0,0,0.08);
     }
 
-    .member-info {
-    margin-bottom: 20px;
-    font-size: 16px;
-    color: #5A4B45;
+   .member-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  font-size: 16px;
+  color: #5A4B45;
 }
 
 .member-info .account {
-    font-weight: bold;
-    color: #CDAFA1;
-    margin-left: 4px;
+  font-weight: bold;
+  color: #CDAFA1;
+  margin-left: 4px;
 }
-
+.member-info .right {
+  margin-left: auto;
+}
 
     .member-info span {
       font-weight: bold;
@@ -146,12 +151,15 @@
 
    <div class="member-info">
   {% if session.member_id %}
-    <p>您好：會員 <span class="account">{{ session.user['account'] }}</span></p>
+    <div class="left">您好：會員 <span class="account">{{ session.user['account'] }}</span></div>
   {% else %}
-    <div>您尚未登入會員，請先登入會員才可結帳。</div>
-    <a class="login-btn" href="/login?next=cart">登入會員</a>
+    <div class="left">您尚未登入會員，請先登入會員才可結帳。</div>
+    <div class="right">
+      <a class="login-btn" href="/login?next=cart">登入會員</a>
+    </div>
   {% endif %}
 </div>
+
 
     {% with messages = get_flashed_messages() %}
       {% if messages %}
