@@ -215,9 +215,6 @@ def product_detail(product_id):
 
 @app.route('/admin')
 def admin():
-    # ✅ 修正：一開始就取得 tab
-    tab = request.args.get("tab", "products")  # 預設為商品管理
-
     from datetime import datetime
     from pytz import timezone
     tz = timezone("Asia/Taipei")
@@ -253,18 +250,18 @@ def admin():
 
         # ✅ 加入台灣時間欄位
         try:
-            from dateutil import parser
-            utc_dt = parser.parse(o['created_at'])
-            o['created_local'] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
+           utc_dt = parser.parse(o['created_at'])
+           o['created_local'] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
         except Exception as e:
-            print("⚠️ 時間格式錯誤：", o['created_at'], e)
-            o['created_local'] = o['created_at']  # fallback
+          print("⚠️ 時間格式錯誤：", o['created_at'], e)
+          o['created_local'] = o['created_at']  # fallback
+
 
         orders.append(o)
+        tab = request.args.get("tab", "products")  # 預設為商品管理
 
-    members_display = members
+    members_display = members  # 給會員頁籤用
     return render_template("admin.html", products=products, members=members_display, orders=orders, tab=tab)
-
 
 @app.route('/admin/members')
 def search_members():
