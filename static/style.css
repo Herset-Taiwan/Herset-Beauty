@@ -285,7 +285,7 @@ footer {
 }
 
 .profile-form .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 }
 
 .profile-form label {
@@ -298,27 +298,36 @@ footer {
 .profile-form input,
 .profile-form textarea {
   width: 100%;
-  padding: 8px 12px;
+  padding: 12px 14px;
   border: 1px solid #ccc;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 15px;
   box-sizing: border-box;
 }
 
+.profile-form input:focus,
+.profile-form textarea:focus {
+  border-color: #E2B6A2;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(226, 182, 162, 0.3);
+}
+
 .save-btn {
   background-color: #CDAFA1;
+  color: white;
+  padding: 12px 26px;
   border: none;
-  border-radius: 6px;
-  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 16px;
   font-weight: bold;
-  color: #3C3C3C;
-  font-size: 15px;
   cursor: pointer;
+  display: block;
+  margin: 0 auto;
   transition: background-color 0.3s ease;
 }
 
 .save-btn:hover {
-  background-color: #E2B6A2;
+  background-color: #B88D75;
 }
 
 .save-success {
@@ -334,6 +343,38 @@ footer {
   font-weight: bold;
 }
 
+.modal-content.profile-form {
+  background: #fff;
+  border-radius: 12px;
+  padding: 30px 40px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 450px;
+  margin: auto;
+  position: relative;
+  font-family: "Segoe UI", sans-serif;
+}
+.modal-content.profile-form h2 {
+  text-align: center;
+  font-size: 24px;
+  margin-bottom: 25px;
+  color: #3b3b3b;
+  letter-spacing: 1px;
+}
+
+.modal-content.profile-form .close-btn {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  font-size: 24px;
+  cursor: pointer;
+  color: #aaa;
+  transition: color 0.3s ease;
+}
+
+.modal-content.profile-form .close-btn:hover {
+  color: #333;
+}
 /* 會員資料填寫表單結束 */
 
 /* 後台會員資料 */
