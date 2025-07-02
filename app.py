@@ -257,7 +257,8 @@ def admin():
     orders_raw = res.data or []
 
     # 查詢會員
-    res = supabase.table("members").select("id, account, username, name, phone, email, address").execute()
+    res = supabase.table("members").select("id, account, username, name, phone, email, address, note, created_at").execute()
+
     members = res.data or []
     member_dict = {m['id']: m for m in members}
 
