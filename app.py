@@ -1,6 +1,7 @@
 from pytz import timezone
 from datetime import datetime
 from dateutil import parser
+from flask import send_from_directory
 
 from flask import Flask, render_template, request, redirect, session, url_for, jsonify, flash
 from werkzeug.utils import secure_filename
@@ -45,7 +46,14 @@ def index():
     cart_count = sum(item['qty'] for item in cart)
     return render_template("index.html", products=products, cart_count=cart_count)
 
+# ✅ SEO相關
+@app.route('/robots.txt')
+def robots():
+    return send_from_directory('.', 'robots.txt')
 
+@app.route('/sitemap.xml')
+def sitemap():
+    return send_from_directory('.', 'sitemap.xml')
 # ✅ 忘記密碼 - 輸入電話與信箱
 @app.route('/forgot', methods=['GET', 'POST'])
 def forgot():
