@@ -108,13 +108,13 @@ def reset_password():
 
         email = session['reset_email']
 
-        # 透過 Email 更新密碼
-        user_res = supabase.table("users").select("*").eq("email", email).execute()
+        # ✅ 改為 members 資料表
+        user_res = supabase.table("members").select("*").eq("email", email).execute()
         if not user_res.data:
             return render_template("reset_password.html", error="找不到此帳號")
 
         user_id = user_res.data[0]['id']
-        supabase.table("users").update({"password": new_password}).eq("id", user_id).execute()
+        supabase.table("members").update({"password": new_password}).eq("id", user_id).execute()
 
         # 清除 session
         session.pop('reset_email', None)
@@ -125,6 +125,7 @@ def reset_password():
         return redirect('/login')
 
     return render_template("reset_password.html")
+
 
 
 
