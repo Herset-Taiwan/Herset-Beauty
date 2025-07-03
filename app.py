@@ -52,7 +52,7 @@ def forgot():
     if request.method == 'POST':
         email = request.form['email']
         # 僅根據 email 查詢
-        res = supabase.table("users").select("*").eq("email", email).execute()
+        res = supabase.table("members").select("*").eq("email", email).execute()
         if res.data:
             code = str(uuid.uuid4())[:6].upper()
             session['reset_code'] = code
