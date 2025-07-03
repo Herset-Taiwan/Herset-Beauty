@@ -50,9 +50,9 @@ def index():
 @app.route('/forgot', methods=['GET', 'POST'])
 def forgot():
     if request.method == 'POST':
-        phone = request.form['phone']
         email = request.form['email']
-        res = supabase.table("users").select("*").eq("phone", phone).eq("email", email).execute()
+        # 僅根據 email 查詢
+        res = supabase.table("users").select("*").eq("email", email).execute()
         if res.data:
             code = str(uuid.uuid4())[:6].upper()
             session['reset_code'] = code
@@ -68,6 +68,7 @@ def forgot():
         else:
             flash("找不到符合的帳號資訊。", "danger")
     return render_template("forgot.html")
+
 
 # ✅ 驗證碼確認
 @app.route('/verify', methods=['GET', 'POST'])
