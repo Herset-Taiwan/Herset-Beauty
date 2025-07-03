@@ -1,29 +1,35 @@
 from pytz import timezone
-tz = timezone('Asia/Taipei')
 from datetime import datetime
-from pytz import timezone
 from dateutil import parser
 
-from flask import Flask, render_template, request, redirect, session, url_for, jsonify
+from flask import Flask, render_template, request, redirect, session, url_for, jsonify, flash
 from werkzeug.utils import secure_filename
 from supabase import create_client, Client
+from flask_mail import Mail, Message
 import os
 import tempfile
 import uuid
 from dotenv import load_dotenv
-from datetime import datetime
 from uuid import UUID
-from flask import flash
-from flask import jsonify
 
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
+# ✅ Supabase 初始化
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# ✅ 郵件設定
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'hersetbeauty@gmail.com'
+app.config['MAIL_PASSWORD'] = 'xlwn swew zqkk fdkt'
+app.config['MAIL_DEFAULT_SENDER'] = 'hersetbeauty@gmail.com'
+mail = Mail(app)
 
 @app.route('/')
 def index():
@@ -38,6 +44,45 @@ def index():
     cart = session.get('cart', [])
     cart_count = sum(item['qty'] for item in cart)
     return render_template("index.html", products=products, cart_count=cart_count)
+
+
+# ✅ 忘記密碼 - 輸入電話與信箱
+@app.route('/forgot', methods=['GET', 'POST'])
+def forgot():
+    if request.method == 'POST':
+        phone = request.form['phone']
+        email = request.form['email']
+        res = supabase.table("users").select("*").eq("phone", phone).eq("email", email).execute()
+        if res.data:
+            code = str(uuid.uuid4())[:6].upper()
+            session['reset_code'] = code
+            session['reset_user'] = res.data[0]
+            try:
+                msg = Message("HERSET 驗證碼", recipients=[email])
+                msg.body = f"您的驗證碼是：{code}"
+                mail.send(msg)
+                flash("驗證碼已發送至您的信箱。", "success")
+                return redirect("/verify")
+            except Exception as e:
+                flash("郵件發送失敗: " + str(e), "danger")
+        else:
+            flash("找不到符合的帳號資訊。", "danger")
+    return render_template("forgot.html")
+
+# ✅ 驗證碼確認
+@app.route('/verify', methods=['GET', 'POST'])
+def verify():
+    if request.method == 'POST':
+        code_input = request.form['code']
+        if code_input == session.get('reset_code'):
+            user = session.get('reset_user')
+            flash(f"您的密碼為：{user['password']}", "success")
+            session.pop('reset_code', None)
+            session.pop('reset_user', None)
+            return redirect("/login")
+        else:
+            flash("驗證碼錯誤，請重新輸入。", "danger")
+    return render_template("verify.html")
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -727,6 +772,24 @@ def return_policy():
 @app.route('/contact')
 def contact():
     return render_template("contact.html")
+
+# 忘記密碼路由
+@app.route('/forgot', methods=['GET', 'POST'])
+def forgot():
+    message = ''
+    if request.method == 'POST':
+        phone = request.form['phone']
+        email = request.form['email']
+        # 假設使用 Supabase 查詢會員資料
+        res = supabase.table('users').select("*").eq("phone", phone).eq("email", email).execute()
+        users = res.data
+        if users:
+            password = users[0]['password']
+            message = f"您的密碼是：{password}"
+        else:
+            message = "查無此帳號資料，請確認輸入的電話與 Email 是否正確。"
+    return render_template("forgot.html", message=message)
+
 
 
 

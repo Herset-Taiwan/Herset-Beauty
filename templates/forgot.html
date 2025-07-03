@@ -2,16 +2,15 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>登入 - HERSET BEAUTY</title>
+  <title>找回密碼 - HERSET BEAUTY</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
     body {
-      background-color: #f4e8e4; /* 奶油裸粉背景 */
+      background-color: #f4e8e4;
       font-family: 'Segoe UI', sans-serif;
       margin: 0;
       padding: 0;
     }
-
     .form-container {
       max-width: 400px;
       margin: 100px auto;
@@ -21,15 +20,12 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
       text-align: center;
     }
-
-    .form-container h2 {
+    h2 {
       margin-bottom: 25px;
       color: #3C3C3C;
       font-size: 24px;
     }
-
-    input[type="text"],
-    input[type="password"] {
+    input[type="email"] {
       width: 100%;
       padding: 12px;
       margin-bottom: 15px;
@@ -38,12 +34,11 @@
       font-size: 16px;
       box-sizing: border-box;
     }
-
     button {
       width: 100%;
       padding: 12px;
       font-size: 16px;
-      background-color: #C6456C; /* 玫瑰裸棕主色 */
+      background-color: #C6456C;
       color: white;
       border: none;
       border-radius: 8px;
@@ -51,45 +46,45 @@
       cursor: pointer;
       transition: background-color 0.3s ease;
     }
-
     button:hover {
-      background-color: #E85E82; /* 陶土裸橘 hover */
+      background-color: #E85E82;
     }
-
     .link {
       margin-top: 20px;
       font-size: 15px;
       color: #5A4B45;
     }
-
     .link a {
       color: #6B3E58;
       font-weight: bold;
       text-decoration: none;
     }
-
     .link a:hover {
       text-decoration: underline;
     }
-
+    .message {
+      margin: 10px 0;
+      color: green;
+    }
     .error-message {
       color: red;
-      margin-bottom: 15px;
     }
   </style>
 </head>
 <body>
   <div class="form-container">
-    <h2>登入帳號</h2>
+    <h2>找回密碼</h2>
+
     {% if error %}<div class="error-message">{{ error }}</div>{% endif %}
+    {% if message %}<div class="message">{{ message }}</div>{% endif %}
+
     <form method="POST">
-      <input type="text" name="account" placeholder="帳號" required>
-      <input type="password" name="password" placeholder="密碼" required>
-      <button type="submit">登入</button>
+      <input type="email" name="email" placeholder="註冊信箱" required>
+      <button type="submit">發送驗證碼</button>
     </form>
+
     <div class="link">
-      尚未註冊？<a href="/register">註冊新帳號</a>
-      忘記密碼？<a href="/forgot">找回密碼</a>
+      已有帳號？<a href="/login">返回登入</a>
     </div>
   </div>
 </body>
