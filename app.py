@@ -76,15 +76,21 @@ def verify():
     if request.method == 'POST':
         code = request.form['code']
         if code == session.get('reset_code'):
+            # ✅ 記錄 Email 以便後續 reset 使用
+            reset_user = session.get('reset_user')
+            if reset_user:
+                session['reset_email'] = reset_user['email']
+
             flash("驗證成功，請設定新密碼。", "success")
-            return redirect('/reset-password')  # ✅ 轉跳到重設密碼頁面
+            return redirect('/reset-password')
         else:
             flash("驗證碼錯誤，請重新輸入。", "danger")
     return render_template("verify.html")
 
 
+
 # ✅ 密碼重置
-@app.route('/reset_password', methods=['GET', 'POST'])
+@app.route('/reset-password', methods=['GET', 'POST'])
 def reset_password():
     if 'reset_email' not in session:
         flash("請先完成驗證步驟")
@@ -112,11 +118,14 @@ def reset_password():
 
         # 清除 session
         session.pop('reset_email', None)
+        session.pop('reset_code', None)
+        session.pop('reset_user', None)
 
         flash("密碼已重設成功，請重新登入")
         return redirect('/login')
 
     return render_template("reset_password.html")
+
 
 
 
