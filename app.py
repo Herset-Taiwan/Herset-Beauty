@@ -27,11 +27,18 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 @app.route('/')
 def index():
+    category = request.args.get('category')  # 抓網址的 category 參數
     res = supabase.table("products").select("*").execute()
     products = res.data
+
+    # ✅ 篩選分類（如果有傳入且不是「全部」）
+    if category and category != '全部':
+        products = [p for p in products if p.get('category') == category]
+
     cart = session.get('cart', [])
     cart_count = sum(item['qty'] for item in cart)
     return render_template("index.html", products=products, cart_count=cart_count)
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
