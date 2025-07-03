@@ -53,18 +53,41 @@
       color: red;
       margin-bottom: 15px;
     }
+    .back-home {
+      margin-top: 30px;
+    }
+    .back-home a {
+      display: inline-block;
+      padding: 10px 20px;
+      border: 2px solid #C6456C;
+      color: #C6456C;
+      border-radius: 8px;
+      font-weight: bold;
+      text-decoration: none;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    .back-home a:hover {
+      background-color: #C6456C;
+      color: white;
+    }
   </style>
 </head>
 <body>
   <div class="form-container">
     <h2>輸入驗證碼</h2>
 
-    {% if error %}<div class="error-message">{{ error }}</div>{% endif %}
+    {% if error %}
+      <div class="error-message">{{ error }}</div>
+    {% endif %}
 
     <form method="POST">
       <input type="text" name="code" placeholder="請輸入驗證碼" required>
       <button type="submit">確認驗證碼</button>
     </form>
+
+    <div class="back-home">
+      <a href="/">返回主頁</a>
+    </div>
   </div>
 </body>
 </html>
