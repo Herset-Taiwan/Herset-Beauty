@@ -74,16 +74,14 @@ def forgot():
 @app.route('/verify', methods=['GET', 'POST'])
 def verify():
     if request.method == 'POST':
-        code_input = request.form['code']
-        if code_input == session.get('reset_code'):
-            user = session.get('reset_user')
-            flash(f"您的密碼為：{user['password']}", "success")
-            session.pop('reset_code', None)
-            session.pop('reset_user', None)
-            return redirect("/login")
+        code = request.form['code']
+        if code == session.get('reset_code'):
+            flash("驗證成功，請設定新密碼。", "success")
+            return redirect('/reset-password')  # ✅ 轉跳到重設密碼頁面
         else:
             flash("驗證碼錯誤，請重新輸入。", "danger")
     return render_template("verify.html")
+
 
 # ✅ 密碼重置
 @app.route('/reset_password', methods=['GET', 'POST'])
