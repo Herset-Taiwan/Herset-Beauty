@@ -84,6 +84,42 @@ def verify():
             flash("驗證碼錯誤，請重新輸入。", "danger")
     return render_template("verify.html")
 
+# ✅ 密碼重置
+@app.route('/reset_password', methods=['GET', 'POST'])
+def reset_password():
+    if 'reset_email' not in session:
+        flash("請先完成驗證步驟")
+        return redirect('/forgot')
+
+    if request.method == 'POST':
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+
+        if not new_password or not confirm_password:
+            return render_template("reset_password.html", error="請填寫所有欄位")
+
+        if new_password != confirm_password:
+            return render_template("reset_password.html", error="兩次輸入的密碼不一致")
+
+        email = session['reset_email']
+
+        # 透過 Email 更新密碼
+        user_res = supabase.table("users").select("*").eq("email", email).execute()
+        if not user_res.data:
+            return render_template("reset_password.html", error="找不到此帳號")
+
+        user_id = user_res.data[0]['id']
+        supabase.table("users").update({"password": new_password}).eq("id", user_id).execute()
+
+        # 清除 session
+        session.pop('reset_email', None)
+
+        flash("密碼已重設成功，請重新登入")
+        return redirect('/login')
+
+    return render_template("reset_password.html")
+
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
