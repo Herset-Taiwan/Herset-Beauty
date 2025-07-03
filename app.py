@@ -54,6 +54,11 @@ def robots():
 @app.route('/sitemap.xml')
 def sitemap():
     return send_from_directory('.', 'sitemap.xml')
+
+@app.route('/googlee43955748321cd00.html')
+def google_verify():
+    return send_from_directory('.', 'googlee43955748321cd00.html')
+
 # ✅ 忘記密碼 - 輸入電話與信箱
 @app.route('/forgot', methods=['GET', 'POST'])
 def forgot():
