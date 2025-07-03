@@ -809,24 +809,6 @@ def return_policy():
 def contact():
     return render_template("contact.html")
 
-# 忘記密碼路由
-@app.route('/forgot', methods=['GET', 'POST'])
-def forgot():
-    message = ''
-    if request.method == 'POST':
-        phone = request.form['phone']
-        email = request.form['email']
-        # 假設使用 Supabase 查詢會員資料
-        res = supabase.table('users').select("*").eq("phone", phone).eq("email", email).execute()
-        users = res.data
-        if users:
-            password = users[0]['password']
-            message = f"您的密碼是：{password}"
-        else:
-            message = "查無此帳號資料，請確認輸入的電話與 Email 是否正確。"
-    return render_template("forgot.html", message=message)
-
-
 
 
 

@@ -62,12 +62,19 @@
     .link a:hover {
       text-decoration: underline;
     }
-    .message {
-      margin: 10px 0;
-      color: green;
+    .flash-message {
+      margin: 10px 0 20px;
+      padding: 10px;
+      border-radius: 6px;
+      font-weight: bold;
     }
-    .error-message {
-      color: red;
+    .flash-success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .flash-danger {
+      background-color: #f8d7da;
+      color: #721c24;
     }
   </style>
 </head>
@@ -75,8 +82,13 @@
   <div class="form-container">
     <h2>找回密碼</h2>
 
-    {% if error %}<div class="error-message">{{ error }}</div>{% endif %}
-    {% if message %}<div class="message">{{ message }}</div>{% endif %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, msg in messages %}
+          <div class="flash-message flash-{{ category }}">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
 
     <form method="POST">
       <input type="email" name="email" placeholder="註冊信箱" required>
