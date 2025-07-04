@@ -328,7 +328,8 @@ function closeProfileModal() {
     currentData.name !== initialProfileData.name ||
     currentData.phone !== initialProfileData.phone ||
     currentData.address !== initialProfileData.address;
-
+  console.log("是否有變更：", changed);
+  
   if (changed) {
     pendingClose = true;
     document.getElementById("unsaved-warning").style.display = "block";

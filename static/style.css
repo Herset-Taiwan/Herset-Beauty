@@ -399,7 +399,10 @@ footer {
   margin: 100px auto;
   width: 300px;
   box-shadow: 0 0 10px rgba(0,0,0,0.3);
+  z-index: 99999; /* 加上這行 */
+  position: relative; /* 加上這行 */
 }
+
 #unsaved-warning button {
   margin: 0 10px;
   padding: 8px 16px;
