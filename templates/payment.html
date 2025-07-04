@@ -28,9 +28,7 @@
             <li><a href="/logout">登出</a></li>
           </ul>
         </li>
-      {% else %}
-        <li><a href="/login">👤 會員登入</a></li>
-      {% endif %}
+      
       <li>
         <a href="/cart" class="cart-btn">🛒 購物車
           {% if cart_count > 0 %}
@@ -95,6 +93,7 @@
   <p>ATFEE先享後付：輸入電話號碼接收驗證簡訊，完成認證後即完成購買。享受延後付款。</p>
   <p><a href="#">點我瞭解更多付款說明</a></p>
 </div>
+
 
 <div id="profile-modal" class="modal">
   <div class="modal-content profile-form">
@@ -167,7 +166,7 @@
       </ul>
     </div>
 
-          <div style="min-width: 200px;">
+    <div style="min-width: 200px;">
   <h4 style="margin-bottom: 10px; text-align: center;">支付方式</h4>
   <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">
     <img src="{{ url_for('static', filename='icons/visa.png') }}">
