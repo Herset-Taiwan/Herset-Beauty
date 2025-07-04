@@ -318,13 +318,15 @@ function openProfileModal() {
 let pendingClose = false;  // 用來記錄是否真的要關閉
 
 function closeProfileModal() {
+  const form = document.querySelector(".profile-form form"); // 🔍 抓表單
+
   const name = document.getElementById("name").value.trim();
   const phone = document.getElementById("phone").value.trim();
   const address = document.getElementById("address").value.trim();
 
   // ✅ 檢查是否有欄位為空
   if (!name || !phone || !address) {
-    alert("請填寫完整的姓名、電話與地址，才能關閉視窗");
+    form.reportValidity();  // 🟢 觸發原生「請填寫這個欄位」泡泡
     return; // ❌ 不讓視窗關閉
   }
 
@@ -342,6 +344,7 @@ function closeProfileModal() {
     document.getElementById("profile-modal").style.display = "none";
   }
 }
+
 
 
 
