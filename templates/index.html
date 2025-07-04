@@ -305,15 +305,27 @@ let initialProfileData = {};
 
 // 1️⃣ 每次開啟會員資料視窗時，記住初始值
 function openProfileModal() {
-  document.getElementById("profile-modal").style.display = "block";
+  fetch('/get_profile')  // 後端 API 拿會員資料
+    .then(res => res.json())
+    .then(data => {
+      // 將資料填入欄位
+      document.getElementById("name").value = data.name || '';
+      document.getElementById("phone").value = data.phone || '';
+      document.getElementById("address").value = data.address || '';
+      document.getElementById("note").value = data.note || '';
 
-  // 記住打開時的初始資料
-  initialProfileData = {
-    name: document.getElementById("name").value.trim(),
-    phone: document.getElementById("phone").value.trim(),
-    address: document.getElementById("address").value.trim()
-  };
+      // 記住初始資料
+      initialProfileData = {
+        name: data.name || '',
+        phone: data.phone || '',
+        address: data.address || ''
+      };
+
+      // 顯示 modal
+      document.getElementById("profile-modal").style.display = "block";
+    });
 }
+
 
 // 2️⃣ 嘗試關閉時做比對
 function closeProfileModal() {

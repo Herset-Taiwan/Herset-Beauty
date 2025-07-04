@@ -184,6 +184,18 @@ def login():
     return render_template("login.html")
 
 
+@app.route('/get_profile')
+def get_profile():
+    if 'member_id' not in session:
+        return jsonify({})  # 未登入就回空物件
+
+    member_id = str(UUID(session['member_id']))
+    res = supabase.table("members").select("name, phone, address, note").eq("id", member_id).execute()
+
+    if res.data:
+        return jsonify(res.data[0])
+    else:
+        return jsonify({})
 
 
 
