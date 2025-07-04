@@ -313,15 +313,30 @@ function openProfileModal() {
 
 // 關閉會員資料視窗
 function closeProfileModal() {
-  const form = document.querySelector(".profile-form form");
   const name = document.getElementById("name").value.trim();
   const phone = document.getElementById("phone").value.trim();
   const address = document.getElementById("address").value.trim();
 
-  // ✅ 沒填完整就禁止關閉，觸發原生提示
+  // ✅ 判斷是否有欄位為空
   if (!name || !phone || !address) {
-    form.reportValidity();
-    return;
+    // 自訂彈窗樣式提醒（避免使用 alert）
+    const warnBox = document.createElement("div");
+    warnBox.textContent = "請完整填寫姓名、電話與地址";
+    warnBox.style.position = "fixed";
+    warnBox.style.top = "50%";
+    warnBox.style.left = "50%";
+    warnBox.style.transform = "translate(-50%, -50%)";
+    warnBox.style.padding = "20px";
+    warnBox.style.backgroundColor = "#fff";
+    warnBox.style.border = "2px solid #C6456C";
+    warnBox.style.borderRadius = "10px";
+    warnBox.style.zIndex = 10000;
+    warnBox.style.textAlign = "center";
+    warnBox.style.fontWeight = "bold";
+
+    document.body.appendChild(warnBox);
+    setTimeout(() => warnBox.remove(), 2000);
+    return; // ❌ 不讓視窗關閉
   }
 
   const currentData = { name, phone, address };
@@ -337,6 +352,7 @@ function closeProfileModal() {
     document.getElementById("profile-modal").style.display = "none";
   }
 }
+
 
 // 警告視窗：確定關閉
 function confirmCloseProfile() {
