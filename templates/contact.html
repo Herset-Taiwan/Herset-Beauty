@@ -118,14 +118,22 @@
     </div>
 
     <div style="min-width: 200px;">
-      <h4 style="margin-bottom: 10px;">關注我們</h4>
-      <div style="display: flex; gap: 10px;">
-        <img src="{{ url_for('static', filename='icons/facebook.png') }}" width="24">
-        <img src="{{ url_for('static', filename='icons/instagram.png') }}" width="24">
-        <img src="{{ url_for('static', filename='icons/line.png') }}" width="24">
-        <img src="{{ url_for('static', filename='icons/youtube.png') }}" width="24">
-      </div>
-    </div>
+  <h4 style="margin-bottom: 10px;">關注我們</h4>
+  <div style="display: flex; gap: 10px;">
+    <a href="https://www.facebook.com/profile.php?id=61575912508195#" target="_blank">
+      <img src="{{ url_for('static', filename='icons/facebook.png') }}" width="36" alt="Facebook">
+    </a>
+    <a href="https://www.instagram.com/hello.herset?igsh=OHN2bHc2OGYxcXQ0&utm_source=qr" target="_blank">
+      <img src="{{ url_for('static', filename='icons/instagram.png') }}" width="36" alt="Instagram">
+    </a>
+    <a href="https://line.me/R/ti/p/@013ylkcz?oat_content=qr" target="_blank">
+      <img src="{{ url_for('static', filename='icons/line.png') }}" width="36" alt="LINE">
+    </a>
+    <a href="https://www.youtube.com/你的頻道網址" target="_blank">
+      <img src="{{ url_for('static', filename='icons/youtube.png') }}" width="36" alt="YouTube">
+    </a>
+  </div>
+</div>
 
     <div style="min-width: 200px;">
       <h4 style="margin-bottom: 10px;">訂購問題</h4>
