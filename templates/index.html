@@ -328,10 +328,18 @@ function closeProfileModal() {
     !initialProfileData.phone &&
     !initialProfileData.address;
 
-  // 如果是第一次登入 且 有欄位為空，就不讓關閉
+  // ✅ 加這段：如果是第一次登入且欄位有空，強制 focus + 回傳 false
   if (isFirstLogin && (!name || !phone || !address)) {
-    form.reportValidity(); // 🟢 觸發瀏覽器「請填寫欄位」提示
-    return;
+    if (!name) nameEl.focus();
+    else if (!phone) phoneEl.focus();
+    else if (!address) addressEl.focus();
+
+    // 🧠 必須先 focus 再 call reportValidity 才能觸發瀏覽器泡泡提示
+    setTimeout(() => {
+      form.reportValidity();
+    }, 10);
+
+    return; // 阻止關閉
   }
 
   // 判斷是否有修改過
