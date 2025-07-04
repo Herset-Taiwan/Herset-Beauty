@@ -245,5 +245,34 @@ setInterval(() => {
 </script>
 <script src="{{ url_for('static', filename='script.js') }}"></script>
 
+
+{% if session.get('incomplete_profile') %}
+<div id="incomplete-popup" style="
+  position: fixed;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #ffffff;
+  border: 2px solid #ccc;
+  padding: 30px;
+  z-index: 9999;
+  text-align: center;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+  <h3 style="margin-bottom: 15px;">請補充會員資料</h3>
+  <p style="margin-bottom: 20px;">請輸入您的姓名、電話與地址，以便順利配送商品。</p>
+  <button onclick="document.getElementById('incomplete-popup').style.display='none'; openProfileModal()" style="
+    padding: 10px 20px;
+    background-color: #C6456C;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;">立即補填資料</button>
+</div>
+{% endif %}
+
+
+
 </body>
 </html>

@@ -152,7 +152,7 @@ def reset_password():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    next_page = request.args.get('next')  # 例如 cart
+    next_page = request.args.get('next')  # 例如 ?next=cart
 
     if request.method == 'POST':
         account = request.form.get('account')
@@ -162,23 +162,27 @@ def login():
             return render_template("login.html", error="請輸入帳號與密碼")
 
         res = supabase.table("members") \
-            .select("id, account, password") \
+            .select("id, account, password, name, phone, address") \
             .eq("account", account).execute()
 
         if res.data and res.data[0]['password'] == password:
-            session['user'] = res.data[0]
-            session['member_id'] = res.data[0]['id']
+            user = res.data[0]
+            session['user'] = user
+            session['member_id'] = user['id']
 
-            # ✅ 根據 next 決定跳轉頁面
-            if next_page == 'cart':
-                return redirect('/cart')
+            # ✅ 判斷是否有缺資料
+            if not user.get('name') or not user.get('phone') or not user.get('address'):
+                session['incomplete_profile'] = True
             else:
-                return redirect('/')
+                session.pop('incomplete_profile', None)
+
+            return redirect('/cart' if next_page == 'cart' else '/')
 
         else:
             return render_template("login.html", error="帳號或密碼錯誤")
 
     return render_template("login.html")
+
 
 
 
@@ -692,10 +696,15 @@ def update_profile():
         print("✅ Supabase 回傳：", result)
         session['profile_updated'] = True
 
+        # ✅ 如果填寫完整，就移除 incomplete_profile
+        if name and phone and address:
+            session.pop('incomplete_profile', None)
+
     except Exception as e:
         print("🚨 更新失敗：", e)
 
     return redirect('/?profile_saved=1')
+
 
 @app.route('/profile-data')
 def profile_data():
