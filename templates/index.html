@@ -318,33 +318,31 @@ function openProfileModal() {
 let pendingClose = false;  // 用來記錄是否真的要關閉
 
 function closeProfileModal() {
-  const currentData = {
-    name: document.getElementById("name").value.trim(),
-    phone: document.getElementById("phone").value.trim(),
-    address: document.getElementById("address").value.trim()
-  };
+  const name = document.getElementById("name").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  const address = document.getElementById("address").value.trim();
+
+  // ✅ 檢查是否有欄位為空
+  if (!name || !phone || !address) {
+    alert("請填寫完整的姓名、電話與地址，才能關閉視窗");
+    return; // ❌ 不讓視窗關閉
+  }
+
+  const currentData = { name, phone, address };
 
   const changed =
     currentData.name !== initialProfileData.name ||
     currentData.phone !== initialProfileData.phone ||
     currentData.address !== initialProfileData.address;
 
-  console.log("是否有變更：", changed);
-
   if (changed) {
     pendingClose = true;
-
-    // ✅ 顯示警告視窗
-    const warning = document.getElementById("unsaved-warning");
-    warning.style.display = "block";
-
-    // ✅ 強制 z-index 提高，避免被 profile-modal 蓋住
-    warning.style.zIndex = "10001";
+    document.getElementById("unsaved-warning").style.display = "block";
   } else {
-    // ✅ 沒變更就正常關閉
     document.getElementById("profile-modal").style.display = "none";
   }
 }
+
 
 
 function confirmCloseProfile() {
