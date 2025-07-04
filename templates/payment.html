@@ -40,24 +40,7 @@
       </li>
     </ul>
   </nav>
-</header>
 
-
-      {% else %}
-        <li><a href="/login">👤 會員登入</a></li>
-      {% endif %}
-      <li>
-        <a href="/cart" class="cart-btn">🛒 購物車
-  {% if cart_count is defined and cart_count > 0 %}
-    <span class="cart-count" id="cart-count">{{ cart_count }}</span>
-  {% else %}
-    <span class="cart-count" id="cart-count" style="display: none;">0</span>
-  {% endif %}
-</a>
-      </li>
-    </ul>
-  </nav>
-</header>
 
 
 <!-- 首頁輪播圖 -->
