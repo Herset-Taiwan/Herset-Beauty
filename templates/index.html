@@ -314,23 +314,34 @@ function openProfileModal() {
 // 關閉會員資料視窗
 function closeProfileModal() {
   const form = document.querySelector(".profile-form form");
+  const name = document.getElementById("name");
+  const phone = document.getElementById("phone");
+  const address = document.getElementById("address");
 
-  // Step 1️⃣：先做原生表單驗證（例如 required）
-  if (!form.checkValidity()) {
-    form.reportValidity();  // ✅ 出現「請填寫這個欄位」泡泡提示
-    return; // ❌ 阻止視窗關閉
-  }
+  const nameVal = name.value.trim();
+  const phoneVal = phone.value.trim();
+  const addressVal = address.value.trim();
 
-  // Step 2️⃣：比較資料是否有變更
-  const name = document.getElementById("name").value.trim();
-  const phone = document.getElementById("phone").value.trim();
-  const address = document.getElementById("address").value.trim();
+  const currentData = {
+    name: nameVal,
+    phone: phoneVal,
+    address: addressVal
+  };
 
-  const currentData = { name, phone, address };
   const changed =
     currentData.name !== initialProfileData.name ||
     currentData.phone !== initialProfileData.phone ||
     currentData.address !== initialProfileData.address;
+
+  // ✅ 如果「原本的值是空」且「現在的值也是空」，不准關閉
+  if (
+    !initialProfileData.name && !nameVal ||
+    !initialProfileData.phone && !phoneVal ||
+    !initialProfileData.address && !addressVal
+  ) {
+    form.reportValidity(); // 跳出原生請填寫提示
+    return;
+  }
 
   if (changed) {
     pendingClose = true;
