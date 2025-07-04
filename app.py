@@ -82,6 +82,13 @@ def forgot():
             flash("找不到符合的帳號資訊。", "danger")
     return render_template("forgot.html")
 
+# 按Herset回到首頁
+@app.context_processor
+def inject_cart_count():
+    cart_count = 0
+    if 'cart' in session:
+        cart_count = len(session['cart'])
+    return dict(cart_count=cart_count)
 
 # ✅ 驗證碼確認
 @app.route('/verify', methods=['GET', 'POST'])
