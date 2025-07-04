@@ -314,17 +314,18 @@ function openProfileModal() {
 // 關閉會員資料視窗
 function closeProfileModal() {
   const form = document.querySelector(".profile-form form");
+
+  // Step 1️⃣：先做原生表單驗證（例如 required）
+  if (!form.checkValidity()) {
+    form.reportValidity();  // ✅ 出現「請填寫這個欄位」泡泡提示
+    return; // ❌ 阻止視窗關閉
+  }
+
+  // Step 2️⃣：比較資料是否有變更
   const name = document.getElementById("name").value.trim();
   const phone = document.getElementById("phone").value.trim();
   const address = document.getElementById("address").value.trim();
 
-  // 🔍 Step 1：若有空值，觸發瀏覽器驗證提示
-  if (!name || !phone || !address) {
-    form.reportValidity();  // ✅ 出現「請填寫這個欄位」
-    return; // ❌ 不關閉
-  }
-
-  // 🔍 Step 2：判斷是否有變更
   const currentData = { name, phone, address };
   const changed =
     currentData.name !== initialProfileData.name ||
@@ -332,14 +333,13 @@ function closeProfileModal() {
     currentData.address !== initialProfileData.address;
 
   if (changed) {
-    // 顯示「尚未儲存變更」警告視窗
     pendingClose = true;
     document.getElementById("unsaved-warning").style.display = "block";
   } else {
-    // 🔚 Step 3：沒變更可直接關閉
     document.getElementById("profile-modal").style.display = "none";
   }
 }
+
 
 
 
