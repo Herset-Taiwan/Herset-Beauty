@@ -289,49 +289,42 @@ document.querySelector('.profile-form form').addEventListener('submit', function
 
 <script>
 let initialProfileData = {};
+let pendingClose = false;  // 用來記錄是否真的要關閉
 
-// 1️⃣ 每次開啟會員資料視窗時，記住初始值
+// 開啟會員資料視窗
 function openProfileModal() {
   fetch('/get_profile')  // 後端 API 拿會員資料
     .then(res => res.json())
     .then(data => {
-      // 將資料填入欄位
       document.getElementById("name").value = data.name || '';
       document.getElementById("phone").value = data.phone || '';
       document.getElementById("address").value = data.address || '';
       document.getElementById("note").value = data.note || '';
 
-      // 記住初始資料
       initialProfileData = {
         name: data.name || '',
         phone: data.phone || '',
         address: data.address || ''
       };
 
-      // 顯示 modal
       document.getElementById("profile-modal").style.display = "block";
     });
 }
 
-
-// 2️⃣ 嘗試關閉時做比對
-let pendingClose = false;  // 用來記錄是否真的要關閉
-
+// 關閉會員資料視窗
 function closeProfileModal() {
   const form = document.querySelector(".profile-form form");
-
-  // ✅ 先做表單驗證
-  if (!form.checkValidity()) {
-    form.reportValidity(); // 觸發原生驗證提示
-    return; // ❌ 阻止關閉 modal
-  }
-
   const name = document.getElementById("name").value.trim();
   const phone = document.getElementById("phone").value.trim();
   const address = document.getElementById("address").value.trim();
 
-  const currentData = { name, phone, address };
+  // ✅ 沒填完整就禁止關閉，觸發原生提示
+  if (!name || !phone || !address) {
+    form.reportValidity();
+    return;
+  }
 
+  const currentData = { name, phone, address };
   const changed =
     currentData.name !== initialProfileData.name ||
     currentData.phone !== initialProfileData.phone ||
@@ -345,10 +338,7 @@ function closeProfileModal() {
   }
 }
 
-
-
-
-
+// 警告視窗：確定關閉
 function confirmCloseProfile() {
   if (pendingClose) {
     document.getElementById("unsaved-warning").style.display = "none";
@@ -357,12 +347,13 @@ function confirmCloseProfile() {
   }
 }
 
+// 警告視窗：取消關閉
 function cancelCloseProfile() {
   document.getElementById("unsaved-warning").style.display = "none";
   pendingClose = false;
 }
-
 </script>
+
 
 <div id="unsaved-warning" class="modal">
   <div class="modal-content" style="text-align:center;">
