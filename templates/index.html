@@ -328,15 +328,24 @@ function closeProfileModal() {
     currentData.name !== initialProfileData.name ||
     currentData.phone !== initialProfileData.phone ||
     currentData.address !== initialProfileData.address;
+
   console.log("是否有變更：", changed);
-  
+
   if (changed) {
     pendingClose = true;
-    document.getElementById("unsaved-warning").style.display = "block";
+
+    // ✅ 顯示警告視窗
+    const warning = document.getElementById("unsaved-warning");
+    warning.style.display = "block";
+
+    // ✅ 強制 z-index 提高，避免被 profile-modal 蓋住
+    warning.style.zIndex = "10001";
   } else {
+    // ✅ 沒變更就正常關閉
     document.getElementById("profile-modal").style.display = "none";
   }
 }
+
 
 function confirmCloseProfile() {
   if (pendingClose) {
