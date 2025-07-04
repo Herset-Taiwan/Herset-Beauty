@@ -352,6 +352,18 @@ function closeProfileModal() {
 }
 </script>
 
+<div id="unsaved-warning" class="modal">
+  <div class="modal-content" style="text-align:center;">
+    <h3>⚠️ 尚未儲存變更</h3>
+    <p>您尚未儲存資料，確定要關閉嗎？</p>
+    <div style="margin-top: 20px;">
+      <button onclick="cancelCloseProfile()">取消</button>
+      <button onclick="confirmCloseProfile()">確定關閉</button>
+    </div>
+  </div>
+</div>
+
+
 
 
 </body>
