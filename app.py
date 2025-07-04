@@ -85,10 +85,10 @@ def forgot():
 # 按Herset回到首頁
 @app.context_processor
 def inject_cart_count():
-    cart_count = 0
-    if 'cart' in session:
-        cart_count = len(session['cart'])
+    cart = session.get('cart', [])
+    cart_count = sum(item.get('qty', 0) for item in cart)
     return dict(cart_count=cart_count)
+
 
 # ✅ 驗證碼確認
 @app.route('/verify', methods=['GET', 'POST'])
