@@ -314,34 +314,31 @@ function openProfileModal() {
 // 關閉會員資料視窗
 function closeProfileModal() {
   const form = document.querySelector(".profile-form form");
-  const name = document.getElementById("name");
-  const phone = document.getElementById("phone");
-  const address = document.getElementById("address");
+  const nameEl = document.getElementById("name");
+  const phoneEl = document.getElementById("phone");
+  const addressEl = document.getElementById("address");
 
-  const nameVal = name.value.trim();
-  const phoneVal = phone.value.trim();
-  const addressVal = address.value.trim();
+  const name = nameEl.value.trim();
+  const phone = phoneEl.value.trim();
+  const address = addressEl.value.trim();
 
-  const currentData = {
-    name: nameVal,
-    phone: phoneVal,
-    address: addressVal
-  };
+  // 判斷是否第一次登入（原始資料都為空）
+  const isFirstLogin =
+    !initialProfileData.name &&
+    !initialProfileData.phone &&
+    !initialProfileData.address;
 
-  const changed =
-    currentData.name !== initialProfileData.name ||
-    currentData.phone !== initialProfileData.phone ||
-    currentData.address !== initialProfileData.address;
-
-  // ✅ 如果「原本的值是空」且「現在的值也是空」，不准關閉
-  if (
-    !initialProfileData.name && !nameVal ||
-    !initialProfileData.phone && !phoneVal ||
-    !initialProfileData.address && !addressVal
-  ) {
-    form.reportValidity(); // 跳出原生請填寫提示
+  // 如果是第一次登入 且 有欄位為空，就不讓關閉
+  if (isFirstLogin && (!name || !phone || !address)) {
+    form.reportValidity(); // 🟢 觸發瀏覽器「請填寫欄位」提示
     return;
   }
+
+  // 判斷是否有修改過
+  const changed =
+    name !== initialProfileData.name ||
+    phone !== initialProfileData.phone ||
+    address !== initialProfileData.address;
 
   if (changed) {
     pendingClose = true;
