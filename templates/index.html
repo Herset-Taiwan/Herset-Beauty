@@ -318,17 +318,17 @@ function openProfileModal() {
 let pendingClose = false;  // 用來記錄是否真的要關閉
 
 function closeProfileModal() {
-  const form = document.querySelector(".profile-form form"); // 🔍 抓表單
+  const form = document.querySelector(".profile-form form");
+
+  // ✅ 先做表單驗證
+  if (!form.checkValidity()) {
+    form.reportValidity(); // 觸發原生驗證提示
+    return; // ❌ 阻止關閉 modal
+  }
 
   const name = document.getElementById("name").value.trim();
   const phone = document.getElementById("phone").value.trim();
   const address = document.getElementById("address").value.trim();
-
-  // ✅ 檢查是否有欄位為空
-  if (!name || !phone || !address) {
-    form.reportValidity();  // 🟢 觸發原生「請填寫這個欄位」泡泡
-    return; // ❌ 不讓視窗關閉
-  }
 
   const currentData = { name, phone, address };
 
@@ -344,6 +344,7 @@ function closeProfileModal() {
     document.getElementById("profile-modal").style.display = "none";
   }
 }
+
 
 
 
