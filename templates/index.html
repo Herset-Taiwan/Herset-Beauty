@@ -272,20 +272,7 @@ setInterval(() => {
 </div>
 {% endif %}
 
-<script>
-function closeProfileModal() {
-  const name = document.getElementById('name').value.trim();
-  const phone = document.getElementById('phone').value.trim();
-  const address = document.getElementById('address').value.trim();
 
-  if (!name || !phone || !address) {
-    alert('請先填寫完整的會員資料（姓名、電話、地址）');
-    return;  // 阻止關閉
-  }
-
-  document.getElementById("profile-modal").style.display = "none";
-}
-</script>
 
 <script>
 document.querySelector('.profile-form form').addEventListener('submit', function(e) {
@@ -328,6 +315,8 @@ function openProfileModal() {
 
 
 // 2️⃣ 嘗試關閉時做比對
+let pendingClose = false;  // 用來記錄是否真的要關閉
+
 function closeProfileModal() {
   const currentData = {
     name: document.getElementById("name").value.trim(),
@@ -335,21 +324,32 @@ function closeProfileModal() {
     address: document.getElementById("address").value.trim()
   };
 
-  // 檢查是否有變動
-  const changed = (
+  const changed =
     currentData.name !== initialProfileData.name ||
     currentData.phone !== initialProfileData.phone ||
-    currentData.address !== initialProfileData.address
-  );
+    currentData.address !== initialProfileData.address;
 
   if (changed) {
-    const confirmLeave = confirm("您尚未儲存變更，是否確定關閉？");
-    if (!confirmLeave) return; // 取消關閉
+    pendingClose = true;
+    document.getElementById("unsaved-warning").style.display = "block";
+  } else {
+    document.getElementById("profile-modal").style.display = "none";
   }
-
-  // 關閉視窗
-  document.getElementById("profile-modal").style.display = "none";
 }
+
+function confirmCloseProfile() {
+  if (pendingClose) {
+    document.getElementById("unsaved-warning").style.display = "none";
+    document.getElementById("profile-modal").style.display = "none";
+    pendingClose = false;
+  }
+}
+
+function cancelCloseProfile() {
+  document.getElementById("unsaved-warning").style.display = "none";
+  pendingClose = false;
+}
+
 </script>
 
 <div id="unsaved-warning" class="modal">
