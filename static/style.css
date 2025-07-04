@@ -432,66 +432,6 @@ footer {
   font-size: 24px;
 }
 
-/* 手機版排版調整（最大寬度 768px） */
-@media screen and (max-width: 768px) {
-  .main-header {
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 10px;
-  }
-
-  .main-nav ul {
-    flex-direction: column;
-    gap: 10px;
-    width: 100%;
-  }
-
-  .sub-categories {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    font-size: 16px;
-  }
-
-  .product-list {
-    flex-direction: column;
-    align-items: center;
-    padding: 0 10px;
-  }
-
-  .product-card {
-    width: 90%;
-    min-height: auto;
-    padding: 20px;
-  }
-
-  .product-card img {
-    height: auto;
-    max-height: 250px;
-  }
-
-  .carousel-img {
-    height: auto;
-    max-height: 300px;
-  }
-
-  .modal-content {
-    width: 90%;
-    padding: 20px;
-  }
-
-  .profile-form {
-    width: 100%;
-    padding: 20px;
-  }
-
-  .save-success, .add-success {
-    top: 10px;
-    font-size: 14px;
-    padding: 8px 16px;
-  }
-}
-
 
 
 
