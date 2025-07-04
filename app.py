@@ -834,7 +834,7 @@ def contact():
 from flask import redirect
 
 # 把舊網址導向正確網址
-@app.route('/elementor-28')
+@app.route('/elementor-28/')
 def redirect_old_page():
     return redirect("https://herset.co/", code=301)
 
