@@ -8,12 +8,27 @@
   <meta name="description" content="HERSET 專注於私密護理、身體保養與香氛，打造簡約自然的保養生活美學。">
   <meta name="keywords" content="HERSET, 天然保養, 私密處清潔, 身體乳, 香氛, 品味生活, 美學品牌">
 
+  <!-- RWD 必備 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <!-- Favicon -->
   <link rel="icon" href="{{ url_for('static', filename='uploads/logo_0.png') }}" type="image/png">
+
+  <!-- 結構化資料：Organization（讓 Google 顯示品牌 logo） -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "HERSET",
+    "url": "https://www.herset.co",
+    "logo": "https://www.herset.co/static/uploads/logo_0.png"
+  }
+  </script>
 
   <!-- 原本 CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
+
 
 <body>
 <div class="add-success" id="add-success">已加入購物車！</div>
