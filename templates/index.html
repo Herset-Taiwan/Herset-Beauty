@@ -128,7 +128,7 @@
       </div>
       <div class="form-group">
         <label for="address">地址：</label>
-        <input type="text" id="address" name="address">
+        <input type="text" id="address" name="address" required>
       </div>
       <div class="form-group">
         <label for="note">訂單備註：</label>
@@ -272,6 +272,33 @@ setInterval(() => {
 </div>
 {% endif %}
 
+<script>
+function closeProfileModal() {
+  const name = document.getElementById('name').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  const address = document.getElementById('address').value.trim();
+
+  if (!name || !phone || !address) {
+    alert('請先填寫完整的會員資料（姓名、電話、地址）');
+    return;  // 阻止關閉
+  }
+
+  document.getElementById("profile-modal").style.display = "none";
+}
+</script>
+
+<script>
+document.querySelector('.profile-form form').addEventListener('submit', function(e) {
+  const name = document.getElementById('name').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  const address = document.getElementById('address').value.trim();
+
+  if (!name || !phone || !address) {
+    e.preventDefault(); // 阻止送出
+    alert('請完整填寫會員資料（姓名、電話、地址）');
+  }
+});
+</script>
 
 
 </body>
