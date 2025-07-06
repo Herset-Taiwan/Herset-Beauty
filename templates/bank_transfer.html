@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>銀行轉帳資訊</title>
+  <style>
+    body { font-family: sans-serif; padding: 30px; }
+    .box { max-width: 500px; margin: auto; border: 1px solid #ccc; padding: 30px; border-radius: 8px; background: #f9f9f9; }
+    h2 { color: #b43c57; }
+    .info { margin-bottom: 15px; }
+    label { font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>請使用以下資訊進行銀行轉帳</h2>
+    <div class="info">
+      <label>銀行名稱：</label> 花旗銀行（代碼：021）
+    </div>
+    <div class="info">
+      <label>帳號：</label> 123456789012
+    </div>
+    <div class="info">
+      <label>戶名：</label> HERSET BEAUTY
+    </div>
+    <div class="info">
+      <label>匯款金額：</label> NT${{ order.total_amount }}
+    </div>
+    <div class="info">
+      <label>訂單編號：</label> {{ order.MerchantTradeNo }}
+    </div>
+
+    <hr>
+    <p>請完成轉帳後，透過 LINE 或客服通知我們，並提供匯款帳號末五碼。</p>
+    <a href="/">返回首頁</a>
+  </div>
+</body>
+</html>

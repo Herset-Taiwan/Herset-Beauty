@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>Line Pay 付款</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 40px;
+      background-color: #fff;
+      color: #444;
+    }
+    img.qrcode {
+      width: 240px;
+      margin: 20px 0;
+    }
+    .note {
+      margin-top: 30px;
+      font-size: 16px;
+      color: #666;
+    }
+    button {
+      margin-top: 40px;
+      padding: 10px 30px;
+      background-color: #06c755;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h2>請使用 Line Pay 掃描下方 QR Code 完成付款</h2>
+
+  <img src="{{ url_for('static', filename='linepay_qr.png') }}" alt="Line Pay QR Code" class="qrcode">
+
+  <div class="note">
+    請使用手機打開 Line App 掃描上方 QR Code 進行付款。<br>
+    付款完成後，請點擊下方「我已完成付款」通知我們。
+  </div>
+
+  <form action="/thank_you" method="get">
+    <button type="submit">我已完成付款</button>
+  </form>
+</body>
+</html>

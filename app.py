@@ -328,7 +328,6 @@ def cart():
 
     return render_template("cart.html", products=products, total=total)
 
-
 #結帳
 @app.route('/checkout', methods=['POST'])
 def checkout():
@@ -345,7 +344,6 @@ def checkout():
     total = 0
     items = []
 
-    # 計算總價與準備商品資料
     for item in cart_items:
         res = supabase.table("products").select("*").eq("id", item['product_id']).single().execute()
         product = res.data
@@ -363,12 +361,9 @@ def checkout():
     from uuid import uuid4
     from pytz import timezone
     tz = timezone("Asia/Taipei")
-
-    # 產生綠界訂單編號
-    merchant_trade_no = "HS" + uuid4().hex[:12]  # 綠界限制最多 20 字元
+    merchant_trade_no = "HS" + uuid4().hex[:12]
     created_at = datetime.now(tz).isoformat()
 
-    # 儲存到 orders 表
     order_data = {
         'member_id': member_id,
         'total_amount': total,
@@ -379,7 +374,6 @@ def checkout():
     result = supabase.table('orders').insert(order_data).execute()
     order_id = result.data[0]['id']
 
-    # 儲存每筆訂單商品
     for item in items:
         item['order_id'] = order_id
     supabase.table('order_items').insert(items).execute()
@@ -387,33 +381,44 @@ def checkout():
     # 清空購物車
     session['cart'] = []
 
-    # 綠界金流參數設定
-    import urllib.parse
-    from utils import generate_check_mac_value  # 確保你有這個函式
+    # 暫存 trade_no，準備付款用
+    session['current_trade_no'] = merchant_trade_no
+    return redirect("/choose-payment")
 
-    merchant_id = '2000132'
-    hash_key = '5294y06JbISpM5x9'
-    hash_iv = 'v77hoKGq4kWxNNIS'
-    return_url = 'https://herset.co/ecpay/return'
+#付款方式
+@app.route('/choose-payment')
+def choose_payment():
+    if 'current_trade_no' not in session:
+        return redirect('/cart')
+    return render_template("choose_payment.html")
 
-    ecpay_data = {
-        "MerchantID": merchant_id,
-        "MerchantTradeNo": merchant_trade_no,
-        "MerchantTradeDate": datetime.now().strftime("%Y/%m/%d %H:%M:%S"),
-        "PaymentType": "aio",
-        "TotalAmount": int(total),
-        "TradeDesc": urllib.parse.quote_plus("HERSET 購物結帳"),
-        "ItemName": "HERSET 商品組合",
-        "ReturnURL": return_url,
-        "ChoosePayment": "Credit",
-        "ClientBackURL": "https://herset.co/thank_you"
-    }
+#執行付款動作
+@app.route('/pay', methods=['POST'])
+def pay():
+    method = request.form.get("method")
+    trade_no = session.get("current_trade_no")
 
-    # 加密 CheckMacValue
-    ecpay_data["CheckMacValue"] = generate_check_mac_value(ecpay_data, hash_key, hash_iv)
+    res = supabase.table("orders").select("*").eq("MerchantTradeNo", trade_no).execute()
+    if not res.data:
+        return "找不到訂單", 404
 
-    return render_template("ecpay_form.html", data=ecpay_data,
-                           url="https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5")
+    order = res.data[0]
+
+    if method == "credit":
+        from utils import generate_ecpay_form
+        return generate_ecpay_form(order, trade_no)
+    elif method == "bank":
+        return render_template("bank_transfer.html", order=order)
+    elif method == "linepay":
+        return "Line Pay 尚未整合"
+    else:
+        return "付款方式錯誤", 400
+    
+    
+#line pay結帳
+@app.route("/linepay")
+def linepay():
+    return render_template("linepay.html")
 
 
 # 歷史訂單重新付款
@@ -443,6 +448,7 @@ def repay_order(merchant_trade_no):
 
 
 
+@app.route('/thank_you')
 @app.route('/thank-you')
 def thank_you():
     return render_template("thank_you.html")
@@ -474,7 +480,7 @@ def product_detail(product_id):
 def ecpay_return():
     data = request.form.to_dict()
     if data.get('RtnCode') == '1':
-        supabase.table("orders").update({'status': 'paid'}).eq('id', data['MerchantTradeNo']).execute()
+        supabase.table("orders").update({'status': 'paid'}).eq('MerchantTradeNo', data['MerchantTradeNo']).execute()
         return '1|OK'
     return '0|Fail'
 #綠界付款成功回傳處理

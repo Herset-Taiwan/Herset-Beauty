@@ -15,6 +15,14 @@
       font-size: 18px;
       margin-top: 20px;
     }
+    .fallback {
+      margin-top: 40px;
+      font-size: 14px;
+    }
+    .fallback a {
+      color: #c06;
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -27,8 +35,11 @@
     {% endfor %}
   </form>
 
+  <div class="fallback">
+    若未自動導向，請 <a href="#" onclick="document.getElementById('ecpay-form').submit(); return false;">點此繼續付款</a>。
+  </div>
+
   <script>
-    // 延遲 500 毫秒送出（避免部分瀏覽器閃爍或不送出）
     setTimeout(function () {
       document.getElementById("ecpay-form").submit();
     }, 500);
