@@ -19,6 +19,9 @@ import hashlib
 import random
 import datetime
 from utils import generate_check_mac_value
+from datetime import datetime
+from utils import generate_check_mac_value, generate_ecpay_form
+
 
 load_dotenv()
 
@@ -355,7 +358,6 @@ def checkout():
             })
 
     from uuid import uuid4
-    from datetime import datetime
     from pytz import timezone
     tz = timezone("Asia/Taipei")
 
