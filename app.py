@@ -140,10 +140,12 @@ def admin_login():
         password = request.form["password"]
         if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
             session["admin_logged_in"] = True
-            return redirect("/admin")
+            return redirect("/admin?tab=orders")
         else:
             return render_template("admin_login.html", error="帳號或密碼錯誤")
     return render_template("admin_login.html")
+
+
 
 #限制後台 /admin 只能登入後才進入
 
