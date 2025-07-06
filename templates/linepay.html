@@ -20,15 +20,24 @@
       font-size: 16px;
       color: #666;
     }
-    button {
-      margin-top: 40px;
+    button, .back-btn {
+      margin-top: 20px;
       padding: 10px 30px;
-      background-color: #06c755;
-      color: white;
       border: none;
       border-radius: 6px;
       font-size: 16px;
       cursor: pointer;
+      display: inline-block;
+    }
+    button {
+      background-color: #06c755;
+      color: white;
+    }
+    .back-btn {
+      background-color: #ccc;
+      color: #333;
+      text-decoration: none;
+      margin-left: 10px;
     }
   </style>
 </head>
@@ -43,7 +52,9 @@
   </div>
 
   <form action="/thank_you" method="get">
-    <button type="submit">我已完成付款</button>
+    <button type="submit">我已完成付款，"請點我"</button>
   </form>
+
+  <a class="back-btn" href="/">稍後再付款，先返回首頁</a>
 </body>
 </html>

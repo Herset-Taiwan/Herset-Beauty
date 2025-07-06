@@ -3,17 +3,76 @@
 <head>
   <meta charset="UTF-8">
   <title>選擇付款方式</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f8f5f4;
+      color: #333;
+      padding: 50px;
+      text-align: center;
+    }
+
+    .container {
+      background: #fff;
+      max-width: 480px;
+      margin: auto;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    h2 {
+      color: #b43c57;
+      margin-bottom: 30px;
+    }
+
+    .radio-group {
+      text-align: left;
+      margin-bottom: 30px;
+    }
+
+    .radio-option {
+      margin: 12px 0;
+      font-size: 16px;
+    }
+
+    input[type="radio"] {
+      transform: scale(1.3);
+      margin-right: 10px;
+    }
+
+    button {
+      padding: 12px 30px;
+      background-color: #b43c57;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #952c44;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
     <h2>請選擇付款方式</h2>
-    <form action="/process_payment" method="POST">
+    <form method="post" action="/process_payment">
+      <div class="radio-group">
+        <div class="radio-option">
+          <label><input type="radio" name="method" value="linepay"> Line Pay</label>
+        </div>
+        <div class="radio-option">
+          <label><input type="radio" name="method" value="bank"> 銀行轉帳</label>
+        </div>
+        <div class="radio-option">
+          <label><input type="radio" name="method" value="ecpay" checked> 信用卡付款</label>
+        </div>
+      </div>
       <input type="hidden" name="order_id" value="{{ order.id }}">
-      <input type="hidden" name="is_repay" value="{{ '1' if is_repay else '0' }}">
-      <label><input type="radio" name="method" value="linepay" required> Line Pay</label><br>
-      <label><input type="radio" name="method" value="bank" required> 銀行轉帳</label><br>
-      <label><input type="radio" name="method" value="credit" required> 信用卡付款</label><br><br>
       <button type="submit">前往付款</button>
     </form>
   </div>
