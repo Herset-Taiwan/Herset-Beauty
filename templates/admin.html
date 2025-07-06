@@ -302,7 +302,7 @@
       buttons.forEach(b => b.classList.remove('active'));
 
       document.getElementById(tabId).classList.add('active');
-      document.querySelector(.tab-btn[onclick*="${tabId}"]).classList.add('active');
+      document.querySelector('.tab-btn[onclick*="' + tabId + '"]').classList.add('active');
     }
 
     // 預設依 tab 參數切換頁籤
