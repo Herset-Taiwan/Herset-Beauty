@@ -89,19 +89,23 @@
         const box = document.createElement('div');
         box.className = 'order-box';
         box.innerHTML = `
-          <div><strong>訂單編號：</strong>#${o.id}</div>
-          <div><strong>訂單時間：</strong>${o.created_local}</div>
-          <div><strong>金額：</strong>$${o.total_amount}</div>
-          <div><strong>付款狀態：</strong>${o.payment_status === 'paid' ? '已付款' : '未付款'}</div>
-          <div><strong>出貨狀態：</strong>${translateStatus(o.status)}</div>
-          <div><strong>商品明細：</strong>
-            <ul>
-              ${o.items.map(i => `<li>${i.product_name} × ${i.qty}（$${i.price}）</li>`).join('')}
-            </ul>
-          </div>
-          ${o.payment_status !== 'paid' ? `<button onclick="goToPay('${o.merchant_trade_no}')">重新付款</button>` : ''}
+  <div><strong>訂單編號：</strong>#${o.id}</div>
+  <div><strong>訂單時間：</strong>${o.created_local}</div>
+  <div><strong>金額：</strong>$${o.total_amount}</div>
+  <div><strong>付款狀態：</strong>${o.payment_status === 'paid' ? '已付款' : '未付款'}</div>
+  <div><strong>出貨狀態：</strong>${translateStatus(o.status)}</div>
+  <div><strong>商品明細：</strong>
+    <ul>
+      ${o.items.map(i => `<li>${i.product_name} × ${i.qty}（$${i.price}）</li>`).join('')}
+    </ul>
+  </div>
+  ${
+    o.payment_status !== 'paid' && o.MerchantTradeNo
+      ? `<button onclick="goToPay('${o.MerchantTradeNo}')">重新付款</button>`
+      : ''
+  }
+`;
 
-        `;
         container.appendChild(box);
       });
 

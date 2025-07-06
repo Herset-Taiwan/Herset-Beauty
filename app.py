@@ -415,7 +415,7 @@ def checkout():
 @app.route("/repay/<merchant_trade_no>")
 def repay_order(merchant_trade_no):
     # 查詢訂單資訊
-    order = supabase.table("orders").select("*").eq("merchant_trade_no", merchant_trade_no).single().execute().data
+    order = supabase.table("orders").select("*").eq("MerchantTradeNo", merchant_trade_no).single().execute().data
     if not order:
         return "找不到此訂單", 404
 
