@@ -30,15 +30,31 @@ def generate_check_mac_value(data: dict, hash_key: str, hash_iv: str) -> str:
     safe = safe.replace('%21', '!').replace('%2a', '*').replace('%28', '(').replace('%29', ')').replace('%20', '+')
     return hashlib.sha256(safe.encode('utf-8')).hexdigest().upper()
 
-def generate_ecpay_form(order):
+def generate_ecpay_form(order, trade_no=None):
+    import urllib.parse
+    from datetime import datetime
+    import random
+    import string
+    from supabase import create_client
+
     merchant_id = "2000132"
     hash_key = "5294y06JbISpM5x9"
     hash_iv = "v77hoKGq4kWxNNIS"
-
-    trade_no = order.get("merchant_trade_no") or order.get("MerchantTradeNo") or order.get("order_number") or order.get("id")
-    total = int(order["total_amount"])
     return_url = "https://herset.co/ecpay/return"
 
+    # 初始化 Supabase（或使用你原本的 supabase 實例）
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+    # ✅ 若沒傳入 trade_no，就產生一組新的並寫入 payment_log
+    if not trade_no:
+        trade_no = "HS" + ''.join(random.choices(string.ascii_uppercase + string.digits, k=12))
+        supabase.table("payment_log").insert({
+            "order_id": order["id"],
+            "merchant_trade_no": trade_no
+        }).execute()
+
+    # 結帳資料
+    total = int(order["total_amount"])
     ecpay_data = {
         "MerchantID": merchant_id,
         "MerchantTradeNo": trade_no,
@@ -61,3 +77,5 @@ def generate_ecpay_form(order):
     </form>
     <script>document.getElementById("ecpay-form").submit();</script>
     """
+
+
