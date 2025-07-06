@@ -16,6 +16,8 @@ from dotenv import load_dotenv
 from uuid import UUID
 import urllib.parse
 import hashlib
+import random
+import datetime
 
 load_dotenv()
 
@@ -34,6 +36,10 @@ def generate_check_mac_value(params, hash_key, hash_iv):
     check_mac = hashlib.sha256(encoded.encode('utf-8')).hexdigest().upper()
     return check_mac
 
+def generate_merchant_trade_no():
+    now = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    rand = random.randint(1000, 9999)
+    return f"HS{now}{rand}"
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -316,10 +322,9 @@ def cart():
     return render_template("cart.html", products=products, total=total)
 
 
-
+#結帳
 @app.route('/checkout', methods=['POST'])
 def checkout():
-    
     if 'member_id' not in session:
         flash("請先登入會員才能結帳")
         return redirect('/cart')
@@ -348,11 +353,16 @@ def checkout():
 
     # 建立訂單資料
     from uuid import uuid4
-    order_id = "HS" + uuid4().hex[:12]  # 自訂訂單編號（要唯一）
+    import random
+    from datetime import datetime
+
+    order_id = "HS" + uuid4().hex[:12]
+    merchant_trade_no = "HS" + datetime.now().strftime("%Y%m%d%H%M%S") + str(random.randint(1000, 9999))
     created_at = datetime.now(tz).isoformat()
 
     order_data = {
         'id': order_id,
+        'MerchantTradeNo': merchant_trade_no,
         'member_id': member_id,
         'total_amount': total,
         'status': 'pending',
@@ -364,7 +374,6 @@ def checkout():
         item['order_id'] = order_id
     supabase.table('order_items').insert(items).execute()
 
-    # 清空購物車
     session['cart'] = []
 
     # 組出綠界金流參數
@@ -375,21 +384,22 @@ def checkout():
 
     ecpay_data = {
         "MerchantID": merchant_id,
-        "MerchantTradeNo": order_id,
+        "MerchantTradeNo": merchant_trade_no,
         "MerchantTradeDate": datetime.now().strftime("%Y/%m/%d %H:%M:%S"),
         "PaymentType": "aio",
         "TotalAmount": total,
         "TradeDesc": urllib.parse.quote_plus("HERSET 購物結帳"),
         "ItemName": "HERSET 商品組合",
         "ReturnURL": return_url,
-        "ChoosePayment": "Credit",  # 可改 ATM、ALL
-        "ClientBackURL": "https://你的網域/thank_you"
+        "ChoosePayment": "Credit",
+        "ClientBackURL": "https://herset.co/thank_you"
     }
 
     ecpay_data["CheckMacValue"] = generate_check_mac_value(ecpay_data, hash_key, hash_iv)
 
     return render_template("ecpay_form.html", data=ecpay_data,
                            url="https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5")
+
 
 
 @app.route('/thank-you')
