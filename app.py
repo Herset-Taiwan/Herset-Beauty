@@ -23,6 +23,7 @@ import time
 from utils import generate_check_mac_value
 from datetime import datetime
 from utils import generate_check_mac_value, generate_ecpay_form
+from utils import generate_ecpay_form
 
 
 load_dotenv()
@@ -418,25 +419,23 @@ def checkout():
 # 歷史訂單重新付款
 @app.route("/repay/<merchant_trade_no>")
 def repay_order(merchant_trade_no):
-    # 查詢原訂單（用 MerchantTradeNo）
+    # 查原始訂單
     order_result = supabase.table("orders").select("*").eq("MerchantTradeNo", merchant_trade_no).execute()
-
     if not order_result.data:
         return "找不到對應的訂單", 404
 
     order = order_result.data[0]
 
-    # ✅ 呼叫 utils.py 中的 generate_ecpay_form，自動產生新 trade_no 並產生付款表單
+    # ✅ 新寫法：generate_ecpay_form 回傳兩個值
     new_trade_no, form_html = generate_ecpay_form(order)
 
-    # ✅ 儲存 retry 對應記錄
+    # ✅ 儲存映射關係
     supabase.table("ecpay_repay_map").insert({
         "original_trade_no": merchant_trade_no,
         "new_trade_no": new_trade_no,
         "order_id": order["id"]
     }).execute()
 
-    # ✅ 回傳表單讓瀏覽器送出付款
     return form_html
 
 
