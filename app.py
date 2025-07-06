@@ -396,7 +396,7 @@ def checkout():
         "MerchantTradeNo": merchant_trade_no,
         "MerchantTradeDate": datetime.now().strftime("%Y/%m/%d %H:%M:%S"),
         "PaymentType": "aio",
-        "TotalAmount": total,
+        "TotalAmount": int(total),
         "TradeDesc": urllib.parse.quote_plus("HERSET 購物結帳"),
         "ItemName": "HERSET 商品組合",
         "ReturnURL": return_url,
