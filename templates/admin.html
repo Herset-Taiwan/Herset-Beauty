@@ -310,7 +310,7 @@ let filteredOrders = [];
 let currentPage = 1;
 
 function filterOrders() {
-  const keyword = document.getElementById("orderSearch").value.toLowerCase();
+  const keyword = document.getElementById("orderSearch").value?.toLowerCase() || "";
   const status = document.getElementById("statusFilter").value;
   const pageSize = parseInt(document.getElementById("pageSizeSelect").value);
   currentPage = 1;
@@ -318,8 +318,8 @@ function filterOrders() {
   filteredOrders = allOrders.filter(o => {
     const matchKeyword =
       o.id.toString().includes(keyword) ||
-      o.member.account.toLowerCase().includes(keyword) ||
-      o.member.name.toLowerCase().includes(keyword);
+      (o.member?.account?.toLowerCase().includes(keyword)) ||
+      (o.member?.name?.toLowerCase().includes(keyword));
 
     const matchStatus =
       status === "all" ||
@@ -331,6 +331,7 @@ function filterOrders() {
 
   renderOrderPage(pageSize);
 }
+
 
 function renderOrderPage(pageSize) {
   const container = document.getElementById("order-list");
@@ -486,9 +487,16 @@ window.addEventListener('DOMContentLoaded', () => {
   const urlParams = new URLSearchParams(window.location.search);
   const tab = urlParams.get('tab');
   if (tab) switchTab(tab);
+  else switchTab("products");
 
-  filterOrders(); // 初始載入訂單
+  // ✅ 確保所有會員列顯示
+  document.querySelectorAll(".member-row").forEach(m => m.style.display = "block");
+
+  // ✅ 主動觸發訂單顯示
+  filteredOrders = allOrders;
+  renderOrderPage(parseInt(document.getElementById("pageSizeSelect").value));
 });
+
 </script>
 
 
