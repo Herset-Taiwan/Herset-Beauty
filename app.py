@@ -133,7 +133,7 @@ ADMIN_PASSWORD = "show0363"  #
 
 
 # admin登入
-@app.route("/admin/login", methods=["GET", "POST"])
+@app.route("/admin0363/login", methods=["GET", "POST"])
 def admin_login():
     if request.method == "POST":
         username = request.form["username"]
@@ -143,7 +143,7 @@ def admin_login():
             return redirect("/admin?tab=orders")
         else:
             return render_template("admin_login.html", error="帳號或密碼錯誤")
-    return render_template("admin_login.html")
+     return render_template("admin_login.html")
 
 
 
@@ -151,7 +151,7 @@ def admin_login():
 @app.route("/admin/logout")
 def admin_logout():
     session.pop("admin_logged_in", None)
-    return redirect("/admin/login")
+    return redirect("/admin0363/login")
 
 
 # ✅ 驗證碼確認
@@ -528,7 +528,7 @@ def update_order_status(order_id):
     if new_status:
         supabase.table("orders").update({"status": new_status}).eq("id", order_id).execute()
         flash("訂單狀態已修改")
-    return redirect("/admin?tab=orders")
+     return redirect("/admin0363?tab=orders")
 
 
 
@@ -607,7 +607,7 @@ def handle_ecpay_result():
 
     return "1|OK"  # 綠界固定格式，代表成功處理
 
-@app.route('/admin')
+@app.route('/admin0363')
 def admin():
     from pytz import timezone
     from dateutil import parser
@@ -675,6 +675,12 @@ def admin():
 
     return render_template("admin.html", products=products, members=members, orders=orders, tab=tab)
 
+
+
+#封鎖 /admin 的舊路由
+@app.route('/admin')
+def block_admin_shortcut():
+    return "此後台路徑無效，請使用正確的管理連結", 403
 
 
 @app.route('/admin/members')
