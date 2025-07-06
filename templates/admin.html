@@ -503,6 +503,10 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   document.querySelectorAll(".member-row").forEach(m => m.style.display = "block");
+  // ✅ 主動初始化訂單顯示（不管一開始進哪個分頁）
+filteredOrders = allOrders;
+renderOrderPage(parseInt(document.getElementById("pageSizeSelect").value));
+
 });
 
 
