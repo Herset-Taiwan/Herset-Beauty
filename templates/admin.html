@@ -304,11 +304,11 @@ function switchTab(tabId) {
   document.getElementById(tabId).classList.add('active');
   document.querySelector('.tab-btn[onclick*="' + tabId + '"]').classList.add('active');
 
-  // ✅ 切到訂單分頁就強制重載訂單內容
   if (tabId === "orders") {
-    filterOrders();
+    filterOrders();  // ✅ 主動顯示訂單
   }
 }
+
 
 
 

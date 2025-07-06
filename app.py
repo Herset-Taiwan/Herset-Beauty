@@ -152,23 +152,26 @@ def admin_panel():
     if not session.get("admin_logged_in"):
         return redirect("/admin/login")
 
+    # 抓取資料
     products = supabase.table("products").select("*").execute().data
     members = supabase.table("members").select("*").execute().data
+    orders_raw = supabase.table("orders").select("*").order("created_at", desc=True).execute().data
 
-    # ✅ 加入關聯查詢：member:member_id(*) 表示把 member_id 對應到 members 表
-    orders = (
-        supabase.table("orders")
-        .select("*, member:member_id(*)")
-        .order("created_at", desc=True)
-        .execute()
-        .data
-    )
+    # 手動建立 members 的索引表：用 id 對應 member 資料
+    member_dict = {m["id"]: m for m in members}
+
+    # 手動把每筆訂單補上 member 的詳細資料（模擬外鍵查詢）
+    orders = []
+    for o in orders_raw:
+        o["member"] = member_dict.get(o.get("member_id"), {})  # 若找不到對應 member 也不會報錯
+        orders.append(o)
 
     return render_template("admin.html",
         products=products,
         members=members,
         orders=orders
     )
+
 
 
 #admin登出功能
