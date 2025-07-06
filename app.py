@@ -388,12 +388,20 @@ def checkout():
     session['current_trade_no'] = merchant_trade_no
     return redirect("/choose-payment")
 
-#付款方式
 @app.route('/choose-payment')
 def choose_payment():
     if 'current_trade_no' not in session:
         return redirect('/cart')
-    return render_template("choose_payment.html")
+
+    trade_no = session['current_trade_no']
+    res = supabase.table("orders").select("*").eq("MerchantTradeNo", trade_no).execute()
+
+    if not res.data:
+        return "找不到訂單", 404
+
+    order = res.data[0]
+    return render_template("choose_payment.html", order=order)
+
 
 #執行付款動作
 @app.route('/pay', methods=['POST'])
