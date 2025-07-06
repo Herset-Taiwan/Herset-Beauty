@@ -37,7 +37,7 @@ def generate_ecpay_form(order, trade_no=None):
 
     # ✅ 若沒傳入 trade_no，就產生新的一組，並寫入 payment_log
     if not trade_no:
-        trade_no = "HS" + ''.join(random.choices(string.ascii_uppercase + string.digits, k=12))
+        trade_no = "HS" + ''.join(random.choices(string.ascii_uppercase + string.digits, k=18))
         supabase.table("payment_log").insert({
             "order_id": order["id"],
             "merchant_trade_no": trade_no
