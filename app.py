@@ -27,6 +27,7 @@ from utils import generate_ecpay_form
 from uuid import uuid4
 from flask import Response
 from flask import request, render_template, Response
+from flask import render_template, session, redirect
 
 
 load_dotenv()
@@ -52,6 +53,7 @@ def generate_merchant_trade_no():
     return f"HS{now}{rand}"
 
 app = Flask(__name__)
+app.secret_key = "your_super_secret_key"  # 為了 session 運作，這個很重要
 app.secret_key = os.urandom(24)
 
 # ✅ Supabase 初始化
@@ -124,6 +126,41 @@ def inject_cart_count():
     cart = session.get('cart', [])
     cart_count = sum(item.get('qty', 0) for item in cart)
     return dict(cart_count=cart_count)
+
+# ✅ 設定你自己的帳號密碼
+ADMIN_USERNAME = "admin"
+ADMIN_PASSWORD = "123456"  # 可改成更安全的密碼
+
+
+# admin登入
+@app.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+            session["admin_logged_in"] = True
+            return redirect("/admin")
+        else:
+            return render_template("admin_login.html", error="帳號或密碼錯誤")
+    return render_template("admin_login.html")
+
+#限制後台 /admin 只能登入後才進入
+
+@app.route("/admin")
+def admin_panel():
+    # 沒有登入就導回登入頁
+    if not session.get("admin_logged_in"):
+        return redirect("/admin/login")
+
+    # 登入成功就顯示 admin.html（你原本的後台畫面）
+    return render_template("admin.html")
+
+#admin登出功能
+@app.route("/admin/logout")
+def admin_logout():
+    session.pop("admin_logged_in", None)
+    return redirect("/admin/login")
 
 
 # ✅ 驗證碼確認
