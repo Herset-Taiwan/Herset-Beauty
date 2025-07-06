@@ -19,6 +19,7 @@ import urllib.parse
 import hashlib
 import random
 import datetime
+import time
 from utils import generate_check_mac_value
 from datetime import datetime
 from utils import generate_check_mac_value, generate_ecpay_form
