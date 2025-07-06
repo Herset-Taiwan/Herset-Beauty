@@ -1,4 +1,6 @@
 from pytz import timezone
+from pytz import timezone
+tz = timezone("Asia/Taipei")
 from datetime import datetime
 from dateutil import parser
 from flask import send_from_directory
@@ -317,6 +319,7 @@ def cart():
 
 @app.route('/checkout', methods=['POST'])
 def checkout():
+    
     if 'member_id' not in session:
         flash("請先登入會員才能結帳")
         return redirect('/cart')
