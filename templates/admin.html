@@ -198,13 +198,14 @@
 
 </head>
 <body>
-  <div style="text-align: right; margin: 10px 0;">
-  <form action="/admin/logout" method="get">
-    <button type="submit" style="background: #e91e63; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
-      🔓 登出
-    </button>
-  </form>
-</div>
+  <!-- 登出按鈕（右上角） -->
+  <div style="text-align: right; margin: 10px 0; padding: 0 20px;">
+    <form action="/admin0363/logout" method="get">
+      <button type="submit" style="background: #e91e63; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+        🔓 登出
+      </button>
+    </form>
+  </div>
   <div class="admin-container">
     {% with messages = get_flashed_messages() %}
     {% if messages %}

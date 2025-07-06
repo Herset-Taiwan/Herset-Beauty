@@ -132,28 +132,77 @@ ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = "show0363"  # 
 
 
-# admin登入
-@app.route("/admin0363/login", methods=["GET", "POST"])
+
+# 後台登入畫面（網址：https://herset.co/admin0363）
+@app.route("/admin0363", methods=["GET", "POST"])
 def admin_login():
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
         if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
             session["admin_logged_in"] = True
-            return redirect("/admin0363?tab=orders")
+            return redirect("/admin0363/dashboard")
         else:
             return render_template("admin_login.html", error="帳號或密碼錯誤")
-
     return render_template("admin_login.html")
 
+# 後台管理頁（網址：https://herset.co/admin0363/dashboard）
+@app.route("/admin0363/dashboard")
+def admin_dashboard():
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
 
+    tz = timezone("Asia/Taipei")
 
+    # 商品
+    products = supabase.table("products").select("*").execute().data or []
+
+    # 會員
+    members = supabase.table("members").select("id, account, username, name, phone, email, address, note, created_at").execute().data or []
+    for m in members:
+        try:
+            if m.get("created_at"):
+                utc_dt = parser.parse(m["created_at"])
+                m["created_at"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
+        except Exception as e:
+            m["created_at"] = m.get("created_at", "—")
+
+    member_dict = {m["id"]: m for m in members}
+
+    # 訂單
+    orders_raw = supabase.table("orders").select("*").order("created_at", desc=True).execute().data or []
+    order_items = supabase.table("order_items").select("*").execute().data or []
+
+    item_group = {}
+    for item in order_items:
+        item_group.setdefault(item["order_id"], []).append(item)
+
+    orders = []
+    for o in orders_raw:
+        o["items"] = item_group.get(o["id"], [])
+        member = member_dict.get(o["member_id"])
+        o["member"] = {
+            "account": member["account"] if member else "guest",
+            "name": member.get("name") if member else "訪客",
+            "phone": member.get("phone") if member else "—",
+            "address": member.get("address") if member else "—"
+        }
+        try:
+            utc_dt = parser.parse(o["created_at"])
+            o["created_local"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
+        except:
+            o["created_local"] = o["created_at"]
+
+        orders.append(o)
+
+    return render_template("admin.html", products=products, members=members, orders=orders, tab="orders")
 
 #admin登出功能
-@app.route("/admin/logout")
+@app.route("/admin0363/logout")
 def admin_logout():
     session.pop("admin_logged_in", None)
-    return redirect("/admin0363/login")
+    return redirect("/admin0363")
+
 
 
 # ✅ 驗證碼確認
@@ -610,73 +659,7 @@ def handle_ecpay_result():
 
     return "1|OK"  # 綠界固定格式，代表成功處理
 
-@app.route('/admin0363')
-def admin():
-    from pytz import timezone
-    from dateutil import parser
-    tz = timezone("Asia/Taipei")
 
-    tab = request.args.get("tab", "products")  # 🟢 預設 tab
-
-    # 查詢商品
-    res = supabase.table("products").select("*").execute()
-    if hasattr(res, 'error') and res.error:
-        print("❌ 商品查詢失敗：", res.error)
-        products = []
-    else:
-        products = res.data or []
-    print("✅ 商品筆數：", len(products))
-
-    # 查詢訂單
-    res = supabase.table("orders").select("*").order("created_at", desc=True).execute()
-    orders_raw = res.data or []
-
-    # 查詢會員（補上 created_at）
-    res = supabase.table("members").select("id, account, username, name, phone, email, address, note, created_at").execute()
-    members = res.data or []
-
-    # 🟢 加入會員註冊時間轉換
-    for m in members:
-        try:
-            if 'created_at' in m and m['created_at']:
-                utc_dt = parser.parse(m['created_at'])
-                m['created_at'] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
-        except Exception as e:
-            print("⚠️ 會員註冊時間轉換錯誤：", m.get('created_at'), e)
-            m['created_at'] = m.get('created_at') or '—'
-
-    member_dict = {m['id']: m for m in members}
-
-    # 查詢訂單項目
-    res = supabase.table("order_items").select("*").execute()
-    items = res.data or []
-    item_group = {}
-    for item in items:
-        item_group.setdefault(item['order_id'], []).append(item)
-
-    # 整合訂單資料
-    orders = []
-    for o in orders_raw:
-        o['items'] = item_group.get(o['id'], [])
-
-        member = member_dict.get(o['member_id'])
-        o['member'] = {
-            'account': member['account'] if member else 'guest',
-            'name': member['name'] if member and 'name' in member else '訪客',
-            'phone': member['phone'] if member and 'phone' in member else '—',
-            'address': member['address'] if member and 'address' in member else '—',
-        }
-
-        try:
-            utc_dt = parser.parse(o['created_at'])
-            o['created_local'] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
-        except Exception as e:
-            print("⚠️ 訂單時間轉換錯誤：", o['created_at'], e)
-            o['created_local'] = o['created_at']
-
-        orders.append(o)
-
-    return render_template("admin.html", products=products, members=members, orders=orders, tab=tab)
 
 
 
