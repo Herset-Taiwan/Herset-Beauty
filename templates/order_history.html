@@ -140,63 +140,60 @@
     }
 
     function renderOrders(data, containerId, page) {
-      const container = document.getElementById(containerId);
-      container.innerHTML = '';
-      const start = (page - 1) * pageSize;
-      const end = start + pageSize;
-      const pageData = data.slice(start, end);
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  const start = (page - 1) * pageSize;
+  const end = start + pageSize;
+  const pageData = data.slice(start, end);
 
-      pageData.forEach(o => {
-  const box = document.createElement('div');
-  box.className = 'order-box';
-  box.innerHTML = `
-    <div class="row"><div class="label">訂單編號：</div><div>#${o.id}</div></div>
-    <div class="row"><div class="label">訂單時間：</div><div>${o.created_local}</div></div>
-    <div class="row"><div class="label">金額：</div><div>$${o.total_amount}</div></div>
-    <div class="row"><div class="label">付款狀態：</div><div>${o.payment_status === 'paid' ? '已付款' : '未付款'}</div></div>
-    <div class="row"><div class="label">出貨狀態：</div><div>${translateStatus(o.status)}</div></div>
-    <div class="row"><div class="label">商品明細：</div>
-      <ul>
-        ${o.items.map(i => `<li>${i.product_name} × ${i.qty}（$${i.price}）</li>`).join('')}
-      </ul>
-    </div>
-    ${o.payment_status !== 'paid' && o.MerchantTradeNo
-      ? `<button class="repay-btn" onclick="goToPay('${o.MerchantTradeNo}')">🔁 重新付款</button>`
-      : ''}
-  `;
-  container.appendChild(box);
-});
+  pageData.forEach(o => {
+    const box = document.createElement('div');
+    box.className = 'order-box';
+    box.innerHTML = `
+      <div class="row"><div class="label">訂單編號：</div><div>#${o.id}</div></div>
+      <div class="row"><div class="label">訂單時間：</div><div>${o.created_local}</div></div>
+      <div class="row"><div class="label">金額：</div><div>$${o.total_amount}</div></div>
+      <div class="row"><div class="label">付款狀態：</div><div>${o.payment_status === 'paid' ? '已付款' : '未付款'}</div></div>
+      <div class="row"><div class="label">出貨狀態：</div><div>${translateStatus(o.status)}</div></div>
+      <div class="row"><div class="label">商品明細：</div>
+        <ul>
+          ${o.items.map(i => `<li>${i.product_name} × ${i.qty}（$${i.price}）</li>`).join('')}
+        </ul>
+      </div>
+      ${o.payment_status !== 'paid' && o.MerchantTradeNo
+        ? `<button class="repay-btn" onclick="goToPay('${o.MerchantTradeNo}')">🔁 重新付款</button>`
+        : ''}
+    `;
+    container.appendChild(box);
+  }); // ✅ forEach 內結束後，不要再 append box！
 
+  const nav = document.createElement('div');
+  nav.className = 'pagination';
 
-        container.appendChild(box);
-      });
+  const totalPages = Math.ceil(data.length / pageSize);
 
-      const nav = document.createElement('div');
-      nav.className = 'pagination';
+  if (totalPages > 1) {
+    const prev = document.createElement('button');
+    prev.textContent = '← 上一頁';
+    prev.disabled = page === 1;
+    prev.onclick = () => renderOrders(data, containerId, page - 1);
 
-      const totalPages = Math.ceil(data.length / pageSize);
+    const next = document.createElement('button');
+    next.textContent = '下一頁 →';
+    next.disabled = page === totalPages;
+    next.onclick = () => renderOrders(data, containerId, page + 1);
 
-      if (totalPages > 1) {
-        const prev = document.createElement('button');
-        prev.textContent = '← 上一頁';
-        prev.disabled = page === 1;
-        prev.onclick = () => renderOrders(data, containerId, page - 1);
+    const info = document.createElement('span');
+    info.textContent = `第 ${page} 頁 / 共 ${totalPages} 頁`;
+    info.style.margin = '0 10px';
 
-        const next = document.createElement('button');
-        next.textContent = '下一頁 →';
-        next.disabled = page === totalPages;
-        next.onclick = () => renderOrders(data, containerId, page + 1);
+    nav.appendChild(prev);
+    nav.appendChild(info);
+    nav.appendChild(next);
+    container.appendChild(nav);
+  }
+}
 
-        const info = document.createElement('span');
-        info.textContent = `第 ${page} 頁 / 共 ${totalPages} 頁`;
-        info.style.margin = '0 10px';
-
-        nav.appendChild(prev);
-        nav.appendChild(info);
-        nav.appendChild(next);
-        container.appendChild(nav);
-      }
-    }
 
     renderOrders(pendingData, 'pending-orders', 1);
     renderOrders(completedData, 'completed-orders', 1);
