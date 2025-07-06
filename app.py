@@ -127,9 +127,9 @@ def inject_cart_count():
     cart_count = sum(item.get('qty', 0) for item in cart)
     return dict(cart_count=cart_count)
 
-# ✅ 設定你自己的帳號密碼
+# ✅ 設定你自己的帳號密碼(admin login)
 ADMIN_USERNAME = "admin"
-ADMIN_PASSWORD = "123456"  # 可改成更安全的密碼
+ADMIN_PASSWORD = "show0363"  # 
 
 
 # admin登入
