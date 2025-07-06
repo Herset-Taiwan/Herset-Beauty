@@ -5,151 +5,197 @@
   <title>管理後台 - HERSET BEAUTY</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    body { font-family: sans-serif; }
-    .admin-container {
-      max-width: 1000px;
-      margin: 50px auto;
-    }
-    .tabs {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 30px;
-    }
-    .tab-btn {
-      padding: 10px 20px;
-      border: none;
-      background: #eee;
-      cursor: pointer;
-      font-weight: bold;
-      border-radius: 5px 5px 0 0;
-      margin-right: 5px;
-    }
-    .tab-btn.active {
-      background: #e91e63;
-      color: white;
-    }
-    .tab-content {
-      display: none;
-    }
-    .tab-content.active {
-      display: block;
-    }
-    .section { margin-bottom: 40px; }
-    .product-row, .member-row, .order-row {
-      display: flex;
-      align-items: center;
-      border: 1px solid #eee;
-      padding: 16px 24px;
-      margin-bottom: 16px;
-      background-color: #fff;
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-      position: relative;
-    }
-    .product-row img {
-      width: 80px;
-      height: 80px;
-      object-fit: cover;
-      margin-right: 20px;
-    }
-    .info {
-      flex: 1;
-      line-height: 1.8;
-    }
-    .actions {
-      display: flex;
-      gap: 10px;
-    }
-    .actions button {
-      background: none;
-      border: none;
-      color: #e91e63;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 14px;
-    }
-    .add-btn {
-      display: inline-block;
-      margin-bottom: 20px;
-      padding: 8px 16px;
-      background-color: #e91e63;
-      color: white;
-      text-decoration: none;
-      border-radius: 5px;
-    }
-    .search-form input {
-      padding: 5px;
-      margin-right: 10px;
-    }
+  body {
+    font-family: "Segoe UI", "Noto Sans TC", sans-serif;
+    background: #f6f7f9;
+    color: #333;
+    margin: 0;
+    padding: 0;
+  }
 
-    /* ────────── 新增：訂單管理美化 ────────── */
+  .admin-container {
+    max-width: 1100px;
+    margin: 50px auto;
+    padding: 0 20px;
+  }
 
-.filter-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-  align-items: center;
-  margin-bottom: 20px;
-  background: #fff0f5;
-  padding: 15px 20px;
-  border-radius: 10px;
-  border: 1px solid #f5d3dc;
-}
+  .tabs {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 30px;
+  }
 
-.filter-bar label {
-  font-weight: bold;
-  color: #5a4b45;
-}
+  .tab-btn {
+    padding: 10px 24px;
+    border: none;
+    background: #ddd;
+    cursor: pointer;
+    font-weight: bold;
+    border-radius: 8px 8px 0 0;
+    margin-right: 5px;
+    transition: all 0.2s ease;
+  }
 
-.filter-bar input,
-.filter-bar select {
-  padding: 6px 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  font-family: inherit;
-  min-width: 120px;
-}
+  .tab-btn:hover {
+    background: #bbb;
+  }
 
-.order-row:hover {
-  transform: scale(1.01);
-  transition: transform 0.2s ease;
-}
+  .tab-btn.active {
+    background: #e91e63;
+    color: white;
+  }
 
-.badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: bold;
-  color: white;
-}
+  .tab-content {
+    display: none;
+  }
 
-.badge.green {
-  background-color: #4CAF50;
-}
+  .tab-content.active {
+    display: block;
+  }
 
-.badge.red {
-  background-color: #f44336;
-}
+  .section {
+    margin-bottom: 40px;
+  }
 
-.pagination button {
-  padding: 6px 12px;
-  margin: 0 5px;
-  background-color: #ffe4ed;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: bold;
-  color: #5a4b45;
-}
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 20px;
+    background: #fff;
+    padding: 15px 20px;
+    border-radius: 10px;
+    border: 1px solid #eee;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
 
-.pagination button:disabled {
-  background-color: #eee;
-  cursor: default;
-  color: #999;
-}
+  .filter-bar label {
+    font-weight: bold;
+  }
 
-  </style>
+  .filter-bar input,
+  .filter-bar select {
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-family: inherit;
+    min-width: 140px;
+  }
+
+  .order-row {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease;
+    position: relative;
+  }
+
+  .order-row:hover {
+    transform: translateY(-2px);
+  }
+
+  .info {
+    line-height: 1.8;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
+    margin-left: 8px;
+  }
+
+  .badge.green {
+    background-color: #4caf50;
+  }
+
+  .badge.red {
+    background-color: #f44336;
+  }
+
+  .actions {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+  }
+
+  .actions button {
+    background: none;
+    border: none;
+    color: #e91e63;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+  }
+
+  .pagination button {
+    padding: 6px 12px;
+    margin: 0 5px;
+    background-color: #ffe4ed;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    color: #5a4b45;
+  }
+
+  .pagination button:disabled {
+    background-color: #eee;
+    cursor: default;
+    color: #999;
+  }
+
+  .add-btn {
+    display: inline-block;
+    margin-bottom: 20px;
+    padding: 8px 16px;
+    background-color: #e91e63;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+  }
+
+  .product-row,
+  .member-row {
+    display: flex;
+    align-items: center;
+    border: 1px solid #eee;
+    padding: 16px 24px;
+    margin-bottom: 16px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    position: relative;
+  }
+
+  .product-row img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    margin-right: 20px;
+    border-radius: 8px;
+  }
+
+  .search-form input {
+    padding: 6px 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+  }
+
+</style>
+
 </head>
 <body>
   <div class="admin-container">
