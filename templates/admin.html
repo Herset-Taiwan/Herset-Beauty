@@ -303,7 +303,13 @@ function switchTab(tabId) {
 
   document.getElementById(tabId).classList.add('active');
   document.querySelector('.tab-btn[onclick*="' + tabId + '"]').classList.add('active');
+
+  // ✅ 如果切換到訂單頁籤，才呼叫一次 filterOrders()
+  if (tabId === "orders" && filteredOrders.length === 0) {
+    filterOrders();
+  }
 }
+
 
 let allOrders = {{ orders | tojson }};
 let filteredOrders = [];
