@@ -149,12 +149,20 @@ def admin_login():
 
 @app.route("/admin")
 def admin_panel():
-    # 沒有登入就導回登入頁
     if not session.get("admin_logged_in"):
         return redirect("/admin/login")
 
-    # 登入成功就顯示 admin.html（你原本的後台畫面）
-    return render_template("admin.html", orders=[])
+    # ✅ 改成你實際抓資料的程式碼（以下是假設用 supabase）
+    products = supabase.table("products").select("*").execute().data
+    members = supabase.table("members").select("*").execute().data
+    orders = supabase.table("orders").select("*").order("created_at", desc=True).execute().data
+
+    return render_template("admin.html", 
+        products=products,
+        members=members,
+        orders=orders
+    )
+
 
 #admin登出功能
 @app.route("/admin/logout")
