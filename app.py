@@ -449,8 +449,8 @@ def process_payment():
             "order_id": order["id"]
         }).execute()
 
-        html = generate_ecpay_form(order, trade_no=new_trade_no)
-        return html
+        return Response(html, content_type='text/html; charset=utf-8')
+
 
     else:
         return "未知付款方式", 400
