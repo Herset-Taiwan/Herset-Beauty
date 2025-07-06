@@ -26,6 +26,7 @@ from utils import generate_check_mac_value, generate_ecpay_form
 from utils import generate_ecpay_form
 from uuid import uuid4
 from flask import Response
+from flask import request, render_template, Response
 
 
 load_dotenv()
@@ -436,13 +437,13 @@ def process_payment():
         return "找不到訂單", 404
 
     if method == "linepay":
-        return render_template("linepay.html", order=order)  # 你可自訂畫面顯示 QR 圖片或帳號
+        return render_template("linepay.html", order=order)  # 顯示 QR 碼或帳號資訊
 
     elif method == "bank":
-        return render_template("bank_transfer.html", order=order)
+        return render_template("bank_transfer.html", order=order)  # 顯示轉帳資料
 
     elif method == "credit":
-        # 產生新的 MerchantTradeNo（避免重複）
+        # 產生新的 MerchantTradeNo，避免與原本的衝突
         new_trade_no = "HS" + uuid4().hex[:12]
         supabase.table("ecpay_repay_map").insert({
             "original_trade_no": order["MerchantTradeNo"],
@@ -450,8 +451,11 @@ def process_payment():
             "order_id": order["id"]
         }).execute()
 
-        return Response(html, content_type='text/html; charset=utf-8')
+        # 產生 ECPay 表單 HTML
+        html = generate_ecpay_form(order, trade_no=new_trade_no)
 
+        # 回傳 HTML，瀏覽器會自動跳轉至綠界頁面
+        return Response(html, content_type='text/html; charset=utf-8')
 
     else:
         return "未知付款方式", 400
