@@ -225,10 +225,11 @@
         <strong>訂單時間：</strong>{{ o['created_local'] }}<br>
         <strong>購買商品：</strong>
         <ul>
-          {% for item in o['items'] %}
-            <li>{{ item['product_name'] }} x {{ item['qty'] }}（${{ item['price'] }}）</li>
-          {% endfor %}
-        </ul>
+  {% for item in o['items'] %}
+    <li>{{ item['product_name'] }}</li>
+  {% endfor %}
+</ul>
+
         <strong>訂單金額：</strong>${{ o['total_amount'] }}<br>
         <strong>會員帳號：</strong>{{ o['member']['account'] }}<br>
         <strong>購買人：</strong>{{ o['member']['name'] }}<br>
