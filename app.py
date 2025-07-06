@@ -411,6 +411,17 @@ def checkout():
                            url="https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5")
 
 
+#歷史訂單重新付款
+@app.route("/repay/<merchant_trade_no>")
+def repay_order(merchant_trade_no):
+    # 查詢訂單資訊
+    order = supabase.table("orders").select("*").eq("merchant_trade_no", merchant_trade_no).single().execute().data
+    if not order:
+        return "找不到此訂單", 404
+
+    # 重新導向到 ECPay 的付款流程
+    form_html = generate_ecpay_form(order)  # 你原本用的那段產生表單函式
+    return form_html
 
 
 @app.route('/thank-you')
