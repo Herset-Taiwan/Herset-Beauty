@@ -18,6 +18,7 @@ import urllib.parse
 import hashlib
 import random
 import datetime
+from utils import generate_check_mac_value
 
 load_dotenv()
 
@@ -331,12 +332,14 @@ def checkout():
 
     cart_items = session.get('cart', [])
     if not cart_items:
+        flash("購物車是空的")
         return redirect('/cart')
 
-    member_id = session.get('member_id')
+    member_id = session['member_id']
     total = 0
     items = []
 
+    # 計算總價與準備商品資料
     for item in cart_items:
         res = supabase.table("products").select("*").eq("id", item['product_id']).single().execute()
         product = res.data
@@ -351,32 +354,38 @@ def checkout():
                 'subtotal': subtotal
             })
 
-    # 建立訂單資料
     from uuid import uuid4
-    import random
     from datetime import datetime
+    from pytz import timezone
+    tz = timezone("Asia/Taipei")
 
-    order_id = "HS" + uuid4().hex[:12]
-    merchant_trade_no = "HS" + datetime.now().strftime("%Y%m%d%H%M%S") + str(random.randint(1000, 9999))
+    # 產生綠界訂單編號
+    merchant_trade_no = "HS" + uuid4().hex[:12]  # 綠界限制最多 20 字元
     created_at = datetime.now(tz).isoformat()
 
+    # 儲存到 orders 表
     order_data = {
-        'id': order_id,
-        'MerchantTradeNo': merchant_trade_no,
         'member_id': member_id,
         'total_amount': total,
         'status': 'pending',
-        'created_at': created_at
+        'created_at': created_at,
+        'MerchantTradeNo': merchant_trade_no
     }
-    supabase.table('orders').insert(order_data).execute()
+    result = supabase.table('orders').insert(order_data).execute()
+    order_id = result.data[0]['id']
 
+    # 儲存每筆訂單商品
     for item in items:
         item['order_id'] = order_id
     supabase.table('order_items').insert(items).execute()
 
+    # 清空購物車
     session['cart'] = []
 
-    # 組出綠界金流參數
+    # 綠界金流參數設定
+    import urllib.parse
+    from utils import generate_check_mac_value  # 確保你有這個函式
+
     merchant_id = '2000132'
     hash_key = '5294y06JbISpM5x9'
     hash_iv = 'v77hoKGq4kWxNNIS'
@@ -395,10 +404,12 @@ def checkout():
         "ClientBackURL": "https://herset.co/thank_you"
     }
 
+    # 加密 CheckMacValue
     ecpay_data["CheckMacValue"] = generate_check_mac_value(ecpay_data, hash_key, hash_iv)
 
     return render_template("ecpay_form.html", data=ecpay_data,
                            url="https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5")
+
 
 
 
