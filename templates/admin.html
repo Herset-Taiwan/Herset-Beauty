@@ -304,11 +304,12 @@ function switchTab(tabId) {
   document.getElementById(tabId).classList.add('active');
   document.querySelector('.tab-btn[onclick*="' + tabId + '"]').classList.add('active');
 
-  // ✅ 如果切換到訂單頁籤，才呼叫一次 filterOrders()
-  if (tabId === "orders" && filteredOrders.length === 0) {
+  // ✅ 切到訂單分頁就強制重載訂單內容
+  if (tabId === "orders") {
     filterOrders();
   }
 }
+
 
 
 let allOrders = {{ orders | tojson }};
@@ -492,16 +493,16 @@ function printOrder(orderId) {
 window.addEventListener('DOMContentLoaded', () => {
   const urlParams = new URLSearchParams(window.location.search);
   const tab = urlParams.get('tab');
-  if (tab) switchTab(tab);
-  else switchTab("products");
+  if (tab) {
+    switchTab(tab);  // ✅ 這樣才會觸發 filterOrders()
+  } else {
+    switchTab("products");
+  }
 
-  // ✅ 確保所有會員列顯示
+  // 顯示會員資料（如果有）
   document.querySelectorAll(".member-row").forEach(m => m.style.display = "block");
-
-  // ✅ 主動觸發訂單顯示
-  filteredOrders = allOrders;
-  renderOrderPage(parseInt(document.getElementById("pageSizeSelect").value));
 });
+
 
 </script>
 
