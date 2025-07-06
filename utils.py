@@ -35,9 +35,14 @@ def generate_ecpay_form(order, trade_no=None):
     hash_iv = "v77hoKGq4kWxNNIS"
     return_url = "https://herset.co/ecpay/return"
 
-    # ✅ 若沒傳入 trade_no，就產生新的一組，並寫入 payment_log
+    # ✅ 若沒傳入 trade_no，就產生一組新的
+    is_new = False
     if not trade_no:
+        is_new = True
         trade_no = "HS" + ''.join(random.choices(string.ascii_uppercase + string.digits, k=18))
+
+    # ✅ 若是新單，寫入 payment_log
+    if is_new:
         supabase.table("payment_log").insert({
             "order_id": order["id"],
             "merchant_trade_no": trade_no
@@ -60,9 +65,12 @@ def generate_ecpay_form(order, trade_no=None):
     ecpay_data["CheckMacValue"] = generate_check_mac_value(ecpay_data, hash_key, hash_iv)
 
     inputs = "\n".join([f'<input type="hidden" name="{k}" value="{v}">' for k, v in ecpay_data.items()])
-    return f"""
+    form_html = f"""
     <form id="ecpay-form" method="post" action="https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5">
         {inputs}
     </form>
     <script>document.getElementById("ecpay-form").submit();</script>
     """
+
+    # ✅ 同時回傳 trade_no 給呼叫端
+    return trade_no, form_html

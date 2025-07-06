@@ -415,10 +415,10 @@ def checkout():
                            url="https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5")
 
 
-#歷史訂單重新付款
+# 歷史訂單重新付款
 @app.route("/repay/<merchant_trade_no>")
 def repay_order(merchant_trade_no):
-    # 改成用正確欄位名稱搜尋
+    # 查詢原訂單（用 MerchantTradeNo）
     order_result = supabase.table("orders").select("*").eq("MerchantTradeNo", merchant_trade_no).execute()
 
     if not order_result.data:
@@ -426,20 +426,19 @@ def repay_order(merchant_trade_no):
 
     order = order_result.data[0]
 
-    # 產生新的 MerchantTradeNo（重新付款用）
-    timestamp_suffix = int(time.time())
-    new_trade_no = f"{merchant_trade_no}_retry_{timestamp_suffix}"
+    # ✅ 呼叫 utils.py 中的 generate_ecpay_form，自動產生新 trade_no 並產生付款表單
+    new_trade_no, form_html = generate_ecpay_form(order)
 
-    # 儲存對應記錄（ecpay_repay_map 表）
+    # ✅ 儲存 retry 對應記錄
     supabase.table("ecpay_repay_map").insert({
         "original_trade_no": merchant_trade_no,
         "new_trade_no": new_trade_no,
         "order_id": order["id"]
     }).execute()
 
-    # 產生付款表單
-    form_html = generate_ecpay_form(order, new_trade_no)
+    # ✅ 回傳表單讓瀏覽器送出付款
     return form_html
+
 
 
 
