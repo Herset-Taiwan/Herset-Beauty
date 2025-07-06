@@ -12,8 +12,26 @@ import tempfile
 import uuid
 from dotenv import load_dotenv
 from uuid import UUID
+import urllib.parse
+import hashlib
 
 load_dotenv()
+
+
+def generate_check_mac_value(params, hash_key, hash_iv):
+    # 1. 將參數依照字母順序排列
+    sorted_params = sorted(params.items())
+
+    # 2. 組合字串
+    raw = f'HashKey={hash_key}&' + '&'.join([f'{k}={v}' for k, v in sorted_params]) + f'&HashIV={hash_iv}'
+
+    # 3. URL Encode（小寫）並取代特殊字元
+    encoded = urllib.parse.quote_plus(raw).lower()
+
+    # 4. SHA256 加密，轉成大寫十六進位
+    check_mac = hashlib.sha256(encoded.encode('utf-8')).hexdigest().upper()
+    return check_mac
+
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -299,7 +317,6 @@ def cart():
 
 @app.route('/checkout', methods=['POST'])
 def checkout():
-    # ✅ 檢查是否已登入會員（有 member_id）
     if 'member_id' not in session:
         flash("請先登入會員才能結帳")
         return redirect('/cart')
@@ -326,23 +343,51 @@ def checkout():
                 'subtotal': subtotal
             })
 
+    # 建立訂單資料
+    from uuid import uuid4
+    order_id = "HS" + uuid4().hex[:12]  # 自訂訂單編號（要唯一）
+    created_at = datetime.now(tz).isoformat()
+
     order_data = {
+        'id': order_id,
         'member_id': member_id,
         'total_amount': total,
         'status': 'pending',
-        'created_at': datetime.now(tz).isoformat()
+        'created_at': created_at
     }
-    print("✅ 寫入的訂單時間（台灣時間）:", order_data['created_at'])
-    print("✅ order_data：", order_data)
-    result = supabase.table('orders').insert(order_data).execute()
-    order_id = result.data[0]['id']
+    supabase.table('orders').insert(order_data).execute()
 
     for item in items:
         item['order_id'] = order_id
     supabase.table('order_items').insert(items).execute()
 
+    # 清空購物車
     session['cart'] = []
-    return redirect(url_for('thank_you'))
+
+    # 組出綠界金流參數
+    merchant_id = '2000132'
+    hash_key = '5294y06JbISpM5x9'
+    hash_iv = 'v77hoKGq4kWxNNIS'
+    return_url = 'https://herset.co/ecpay/return'
+
+    ecpay_data = {
+        "MerchantID": merchant_id,
+        "MerchantTradeNo": order_id,
+        "MerchantTradeDate": datetime.now().strftime("%Y/%m/%d %H:%M:%S"),
+        "PaymentType": "aio",
+        "TotalAmount": total,
+        "TradeDesc": urllib.parse.quote_plus("HERSET 購物結帳"),
+        "ItemName": "HERSET 商品組合",
+        "ReturnURL": return_url,
+        "ChoosePayment": "Credit",  # 可改 ATM、ALL
+        "ClientBackURL": "https://你的網域/thank_you"
+    }
+
+    ecpay_data["CheckMacValue"] = generate_check_mac_value(ecpay_data, hash_key, hash_iv)
+
+    return render_template("ecpay_form.html", data=ecpay_data,
+                           url="https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5")
+
 
 @app.route('/thank-you')
 def thank_you():
@@ -368,6 +413,18 @@ def product_detail(product_id):
     cart = session.get('cart', [])
     cart_count = sum(item['qty'] for item in cart)
     return render_template("product.html", product=product, cart_count=cart_count)
+
+
+#綠界付款成功回傳處理
+@app.route('/ecpay/return', methods=['POST'])
+def ecpay_return():
+    data = request.form.to_dict()
+    if data.get('RtnCode') == '1':
+        supabase.table("orders").update({'status': 'paid'}).eq('id', data['MerchantTradeNo']).execute()
+        return '1|OK'
+    return '0|Fail'
+#綠界付款成功回傳處理
+
 
 @app.route('/admin')
 def admin():
