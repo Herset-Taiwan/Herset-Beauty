@@ -1,6 +1,7 @@
 from pytz import timezone
 from pytz import timezone
 tz = timezone("Asia/Taipei")
+from flask import request
 from datetime import datetime
 from dateutil import parser
 from flask import send_from_directory
@@ -486,6 +487,58 @@ def ecpay_return():
     return '0|Fail'
 #綠界付款成功回傳處理
 
+#重新付款處理
+@app.route("/ecpay/return", methods=["POST"])
+@app.route("/notify", methods=["POST"])
+def handle_ecpay_result():
+    result = request.form.to_dict()
+
+    # Step 1: 驗證 CheckMacValue
+    from utils import verify_check_mac_value
+    if not verify_check_mac_value(result):
+        return "Invalid CheckMacValue", 400
+
+    merchant_trade_no = result.get("MerchantTradeNo")
+    payment_date = result.get("PaymentDate")
+    rtn_code = result.get("RtnCode")  # 綠界定義：1 為成功
+
+    # Step 2: 找出對應訂單
+    order = None
+
+    # 先從 ecpay_repay_map 尋找 retry 記錄
+    map_result = supabase.table("ecpay_repay_map").select("*").eq("new_trade_no", merchant_trade_no).execute()
+    if map_result.data:
+        order_id = map_result.data[0]['order_id']
+        order_result = supabase.table("orders").select("*").eq("id", order_id).execute()
+    else:
+        # 沒 retry 過，直接用原始 TradeNo 查
+        order_result = supabase.table("orders").select("*").eq("merchant_trade_no", merchant_trade_no).execute()
+
+    if not order_result.data:
+        return "Order not found", 404
+
+    order = order_result.data[0]
+
+    # Step 3: 儲存付款紀錄（建議你在 Step 1 就先存一筆 log，也可在這邊補存）
+    supabase.table("payment_log").insert({
+        "merchant_trade_no": merchant_trade_no,
+        "order_id": order["id"],
+        "rtn_code": rtn_code,
+        "rtn_msg": result.get("RtnMsg"),
+        "payment_type": result.get("PaymentType"),
+        "payment_date": payment_date,
+        "raw_data": json.dumps(result)
+    }).execute()
+
+    # Step 4: 更新訂單狀態（只有成功才更新）
+    if str(rtn_code) == "1":
+        supabase.table("orders").update({
+            "payment_status": "paid",
+            "payment_time": payment_date,
+            "paid_trade_no": merchant_trade_no
+        }).eq("id", order["id"]).execute()
+
+    return "1|OK"  # 綠界固定格式，代表成功處理
 
 @app.route('/admin')
 def admin():

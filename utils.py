@@ -30,6 +30,17 @@ def generate_check_mac_value(data: dict, hash_key: str, hash_iv: str) -> str:
     safe = safe.replace('%21', '!').replace('%2a', '*').replace('%28', '(').replace('%29', ')').replace('%20', '+')
     return hashlib.sha256(safe.encode('utf-8')).hexdigest().upper()
 
+def verify_check_mac_value(result: dict) -> bool:
+    from .ecpay_utils import generate_check_mac_value
+    hash_key = '5294y06JbISpM5x9'
+    hash_iv = 'v77hoKGq4kWxNNIS'
+
+    # 複製資料，排除 CheckMacValue
+    data = {k: v for k, v in result.items() if k != "CheckMacValue"}
+    expected = generate_check_mac_value(data, hash_key, hash_iv)
+    return expected == result.get("CheckMacValue")
+
+
 def generate_ecpay_form(order, trade_no=None):
     import urllib.parse
     from datetime import datetime
