@@ -152,12 +152,19 @@ def admin_panel():
     if not session.get("admin_logged_in"):
         return redirect("/admin/login")
 
-    # ✅ 改成你實際抓資料的程式碼（以下是假設用 supabase）
     products = supabase.table("products").select("*").execute().data
     members = supabase.table("members").select("*").execute().data
-    orders = supabase.table("orders").select("*").order("created_at", desc=True).execute().data
 
-    return render_template("admin.html", 
+    # ✅ 加入關聯查詢：member:member_id(*) 表示把 member_id 對應到 members 表
+    orders = (
+        supabase.table("orders")
+        .select("*, member:member_id(*)")
+        .order("created_at", desc=True)
+        .execute()
+        .data
+    )
+
+    return render_template("admin.html",
         products=products,
         members=members,
         orders=orders
