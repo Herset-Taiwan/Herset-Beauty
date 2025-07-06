@@ -140,10 +140,12 @@ def admin_login():
         password = request.form["password"]
         if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
             session["admin_logged_in"] = True
-            return redirect("/admin?tab=orders")
+            return redirect("/admin0363?tab=orders")
         else:
             return render_template("admin_login.html", error="帳號或密碼錯誤")
-        return render_template("admin_login.html")
+
+    return render_template("admin_login.html")
+
 
 
 
@@ -522,13 +524,14 @@ def repay_order(merchant_trade_no):
 def thank_you():
     return render_template("thank_you.html")
 
-@app.route('/admin/orders/update_status/<int:order_id>', methods=['POST'])
+@app.route('/admin0363/orders/update_status/<int:order_id>', methods=['POST'])
 def update_order_status(order_id):
     new_status = request.form.get("status")
     if new_status:
         supabase.table("orders").update({"status": new_status}).eq("id", order_id).execute()
         flash("訂單狀態已修改")
-     return redirect("/admin0363?tab=orders")
+    return redirect("/admin0363?tab=orders")
+
 
 
 
