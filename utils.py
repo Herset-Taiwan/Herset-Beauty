@@ -33,7 +33,7 @@ def generate_ecpay_form(order):
     hash_key = "5294y06JbISpM5x9"
     hash_iv = "v77hoKGq4kWxNNIS"
 
-    trade_no = order["merchant_trade_no"]
+    trade_no = order.get("merchant_trade_no") or order.get("MerchantTradeNo") or order.get("order_number") or order.get("id")
     total = int(order["total_amount"])
     return_url = "https://herset.co/ecpay/return"
 
