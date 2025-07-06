@@ -1,5 +1,7 @@
 import hashlib
 import urllib.parse
+from datetime import datetime
+import urllib.parse
 
 
 def generate_check_mac_value(params, hash_key, hash_iv):
