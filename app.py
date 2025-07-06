@@ -154,7 +154,7 @@ def admin_panel():
         return redirect("/admin/login")
 
     # 登入成功就顯示 admin.html（你原本的後台畫面）
-    return render_template("admin.html")
+    return render_template("admin.html", orders=[])
 
 #admin登出功能
 @app.route("/admin/logout")
