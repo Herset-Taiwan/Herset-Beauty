@@ -416,28 +416,71 @@ function printOrder(orderId) {
       <head>
         <title>訂單 #${order.id}</title>
         <style>
-          body { font-family: "Noto Sans TC", sans-serif; padding: 30px; line-height: 1.8; }
-          h2 { margin-top: 0; }
-          ul { padding-left: 20px; }
+          body {
+            font-family: "Noto Sans TC", sans-serif;
+            background: #f9f9f9;
+            padding: 40px;
+          }
+          .print-box {
+            background: white;
+            border: 2px solid #e91e63;
+            border-radius: 12px;
+            padding: 30px 40px;
+            max-width: 600px;
+            margin: auto;
+            box-shadow: 0 0 8px rgba(0,0,0,0.15);
+          }
+          h2 {
+            color: #e91e63;
+            margin-top: 0;
+            border-bottom: 2px dashed #ccc;
+            padding-bottom: 10px;
+          }
+          ul {
+            padding-left: 24px;
+            margin-top: 6px;
+          }
+          p {
+            margin: 6px 0 12px;
+          }
+          .btn-print {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 8px 18px;
+            background: #e91e63;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+          }
+
+          @media print {
+            .btn-print { display: none; }
+          }
         </style>
       </head>
       <body>
-        <h2>訂單明細（#${order.id}）</h2>
-        <p><strong>訂單時間：</strong>${order.created_local}</p>
-        <p><strong>購買商品：</strong></p>
-        <ul>${itemsHtml}</ul>
-        <p><strong>總金額：</strong>$${order.total_amount}</p>
-        <hr>
-        <p><strong>購買人姓名：</strong>${order.member.name}</p>
-        <p><strong>電話：</strong>${order.member.phone}</p>
-        <p><strong>地址：</strong>${order.member.address}</p>
-        <br><br>
-        <button onclick="window.print()">列印</button>
+        <div class="print-box">
+          <h2>訂單明細（#${order.id}）</h2>
+          <p><strong>訂單時間：</strong>${order.created_local}</p>
+          <p><strong>購買商品：</strong></p>
+          <ul>${itemsHtml}</ul>
+          <p><strong>總金額：</strong>$${order.total_amount}</p>
+          <hr>
+          <p><strong>購買人姓名：</strong>${order.member.name}</p>
+          <p><strong>電話：</strong>${order.member.phone}</p>
+          <p><strong>地址：</strong>${order.member.address}</p>
+
+          <button class="btn-print" onclick="window.print()">列印</button>
+        </div>
       </body>
     </html>
   `);
+
   printWindow.document.close();
 }
+
 
 window.addEventListener('DOMContentLoaded', () => {
   const urlParams = new URLSearchParams(window.location.search);
