@@ -1,7 +1,21 @@
-<h2>選擇付款方式</h2>
-<form method="POST" action="/pay">
-  <label><input type="radio" name="method" value="credit" required> 信用卡（綠界）</label><br>
-  <label><input type="radio" name="method" value="linepay"> Line Pay</label><br>
-  <label><input type="radio" name="method" value="bank"> 銀行轉帳</label><br>
-  <button type="submit">下一步</button>
-</form>
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>選擇付款方式</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <h2>請選擇付款方式</h2>
+    <form action="/process_payment" method="POST">
+      <input type="hidden" name="order_id" value="{{ order.id }}">
+      <input type="hidden" name="is_repay" value="{{ '1' if is_repay else '0' }}">
+      <label><input type="radio" name="method" value="linepay" required> Line Pay</label><br>
+      <label><input type="radio" name="method" value="bank" required> 銀行轉帳</label><br>
+      <label><input type="radio" name="method" value="credit" required> 信用卡付款</label><br><br>
+      <button type="submit">前往付款</button>
+    </form>
+  </div>
+</body>
+</html>

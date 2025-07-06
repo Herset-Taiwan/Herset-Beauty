@@ -414,11 +414,46 @@ def pay():
     else:
         return "付款方式錯誤", 400
     
-    
+
 #line pay結帳
 @app.route("/linepay")
 def linepay():
     return render_template("linepay.html")
+
+
+#判斷用戶選的付款方式
+@app.route("/process_payment", methods=["POST"])
+def process_payment():
+    order_id = request.form.get("order_id")
+    method = request.form.get("method")
+    is_repay = request.form.get("is_repay") == "1"
+
+    # 查詢訂單
+    order = supabase.table("orders").select("*").eq("id", order_id).single().execute().data
+    if not order:
+        return "找不到訂單", 404
+
+    if method == "linepay":
+        return render_template("linepay.html", order=order)  # 你可自訂畫面顯示 QR 圖片或帳號
+
+    elif method == "bank":
+        return render_template("bank_transfer.html", order=order)
+
+    elif method == "credit":
+        # 產生新的 MerchantTradeNo（避免重複）
+        new_trade_no = "HS" + uuid4().hex[:12]
+        supabase.table("ecpay_repay_map").insert({
+            "original_trade_no": order["MerchantTradeNo"],
+            "new_trade_no": new_trade_no,
+            "order_id": order["id"]
+        }).execute()
+
+        html = generate_ecpay_form(order, trade_no=new_trade_no)
+        return html
+
+    else:
+        return "未知付款方式", 400
+
 
 
 # 歷史訂單重新付款
@@ -431,17 +466,9 @@ def repay_order(merchant_trade_no):
 
     order = order_result.data[0]
 
-    # ✅ 新寫法：generate_ecpay_form 回傳兩個值
-    new_trade_no, form_html = generate_ecpay_form(order)
+    # 顯示付款方式選擇畫面
+    return render_template("choose_payment.html", order=order, is_repay=True)
 
-    # ✅ 儲存映射關係
-    supabase.table("ecpay_repay_map").insert({
-        "original_trade_no": merchant_trade_no,
-        "new_trade_no": new_trade_no,
-        "order_id": order["id"]
-    }).execute()
-
-    return form_html
 
 
 
