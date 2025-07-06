@@ -866,6 +866,38 @@ from flask import redirect
 def redirect_old_page():
     return redirect("https://herset.co/", code=301)
 
+# 修改密碼
+@app.route('/change-password', methods=['GET', 'POST'])
+def change_password():
+    if 'user' not in session:
+        return redirect('/login')
+
+    account_id = session['user']['account']  # 使用 account 欄位（UUID）
+
+    if request.method == 'POST':
+        old_pw = request.form['old_password']
+        new_pw = request.form['new_password']
+        confirm_pw = request.form['confirm_password']
+
+        if new_pw != confirm_pw:
+            return render_template('change_password.html', error="新密碼與確認不一致")
+
+        # 查詢該會員目前的密碼
+        user_data = supabase.table("members").select("password").eq("account", account_id).execute().data
+        if not user_data:
+            return render_template('change_password.html', error="找不到會員資料")
+
+        if old_pw != user_data[0]['password']:
+            return render_template('change_password.html', error="舊密碼錯誤")
+
+        # 更新密碼
+        supabase.table("members").update({"password": new_pw}).eq("account", account_id).execute()
+
+        return render_template('change_password.html', success="密碼已更新成功")
+
+    return render_template('change_password.html')
+
+
 
 
 if __name__ == '__main__':
