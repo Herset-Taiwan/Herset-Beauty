@@ -494,14 +494,17 @@ window.addEventListener('DOMContentLoaded', () => {
   const urlParams = new URLSearchParams(window.location.search);
   const tab = urlParams.get('tab');
   if (tab) {
-    switchTab(tab);  // ✅ 這樣才會觸發 filterOrders()
+    switchTab(tab);
+    if (tab === "orders") {
+      filterOrders();  // ✅ 加這行
+    }
   } else {
     switchTab("products");
   }
 
-  // 顯示會員資料（如果有）
   document.querySelectorAll(".member-row").forEach(m => m.style.display = "block");
 });
+
 
 
 </script>
