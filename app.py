@@ -417,36 +417,29 @@ def checkout():
 #歷史訂單重新付款
 @app.route("/repay/<merchant_trade_no>")
 def repay_order(merchant_trade_no):
-    import random
-    import string
-    from datetime import datetime
+    # 改成用正確欄位名稱搜尋
+    order_result = supabase.table("orders").select("*").eq("MerchantTradeNo", merchant_trade_no).execute()
 
-    # 1. 根據舊 trade_no 查出原訂單
-    result = supabase.table("payment_log").select("order_id").eq("merchant_trade_no", merchant_trade_no).execute()
-    if not result.data:
-        return "找不到對應的訂單", 404
-
-    order_id = result.data[0]["order_id"]
-    order_result = supabase.table("orders").select("*").eq("id", order_id).execute()
     if not order_result.data:
-        return "查無訂單資料", 404
+        return "找不到對應的訂單", 404
 
     order = order_result.data[0]
 
-    # 2. 產生新的 MerchantTradeNo
-    new_trade_no = "HS" + ''.join(random.choices(string.ascii_uppercase + string.digits, k=12))
+    # 產生新的 MerchantTradeNo（重新付款用）
+    timestamp_suffix = int(time.time())
+    new_trade_no = f"{merchant_trade_no}_retry_{timestamp_suffix}"
 
-    # 3. 寫入 payment_log
-    supabase.table("payment_log").insert({
-        "order_id": order["id"],
-        "merchant_trade_no": new_trade_no,
-        "source": "repay",  # 你也可以加個欄位識別來源（非必要）
-        "created_at": datetime.utcnow().isoformat()
+    # 儲存對應記錄（ecpay_repay_map 表）
+    supabase.table("ecpay_repay_map").insert({
+        "original_trade_no": merchant_trade_no,
+        "new_trade_no": new_trade_no,
+        "order_id": order["id"]
     }).execute()
 
-    # 4. 帶入新的 trade_no 產生綠界付款表單
-    form_html = generate_ecpay_form(order, trade_no=new_trade_no)
+    # 產生付款表單
+    form_html = generate_ecpay_form(order, new_trade_no)
     return form_html
+
 
 
 
