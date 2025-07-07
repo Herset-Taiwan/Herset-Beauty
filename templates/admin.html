@@ -236,9 +236,10 @@
           </div>
           <div class="actions">
             <a href="/edit/{{ p['id'] }}">✏️ 編輯</a>
-            <form action="/delete/{{ p['id'] }}" method="post" style="display:inline;">
-              <button type="submit" onclick="return confirm('確定要刪除這個商品嗎？')">🗑️ 刪除</button>
-            </form>
+            <button onclick="openDeleteDialog({{ o.id }})" style="color: #e91e63; border: none; background: none; cursor: pointer;">
+  🗑️ 刪除
+</button>
+
           </div>
         </div>
         {% endfor %}
@@ -300,6 +301,21 @@
   <div id="order-list"></div>
   <div id="order-pagination" style="margin-top: 10px; text-align:center;"></div>
 </div>
+<!-- 自訂的刪除確認視窗 -->
+<div id="deleteModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#00000088; z-index:1000; justify-content:center; align-items:center;">
+  <div style="background:white; padding:30px; border-radius:12px; max-width:400px; width:90%;">
+    <h3 style="margin-top:0;">⚠️ 確認刪除訂單</h3>
+    <p>您確定要刪除這筆訂單嗎？請輸入管理員帳號與密碼確認。</p>
+    <input id="adminUser" placeholder="管理員帳號" style="width:100%; padding:6px; margin-top:10px;"><br>
+    <input id="adminPass" type="password" placeholder="管理員密碼" style="width:100%; padding:6px; margin-top:10px;"><br>
+    <div style="margin-top:15px; text-align:right;">
+      <button onclick="closeDeleteDialog()" style="margin-right:10px;">取消</button>
+      <button onclick="confirmDelete()" style="background:#e91e63; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer;">確認刪除</button>
+    </div>
+    <input type="hidden" id="deleteOrderId">
+  </div>
+</div>
+
 
 
   <script>
@@ -519,6 +535,44 @@ renderOrderPage(parseInt(document.getElementById("pageSizeSelect").value));
 
 
 
+</script>
+
+<script>
+function openDeleteDialog(orderId) {
+  document.getElementById('deleteOrderId').value = orderId;
+  document.getElementById('adminUser').value = '';
+  document.getElementById('adminPass').value = '';
+  document.getElementById('deleteModal').style.display = 'flex';
+}
+
+function closeDeleteDialog() {
+  document.getElementById('deleteModal').style.display = 'none';
+}
+
+function confirmDelete() {
+  const user = document.getElementById('adminUser').value.trim();
+  const pass = document.getElementById('adminPass').value.trim();
+  const orderId = document.getElementById('deleteOrderId').value;
+
+  if (!user || !pass) {
+    alert("請輸入帳號密碼");
+    return;
+  }
+
+  fetch("/admin0363/orders/verify_delete", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username: user, password: pass, order_id: orderId })
+  })
+  .then(res => res.json())
+  .then(result => {
+    if (result.success) {
+      window.location.href = `/admin0363/orders/delete/${orderId}`;
+    } else {
+      alert("帳號或密碼錯誤");
+    }
+  });
+}
 </script>
 
 

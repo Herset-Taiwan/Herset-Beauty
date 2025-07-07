@@ -132,6 +132,19 @@ ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = "show0363"  # 
 
 
+# ✅ 刪除訂單密碼驗證路由
+@app.route('/admin0363/orders/verify_delete', methods=['POST'])
+def verify_admin_for_delete():
+    data = request.get_json()
+    username = data.get("username")
+    password = data.get("password")
+
+    if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+        return jsonify(success=True)
+    else:
+        return jsonify(success=False)
+
+
 
 # 後台登入畫面（網址：https://herset.co/admin0363）
 @app.route("/admin0363", methods=["GET", "POST"])
