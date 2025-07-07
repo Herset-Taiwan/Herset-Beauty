@@ -738,12 +738,13 @@ def search_members():
     return render_template("admin.html", products=products, members=members, orders=orders, tab="members")
 
 
-
-@app.route('/admin/orders/delete/<int:order_id>', methods=['POST'])
+#刪除訂單
+@app.route('/admin0363/orders/delete/<int:order_id>', methods=['POST'])
 def delete_order(order_id):
     supabase.table("orders").delete().eq("id", order_id).execute()
-    supabase.table("order_items").delete().eq("order_id", order_id).execute()  # 一併清除
+    supabase.table("order_items").delete().eq("order_id", order_id).execute()
     return redirect('/admin0363/dashboard')
+
 
 
 @app.route('/admin/new')

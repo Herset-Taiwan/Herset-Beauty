@@ -566,17 +566,27 @@ function confirmDelete() {
   .then(res => res.json())
   .then(result => {
     if (result.success) {
-      // 🔁 改用表單提交 POST 刪除
-      const form = document.createElement("form");
-      form.method = "POST";
-      form.action = `/admin0363/orders/delete/${orderId}`;
-      document.body.appendChild(form);
-      form.submit();
-    } else {
-      alert("帳號或密碼錯誤");
-    }
+  // 🔁 改用表單提交 POST 刪除
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = `/admin0363/orders/delete/${orderId}`;
+
+  // 🔒 加一個隱藏欄位，避免 POST 空白
+  const hiddenInput = document.createElement("input");
+  hiddenInput.type = "hidden";
+  hiddenInput.name = "confirm";
+  hiddenInput.value = "yes";
+  form.appendChild(hiddenInput);
+
+  document.body.appendChild(form);
+  form.submit();
+} else {
+  alert("帳號或密碼錯誤");
+}
+
   });
 }
+
 </script>
 
 
