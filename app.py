@@ -172,16 +172,12 @@ def admin_dashboard():
     tab = request.args.get("tab", "orders")
     selected_categories = request.args.getlist("category")
 
-    # ✅ 商品（支援分類過濾，預設顯示全部）
+    # ✅ 商品（預設顯示全部，有勾分類才篩選）
     if tab == "products":
         query = supabase.table("products").select("*")
-        if "category" in request.args:
-            if selected_categories:
-                filters = [f"categories.cs.{json.dumps([cat])}" for cat in selected_categories]
-                query = query.or_(','.join(filters))
-            else:
-                # 有帶 category 但是空的 → 表示清空篩選 → 回傳空結果
-                query = query.or_("id.eq.-1")
+        if selected_categories:
+            filters = [f"categories.cs.{json.dumps([cat])}" for cat in selected_categories]
+            query = query.or_(','.join(filters))
         products = query.execute().data or []
     else:
         products = []
@@ -227,13 +223,13 @@ def admin_dashboard():
 
         orders.append(o)
 
-    # ✅ 回傳畫面
     return render_template("admin.html",
                            products=products,
                            members=members,
                            orders=orders,
                            tab=tab,
                            selected_categories=selected_categories)
+
 
 
 
