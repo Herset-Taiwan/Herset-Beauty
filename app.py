@@ -523,6 +523,30 @@ def pay():
 def linepay():
     return render_template("linepay.html")
 
+ #line pay結帳完成回傳
+@app.route("/linepay/notify", methods=["POST"])
+def linepay_notify():
+    try:
+        data = request.get_json()
+
+        # 假設 orderId 是訂單號（你可以根據真實格式調整）
+        order_id = int(data.get("orderId"))
+        status = data.get("transactionStatus")
+
+        if status == "SUCCESS":
+            supabase.table("orders").update({
+                "payment_status": "paid"
+            }).eq("id", order_id).execute()
+            print(f"✅ 已更新訂單 {order_id} 為已付款")
+
+        return "OK", 200
+
+    except Exception as e:
+        print("❌ LinePay Webhook 錯誤:", e)
+        return "FAIL", 500
+
+
+
 
 #判斷用戶選的付款方式
 @app.route("/process_payment", methods=["POST"])
@@ -862,7 +886,9 @@ def edit_product(product_id):
 
         # ✅ 寫入資料庫
         supabase.table("products").update(updated).eq("id", product_id).execute()
-        return redirect('/admin?tab=products')
+        # ✅ POST：儲存商品後跳轉正確的管理頁面
+        return redirect('/admin0363/dashboard?tab=products')
+
 
     else:
         # GET：載入原始商品

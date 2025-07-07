@@ -51,9 +51,11 @@
     付款完成後，請點擊下方「我已完成付款」通知我們。
   </div>
 
-  <form action="/thank_you" method="get">
-    <button type="submit">我已完成付款，"請點我"</button>
-  </form>
+  <form action="/linepay/complete" method="post">
+  <input type="hidden" name="order_id" value="{{ order.id }}">
+  <button type="submit">我已完成付款，"請點我"</button>
+</form>
+
 
   <a class="back-btn" href="/">稍後再付款，先返回首頁</a>
 </body>
