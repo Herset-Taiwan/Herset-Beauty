@@ -169,16 +169,18 @@ def admin_dashboard():
     tab = request.args.get("tab", "orders")
     selected_categories = request.args.getlist("category")  # ✅ 多選分類參數
 
-    # ✅ 商品（支援分類過濾）
-    if tab == "products":
-        query = supabase.table("products").select("*")
-        if selected_categories:
-            # 對每個分類建立 OR 條件：categories.cs."分類"
-            filters = ",".join([f'categories.cs."{cat}"' for cat in selected_categories])
-            query = query.or_(filters)
-        products = query.execute().data or []
-    else:
-        products = []
+# ✅ 商品（支援分類過濾）
+if tab == "products":
+    query = supabase.table("products").select("*")
+    if selected_categories:
+        # 將每個分類用 PostgREST 支援的格式包成 or 條件
+        conditions = [f'categories.cs.{{"{cat}"}}' for cat in selected_categories]
+        query = query.or_(','.join(conditions))
+    products = query.execute().data or []
+else:
+    products = []
+
+
 
     # ✅ 會員
     members = supabase.table("members").select("id, account, username, name, phone, email, address, note, created_at").execute().data or []

@@ -228,7 +228,7 @@
 <form method="GET" action="/admin0363/dashboard" style="margin-bottom: 20px;">
   <input type="hidden" name="tab" value="products">
   <label>分類篩選：</label>
-  <select id="category-filter" name="category" multiple>
+  <select id="category-filter" name="category[]" multiple>
     {% set all_categories = ['身體保養', '私密保養', '寵物友善', '品牌嚴選'] %}
     {% for cat in all_categories %}
       <option value="{{ cat }}" {% if cat in selected_categories %}selected{% endif %}>{{ cat }}</option>
