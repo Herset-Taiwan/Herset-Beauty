@@ -129,10 +129,19 @@
       <!-- ✅ 多分類欄位 -->
       <label>分類（可多選 + 可新增）</label>
       <select id="categories" name="categories[]" multiple placeholder="請選擇或輸入分類">
-        {% for cat in product['categories'] or [] %}
-          <option value="{{ cat }}" selected>{{ cat }}</option>
-        {% endfor %}
-      </select>
+  {% set all_categories = ['身體保養', '私密保養', '寵物友善', '品牌嚴選'] %}
+  {% for cat in all_categories %}
+    <option value="{{ cat }}" {% if cat in product['categories'] %}selected{% endif %}>{{ cat }}</option>
+  {% endfor %}
+
+  {# 若 product['categories'] 中有其他自訂分類，也一併顯示 #}
+  {% for cat in product['categories'] or [] %}
+    {% if cat not in all_categories %}
+      <option value="{{ cat }}" selected>{{ cat }}</option>
+    {% endif %}
+  {% endfor %}
+</select>
+
 
       <label>商品介紹</label>
       <textarea name="intro">{{ product['intro'] }}</textarea>
