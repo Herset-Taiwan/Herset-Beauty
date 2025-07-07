@@ -566,13 +566,19 @@ function confirmDelete() {
   .then(res => res.json())
   .then(result => {
     if (result.success) {
-      window.location.href = `/admin0363/orders/delete/${orderId}`;
+      // 🔁 改用表單提交 POST 刪除
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = `/admin0363/orders/delete/${orderId}`;
+      document.body.appendChild(form);
+      form.submit();
     } else {
       alert("帳號或密碼錯誤");
     }
   });
 }
 </script>
+
 
 
 </body>
