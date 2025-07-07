@@ -4,32 +4,35 @@
   <meta charset="UTF-8">
   <title>編輯商品 - HERSET BEAUTY</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <style>
 
+  <!-- ✅ Selectize CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/css/selectize.default.css" rel="stylesheet" />
+
+  <style>
     .image-box {
-    position: relative;
-    display: inline-block;
-  }
-  .image-box img {
-    width: 100px;
-    height: 100px;
-    object-fit: cover;
-    border-radius: 6px;
-    border: 1px solid #ddd;
-  }
-  .delete-img-btn {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    background: #e91e63;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    font-size: 14px;
-    cursor: pointer;
-  }
+      position: relative;
+      display: inline-block;
+    }
+    .image-box img {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+    }
+    .delete-img-btn {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: #e91e63;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      font-size: 14px;
+      cursor: pointer;
+    }
     .form-container {
       max-width: 800px;
       margin: 50px auto;
@@ -38,20 +41,17 @@
       border-radius: 10px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.08);
     }
-
     h2 {
       color: #CDAFA1;
       text-align: center;
       margin-bottom: 30px;
     }
-
     label {
       display: block;
       margin-top: 15px;
       font-weight: bold;
       color: #3C3C3C;
     }
-
     input[type="text"],
     input[type="number"],
     select,
@@ -64,19 +64,16 @@
       box-sizing: border-box;
       margin-top: 5px;
     }
-
     textarea {
       resize: vertical;
       min-height: 80px;
     }
-
     .image-preview {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
       margin-top: 10px;
     }
-
     .image-preview img {
       width: 100px;
       height: 100px;
@@ -84,7 +81,6 @@
       border: 1px solid #ddd;
       border-radius: 5px;
     }
-
     .options-container input {
       display: block;
       width: 100%;
@@ -93,7 +89,6 @@
       border: 1px solid #ccc;
       border-radius: 6px;
     }
-
     .add-option-btn {
       margin-top: 10px;
       background-color: #CDAFA1;
@@ -103,11 +98,9 @@
       border-radius: 6px;
       cursor: pointer;
     }
-
     .add-option-btn:hover {
       background-color: #E2B6A2;
     }
-
     .save-btn {
       margin-top: 30px;
       background-color: #CDAFA1;
@@ -120,22 +113,10 @@
       cursor: pointer;
       width: 100%;
     }
-
     .save-btn:hover {
       background-color: #E2B6A2;
     }
   </style>
-
-  <script>
-    function addOptionField() {
-      const container = document.getElementById('options-container');
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.name = 'options[]';
-      input.placeholder = '例：澄淨白茶感';
-      container.appendChild(input);
-    }
-  </script>
 </head>
 <body>
   <div class="form-container">
@@ -147,13 +128,12 @@
       <label>價格</label>
       <input type="number" name="price" value="{{ product['price'] }}" required>
 
-      <label>分類</label>
-      <select name="category" required>
-        <option value="">請選擇</option>
-        <option value="身體保養" {% if product['category'] == '身體保養' %}selected{% endif %}>身體保養</option>
-        <option value="私密保養" {% if product['category'] == '私密保養' %}selected{% endif %}>私密保養</option>
-        <option value="寵物友善" {% if product['category'] == '寵物友善' %}selected{% endif %}>寵物友善</option>
-        <option value="品牌嚴選" {% if product['category'] == '品牌嚴選' %}selected{% endif %}>品牌嚴選</option>
+      <!-- ✅ 分類 (多選 + 可輸入) -->
+      <label>分類（可多選 + 可輸入）</label>
+      <select id="categories" name="categories[]" multiple placeholder="請選擇或輸入分類">
+        {% for cat in product['categories'] or [] %}
+          <option value="{{ cat }}" selected>{{ cat }}</option>
+        {% endfor %}
       </select>
 
       <label>商品介紹</label>
@@ -181,20 +161,43 @@
 
       {% if product['images'] %}
         <label>現有圖片：</label>
-<div class="image-preview" id="image-preview">
-  {% for img in product['images'] %}
-    <div class="image-box">
-      <img src="{{ img }}">
-      <input type="hidden" name="existing_images[]" value="{{ img }}">
-      <button type="button" class="delete-img-btn" onclick="this.parentNode.remove()">✖</button>
-    </div>
-  {% endfor %}
-</div>
-
+        <div class="image-preview" id="image-preview">
+          {% for img in product['images'] %}
+            <div class="image-box">
+              <img src="{{ img }}">
+              <input type="hidden" name="existing_images[]" value="{{ img }}">
+              <button type="button" class="delete-img-btn" onclick="this.parentNode.remove()">✖</button>
+            </div>
+          {% endfor %}
+        </div>
       {% endif %}
 
       <button type="submit" class="save-btn">儲存修改</button>
     </form>
   </div>
+
+  <!-- ✅ Selectize JS -->
+  <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
+  <script>
+    function addOptionField() {
+      const container = document.getElementById('options-container');
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.name = 'options[]';
+      input.placeholder = '例：澄淨白茶感';
+      container.appendChild(input);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      $('#categories').selectize({
+        plugins: ['remove_button'],
+        delimiter: ',',
+        persist: false,
+        create: function (input) {
+          return { value: input, text: input };
+        }
+      });
+    });
+  </script>
 </body>
 </html>
