@@ -679,7 +679,7 @@ def handle_ecpay_result():
 #封鎖 /admin 的舊路由
 @app.route('/admin')
 def block_admin_shortcut():
-    return "404 Not Found", 403
+    return "404 Not Found    The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.", 403
 
 
 @app.route('/admin/members')
