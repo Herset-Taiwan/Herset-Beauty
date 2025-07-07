@@ -666,7 +666,7 @@ def handle_ecpay_result():
 #封鎖 /admin 的舊路由
 @app.route('/admin')
 def block_admin_shortcut():
-    return "此後台路徑無效，請使用正確的管理連結", 403
+    return "404 Not Found", 403
 
 
 @app.route('/admin/members')
