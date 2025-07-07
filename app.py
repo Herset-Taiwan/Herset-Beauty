@@ -176,12 +176,15 @@ def admin_dashboard():
     if tab == "products":
         query = supabase.table("products").select("*")
         if selected_categories:
-            # 多分類 OR 條件：categories.cs.[分類]
             filters = [f"categories.cs.{json.dumps([cat])}" for cat in selected_categories]
             query = query.or_(','.join(filters))
         products = query.execute().data or []
     else:
-        products = []
+        # ✅ 如果 tab 不是 "products" 但沒指定 category，也預設抓全部商品
+        if not selected_categories and not tab:
+            products = supabase.table("products").select("*").execute().data or []
+        else:
+            products = []
 
     # ✅ 會員
     members = supabase.table("members").select(
