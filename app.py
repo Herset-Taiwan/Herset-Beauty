@@ -834,7 +834,7 @@ def add_product():
             print("⚠️ Supabase 錯誤：", response.error)
             return f"資料寫入失敗：{response.error['message']}", 500
 
-        return redirect('/admin?tab=products')  # 回商品頁籤
+        return redirect('/admin0363/dashboard?tab=products')  # 回商品頁籤
 
     except Exception as e:
         print("🚨 新增商品錯誤：", e)
