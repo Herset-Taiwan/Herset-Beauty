@@ -164,27 +164,24 @@ def admin_dashboard():
     if not session.get("admin_logged_in"):
         return redirect("/admin0363")
 
+    from pytz import timezone
+    from dateutil import parser
+    import json
+
     tz = timezone("Asia/Taipei")
     tab = request.args.get("tab", "orders")
     selected_categories = request.args.getlist("category")
 
     # ✅ 商品（支援分類過濾）
     if tab == "products":
-      import json
-    query = supabase.table("products").select("*")
-
-    if selected_categories:
-        # 每個分類包成 JSON 陣列再比對 categories.cs.[分類]
-        filters = [f"categories.cs.{json.dumps([cat])}" for cat in selected_categories]
-        query = query.or_(','.join(filters))
-
-    # ✅ 無論是否有篩選條件都執行查詢
-    products = query.execute().data or []
+        query = supabase.table("products").select("*")
+        if selected_categories:
+            # 多分類 OR 條件：categories.cs.[分類]
+            filters = [f"categories.cs.{json.dumps([cat])}" for cat in selected_categories]
+            query = query.or_(','.join(filters))
+        products = query.execute().data or []
     else:
-    products = []
-
-
-
+        products = []
 
     # ✅ 會員
     members = supabase.table("members").select(
@@ -227,12 +224,14 @@ def admin_dashboard():
 
         orders.append(o)
 
+    # ✅ 回傳畫面
     return render_template("admin.html",
                            products=products,
                            members=members,
                            orders=orders,
                            tab=tab,
                            selected_categories=selected_categories)
+
 
 
 
