@@ -170,15 +170,17 @@ def admin_dashboard():
   # ✅ 多選分類參數
 
     # ✅ 商品（支援分類過濾）
-    if tab == "products":
-        query = supabase.table("products").select("*")
-        if selected_categories:
-            # 將每個分類用 PostgREST 支援的格式包成 or 條件
-            conditions = [f'categories.cs.{{"{cat}"}}' for cat in selected_categories]
-            query = query.or_(','.join(conditions))
-        products = query.execute().data or []
-    else:
-        products = []
+if tab == "products":
+    import json
+    query = supabase.table("products").select("*")
+    if selected_categories:
+        # ✅ 修正為合法 JSON 陣列語法
+        conditions = [f"categories.cs.{json.dumps([cat])}" for cat in selected_categories]
+        query = query.or_(','.join(conditions))
+    products = query.execute().data or []
+else:
+    products = []
+
 
     # ✅ 會員
     members = supabase.table("members").select("id, account, username, name, phone, email, address, note, created_at").execute().data or []
