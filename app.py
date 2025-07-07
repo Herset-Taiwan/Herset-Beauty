@@ -743,7 +743,7 @@ def search_members():
 def delete_order(order_id):
     supabase.table("orders").delete().eq("id", order_id).execute()
     supabase.table("order_items").delete().eq("order_id", order_id).execute()  # 一併清除
-    return redirect('/admin')
+     return redirect('/admin0363/dashboard')
 
 
 @app.route('/admin/new')
@@ -877,7 +877,7 @@ def edit_product(product_id):
 def delete_product(product_id):
 
     supabase.table("products").delete().eq("id", product_id).execute()
-    return redirect('/admin')
+    return redirect('/admin0363/dashboard')
 
 @app.route('/add_to_cart', methods=['POST'])
 def add_to_cart():
