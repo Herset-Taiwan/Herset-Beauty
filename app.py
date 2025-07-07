@@ -166,7 +166,8 @@ def admin_dashboard():
 
     tz = timezone("Asia/Taipei")
     tab = request.args.get("tab", "orders")
-    selected_categories = request.args.getlist("category")  # ✅ 多選分類參數
+    selected_categories = request.args.getlist("category[]")  # 注意有中括號！
+  # ✅ 多選分類參數
 
     # ✅ 商品（支援分類過濾）
     if tab == "products":
