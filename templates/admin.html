@@ -228,21 +228,21 @@
       <a href="/admin/new" class="add-btn">＋ 新增商品</a>
       {% if products %}
         {% for p in products %}
-        <div class="product-row">
-          <img src="{{ p['image'] or '' }}" alt="{{ p['name'] }}">
-          <div class="info">
-            <strong>{{ p['name'] or '無名稱' }}</strong><br>
-            價格：${{ p['price'] or 0 }}
-          </div>
-          <div class="actions">
-            <a href="/edit/{{ p['id'] }}">✏️ 編輯</a>
-            <button onclick="openDeleteDialog({{ o.id }})" style="color: #e91e63; border: none; background: none; cursor: pointer;">
-  🗑️ 刪除
-</button>
+<div class="product-row">
+  <img src="{{ p['image'] or '' }}" alt="{{ p['name'] }}">
+  <div class="info">
+    <strong>{{ p['name'] or '無名稱' }}</strong><br>
+    價格：${{ p['price'] or 0 }}
+  </div>
+  <div class="actions">
+    <a href="/edit/{{ p['id'] }}">✏️ 編輯</a>
+    <form action="/delete/{{ p['id'] }}" method="post" style="display:inline;" onsubmit="return confirm('確定要刪除商品？')">
+      <button type="submit" style="color: #e91e63; border: none; background: none; cursor: pointer;">🗑️ 刪除</button>
+    </form>
+  </div>
+</div>
+{% endfor %}
 
-          </div>
-        </div>
-        {% endfor %}
       {% else %}
         <p style="color: gray;">目前沒有任何商品</p>
       {% endif %}
