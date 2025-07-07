@@ -94,7 +94,7 @@
 <!-- 商品清單 -->
 <section class="product-list">
   {% for p in products %}
-  <div class="product-card" data-category="{{ p['category'] }}">
+  <div class="product-card" data-category="{{ p['categories'] | join(',') }}">
     
     <!-- 圖片也可以點擊，跳轉到商品頁 -->
     <a href="/product/{{ p['id'] }}">
@@ -212,9 +212,11 @@
 function filterCategory(category) {
   const all = document.querySelectorAll(".product-card");
   all.forEach(el => {
-    el.style.display = category === '全部' || el.dataset.category === category ? 'block' : 'none';
+    const categories = el.dataset.category.split(',');
+    el.style.display = category === '全部' || categories.includes(category) ? 'block' : 'none';
   });
 }
+
 filterCategory('全部');
 
 function addToCart(event, productId) {
