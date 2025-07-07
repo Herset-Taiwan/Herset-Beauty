@@ -126,8 +126,8 @@
       <label>價格</label>
       <input type="number" name="price" value="{{ product['price'] }}" required>
 
-      <!-- ✅ 分類（selectize 多選 + 新增） -->
-      <label>分類（可多選 + 可輸入）</label>
+      <!-- ✅ 多分類欄位 -->
+      <label>分類（可多選 + 可新增）</label>
       <select id="categories" name="categories[]" multiple placeholder="請選擇或輸入分類">
         {% for cat in product['categories'] or [] %}
           <option value="{{ cat }}" selected>{{ cat }}</option>
@@ -174,7 +174,8 @@
     </form>
   </div>
 
-  <!-- ✅ Selectize JS -->
+  <!-- ✅ jQuery + Selectize -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
   <script>
     function addOptionField() {
@@ -186,7 +187,7 @@
       container.appendChild(input);
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
+    $(document).ready(function () {
       $('#categories').selectize({
         plugins: ['remove_button'],
         delimiter: ',',

@@ -108,7 +108,8 @@
     <button type="submit">新增商品</button>
   </form>
 
-  <!-- ✅ Selectize JS -->
+  <!-- ✅ jQuery + Selectize JS -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
   <script>
     function addOption() {
@@ -119,16 +120,13 @@
       wrapper.appendChild(div);
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
-      const select = document.getElementById('categories');
-      if (select) {
-        Selectize.create(select, {
-          plugins: ['remove_button'],
-          delimiter: ',',
-          persist: false,
-          create: true
-        });
-      }
+    $(document).ready(function () {
+      $('#categories').selectize({
+        plugins: ['remove_button'],
+        delimiter: ',',
+        persist: false,
+        create: true
+      });
     });
   </script>
 

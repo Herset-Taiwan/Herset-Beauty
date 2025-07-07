@@ -166,23 +166,33 @@ def admin_dashboard():
         return redirect("/admin0363")
 
     tz = timezone("Asia/Taipei")
+    tab = request.args.get("tab", "orders")
+    selected_categories = request.args.getlist("category")  # ✅ 多選分類參數
 
-    # 商品
-    products = supabase.table("products").select("*").execute().data or []
+    # ✅ 商品（支援分類過濾）
+    if tab == "products":
+        query = supabase.table("products").select("*")
+        if selected_categories:
+            # 對每個分類建立 OR 條件：categories.cs."分類"
+            filters = ",".join([f'categories.cs."{cat}"' for cat in selected_categories])
+            query = query.or_(filters)
+        products = query.execute().data or []
+    else:
+        products = []
 
-    # 會員
+    # ✅ 會員
     members = supabase.table("members").select("id, account, username, name, phone, email, address, note, created_at").execute().data or []
     for m in members:
         try:
             if m.get("created_at"):
                 utc_dt = parser.parse(m["created_at"])
                 m["created_at"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
-        except Exception as e:
+        except:
             m["created_at"] = m.get("created_at", "—")
 
     member_dict = {m["id"]: m for m in members}
 
-    # 訂單
+    # ✅ 訂單
     orders_raw = supabase.table("orders").select("*").order("created_at", desc=True).execute().data or []
     order_items = supabase.table("order_items").select("*").execute().data or []
 
@@ -208,7 +218,14 @@ def admin_dashboard():
 
         orders.append(o)
 
-    return render_template("admin.html", products=products, members=members, orders=orders, tab="orders")
+    return render_template("admin.html",
+        products=products,
+        members=members,
+        orders=orders,
+        tab=tab,
+        selected_categories=selected_categories  # ✅ 傳到模板
+    )
+
 
 #admin登出功能
 @app.route("/admin0363/logout")

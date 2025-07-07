@@ -225,6 +225,34 @@
 
     <div id="products" class="tab-content active">
       <h2>商品管理</h2>
+<form method="GET" action="/admin0363/dashboard" style="margin-bottom: 20px;">
+  <input type="hidden" name="tab" value="products">
+  <label>分類篩選：</label>
+  <select id="category-filter" name="category" multiple>
+    {% set all_categories = ['身體保養', '私密保養', '寵物友善', '品牌嚴選'] %}
+    {% for cat in all_categories %}
+      <option value="{{ cat }}" {% if cat in selected_categories %}selected{% endif %}>{{ cat }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit">搜尋</button>
+</form>
+
+<!-- 引入 jQuery + Selectize -->
+<link href="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/css/selectize.default.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
+<script>
+  $(function () {
+    $('#category-filter').selectize({
+      plugins: ['remove_button'],
+      delimiter: ',',
+      persist: false,
+      create: true
+    });
+  });
+</script>
+
+
       <a href="/admin/new" class="add-btn">＋ 新增商品</a>
       {% if products %}
         {% for p in products %}
