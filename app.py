@@ -775,6 +775,7 @@ def delete_order(order_id):
 def new_product():
     return render_template("new_product.html")
 
+
 @app.route('/add_product', methods=['POST'])
 def add_product():
     try:
@@ -786,7 +787,9 @@ def add_product():
         spec = request.form.get('spec', '').strip()
         ingredient = request.form.get('ingredient', '').strip()
         categories = request.form.getlist('categories[]')  # ✅ 多分類
+        options = request.form.getlist('options[]')
 
+        # ✅ 上傳圖片處理
         image_files = request.files.getlist("image_files")
         image_urls = []
         for file in image_files:
@@ -807,8 +810,7 @@ def add_product():
         if not image_urls:
             return "請上傳至少一張圖片", 400
 
-        options = request.form.getlist('options[]')
-
+        # ✅ 建立商品資料
         data = {
             "name": name,
             "price": price,
@@ -819,7 +821,7 @@ def add_product():
             "spec": spec,
             "ingredient": ingredient,
             "options": options,
-            "categories": categories  # ✅ 寫入多分類陣列
+            "categories": categories
         }
 
         response = supabase.table("products").insert(data).execute()
@@ -833,51 +835,52 @@ def add_product():
         return f"新增商品時發生錯誤：{str(e)}", 500
 
 
-
 @app.route('/edit/<product_id>', methods=['GET', 'POST'])
 def edit_product(product_id):
     if request.method == 'POST':
-        updated = {
-            "name": request.form['name'],
-            "price": float(request.form['price']),
-            "intro": request.form['intro'],
-            "feature": request.form['feature'],
-            "spec": request.form['spec'],
-            "ingredient": request.form['ingredient'],
-            "options": request.form.getlist('options[]'),
-            "categories": request.form.getlist('categories[]')  # ✅ 多選分類
-        }
+        try:
+            updated = {
+                "name": request.form.get('name', '').strip(),
+                "price": float(request.form.get('price', '0').strip()),
+                "intro": request.form.get('intro', '').strip(),
+                "feature": request.form.get('feature', '').strip(),
+                "spec": request.form.get('spec', '').strip(),
+                "ingredient": request.form.get('ingredient', '').strip(),
+                "options": request.form.getlist('options[]'),
+                "categories": request.form.getlist('categories[]')
+            }
 
-        # ✅ 舊圖片保留
-        kept_images = request.form.getlist('existing_images[]')
+            # ✅ 保留舊圖
+            kept_images = request.form.getlist('existing_images[]')
 
-        # ✅ 上傳新圖
-        image_files = request.files.getlist("image_files")
-        image_urls = []
-        for file in image_files:
-            if file and file.filename:
-                filename = secure_filename(file.filename)
-                unique_filename = f"{uuid.uuid4()}_{filename}"
-                storage_path = f"product_images/{unique_filename}"
-                with tempfile.NamedTemporaryFile(delete=False) as tmp:
-                    file.save(tmp.name)
-                    try:
-                        supabase.storage.from_("images").upload(storage_path, tmp.name)
-                    except Exception as e:
-                        print("❗️圖片上傳錯誤：", e)
-                        continue
-                url = supabase.storage.from_("images").get_public_url(storage_path)
-                image_urls.append(url)
+            # ✅ 處理新上傳圖
+            image_files = request.files.getlist("image_files")
+            image_urls = []
+            for file in image_files:
+                if file and file.filename:
+                    filename = secure_filename(file.filename)
+                    unique_filename = f"{uuid.uuid4()}_{filename}"
+                    storage_path = f"product_images/{unique_filename}"
+                    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                        file.save(tmp.name)
+                        try:
+                            supabase.storage.from_("images").upload(storage_path, tmp.name)
+                        except Exception as e:
+                            print("❗️圖片上傳錯誤：", e)
+                            continue
+                    url = supabase.storage.from_("images").get_public_url(storage_path)
+                    image_urls.append(url)
 
-        # ✅ 合併圖片
-        updated['images'] = kept_images + image_urls
+            # ✅ 合併舊圖與新圖
+            updated['images'] = kept_images + image_urls
+            if updated['images']:
+                updated['image'] = updated['images'][0]
 
-        # ✅ 設定主圖
-        if updated['images']:
-            updated['image'] = updated['images'][0]
+            supabase.table("products").update(updated).eq("id", product_id).execute()
+            return redirect('/admin0363/dashboard?tab=products')
 
-        supabase.table("products").update(updated).eq("id", product_id).execute()
-        return redirect('/admin0363/dashboard?tab=products')
+        except Exception as e:
+            return f"編輯商品時發生錯誤：{str(e)}", 500
 
     else:
         res = supabase.table("products").select("*").eq("id", product_id).single().execute()
@@ -885,6 +888,7 @@ def edit_product(product_id):
         if not product:
             return "找不到商品", 404
         return render_template("edit_product.html", product=product)
+
 
 
 

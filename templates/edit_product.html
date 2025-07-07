@@ -4,8 +4,6 @@
   <meta charset="UTF-8">
   <title>編輯商品 - HERSET BEAUTY</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-
-  <!-- ✅ Selectize CSS -->
   <link href="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/css/selectize.default.css" rel="stylesheet" />
 
   <style>
@@ -128,7 +126,7 @@
       <label>價格</label>
       <input type="number" name="price" value="{{ product['price'] }}" required>
 
-      <!-- ✅ 分類 (多選 + 可輸入) -->
+      <!-- ✅ 分類（selectize 多選 + 新增） -->
       <label>分類（可多選 + 可輸入）</label>
       <select id="categories" name="categories[]" multiple placeholder="請選擇或輸入分類">
         {% for cat in product['categories'] or [] %}
@@ -193,9 +191,7 @@
         plugins: ['remove_button'],
         delimiter: ',',
         persist: false,
-        create: function (input) {
-          return { value: input, text: input };
-        }
+        create: true
       });
     });
   </script>
