@@ -743,7 +743,7 @@ def search_members():
 def delete_order(order_id):
     supabase.table("orders").delete().eq("id", order_id).execute()
     supabase.table("order_items").delete().eq("order_id", order_id).execute()  # 一併清除
-     return redirect('/admin0363/dashboard')
+    return redirect('/admin0363/dashboard')
 
 
 @app.route('/admin/new')
