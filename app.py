@@ -169,7 +169,7 @@ def admin_dashboard():
     import json
 
     tz = timezone("Asia/Taipei")
-    tab = request.args.get("tab", "orders")
+    tab = request.args.get("tab", "products")
     selected_categories = request.args.getlist("category")
 
     # ✅ 商品（預設顯示全部，有勾分類才篩選）
