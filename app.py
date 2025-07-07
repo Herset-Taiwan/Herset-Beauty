@@ -166,24 +166,24 @@ def admin_dashboard():
 
     tz = timezone("Asia/Taipei")
     tab = request.args.get("tab", "orders")
-    selected_categories = request.args.getlist("category[]")  # 注意有中括號！
-  # ✅ 多選分類參數
+    selected_categories = request.args.getlist("category")
 
     # ✅ 商品（支援分類過濾）
-if tab == "products":
-    import json
-    query = supabase.table("products").select("*")
-    if selected_categories:
-        # ✅ 修正為合法 JSON 陣列語法
-        conditions = [f"categories.cs.{json.dumps([cat])}" for cat in selected_categories]
-        query = query.or_(','.join(conditions))
-    products = query.execute().data or []
-else:
-    products = []
-
+    if tab == "products":
+        import json
+        query = supabase.table("products").select("*")
+        if selected_categories:
+            conditions = [f"categories.cs.{json.dumps([cat])}" for cat in selected_categories]
+            query = query.or_(','.join(conditions))
+        products = query.execute().data or []
+    else:
+        products = []
 
     # ✅ 會員
-    members = supabase.table("members").select("id, account, username, name, phone, email, address, note, created_at").execute().data or []
+    members = supabase.table("members").select(
+        "id, account, username, name, phone, email, address, note, created_at"
+    ).execute().data or []
+
     for m in members:
         try:
             if m.get("created_at"):
@@ -220,13 +220,14 @@ else:
 
         orders.append(o)
 
-    # ✅ 回傳畫面（縮排一定要在 def 裡）
+    # ✅ 這個 return 一定要縮排在函式內（不能與 def 平行）
     return render_template("admin.html",
                            products=products,
                            members=members,
                            orders=orders,
                            tab=tab,
                            selected_categories=selected_categories)
+
 
 #admin登出功能
 @app.route("/admin0363/logout")
