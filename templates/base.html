@@ -11,17 +11,17 @@
   <!-- Canonical -->
   <link rel="canonical" href="https://herset.co{{ request.path }}">
 
-  <!-- Favicon -->
-  <link rel="icon" href="{{ url_for('static', filename='uploads/logo_0.png') }}" type="image/png">
+  <!-- ✅ Favicon：使用絕對網址避免圖片讀不到 -->
+  <link rel="icon" href="https://herset.co/static/uploads/logo_0.png" type="image/png">
 
-  <!-- 結構化資料：品牌 logo 給 Google 抓 -->
+  <!-- ✅ 結構化資料：品牌 Logo 用絕對網址讓 Google 能抓到 -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": "HERSET",
     "url": "https://www.herset.co",
-    "logo": "https://www.herset.co/static/uploads/logo_0.png"
+    "logo": "https://herset.co/static/uploads/logo_0.png"
   }
   </script>
 

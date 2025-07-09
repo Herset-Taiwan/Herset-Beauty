@@ -97,6 +97,12 @@ def sitemap():
 def google_verify():
     return send_from_directory('.', 'googlee43955748321cd00.html')
 
+# logo路由
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static'),
+                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
+
 # ✅ 忘記密碼 - 輸入電話與信箱
 @app.route('/forgot', methods=['GET', 'POST'])
 def forgot():
