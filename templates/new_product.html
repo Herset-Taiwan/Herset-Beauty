@@ -132,13 +132,18 @@
     }
 
     $(document).ready(function () {
-      $('#categories').selectize({
+    var selectize = $('#your-select-id').selectize({
         plugins: ['remove_button'],
-        delimiter: ',',
         persist: false,
-        create: true
-      });
+        create: true,
+
+        onOptionRemove: function(value) {
+            // 把選項移回來源清單（可自訂要怎麼補回來）
+            this.addOption({ value: value, text: value });
+        }
     });
+});
+
   </script>
 
 </body>
