@@ -1,75 +1,8 @@
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-  <meta charset="UTF-8">
-  <title>HERSET 官方網站｜天然保養 × 品味生活</title>
+{% extends "base.html" %}
 
-  <!-- SEO -->
-  <meta name="description" content="HERSET 專注於私密護理、身體保養與香氛，打造簡約自然的保養生活美學。">
-  <meta name="keywords" content="HERSET, 天然保養, 私密處清潔, 身體乳, 香氛, 品味生活, 美學品牌">
+{% block title %}HERSET 官方網站｜天然保養 × 品味生活{% endblock %}
 
-  <!-- Favicon -->
-  <link rel="icon" href="{{ url_for('static', filename='uploads/logo_0.png') }}" type="image/png">
-
-  <!-- 結構化資料：品牌 logo 給 Google 抓 -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": "HERSET",
-    "url": "https://www.herset.co",
-    "logo": "https://www.herset.co/static/uploads/logo_0.png"
-  }
-  </script>
-
-  <!-- 原本 CSS -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-
-
-<body>
-<div class="add-success" id="add-success">已加入購物車！</div>
-<div class="save-success" id="save-success">資料已更新完成！</div>
-
-<!-- 導覽列 -->
-<header class="main-header">
-  <a href="/" class="logo-area" style="text-decoration: none; color: inherit;">
-    <img src="{{ url_for('static', filename='uploads/logo_0.png') }}" alt="logo">
-    <span>HERSET</span>
-  </a>
-  <nav class="main-nav">
-    <ul>
-      <li><a href="/">HOME</a></li>
-      <li><a href="/about">關於我們</a></li>
-      {% if session.get('user') %}
-        <li class="dropdown">
-          <a href="#">👤 會員中心</a>
-          <ul class="dropdown-menu">
-            <li><a href="/order-history">歷史訂單</a></li>
-            <li><a href="#" onclick="openProfileModal()">會員資料</a></li>
-            <li><a href="/change-password">🔒 修改密碼</a></li>  <!-- 新增這行 -->
-            <li><a href="/logout">登出</a></li>
-          </ul>
-        </li>
-      {% else %}
-        <li><a href="/login">👤 會員登入</a></li>
-      {% endif %}
-      <li>
-        <a href="/cart" class="cart-btn">🛒 購物車
-          {% if cart_count > 0 %}
-            <span class="cart-count" id="cart-count">{{ cart_count }}</span>
-          {% else %}
-            <span class="cart-count" id="cart-count" style="display: none;">0</span>
-          {% endif %}
-        </a>
-      </li>
-    </ul>
-  </nav>
-</header>
-
-
-
-
+{% block content %}
 <!-- 首頁輪播圖 -->
 <div class="carousel-container">
   <div class="carousel">
@@ -89,23 +22,17 @@
   <a onclick="filterCategory('品牌嚴選')">品牌嚴選</a>
 </div>
 
-
-
 <!-- 商品清單 -->
 <section class="product-list">
   {% for p in products %}
   <div class="product-card" data-category="{{ p['categories'] | join(',') }}">
-    
-    <!-- 圖片也可以點擊，跳轉到商品頁 -->
     <a href="/product/{{ p['id'] }}">
       <img src="{{ p['images'][0] if p['images'] else '' }}" alt="{{ p['name'] }}">
     </a>
-
     <div class="product-info">
       <h2>{{ p['name'] }}</h2>
       <p class="price">${{ p['price'] }}</p>
     </div>
-
     <div class="btn-group">
       <button onclick="addToCart(event, {{ p['id'] }})">加入購物車</button>
       <a href="/product/{{ p['id'] }}" class="view-btn">查看商品</a>
@@ -114,100 +41,33 @@
   {% endfor %}
 </section>
 
-
-<div id="profile-modal" class="modal">
-  <div class="modal-content profile-form">
-    <span class="close-btn" onclick="closeProfileModal()">&times;</span>
-    <h2>會員資料</h2>
-    <form action="/profile" method="POST">
-      <div class="form-group">
-        <label for="name">姓名：</label>
-        <input type="text" id="name" name="name" required>
-      </div>
-      <div class="form-group">
-        <label for="phone">電話：</label>
-        <input type="text" id="phone" name="phone" required>
-      </div>
-      <div class="form-group">
-        <label for="address">地址：</label>
-        <input type="text" id="address" name="address" required>
-      </div>
-      <div class="form-group">
-        <label for="note">訂單備註：</label>
-        <textarea id="note" name="note" rows="3"></textarea>
-      </div>
-      <div style="text-align:center; margin-top: 20px;">
-        <button type="submit" class="save-btn">儲存資料</button>
-
-      </div>
-    </form>
-  </div>
-</div>
-<!-- Banner -->
+<!-- 首頁標語區 -->
 <section class="banner">
   <h1>自然呵護，極致純淨</h1>
   <p>專為敏感肌設計的私密保養系列</p>
 </section>
 
-<!-- 頁尾 -->
-<footer style="background: #f4d8cc; padding: 40px 20px; font-family: sans-serif; font-size: 14px;">
-  <div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
-    
-        <div style="max-width: 300px;">
-      <h3 style="font-weight: bold;">Style should feel like home.<br>And home is not a place<br>-It's a feeling.</h3>
-      <!--<p style="margin-top: 10px;"><strong>( Intimate & proud )</strong></p>-->
-      <!--<p style="margin-top: 10px;">LIP Intimate Care 全商品已投保新光產品責任險2000萬，提供給您更安心的品質與保障</p>-->
-    </div>
-
-    <div style="min-width: 200px;">
-  <h4 style="margin-bottom: 10px;">關注我們</h4>
-  <div style="display: flex; gap: 10px;">
-    <a href="https://www.facebook.com/profile.php?id=61575912508195#" target="_blank">
-      <img src="{{ url_for('static', filename='icons/facebook.png') }}" width="36" alt="Facebook">
-    </a>
-    <a href="https://www.instagram.com/hello.herset?igsh=OHN2bHc2OGYxcXQ0&utm_source=qr" target="_blank">
-      <img src="{{ url_for('static', filename='icons/instagram.png') }}" width="36" alt="Instagram">
-    </a>
-    <a href="https://line.me/R/ti/p/@013ylkcz?oat_content=qr" target="_blank">
-      <img src="{{ url_for('static', filename='icons/line.png') }}" width="36" alt="LINE">
-    </a>
-    <a href="https://www.youtube.com/你的頻道網址" target="_blank">
-      <img src="{{ url_for('static', filename='icons/youtube.png') }}" width="36" alt="YouTube">
-    </a>
+<!-- 補填會員資料提示 -->
+{% if session.get('incomplete_profile') %}
+<div id="incomplete-popup" class="modal" style="top: 30%; left: 50%; transform: translate(-50%, -50%);">
+  <div class="modal-content" style="text-align:center;">
+    <h3>請補充會員資料</h3>
+    <p>請輸入您的姓名、電話與地址，以便順利配送商品。</p>
+    <button onclick="document.getElementById('incomplete-popup').style.display='none'; openProfileModal()" style="
+      padding: 10px 20px;
+      background-color: #C6456C;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;">立即補填資料</button>
   </div>
 </div>
+{% endif %}
 
+{% endblock %}
 
-    <div style="min-width: 200px;">
-      <h4 style="margin-bottom: 10px;">訂購問題</h4>
-      <ul style="list-style: none; padding: 0;">
-        <li><a href="/about">關於我們</a></li>
-        <li><a href="/payment">付款方式</a></li>
-        <li><a href="/delivery">配送方式</a></li>
-        <li><a href="/return">退貨退款</a></li>
-        <li><a href="/contact">聯絡我們</a></li>
-        <li>銷售據點</li>
-        <li>產品常見FAQ</li>
-      </ul>
-    </div>
-
-    <div style="min-width: 200px;">
-  <h4 style="margin-bottom: 10px; text-align: center;">支付方式</h4>
-  <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">
-    <img src="{{ url_for('static', filename='icons/visa.png') }}">
-    <!--<img src="{{ url_for('static', filename='icons/mastercard.png') }}" style="height: 40px; object-fit: contain;">-->
-    <img src="{{ url_for('static', filename='icons/linepay.png') }}">
-    <!--<img src="{{ url_for('static', filename='icons/sinopac.png') }}" style="height: 40px; object-fit: contain;">-->
-    <!--<img src="{{ url_for('static', filename='icons/paypal.png') }}" style="height: 40px; object-fit: contain;">-->
-    <!--<img src="{{ url_for('static', filename='icons/jkopay.png') }}" style="height: 40px; object-fit: contain;">-->
-    <!--<img src="{{ url_for('static', filename='icons/aftee.png') }}" style="height: 40px; object-fit: contain;">-->
-  </div>
-</div>
-
-</footer>
-
-
-<!-- JS：分類與加入購物車 -->
+{% block script %}
 <script>
 function filterCategory(category) {
   const all = document.querySelectorAll(".product-card");
@@ -216,8 +76,6 @@ function filterCategory(category) {
     el.style.display = category === '全部' || categories.includes(category) ? 'block' : 'none';
   });
 }
-
-
 filterCategory('全部');
 
 function addToCart(event, productId) {
@@ -238,7 +96,7 @@ function addToCart(event, productId) {
     }
   });
 }
-// 輪播圖切換
+
 let cur = 0;
 const banners = document.querySelectorAll('.carousel-img');
 setInterval(() => {
@@ -246,154 +104,5 @@ setInterval(() => {
   cur = (cur + 1) % banners.length;
   banners[cur].classList.add('active');
 }, 5000);
-
 </script>
-<script src="{{ url_for('static', filename='script.js') }}"></script>
-
-
-{% if session.get('incomplete_profile') %}
-<div id="incomplete-popup" style="
-  position: fixed;
-  top: 30%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: #ffffff;
-  border: 2px solid #ccc;
-  padding: 30px;
-  z-index: 9999;
-  text-align: center;
-  border-radius: 10px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
-  <h3 style="margin-bottom: 15px;">請補充會員資料</h3>
-  <p style="margin-bottom: 20px;">請輸入您的姓名、電話與地址，以便順利配送商品。</p>
-  <button onclick="document.getElementById('incomplete-popup').style.display='none'; openProfileModal()" style="
-    padding: 10px 20px;
-    background-color: #C6456C;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;">立即補填資料</button>
-</div>
-{% endif %}
-
-
-
-<script>
-document.querySelector('.profile-form form').addEventListener('submit', function(e) {
-  const name = document.getElementById('name').value.trim();
-  const phone = document.getElementById('phone').value.trim();
-  const address = document.getElementById('address').value.trim();
-
-  if (!name || !phone || !address) {
-    e.preventDefault(); // 阻止送出
-    alert('請完整填寫會員資料（姓名、電話、地址）');
-  }
-});
-</script>
-
-<script>
-let initialProfileData = {};
-let pendingClose = false;  // 用來記錄是否真的要關閉
-
-// 開啟會員資料視窗
-function openProfileModal() {
-  fetch('/get_profile')  // 後端 API 拿會員資料
-    .then(res => res.json())
-    .then(data => {
-      document.getElementById("name").value = data.name || '';
-      document.getElementById("phone").value = data.phone || '';
-      document.getElementById("address").value = data.address || '';
-      document.getElementById("note").value = data.note || '';
-
-      initialProfileData = {
-        name: data.name || '',
-        phone: data.phone || '',
-        address: data.address || ''
-      };
-
-      document.getElementById("profile-modal").style.display = "block";
-    });
-}
-
-// 關閉會員資料視窗
-function closeProfileModal() {
-  const form = document.querySelector(".profile-form form");
-  const nameEl = document.getElementById("name");
-  const phoneEl = document.getElementById("phone");
-  const addressEl = document.getElementById("address");
-
-  const name = nameEl.value.trim();
-  const phone = phoneEl.value.trim();
-  const address = addressEl.value.trim();
-
-  // 判斷是否第一次登入（原始資料都為空）
-  const isFirstLogin =
-    !initialProfileData.name &&
-    !initialProfileData.phone &&
-    !initialProfileData.address;
-
-  // ✅ 加這段：如果是第一次登入且欄位有空，強制 focus + 回傳 false
-  if (isFirstLogin && (!name || !phone || !address)) {
-    if (!name) nameEl.focus();
-    else if (!phone) phoneEl.focus();
-    else if (!address) addressEl.focus();
-
-    // 🧠 必須先 focus 再 call reportValidity 才能觸發瀏覽器泡泡提示
-    setTimeout(() => {
-      form.reportValidity();
-    }, 10);
-
-    return; // 阻止關閉
-  }
-
-  // 判斷是否有修改過
-  const changed =
-    name !== initialProfileData.name ||
-    phone !== initialProfileData.phone ||
-    address !== initialProfileData.address;
-
-  if (changed) {
-    pendingClose = true;
-    document.getElementById("unsaved-warning").style.display = "block";
-  } else {
-    document.getElementById("profile-modal").style.display = "none";
-  }
-}
-
-
-
-
-// 警告視窗：確定關閉
-function confirmCloseProfile() {
-  if (pendingClose) {
-    document.getElementById("unsaved-warning").style.display = "none";
-    document.getElementById("profile-modal").style.display = "none";
-    pendingClose = false;
-  }
-}
-
-// 警告視窗：取消關閉
-function cancelCloseProfile() {
-  document.getElementById("unsaved-warning").style.display = "none";
-  pendingClose = false;
-}
-</script>
-
-
-<div id="unsaved-warning" class="modal">
-  <div class="modal-content" style="text-align:center;">
-    <h3>⚠️ 尚未儲存變更</h3>
-    <p>您尚未儲存資料，確定要關閉嗎？</p>
-    <div style="margin-top: 20px;">
-      <button onclick="cancelCloseProfile()">取消</button>
-      <button onclick="confirmCloseProfile()">確定關閉</button>
-    </div>
-  </div>
-</div>
-
-
-
-
-</body>
-</html>
+{% endblock %}
