@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}HERSET 官方網站｜天然保養 × 品味生活{% endblock %}</title>
+
+  <!-- SEO -->
+  <meta name="description" content="HERSET 專注於私密護理、身體保養與香氛，打造簡約自然的保養生活美學。">
+  <meta name="keywords" content="HERSET, 天然保養, 私密處清潔, 身體乳, 香氛, 品味生活, 美學品牌">
+
+  <!-- Canonical -->
+  <link rel="canonical" href="https://herset.co{{ request.path }}">
+
+  <!-- Favicon -->
+  <link rel="icon" href="{{ url_for('static', filename='uploads/logo_0.png') }}" type="image/png">
+
+  <!-- 結構化資料：品牌 logo 給 Google 抓 -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "HERSET",
+    "url": "https://www.herset.co",
+    "logo": "https://www.herset.co/static/uploads/logo_0.png"
+  }
+  </script>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+<div class="add-success" id="add-success">已加入購物車！</div>
+<div class="save-success" id="save-success">資料已更新完成！</div>
+
+<!-- 導覽列 -->
+<header class="main-header">
+  <a href="/" class="logo-area" style="text-decoration: none; color: inherit;">
+    <img src="{{ url_for('static', filename='uploads/logo_0.png') }}" alt="logo">
+    <span>HERSET</span>
+  </a>
+  <nav class="main-nav">
+    <ul>
+      <li><a href="/">HOME</a></li>
+      <li><a href="/about">關於我們</a></li>
+      {% if session.get('user') %}
+        <li class="dropdown">
+          <a href="#">👤 會員中心</a>
+          <ul class="dropdown-menu">
+            <li><a href="/order-history">歷史訂單</a></li>
+            <li><a href="#" onclick="openProfileModal()">會員資料</a></li>
+            <li><a href="/change-password">🔒 修改密碼</a></li>
+            <li><a href="/logout">登出</a></li>
+          </ul>
+        </li>
+      {% else %}
+        <li><a href="/login">👤 會員登入</a></li>
+      {% endif %}
+      <li>
+        <a href="/cart" class="cart-btn">🛒 購物車
+          {% if cart_count > 0 %}
+            <span class="cart-count" id="cart-count">{{ cart_count }}</span>
+          {% else %}
+            <span class="cart-count" id="cart-count" style="display: none;">0</span>
+          {% endif %}
+        </a>
+      </li>
+    </ul>
+  </nav>
+</header>
+
+<!-- 主要內容區塊 -->
+{% block content %}{% endblock %}
+
+<!-- 頁尾 -->
+<footer style="background: #f4d8cc; padding: 40px 20px; font-family: sans-serif; font-size: 14px;">
+  <div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
+    <div style="max-width: 300px;">
+      <h3 style="font-weight: bold;">Style should feel like home.<br>And home is not a place<br>-It's a feeling.</h3>
+    </div>
+    <div style="min-width: 200px;">
+      <h4 style="margin-bottom: 10px;">關注我們</h4>
+      <div style="display: flex; gap: 10px;">
+        <a href="https://www.facebook.com/profile.php?id=61575912508195#" target="_blank">
+          <img src="{{ url_for('static', filename='icons/facebook.png') }}" width="36" alt="Facebook">
+        </a>
+        <a href="https://www.instagram.com/hello.herset?igsh=OHN2bHc2OGYxcXQ0&utm_source=qr" target="_blank">
+          <img src="{{ url_for('static', filename='icons/instagram.png') }}" width="36" alt="Instagram">
+        </a>
+        <a href="https://line.me/R/ti/p/@013ylkcz?oat_content=qr" target="_blank">
+          <img src="{{ url_for('static', filename='icons/line.png') }}" width="36" alt="LINE">
+        </a>
+        <a href="https://www.youtube.com/你的頻道網址" target="_blank">
+          <img src="{{ url_for('static', filename='icons/youtube.png') }}" width="36" alt="YouTube">
+        </a>
+      </div>
+    </div>
+    <div style="min-width: 200px;">
+      <h4 style="margin-bottom: 10px;">訂購問題</h4>
+      <ul style="list-style: none; padding: 0;">
+        <li><a href="/about">關於我們</a></li>
+        <li><a href="/payment">付款方式</a></li>
+        <li><a href="/delivery">配送方式</a></li>
+        <li><a href="/return">退貨退款</a></li>
+        <li><a href="/contact">聯絡我們</a></li>
+        <li>銷售據點</li>
+        <li>產品常見FAQ</li>
+      </ul>
+    </div>
+    <div style="min-width: 200px;">
+      <h4 style="margin-bottom: 10px; text-align: center;">支付方式</h4>
+      <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">
+        <img src="{{ url_for('static', filename='icons/visa.png') }}">
+        <img src="{{ url_for('static', filename='icons/linepay.png') }}">
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+
+{% block script %}{% endblock %}
+</body>
+</html>

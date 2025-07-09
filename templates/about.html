@@ -1,152 +1,79 @@
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-  <meta charset="UTF-8">
-  <title>關於我們 - HERSET BEAUTY</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <style>
-    body {
-      background-color: #F3E5E1;
-      font-family: "微軟正黑體", sans-serif;
-      color: #3C3C3C;
-      margin: 0;
-      padding: 0;
-    }
-    header.main-header {
-      background-color: #F9F0F3;
-      padding: 10px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .logo-area {
-      display: flex;
-      align-items: center;
-    }
-    .logo-area img {
-      height: 40px;
-      margin-right: 10px;
-    }
-    .main-nav ul {
-      list-style: none;
-      display: flex;
-      gap: 20px;
-      margin: 0;
-      padding: 0;
-    }
-    .main-nav a {
-      text-decoration: none;
-      color: #3C3C3C;
-      font-weight: bold;
-    }
-    .main-nav a:hover {
-      color: #CDAFA1;
-    }
-    .about-container {
-      max-width: 900px;
-      margin: 40px auto;
-      padding: 30px;
-      background-color: #FFFFFF;
-      border-radius: 12px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.08);
-      text-align: center; /* ✅ 將整塊文字置中 */
-    }
-    .about-container h2 {
-      color: #CDAFA1;
-      margin-bottom: 20px;
-    }
-    .about-container p {
-      line-height: 2;
-      font-size: 16px;
-      margin-bottom: 16px;
-    }
-    .back-btn {
-      display: inline-block;
-      margin: 20px auto 0;
-      text-align: center;
-      color: #3C3C3C;
-      text-decoration: none;
-      font-weight: bold;
-      padding: 8px 16px;
-      border-radius: 5px;
-      background-color: #EADDD6;
-      display: block;
-      width: fit-content;
-    }
-    .back-btn:hover {
-      background-color: #CDAFA1;
-      color: white;
-    }
-  </style>
-</head>
-<body>
+{% extends "base.html" %}
 
-  <!-- 導覽列 -->
-<header class="main-header">
-  <a href="/" class="logo-area" style="text-decoration: none; color: inherit;">
-    <img src="{{ url_for('static', filename='uploads/logo_0.png') }}" alt="logo">
-    <span>HERSET</span>
-  </a>
-  <nav class="main-nav">
-    <ul>
-      <li><a href="/">HOME</a></li>
-      <li><a href="/about">關於我們</a></li>
-      {% if session.get('user') %}
-        <li class="dropdown">
-          <a href="#">👤 會員中心</a>
-          <ul class="dropdown-menu">
-            <li><a href="/order-history">歷史訂單</a></li>
-            <li><a href="#" onclick="openProfileModal()">會員資料</a></li>
-            <li><a href="/logout">登出</a></li>
-          </ul>
-        </li>
-      {% else %}
-        <li><a href="/login">👤 會員登入</a></li>
-      {% endif %}
-      <li>
-        <a href="/cart" class="cart-btn">🛒 購物車
-          {% if cart_count > 0 %}
-            <span class="cart-count" id="cart-count">{{ cart_count }}</span>
-          {% else %}
-            <span class="cart-count" id="cart-count" style="display: none;">0</span>
-          {% endif %}
-        </a>
-      </li>
-    </ul>
-  </nav>
-</header>
+{% block title %}關於我們 - HERSET BEAUTY{% endblock %}
 
+{% block content %}
+<style>
+  body {
+    background-color: #F3E5E1;
+    font-family: "微軟正黑體", sans-serif;
+    color: #3C3C3C;
+    margin: 0;
+    padding: 0;
+  }
+  .about-container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 30px;
+    background-color: #FFFFFF;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.08);
+    text-align: center;
+  }
+  .about-container h2 {
+    color: #CDAFA1;
+    margin-bottom: 20px;
+  }
+  .about-container p {
+    line-height: 2;
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+  .back-btn {
+    display: inline-block;
+    margin: 20px auto 0;
+    text-align: center;
+    color: #3C3C3C;
+    text-decoration: none;
+    font-weight: bold;
+    padding: 8px 16px;
+    border-radius: 5px;
+    background-color: #EADDD6;
+    display: block;
+    width: fit-content;
+  }
+  .back-btn:hover {
+    background-color: #CDAFA1;
+    color: white;
+  }
+</style>
 
-  <!-- 關於內容區 -->
-  <div class="about-container">
-    <h2>關於 HERSET</h2>
-    <p>「HERSET 為每一個想被溫柔對待的日常，準備好了一點什麼。」</p>
-    <p>Style should feel like home.</p>
-    <p>
-      HERSET 的出現，是因為我們一直找不到「剛剛好」的東西。
-      香味太濃、洗感太澀、設計太浮誇、或者標榜天然卻讓人用得不安心。
-      我們總覺得：「怎麼沒有一個品牌，是專門做給像我們這樣的人的？」
-    </p>
-    <p>
-      於是 HERSET 就這樣慢慢誕生了。
-      我們想做的，不是為了討好市場的產品，而是回到生活本身——真正去感受「我們到底需要什麼？」
-      我們想要的是：舒服、簡單、有質感，但又不能無聊。香味要自然、使用要安心，包裝要美，但不流於誇張。
-      我們希望 HERSET 能陪妳過日子，但不是那種會搶鏡的存在，而是靜靜地、剛剛好地待在妳的生活裡。
-    </p>
-    <p>
-      HERSET 不是華麗的品牌，我們的速度也不快。
-      但每一樣東西，都是認真挑選、反覆打樣、自己用過才願意推出的。
-      我們相信，真正好的東西，不是說出來的，是感受得出來的。
-    </p>
-    <p>
-      如果你也正在尋找一個讓你覺得「終於找到」的品牌，<br>
-      那 HERSET，可能就是那個地方。
-    </p>
-    <p>不，其實不是地方，是一種感覺——像家的那種感覺。</p>
+<div class="about-container">
+  <h2>關於 HERSET</h2>
+  <p>「HERSET 為每一個想被溫柔對待的日常，準備好了一點什麼。」</p>
+  <p>Style should feel like home.</p>
+  <p>
+    HERSET 的出現，是因為我們一直找不到「剛剛好」的東西。
+    香味太濃、洗感太澀、設計太浮誇、或者標榜天然卻讓人用得不安心。
+    我們總覺得：「怎麼沒有一個品牌，是專門做給像我們這樣的人的？」
+  </p>
+  <p>
+    於是 HERSET 就這樣慢慢誕生了。
+    我們想做的，不是為了討好市場的產品，而是回到生活本身——真正去感受「我們到底需要什麼？」
+    我們想要的是：舒服、簡單、有質感，但又不能無聊。香味要自然、使用要安心，包裝要美，但不流於誇張。
+    我們希望 HERSET 能陪妳過日子，但不是那種會搶鏡的存在，而是靜靜地、剛剛好地待在妳的生活裡。
+  </p>
+  <p>
+    HERSET 不是華麗的品牌，我們的速度也不快。
+    但每一樣東西，都是認真挑選、反覆打樣、自己用過才願意推出的。
+    我們相信，真正好的東西，不是說出來的，是感受得出來的。
+  </p>
+  <p>
+    如果你也正在尋找一個讓你覺得「終於找到」的品牌，<br>
+    那 HERSET，可能就是那個地方。
+  </p>
+  <p>不，其實不是地方，是一種感覺——像家的那種感覺。</p>
+</div>
 
-  </div>
-
-  <a href="/" class="back-btn">← 返回首頁</a>
-
-</body>
-</html>
+<a href="/" class="back-btn">← 返回首頁</a>
+{% endblock %}
