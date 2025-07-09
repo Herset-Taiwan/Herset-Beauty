@@ -137,24 +137,18 @@
     delimiter: ',',
     persist: false,
     create: true,
+    createOnBlur: true, // ✅ 關鍵！確保失焦時才真的建立選項
 
-    // ✅ 加入這段：確保刪除後選項還能出現在清單中
-    onOptionRemove: function(value) {
-      // 將選項加回候選清單
-      this.addOption({ value: value, text: value });
-    }
-  });
-
-  const selectize = $select[0].selectize;
-
-  // ✅ 原本就有的 item_remove，保留即可
-  selectize.on('item_remove', function(value) {
-    const isOriginal = selectize.options[value]?.$order !== undefined;
-    if (!isOriginal) {
-      selectize.removeOption(value);
+    // 🔄 當使用者刪除選項時，把自創選項從清單移除
+    onItemRemove: function (value) {
+      const isOriginal = this.options[value]?.$order !== undefined;
+      if (!isOriginal) {
+        this.removeOption(value); // ✅ 真正移除自創選項
+      }
     }
   });
 });
+
 
   </script>
 
