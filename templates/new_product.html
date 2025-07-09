@@ -85,7 +85,7 @@
     <input type="number" name="price" required>
 
     <!-- ✅ 多分類 selectize -->
-    <label>分類（可多選 + 可新增）</label>
+    <label>分類（可多選）</label>
     <select id="categories" name="categories[]" multiple placeholder="請選擇或輸入分類">
       <option value="身體保養">身體保養</option>
       <option value="私密保養">私密保養</option>
@@ -136,18 +136,12 @@
     plugins: ['remove_button'],
     delimiter: ',',
     persist: false,
-    create: true,
-    createOnBlur: true, // ✅ 關鍵！確保失焦時才真的建立選項
 
-    // 🔄 當使用者刪除選項時，把自創選項從清單移除
-    onItemRemove: function (value) {
-      const isOriginal = this.options[value]?.$order !== undefined;
-      if (!isOriginal) {
-        this.removeOption(value); // ✅ 真正移除自創選項
-      }
-    }
+    // 🔒 禁止新增分類（拿掉 create: true）
+    create: false
   });
 });
+
 
 
   </script>
