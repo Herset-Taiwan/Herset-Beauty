@@ -132,16 +132,28 @@
     }
 
     $(document).ready(function () {
-    var selectize = $('#your-select-id').selectize({
-        plugins: ['remove_button'],
-        persist: false,
-        create: true,
+  const $select = $('#categories').selectize({
+    plugins: ['remove_button'],
+    delimiter: ',',
+    persist: false,
+    create: true,
 
-        onOptionRemove: function(value) {
-            // 把選項移回來源清單（可自訂要怎麼補回來）
-            this.addOption({ value: value, text: value });
-        }
-    });
+    // ✅ 加入這段：確保刪除後選項還能出現在清單中
+    onOptionRemove: function(value) {
+      // 將選項加回候選清單
+      this.addOption({ value: value, text: value });
+    }
+  });
+
+  const selectize = $select[0].selectize;
+
+  // ✅ 原本就有的 item_remove，保留即可
+  selectize.on('item_remove', function(value) {
+    const isOriginal = selectize.options[value]?.$order !== undefined;
+    if (!isOriginal) {
+      selectize.removeOption(value);
+    }
+  });
 });
 
   </script>
