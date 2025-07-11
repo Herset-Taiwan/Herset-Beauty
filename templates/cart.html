@@ -199,7 +199,12 @@
       </div>
       {% endfor %}
 
-      <div class="total">總金額：${{ total }}</div>
+      <div class="total">
+  商品總金額：${{ total }}<br>
+  運費：{% if shipping_fee == 0 %}免運費（已達 $2000 免運門檻）{% else %}${{ shipping_fee }}（還差 ${{ free_shipping_diff }} 可享免運）{% endif %}<br>
+  <strong>應付總金額：${{ final_total }}</strong>
+</div>
+
 
       <form method="POST" action="/checkout">
         <button type="submit" class="checkout-btn">結帳</button>

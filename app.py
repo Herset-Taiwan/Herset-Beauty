@@ -418,7 +418,6 @@ def cart():
         cart = session.get('cart', [])
 
         for item in cart:
-            # 加入防呆：有些舊資料可能是 'id' 而不是 'product_id'
             pid = item.get('product_id') or item.get('id')
             if pid == product_id:
                 if action == 'increase':
@@ -440,7 +439,7 @@ def cart():
     for item in cart_items:
         pid = item.get('product_id') or item.get('id')
         if not pid:
-            continue  # 避免錯誤
+            continue
 
         res = supabase.table("products").select("*").eq("id", pid).single().execute()
         if res.data:
@@ -450,7 +449,18 @@ def cart():
             products.append(product)
             total += product['subtotal']
 
-    return render_template("cart.html", products=products, total=total)
+    # 運費邏輯
+    shipping_fee = 0 if total >= 2000 else 80
+    final_total = total + shipping_fee
+    free_shipping_diff = 0 if total >= 2000 else 2000 - total
+
+    return render_template("cart.html",
+                           products=products,
+                           total=total,
+                           shipping_fee=shipping_fee,
+                           final_total=final_total,
+                           free_shipping_diff=free_shipping_diff)
+
 
 #結帳
 @app.route('/checkout', methods=['POST'])
@@ -482,6 +492,10 @@ def checkout():
                 'subtotal': subtotal
             })
 
+    # 加入運費判斷
+    shipping_fee = 0 if total >= 2000 else 80
+    final_total = total + shipping_fee
+
     from uuid import uuid4
     from pytz import timezone
     tz = timezone("Asia/Taipei")
@@ -490,7 +504,8 @@ def checkout():
 
     order_data = {
         'member_id': member_id,
-        'total_amount': total,
+        'total_amount': final_total,
+        'shipping_fee': shipping_fee,  # ← 若你的 orders 表沒有這欄位，可拿掉
         'status': 'pending',
         'created_at': created_at,
         'MerchantTradeNo': merchant_trade_no
@@ -505,9 +520,10 @@ def checkout():
     # 清空購物車
     session['cart'] = []
 
-    # 暫存 trade_no，準備付款用
+    # 暫存 trade_no 準備付款用
     session['current_trade_no'] = merchant_trade_no
     return redirect("/choose-payment")
+
 
 @app.route('/choose-payment')
 def choose_payment():
