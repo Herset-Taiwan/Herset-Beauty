@@ -148,6 +148,7 @@
   const pageData = data.slice(start, end);
 
   pageData.forEach(o => {
+    
     const box = document.createElement('div');
     const itemList = o.items.map(i => `${i.product_name} × ${i.qty}（$${i.price}）`).join('、');
     const itemSubtotal = o.items.reduce((sum, i) => sum + (i.price * i.qty), 0);
@@ -163,7 +164,13 @@
 
   <!-- 🟦 商品與金額區塊 -->
   <div class="row"><div class="label">商品明細：</div><div>${itemList}</div></div>
-  <div class="row"><div class="label">運費：</div><div style="color:#e91e63;">$${shipping}</div></div>
+  <div class="row">
+  <div class="label">運費：</div>
+  <div style="color:#e91e63;">
+    $${shipping}${shipping === 0 ? '（免運）' : ''}
+  </div>
+</div>
+
   <div class="row"><div class="label">總金額：</div><div style="font-weight:bold; color:#c2185b;">$${finalAmount}</div></div>
 
   <hr style="margin: 10px 0; border-top: 1px dashed #ccc;">
