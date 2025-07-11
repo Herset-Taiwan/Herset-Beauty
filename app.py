@@ -662,7 +662,7 @@ def update_order_status(order_id):
     if new_status:
         supabase.table("orders").update({"status": new_status}).eq("id", order_id).execute()
         flash("訂單狀態已修改")
-    return redirect("/admin0363/dashboard?tab=orders")
+    return redirect(url_for('admin_dashboard', tab='orders'))
 
 
 
