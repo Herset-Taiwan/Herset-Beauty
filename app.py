@@ -656,13 +656,16 @@ def repay_order(merchant_trade_no):
 def thank_you():
     return render_template("thank_you.html")
 
+
+#後台訂單狀態修改
 @app.route('/admin0363/orders/update_status/<int:order_id>', methods=['POST'])
 def update_order_status(order_id):
     new_status = request.form.get("status")
     if new_status:
         supabase.table("orders").update({"status": new_status}).eq("id", order_id).execute()
-        flash("訂單狀態已修改")
-    return redirect(url_for('admin_dashboard', tab='orders'))
+        flash(f"訂單 #{order_id} 出貨狀態已修改")  # ← ✅ 修改訊息內容
+    return redirect("/admin0363?tab=orders")
+
 
 
 
