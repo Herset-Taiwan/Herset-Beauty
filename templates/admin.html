@@ -653,6 +653,16 @@ renderOrderPage(parseInt(document.getElementById("pageSizeSelect").value));
 
 </script>
 
+
+<script>
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const flashBox = document.querySelector('.flash');
+    if (flashBox) flashBox.innerHTML = '';
+  });
+});
+</script>
+
 <script>
 function openDeleteDialog(orderId) {
   document.getElementById('deleteOrderId').value = orderId;
