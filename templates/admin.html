@@ -194,6 +194,12 @@
     border: 1px solid #ccc;
   }
 
+  .info strong {
+  display: inline-block;
+  min-width: 100px;
+}
+
+
 </style>
 
 </head>
@@ -409,46 +415,53 @@ function renderOrderPage(pageSize) {
   const finalAmount = itemSubtotal + shipping;
 
   const pageData = filteredOrders.slice(start, end);
-  pageData.forEach(o => {
-    const div = document.createElement("div");
-    div.className = "order-row";
-    div.innerHTML = `
-      <div class="info">
-        <strong>訂單編號：</strong>#${o.id}<br>
-        <strong>訂單時間：</strong>${o.created_local}<br>
-        <strong>購買商品：</strong>
-        <ul style="padding-left: 20px;">${o.items.map(i => `<li>${i.product_name} × ${i.qty}（$${i.price}）</li>`).join("")}</ul>
-        <strong>商品小計：</strong>$${itemSubtotal}<br>
-        <strong>運費：</strong>$${shipping}<br>
-        <strong>總金額：</strong>$${finalAmount}<br>
+pageData.forEach(o => {
+  const itemList = o.items.map(i => `${i.product_name} × ${i.qty}（$${i.price}）`).join('、');
+  const itemSubtotal = o.items.reduce((sum, i) => sum + (i.price * i.qty), 0);
+  const shipping = o.shipping_fee || 0;
+  const finalAmount = itemSubtotal + shipping;
 
-        <strong>付款狀態：</strong>
-        <span class="badge ${o.payment_status === 'paid' ? 'green' : 'red'}">
-          ${o.payment_status === 'paid' ? '已付款' : '未付款'}
-        </span><br>
-        <strong>會員帳號：</strong>${o.member.account}<br>
-        <strong>購買人：</strong>${o.member.name}<br>
-        <strong>電話：</strong>${o.member.phone}<br>
-        <strong>地址：</strong>${o.member.address}<br>
-        <form method="POST" action="/admin/orders/update_status/${o.id}" style="margin-top: 5px;">
-          <strong>修改狀態：</strong>
-          <select name="status" onchange="this.form.submit()">
-            <option value="pending" ${o.status === 'pending' ? 'selected' : ''}>待處理</option>
-            <option value="paid" ${o.status === 'paid' ? 'selected' : ''}>已付款</option>
-            <option value="shipped" ${o.status === 'shipped' ? 'selected' : ''}>已出貨</option>
-          </select>
-        </form>
-      </div>
-      <div class="actions" style="position: absolute; top: 10px; right: 10px;">
-  <button onclick="openDeleteDialog(${o.id})" style="color: #e91e63; border: none; background: none; cursor: pointer;">🗑️ 刪除</button>
-</div>
+  const div = document.createElement("div");
+  div.className = "order-row";
+  div.innerHTML = `
+    <div class="info">
+      <strong>訂單編號：</strong>#${o.id}<br>
+      <strong>訂單時間：</strong>${o.created_local}<br>
+      <strong>購買商品：</strong>
+      <div>${itemList}</div>
+      <strong>商品小計：</strong>$${itemSubtotal}<br>
+      <strong>運費：</strong>$${shipping}${shipping === 0 ? '（免運）' : ''}<br>
+      <strong>總金額：</strong><span style="color:#e91e63;"><strong>$${finalAmount}</strong></span><br>
 
-      <div style="position: absolute; bottom: 10px; right: 10px;">
-        <button onclick="printOrder(${o.id})" style="padding: 6px 12px; background: #e91e63; color: white; border: none; border-radius: 6px; cursor: pointer;">列印訂單</button>
-      </div>
-    `;
-    container.appendChild(div);
-  });
+      <strong>付款狀態：</strong>
+      <span class="badge ${o.payment_status === 'paid' ? 'green' : 'red'}">
+        ${o.payment_status === 'paid' ? '已付款' : '未付款'}
+      </span><br>
+      <strong>會員帳號：</strong>${o.member.account}<br>
+      <strong>購買人：</strong>${o.member.name}<br>
+      <strong>電話：</strong>${o.member.phone}<br>
+      <strong>地址：</strong>${o.member.address}<br>
+
+      <form method="POST" action="/admin/orders/update_status/${o.id}" style="margin-top: 5px;">
+        <strong>修改狀態：</strong>
+        <select name="status" onchange="this.form.submit()">
+          <option value="pending" ${o.status === 'pending' ? 'selected' : ''}>待處理</option>
+          <option value="paid" ${o.status === 'paid' ? 'selected' : ''}>已付款</option>
+          <option value="shipped" ${o.status === 'shipped' ? 'selected' : ''}>已出貨</option>
+        </select>
+      </form>
+    </div>
+    <div class="actions" style="position: absolute; top: 10px; right: 10px;">
+      <button onclick="openDeleteDialog(${o.id})" style="color: #e91e63; border: none; background: none; cursor: pointer;">🗑️ 刪除</button>
+    </div>
+
+    <div style="position: absolute; bottom: 10px; right: 10px;">
+      <button onclick="printOrder(${o.id})" style="padding: 6px 12px; background: #e91e63; color: white; border: none; border-radius: 6px; cursor: pointer;">列印訂單</button>
+    </div>
+  `;
+  container.appendChild(div);
+});
+
 
   // 分頁按鈕
   if (totalPages > 1) {
