@@ -25,7 +25,7 @@
 <!-- 商品清單 -->
 <section class="product-list">
   {% for p in products %}
-  <div class="product-card" data-category="{{ p['categories'] | join(',') }}">
+  <div class="product-card" data-category="{{ p['categories'] | join(',') if p['categories'] else '全部' }}">
     <a href="/product/{{ p['id'] }}">
       <img src="{{ p['images'][0] if p['images'] else '' }}" alt="{{ p['name'] }}">
     </a>
@@ -85,7 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
 function filterCategory(category) {
   const all = document.querySelectorAll(".product-card");
   all.forEach(el => {
-    const categories = el.dataset.category.split(',').map(s => s.trim());
+    const categories = (el.dataset.category || '').split(',').map(s => s.trim());
     if (category === '全部') {
       el.style.display = 'block';
     } else {
