@@ -15,11 +15,11 @@
 
 <!-- 分類區塊 -->
 <div class="sub-categories">
-  <a href="javascript:void(0)" onclick="filterCategory('全部')">全部商品</a>
-  <a href="javascript:void(0)" onclick="filterCategory('身體保養')">身體保養</a>
-  <a href="javascript:void(0)" onclick="filterCategory('私密保養')">私密保養</a>
-  <a href="javascript:void(0)" onclick="filterCategory('寵物友善')">寵物友善</a>
-  <a href="javascript:void(0)" onclick="filterCategory('品牌嚴選')">品牌嚴選</a>
+  <a onclick="filterCategory('全部')">全部商品</a>
+  <a onclick="filterCategory('身體保養')">身體保養</a>
+  <a onclick="filterCategory('私密保養')">私密保養</a>
+  <a onclick="filterCategory('寵物友善')">寵物友善</a>
+  <a onclick="filterCategory('品牌嚴選')">品牌嚴選</a>
 </div>
 
 <!-- 商品清單 -->
@@ -43,8 +43,8 @@
 
 <!-- 首頁標語區 -->
 <section class="banner">
-  <h1>自然呵護，極致純淨</h1>
-  <p>專為敏感肌設計的私密保養系列</p>
+  <h1 id="banner-title">自然呵護，極致純淨</h1>
+  <p id="banner-desc">專為敏感肌設計的私密保養系列</p>
 </section>
 
 <!-- 補填會員資料提示 -->
@@ -75,45 +75,48 @@ function filterCategory(category) {
     const categories = el.dataset.category.split(',').map(s => s.trim());
     el.style.display = category === '全部' || categories.includes(category) ? 'block' : 'none';
   });
-  // 更新標語文字
-  const title = document.getElementById('category-title');
-  const subtitle = document.getElementById('category-subtitle');
+
+  // 切換標語文字
+  const bannerTitle = document.getElementById("banner-title");
+  const bannerDesc = document.getElementById("banner-desc");
 
   switch (category) {
     case '全部':
-      title.textContent = '自然呵護，極致純淨';
-      subtitle.textContent = '專為敏感肌設計的私密保養系列';
+      bannerTitle.textContent = '自然呵護，極致純淨';
+      bannerDesc.textContent = '從頭到腳的全方位呵護，任你挑選';
       break;
     case '身體保養':
-      title.textContent = '呵護每一寸肌膚';
-      subtitle.textContent = '選用天然配方，守護你的身體肌膚';
+      bannerTitle.textContent = '喚醒肌膚，滋潤每一寸';
+      bannerDesc.textContent = '給你最溫和細緻的身體保養系列';
       break;
     case '私密保養':
-      title.textContent = '私密呵護，自然安心';
-      subtitle.textContent = '專為女性敏感肌設計的私密保養品';
+      bannerTitle.textContent = '自然呵護，極致純淨';
+      bannerDesc.textContent = '專為敏感肌設計的私密保養系列';
       break;
     case '寵物友善':
-      title.textContent = '毛孩也能安心使用';
-      subtitle.textContent = '天然配方，寵物也友善不刺激';
+      bannerTitle.textContent = '安心陪伴，毛孩最懂你';
+      bannerDesc.textContent = '寵物友善的安心保養選擇';
       break;
     case '品牌嚴選':
-      title.textContent = '我們只挑最好的';
-      subtitle.textContent = 'HERSET 精選品牌推薦，值得信賴';
+      bannerTitle.textContent = '精選品牌，品味生活';
+      bannerDesc.textContent = '嚴選天然成分，守護你的日常';
       break;
     default:
-      title.textContent = '自然呵護，極致純淨';
-      subtitle.textContent = '專為敏感肌設計的私密保養系列';
+      bannerTitle.textContent = 'HERSET';
+      bannerDesc.textContent = '';
   }
 }
-}
-filterCategory('全部');
+
+document.addEventListener("DOMContentLoaded", () => {
+  filterCategory('全部');
+});
 
 function addToCart(event, productId) {
   event.preventDefault();
   fetch('/add_to_cart', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: `product_id=${productId}`
+    body: product_id=${productId}
   })
   .then(res => res.json())
   .then(data => {
