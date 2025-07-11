@@ -440,14 +440,19 @@ div.innerHTML = `
     <strong>電話：</strong>${o.member.phone}<br>
     <strong>地址：</strong>${o.member.address}<br>
     <hr style="border: 1px dashed #ccc; margin: 10px 0;">
-    <form method="POST" action="/admin/orders/update_status/${o.id}" style="margin-top: 5px;">
-      <strong>修改狀態：</strong>
-      <select name="status" onchange="this.form.submit()">
-        <option value="pending" ${o.status === 'pending' ? 'selected' : ''}>待處理</option>
-        <option value="paid" ${o.status === 'paid' ? 'selected' : ''}>已付款</option>
-        <option value="shipped" ${o.status === 'shipped' ? 'selected' : ''}>已出貨</option>
-      </select>
-    </form>
+    <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+  <strong>出貨狀態：</strong> ${o.status === 'shipped' ? '已出貨' : (o.status === 'paid' ? '已付款' : '待處理')}
+  
+  <form method="POST" action="/admin/orders/update_status/${o.id}">
+    <strong style="margin-left: 20px;">修改狀態：</strong>
+    <select name="status" onchange="this.form.submit()">
+      <option value="pending" ${o.status === 'pending' ? 'selected' : ''}>待處理</option>
+      <option value="paid" ${o.status === 'paid' ? 'selected' : ''}>已付款</option>
+      <option value="shipped" ${o.status === 'shipped' ? 'selected' : ''}>已出貨</option>
+    </select>
+  </form>
+</div>
+
   </div>
     <div class="actions" style="position: absolute; top: 10px; right: 10px;">
       <button onclick="openDeleteDialog(${o.id})" style="color: #e91e63; border: none; background: none; cursor: pointer;">🗑️ 刪除</button>
