@@ -176,18 +176,16 @@ def admin_dashboard():
 
     tz = timezone("Asia/Taipei")
     tab = request.args.get("tab", "products")
-selected_categories = request.args.getlist("category")
+    selected_categories = request.args.getlist("category")
 
-# ✅ 商品（預設顯示全部，有勾分類才篩選）
-products = []  # ← 預先宣告
-if tab == "products":
-    query = supabase.table("products").select("*")
-    if selected_categories:
-        filters = [f"categories.cs.{json.dumps([cat])}" for cat in selected_categories]
-        query = query.or_(','.join(filters))
-    products = query.execute().data or []
-
-
+    # ✅ 商品（預設顯示全部，有勾分類才篩選）
+    products = []
+    if tab == "products":
+        query = supabase.table("products").select("*")
+        if selected_categories:
+            filters = [f"categories.cs.{json.dumps([cat])}" for cat in selected_categories]
+            query = query.or_(','.join(filters))
+        products = query.execute().data or []
 
     # ✅ 會員
     members = supabase.table("members").select(
@@ -236,8 +234,6 @@ if tab == "products":
                            orders=orders,
                            tab=tab,
                            selected_categories=selected_categories)
-
-
 
 
 #admin登出功能
