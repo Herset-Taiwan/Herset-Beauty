@@ -235,14 +235,15 @@
   </div>
   <div class="admin-container">
     {% with messages = get_flashed_messages() %}
-    {% if messages %}
-      <ul style="color: green;">
-        {% for message in messages %}
-          <li>{{ message }}</li>
-        {% endfor %}
-      </ul>
-    {% endif %}
-    {% endwith %}
+  {% if messages and tab == 'orders' %}
+    <ul class="flash">
+      {% for message in messages %}
+        <li class="text-success">🟢 {{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+
 
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('products')">商品管理</button>
