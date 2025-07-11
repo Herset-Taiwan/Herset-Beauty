@@ -664,7 +664,7 @@ def update_order_status(order_id):
     if new_status:
         supabase.table("orders").update({"status": new_status}).eq("id", order_id).execute()
         flash(f"訂單 #{order_id} 出貨狀態已修改")  # ← ✅ 修改訊息內容
-    return redirect("/admin0363?tab=orders")
+     return redirect("/admin0363/dashboard?tab=orders")
 
 
 
