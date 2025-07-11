@@ -469,77 +469,123 @@ function printOrder(orderId) {
   if (!order) return alert("找不到訂單");
 
   const printWindow = window.open('', '_blank');
-  const itemsHtml = order.items.map(i => `<li>${i.product_name} × ${i.qty}（$${i.price}）</li>`).join("");
+
+  // 產生商品列 HTML
+  let itemsHtml = '';
+  let totalQty = 0;
+  order.items.forEach((item, index) => {
+    totalQty += item.qty;
+    itemsHtml += `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${item.product_name}</td>
+        <td>${item.product_no || ''}</td>
+        <td>${item.product_code || ''}</td>
+        <td>${item.material_name || ''}</td>
+        <td>${item.qty}</td>
+        <td>□</td>
+        <td>□</td>
+      </tr>
+    `;
+  });
 
   printWindow.document.write(`
     <html>
-      <head>
-        <title>訂單 #${order.id}</title>
-        <style>
-          body {
-            font-family: "Noto Sans TC", sans-serif;
-            background: #f9f9f9;
-            padding: 40px;
-          }
-          .print-box {
-            background: white;
-            border: 2px solid #e91e63;
-            border-radius: 12px;
-            padding: 30px 40px;
-            max-width: 600px;
-            margin: auto;
-            box-shadow: 0 0 8px rgba(0,0,0,0.15);
-          }
-          h2 {
-            color: #e91e63;
-            margin-top: 0;
-            border-bottom: 2px dashed #ccc;
-            padding-bottom: 10px;
-          }
-          ul {
-            padding-left: 24px;
-            margin-top: 6px;
-          }
-          p {
-            margin: 6px 0 12px;
-          }
-          .btn-print {
-            display: inline-block;
-            margin-top: 30px;
-            padding: 8px 18px;
-            background: #e91e63;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-          }
+    <head>
+      <title>出貨明細單 - #${order.id}</title>
+      <style>
+        body {
+          font-family: "Noto Sans TC", sans-serif;
+          padding: 40px;
+          background: white;
+        }
+        h2 {
+          text-align: center;
+          margin-bottom: 20px;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 20px;
+        }
+        th, td {
+          border: 1px solid #333;
+          padding: 6px 8px;
+          font-size: 14px;
+          text-align: center;
+        }
+        .info {
+          margin-top: 10px;
+          font-size: 14px;
+        }
+        .info p {
+          margin: 2px 0;
+        }
+        .note {
+          font-size: 13px;
+          margin-top: 30px;
+        }
+        .btn-print {
+          margin-top: 30px;
+          padding: 8px 18px;
+          background: #e91e63;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          font-weight: bold;
+        }
+        @media print {
+          .btn-print { display: none; }
+        }
+      </style>
+    </head>
+    <body>
+      <h2>換貨單</h2>
+      <div class="info">
+        <p><strong>訂單編號：</strong>ON${order.id.toString().padStart(10, '0')}</p>
+        <p><strong>訂單日期：</strong>${order.created_local.split(" ")[0]}</p>
+        <p><strong>物流廠商：</strong>宅配</p>
+        <p><strong>賣場名稱：</strong>${order.source || '線上訂單'}</p>
+        <p><strong>收件人姓名：</strong>${order.member.name}</p>
+        <p><strong>聯絡電話：</strong>${order.member.phone}</p>
+      </div>
 
-          @media print {
-            .btn-print { display: none; }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="print-box">
-          <h2>訂單明細（#${order.id}）</h2>
-          <p><strong>訂單時間：</strong>${order.created_local}</p>
-          <p><strong>購買商品：</strong></p>
-          <ul>${itemsHtml}</ul>
-          <p><strong>總金額：</strong>$${order.total_amount}</p>
-          <hr>
-          <p><strong>購買人姓名：</strong>${order.member.name}</p>
-          <p><strong>電話：</strong>${order.member.phone}</p>
-          <p><strong>地址：</strong>${order.member.address}</p>
+      <table>
+        <thead>
+          <tr>
+            <th>項次</th>
+            <th>銷售項目</th>
+            <th>料號</th>
+            <th>索引</th>
+            <th>料品名稱</th>
+            <th>換貨數量</th>
+            <th>檢查A</th>
+            <th>檢查B</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemsHtml}
+          <tr>
+            <td colspan="5"><strong>總件數</strong></td>
+            <td colspan="3"><strong>${totalQty}</strong></td>
+          </tr>
+        </tbody>
+      </table>
 
-          <button class="btn-print" onclick="window.print()">列印</button>
-        </div>
-      </body>
+      <div class="note">
+        感謝您購買本商品，若有缺件、瑕疵、破損等問題請於3天內與我們聯繫。聯絡電話：0972-XXX-XXX<br>
+        若需換貨請務必保留原包裝並附回本單據。
+      </div>
+
+      <button class="btn-print" onclick="window.print()">列印</button>
+    </body>
     </html>
   `);
 
   printWindow.document.close();
 }
+
 
 
 window.addEventListener('DOMContentLoaded', () => {
