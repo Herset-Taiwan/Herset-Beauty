@@ -1,3 +1,4 @@
+類別頁籤這邊，目前點了不同類別，文字敘述都是一樣的"自然呵護，極致純淨"，我希望不同頁籤有不同的文字內容:
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -90,12 +91,6 @@
 </div>
 
 
-<!-- 類別敘述區塊 -->
-<div id="category-description" style="text-align:center; margin: 40px 0;">
-  <h1>自然呵護，極致純淨</h1>
-  <p>專為敏感肌設計的私密保養系列</p>
-</div>
-
 
 <!-- 商品清單 -->
 <section class="product-list">
@@ -149,7 +144,11 @@
     </form>
   </div>
 </div>
-
+<!-- Banner -->
+<section class="banner" id="category-banner">
+  <h1 id="banner-title">自然呵護，極致純淨</h1>
+  <p id="banner-subtitle">專為敏感肌設計的私密保養系列</p>
+</section>
 
 <!-- 頁尾 -->
 <footer style="background: #f4d8cc; padding: 40px 20px; font-family: sans-serif; font-size: 14px;">
@@ -211,57 +210,55 @@
 
 <!-- JS：分類與加入購物車 -->
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-  const descriptions = {
-    "全部": {
-      title: "全部商品一次瀏覽",
-      desc: "探索 HERSET 精選的天然保養系列，讓生活回歸純粹。"
-    },
-    "身體保養": {
-      title: "溫和呵護，從身體開始",
-      desc: "從洗沐到乳液，為你的肌膚注入溫柔的力量。"
-    },
-    "私密保養": {
-      title: "自然呵護，極致純淨",
-      desc: "專為敏感肌設計的私密保養系列"
-    },
-    "寵物友善": {
-      title: "毛孩無毒生活",
-      desc: "為毛孩打造友善無害的照護選擇。"
-    },
-    "品牌嚴選": {
-      title: "品質保證，嚴選推薦",
-      desc: "精選值得信賴的天然品牌，安心有保障。"
-    }
-  };
 
-  window.filterCategory = function (category) {
-    const all = document.querySelectorAll(".product-card");
-    all.forEach(el => {
-      const categories = el.dataset.category.split(',').map(s => s.trim());
-      el.style.display = category === '全部' || categories.includes(category) ? 'block' : 'none';
-    });
+const categoryDescriptions = {
+  '全部': {
+    title: '探索 HERSET 精選好物',
+    subtitle: '從保養到香氛，品味你的生活美學'
+  },
+  '身體保養': {
+    title: '全身呵護，從肌膚開始',
+    subtitle: '溫和保養，給予肌膚最溫柔的照顧'
+  },
+  '私密保養': {
+    title: '自然呵護，極致純淨',
+    subtitle: '專為敏感肌設計的私密保養系列'
+  },
+  '寵物友善': {
+    title: '寵愛毛孩，共享美好生活',
+    subtitle: '為寵物與主人的幸福選擇'
+  },
+  '品牌嚴選': {
+    title: '品牌嚴選，質感生活',
+    subtitle: '精選品牌，守護你的日常品質'
+  }
+};
 
-    const descBox = document.getElementById("category-description");
-    if (descriptions[category]) {
-      descBox.innerHTML = `
-        <h1>${descriptions[category].title}</h1>
-        <p>${descriptions[category].desc}</p>
-      `;
-    } else {
-      descBox.innerHTML = "";
-    }
-  };
+function filterCategory(category) {
+  const all = document.querySelectorAll(".product-card");
+  all.forEach(el => {
+    const categories = el.dataset.category.split(',').map(s => s.trim());
+    el.style.display = category === '全部' || categories.includes(category) ? 'block' : 'none';
+  });
 
-  // 預設載入全部
-  filterCategory("全部");
+  // 更新分類敘述區
+  const desc = categoryDescriptions[category];
+  if (desc) {
+    document.getElementById('banner-title').textContent = desc.title;
+    document.getElementById('banner-subtitle').textContent = desc.subtitle;
+  }
+}
+
+
+
+filterCategory('全部');
 
 function addToCart(event, productId) {
   event.preventDefault();
   fetch('/add_to_cart', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: `product_id=${productId}`
+    body: product_id=${productId}
   })
   .then(res => res.json())
   .then(data => {
@@ -274,9 +271,6 @@ function addToCart(event, productId) {
     }
   });
 }
-</script>
-
-<script>
 // 輪播圖切換
 let cur = 0;
 const banners = document.querySelectorAll('.carousel-img');
