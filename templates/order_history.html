@@ -49,10 +49,12 @@
   }
 
   .order-box .label {
-  flex: 0 0 120px;
+  flex: 0 0 100px;
   font-weight: bold;
   margin-right: 10px;
+  vertical-align: top;
 }
+
 
 
   .order-box ul {
@@ -157,24 +159,33 @@
     const box = document.createElement('div');
     box.className = 'order-box';
     box.innerHTML = `
+  <!-- 訂單資訊 -->
   <div class="row"><div class="label">訂單編號：</div><div>#${o.id}</div></div>
   <div class="row"><div class="label">訂單時間：</div><div>${o.created_local}</div></div>
-  <div class="row"><div class="label">商品金額：</div><div>$${itemSubtotal}</div></div>
+
+  <br>
+
+  <!-- 商品明細 -->
+  <div class="row">
+    <div class="label">商品明細：</div>
+    <div>${o.items.map(i => `${i.product_name} × ${i.qty}（$${i.price}）`).join('、')}</div>
+  </div>
+
+  <!-- 金額 -->
   <div class="row"><div class="label">運費：</div><div>$${shipping}</div></div>
   <div class="row"><div class="label">總金額：</div><div><strong>$${finalAmount}</strong></div></div>
+
+  <br>
+
+  <!-- 狀態 -->
   <div class="row"><div class="label">付款狀態：</div><div>${o.payment_status === 'paid' ? '已付款' : '未付款'}</div></div>
   <div class="row"><div class="label">出貨狀態：</div><div>${translateStatus(o.status)}</div></div>
-  <div class="row"><div class="label">商品明細：</div>
-    <ul style="margin: 8px 0 0 0; padding-left: 20px;">
-      ${o.items.map(i => `<li>${i.product_name} × ${i.qty}（$${i.price}）</li>`).join('')}
-    </ul>
-  </div>
+
   ${o.payment_status !== 'paid' && o.MerchantTradeNo
     ? `<button class="repay-btn" onclick="goToPay('${o.MerchantTradeNo}')">🔁 重新付款</button>`
     : ''}
 `;
-    container.appendChild(box);
-  });
+
 
   // 分頁控制
   const nav = document.createElement('div');
