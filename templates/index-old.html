@@ -1,4 +1,3 @@
-類別頁籤這邊，目前點了不同類別，文字敘述都是一樣的"自然呵護，極致純淨"，我希望不同頁籤有不同的文字內容:
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -235,6 +234,7 @@ const categoryDescriptions = {
   }
 };
 
+// ✅ 改為接收 event，並正確處理分類與文字更新
 function filterCategory(event, category) {
   if (event) event.preventDefault();
 
@@ -251,20 +251,13 @@ function filterCategory(event, category) {
   }
 }
 
-  // 更新分類敘述區
-  const desc = categoryDescriptions[category];
-  if (desc) {
-    document.getElementById('banner-title').textContent = desc.title;
-    document.getElementById('banner-subtitle').textContent = desc.subtitle;
-  }
-
 // ✅ 頁面載入後預設顯示全部商品
 window.addEventListener('DOMContentLoaded', function() {
   filterCategory(new Event('load'), '全部');
 });
 
 
-filterCategory('全部');
+
 
 function addToCart(event, productId) {
   event.preventDefault();
