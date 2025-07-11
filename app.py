@@ -514,6 +514,7 @@ def checkout():
     order_id = result.data[0]['id']
 
     for item in items:
+        item['id'] = str(uuid4())             # ✅ 每筆都給一個唯一的 id
         item['order_id'] = order_id
     supabase.table('order_items').insert(items).execute()
 
