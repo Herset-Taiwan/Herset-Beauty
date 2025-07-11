@@ -117,7 +117,114 @@
   </div>
 </footer>
 
+<!-- 會員資料 Modal -->
+<div id="profile-modal" class="modal">
+  <div class="modal-content profile-form">
+    <span class="close-btn" onclick="closeProfileModal()">&times;</span>
+    <h2>會員資料</h2>
+    <form action="/profile" method="POST">
+      <div class="form-group">
+        <label for="name">姓名：</label>
+        <input type="text" id="name" name="name" required>
+      </div>
+      <div class="form-group">
+        <label for="phone">電話：</label>
+        <input type="text" id="phone" name="phone" required>
+      </div>
+      <div class="form-group">
+        <label for="address">地址：</label>
+        <input type="text" id="address" name="address" required>
+      </div>
+      <div class="form-group">
+        <label for="note">訂單備註：</label>
+        <textarea id="note" name="note" rows="3"></textarea>
+      </div>
+      <div style="text-align:center; margin-top: 20px;">
+        <button type="submit" class="save-btn">儲存資料</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 未儲存確認 -->
+<div id="unsaved-warning" class="modal">
+  <div class="modal-content" style="text-align:center;">
+    <h3>⚠️ 尚未儲存變更</h3>
+    <p>您尚未儲存資料，確定要關閉嗎？</p>
+    <div style="margin-top: 20px;">
+      <button onclick="cancelCloseProfile()">取消</button>
+      <button onclick="confirmCloseProfile()">確定關閉</button>
+    </div>
+  </div>
+</div>
+
+
 <script src="{{ url_for('static', filename='script.js') }}"></script>
+<script>
+let initialProfileData = {};
+let pendingClose = false;
+
+function openProfileModal() {
+  fetch('/get_profile')
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("name").value = data.name || '';
+      document.getElementById("phone").value = data.phone || '';
+      document.getElementById("address").value = data.address || '';
+      document.getElementById("note").value = data.note || '';
+
+      initialProfileData = {
+        name: data.name || '',
+        phone: data.phone || '',
+        address: data.address || ''
+      };
+
+      document.getElementById("profile-modal").style.display = "block";
+    });
+}
+
+function closeProfileModal() {
+  const name = document.getElementById("name").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  const address = document.getElementById("address").value.trim();
+
+  const isFirstLogin =
+    !initialProfileData.name && !initialProfileData.phone && !initialProfileData.address;
+
+  if (isFirstLogin && (!name || !phone || !address)) {
+    setTimeout(() => {
+      document.querySelector(".profile-form form").reportValidity();
+    }, 10);
+    return;
+  }
+
+  const changed =
+    name !== initialProfileData.name ||
+    phone !== initialProfileData.phone ||
+    address !== initialProfileData.address;
+
+  if (changed) {
+    pendingClose = true;
+    document.getElementById("unsaved-warning").style.display = "block";
+  } else {
+    document.getElementById("profile-modal").style.display = "none";
+  }
+}
+
+function confirmCloseProfile() {
+  if (pendingClose) {
+    document.getElementById("unsaved-warning").style.display = "none";
+    document.getElementById("profile-modal").style.display = "none";
+    pendingClose = false;
+  }
+}
+
+function cancelCloseProfile() {
+  document.getElementById("unsaved-warning").style.display = "none";
+  pendingClose = false;
+}
+</script>
+
 
 {% block script %}{% endblock %}
 </body>
