@@ -470,7 +470,6 @@ function printOrder(orderId) {
 
   const printWindow = window.open('', '_blank');
 
-  // 建立每筆商品列
   let itemsHtml = '';
   let totalQty = 0;
   order.items.forEach((item, index) => {
@@ -481,8 +480,8 @@ function printOrder(orderId) {
         <td>${item.product_name}</td>
         <td>${item.product_no || ''}</td>
         <td>${item.qty}</td>
-        <td>□</td>
-        <td>□</td>
+        <td><input type="checkbox" /></td>
+        <td><input type="checkbox" /></td>
       </tr>
     `;
   });
@@ -490,16 +489,16 @@ function printOrder(orderId) {
   printWindow.document.write(`
     <html>
     <head>
-      <title>出貨明細單 - #${order.id}</title>
+      <title>換貨單 - #${order.id}</title>
       <style>
         body {
           font-family: "Noto Sans TC", sans-serif;
           padding: 40px;
           background: white;
         }
-        h2 {
+        h1 {
           text-align: center;
-          margin-bottom: 20px;
+          margin-bottom: 30px;
         }
         table {
           width: 100%;
@@ -517,7 +516,7 @@ function printOrder(orderId) {
           font-size: 14px;
         }
         .info p {
-          margin: 2px 0;
+          margin: 4px 0;
         }
         .note {
           font-size: 13px;
@@ -539,12 +538,13 @@ function printOrder(orderId) {
       </style>
     </head>
     <body>
-      <h2>換貨單</h2>
+      <h1>換貨單</h1>
+
       <div class="info">
+        <p><strong>賣場名稱：</strong>Herset</p>
         <p><strong>訂單編號：</strong>ON${order.id.toString().padStart(10, '0')}</p>
         <p><strong>訂單日期：</strong>${order.created_local.split(" ")[0]}</p>
         <p><strong>物流廠商：</strong>宅配</p>
-        <p><strong>賣場名稱：</strong>${order.source || '線上訂單'}</p>
         <p><strong>收件人姓名：</strong>${order.member.name}</p>
         <p><strong>聯絡電話：</strong>${order.member.phone}</p>
       </div>
@@ -581,6 +581,7 @@ function printOrder(orderId) {
 
   printWindow.document.close();
 }
+
 
 
 
