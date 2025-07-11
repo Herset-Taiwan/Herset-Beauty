@@ -403,6 +403,10 @@ function renderOrderPage(pageSize) {
   const totalPages = Math.ceil(filteredOrders.length / pageSize);
   const start = (currentPage - 1) * pageSize;
   const end = start + pageSize;
+  const itemList = o.items.map(i => `${i.product_name} × ${i.qty}（$${i.price}）`).join('、');
+  const itemSubtotal = o.items.reduce((sum, i) => sum + (i.price * i.qty), 0);
+  const shipping = o.shipping_fee || 0;
+  const finalAmount = itemSubtotal + shipping;
 
   const pageData = filteredOrders.slice(start, end);
   pageData.forEach(o => {
@@ -414,7 +418,10 @@ function renderOrderPage(pageSize) {
         <strong>訂單時間：</strong>${o.created_local}<br>
         <strong>購買商品：</strong>
         <ul style="padding-left: 20px;">${o.items.map(i => `<li>${i.product_name} × ${i.qty}（$${i.price}）</li>`).join("")}</ul>
-        <strong>訂單金額：</strong>$${o.total_amount}<br>
+        <strong>商品小計：</strong>$${itemSubtotal}<br>
+        <strong>運費：</strong>$${shipping}<br>
+        <strong>總金額：</strong>$${finalAmount}<br>
+
         <strong>付款狀態：</strong>
         <span class="badge ${o.payment_status === 'paid' ? 'green' : 'red'}">
           ${o.payment_status === 'paid' ? '已付款' : '未付款'}
