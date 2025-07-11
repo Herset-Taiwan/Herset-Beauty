@@ -86,7 +86,13 @@ function filterCategory(category) {
   const all = document.querySelectorAll(".product-card");
   all.forEach(el => {
     const categories = el.dataset.category.split(',').map(s => s.trim());
-    el.style.display = category === '全部' || categories.includes(category) ? 'block' : 'none';
+    if (category === '全部') {
+  el.style.display = 'block';
+} else {
+  const categories = el.dataset.category.split(',').map(s => s.trim());
+  el.style.display = categories.includes(category) ? 'block' : 'none';
+}
+
   });
 
   // 更新標語文字
