@@ -150,7 +150,7 @@
   pageData.forEach(o => {
     
     const box = document.createElement('div');
-    const itemList = o.items.map(i => `${i.product_name} × ${i.qty}（$${i.price}）`).join('、');
+    const itemList = o.items.map(i => `<div>${i.product_name} × ${i.qty}（$${i.price}）</div>`).join('');
     const itemSubtotal = o.items.reduce((sum, i) => sum + (i.price * i.qty), 0);
     const shipping = o.shipping_fee || 0;
     const finalAmount = o.total_amount;
