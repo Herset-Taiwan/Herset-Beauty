@@ -69,6 +69,19 @@
 
 {% block script %}
 <script>
+document.addEventListener("DOMContentLoaded", () => {
+  // 點擊分類選單的事件綁定
+  document.querySelectorAll('.sub-categories a').forEach(el => {
+    el.addEventListener('click', () => {
+      const category = el.textContent.trim();
+      filterCategory(category);
+    });
+  });
+
+  // 初始化預設分類
+  filterCategory('全部');
+});
+
 function filterCategory(category) {
   const all = document.querySelectorAll(".product-card");
   all.forEach(el => {
@@ -76,7 +89,7 @@ function filterCategory(category) {
     el.style.display = category === '全部' || categories.includes(category) ? 'block' : 'none';
   });
 
-  // 切換標語文字
+  // 更新標語文字
   const bannerTitle = document.getElementById("banner-title");
   const bannerDesc = document.getElementById("banner-desc");
 
@@ -107,16 +120,13 @@ function filterCategory(category) {
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  filterCategory('全部');
-});
-
+// 加入購物車功能（保留原本）
 function addToCart(event, productId) {
   event.preventDefault();
   fetch('/add_to_cart', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: product_id=${productId}
+    body: 'product_id=' + productId
   })
   .then(res => res.json())
   .then(data => {
@@ -130,6 +140,7 @@ function addToCart(event, productId) {
   });
 }
 
+// 輪播圖
 let cur = 0;
 const banners = document.querySelectorAll('.carousel-img');
 setInterval(() => {
