@@ -470,7 +470,7 @@ function printOrder(orderId) {
 
   const printWindow = window.open('', '_blank');
 
-  // 產生商品列 HTML
+  // 建立每筆商品列
   let itemsHtml = '';
   let totalQty = 0;
   order.items.forEach((item, index) => {
@@ -480,8 +480,6 @@ function printOrder(orderId) {
         <td>${index + 1}</td>
         <td>${item.product_name}</td>
         <td>${item.product_no || ''}</td>
-        <td>${item.product_code || ''}</td>
-        <td>${item.material_name || ''}</td>
         <td>${item.qty}</td>
         <td>□</td>
         <td>□</td>
@@ -557,8 +555,6 @@ function printOrder(orderId) {
             <th>項次</th>
             <th>銷售項目</th>
             <th>料號</th>
-            <th>索引</th>
-            <th>料品名稱</th>
             <th>換貨數量</th>
             <th>檢查A</th>
             <th>檢查B</th>
@@ -567,7 +563,7 @@ function printOrder(orderId) {
         <tbody>
           ${itemsHtml}
           <tr>
-            <td colspan="5"><strong>總件數</strong></td>
+            <td colspan="3"><strong>總件數</strong></td>
             <td colspan="3"><strong>${totalQty}</strong></td>
           </tr>
         </tbody>
@@ -585,6 +581,7 @@ function printOrder(orderId) {
 
   printWindow.document.close();
 }
+
 
 
 
