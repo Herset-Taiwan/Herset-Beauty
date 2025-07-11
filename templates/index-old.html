@@ -83,11 +83,11 @@
 
 <!-- 分類區塊 -->
 <div class="sub-categories">
-  <a onclick="filterCategory('全部')">全部商品</a>
-  <a onclick="filterCategory('身體保養')">身體保養</a>
-  <a onclick="filterCategory('私密保養')">私密保養</a>
-  <a onclick="filterCategory('寵物友善')">寵物友善</a>
-  <a onclick="filterCategory('品牌嚴選')">品牌嚴選</a>
+  <a href="#" onclick="filterCategory(event, '全部')">全部商品</a>
+  <a href="#" onclick="filterCategory(event, '身體保養')">身體保養</a>
+  <a href="#" onclick="filterCategory(event, '私密保養')">私密保養</a>
+  <a href="#" onclick="filterCategory(event, '寵物友善')">寵物友善</a>
+  <a href="#" onclick="filterCategory(event, '品牌嚴選')">品牌嚴選</a>
 </div>
 
 
@@ -211,6 +211,7 @@
 <!-- JS：分類與加入購物車 -->
 <script>
 
+// 分類說明文字
 const categoryDescriptions = {
   '全部': {
     title: '探索 HERSET 精選好物',
@@ -234,14 +235,15 @@ const categoryDescriptions = {
   }
 };
 
-function filterCategory(category) {
+function filterCategory(event, category) {
+  if (event) event.preventDefault();
+
   const all = document.querySelectorAll(".product-card");
   all.forEach(el => {
     const categories = el.dataset.category.split(',').map(s => s.trim());
     el.style.display = category === '全部' || categories.includes(category) ? 'block' : 'none';
   });
 
-  // 更新分類敘述區
   const desc = categoryDescriptions[category];
   if (desc) {
     document.getElementById('banner-title').textContent = desc.title;
@@ -249,6 +251,17 @@ function filterCategory(category) {
   }
 }
 
+  // 更新分類敘述區
+  const desc = categoryDescriptions[category];
+  if (desc) {
+    document.getElementById('banner-title').textContent = desc.title;
+    document.getElementById('banner-subtitle').textContent = desc.subtitle;
+  }
+
+// ✅ 頁面載入後預設顯示全部商品
+window.addEventListener('DOMContentLoaded', function() {
+  filterCategory(new Event('load'), '全部');
+});
 
 
 filterCategory('全部');
