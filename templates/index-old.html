@@ -90,6 +90,12 @@
 </div>
 
 
+<!-- 類別敘述區塊 -->
+<div id="category-description" style="text-align:center; margin: 40px 0;">
+  <h1>自然呵護，極致純淨</h1>
+  <p>專為敏感肌設計的私密保養系列</p>
+</div>
+
 
 <!-- 商品清單 -->
 <section class="product-list">
@@ -143,11 +149,7 @@
     </form>
   </div>
 </div>
-<!-- Banner -->
-<section class="banner">
-  <h1>自然呵護，極致純淨</h1>
-  <p>專為敏感肌設計的私密保養系列</p>
-</section>
+
 
 <!-- 頁尾 -->
 <footer style="background: #f4d8cc; padding: 40px 20px; font-family: sans-serif; font-size: 14px;">
@@ -209,16 +211,45 @@
 
 <!-- JS：分類與加入購物車 -->
 <script>
+  const descriptions = {
+  "全部": {
+    title: "全部商品一次瀏覽",
+    desc: "探索 HERSET 精選的天然保養系列，讓生活回歸純粹。"
+  },
+  "身體保養": {
+    title: "溫和呵護，從身體開始",
+    desc: "從洗沐到乳液，為你的肌膚注入溫柔的力量。"
+  },
+  "私密保養": {
+    title: "自然呵護，極致純淨",
+    desc: "專為敏感肌設計的私密保養系列"
+  },
+  "寵物友善": {
+    title: "毛孩無毒生活",
+    desc: "為毛孩打造友善無害的照護選擇。"
+  },
+  "品牌嚴選": {
+    title: "品質保證，嚴選推薦",
+    desc: "精選值得信賴的天然品牌，安心有保障。"
+  }
+};
 function filterCategory(category) {
   const all = document.querySelectorAll(".product-card");
   all.forEach(el => {
     const categories = el.dataset.category.split(',').map(s => s.trim());
     el.style.display = category === '全部' || categories.includes(category) ? 'block' : 'none';
   });
+
+  const descBox = document.getElementById("category-description");
+  if (descriptions[category]) {
+    descBox.innerHTML = `<h1>${descriptions[category].title}</h1><p>${descriptions[category].desc}</p>`;
+  } else {
+    descBox.innerHTML = "";
+  }
 }
 
-
-filterCategory('全部');
+// 預設顯示全部
+filterCategory("全部");
 
 function addToCart(event, productId) {
   event.preventDefault();
@@ -238,6 +269,9 @@ function addToCart(event, productId) {
     }
   });
 }
+</script>
+
+<script>
 // 輪播圖切換
 let cur = 0;
 const banners = document.querySelectorAll('.carousel-img');
