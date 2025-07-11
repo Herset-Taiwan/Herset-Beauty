@@ -409,10 +409,6 @@ function renderOrderPage(pageSize) {
   const totalPages = Math.ceil(filteredOrders.length / pageSize);
   const start = (currentPage - 1) * pageSize;
   const end = start + pageSize;
-  const itemList = o.items.map(i => `${i.product_name} × ${i.qty}（$${i.price}）`).join('、');
-  const itemSubtotal = o.items.reduce((sum, i) => sum + (i.price * i.qty), 0);
-  const shipping = o.shipping_fee || 0;
-  const finalAmount = itemSubtotal + shipping;
 
   const pageData = filteredOrders.slice(start, end);
 pageData.forEach(o => {
