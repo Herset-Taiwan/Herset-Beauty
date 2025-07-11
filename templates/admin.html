@@ -443,7 +443,7 @@ div.innerHTML = `
     <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
   <strong>出貨狀態：</strong> ${o.status === 'shipped' ? '已出貨' : (o.status === 'paid' ? '已付款' : '待處理')}
   
-  <form method="POST" action="/admin/orders/update_status/${o.id}">
+  <form method="POST" action="/admin0363/orders/update_status/${o.id}">
     <strong style="margin-left: 20px;">修改狀態：</strong>
     <select name="status" onchange="this.form.submit()">
       <option value="pending" ${o.status === 'pending' ? 'selected' : ''}>待處理</option>
