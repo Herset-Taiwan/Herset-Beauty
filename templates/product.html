@@ -180,6 +180,12 @@
     <h2>{{ product['name'] }}</h2>
     <div class="price">NT${{ "%.0f"|format(product['price']) }}</div>
 
+    {% if product['stock'] == 0 %}
+  <div style="color: red; font-weight: bold; margin-top: 10px;">商品已售完，補貨中</div>
+{% else %}
+  <div style="margin-top: 10px; font-size: 15px;">剩餘庫存：{{ product['stock'] }}</div>
+{% endif %}
+
     <div class="options">
       <label>選項：</label><br>
       {% for opt in product['options'] %}
@@ -194,15 +200,28 @@
       <button onclick="adjustQty(1)">+</button>
     </div>
 
-    <div class="actions">
-      <button onclick="addToCart({{ product['id'] }})">加入購物車</button>
-      <form action="/add_to_cart" method="post" style="display:inline;">
-        <input type="hidden" name="product_id" value="{{ product['id'] }}">
-        <input type="hidden" name="qty" id="qty-input-checkout" value="1">
-        <input type="hidden" name="action" value="checkout">
-        <button type="submit">立即結帳</button>
-      </form>
-    </div>
+   {% set is_out_of_stock = product['stock'] == 0 %}
+<div class="actions">
+  <button 
+    onclick="addToCart({{ product['id'] }})" 
+    {% if is_out_of_stock %}disabled style="opacity: 0.5; cursor: not-allowed;"{% endif %}
+  >
+    加入購物車
+  </button>
+
+  <form action="/add_to_cart" method="post" style="display:inline;">
+    <input type="hidden" name="product_id" value="{{ product['id'] }}">
+    <input type="hidden" name="qty" id="qty-input-checkout" value="1">
+    <input type="hidden" name="action" value="checkout">
+    <button 
+      type="submit" 
+      {% if is_out_of_stock %}disabled style="opacity: 0.5; cursor: not-allowed;"{% endif %}
+    >
+      立即結帳
+    </button>
+  </form>
+</div>
+
   </div>
 </div>
 
