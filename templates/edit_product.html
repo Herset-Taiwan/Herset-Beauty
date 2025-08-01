@@ -179,6 +179,32 @@
   background: #d8c8c1;
 }
 
+.page-wrapper {
+  display: flex;
+  max-width: 1200px;
+  margin: 40px auto;
+  align-items: flex-start;
+  gap: 30px;
+}
+
+.left-col {
+  flex-shrink: 0;
+  padding-top: 10px;
+}
+
+#back-btn {
+  background: #EADDD6;
+  color: #3C3C3C;
+  border: 1px solid #aaa;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+#back-btn:hover {
+  background: #d8c8c1;
+}
 
 
   </style>
@@ -196,9 +222,9 @@
     </div>
   </div>
 </div>
-<div style="max-width: 800px; margin: 30px auto 0;">
-  <button id="back-btn" style="margin-bottom: 10px;">← 返回</button>
-</div>
+  <div class="left-col">
+    <button id="back-btn">← 返回</button>
+  </div>
 
   <div class="form-container">
     <h2>編輯商品</h2>
