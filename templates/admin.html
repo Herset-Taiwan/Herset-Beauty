@@ -291,6 +291,12 @@
     <strong>{{ p['name'] or '無名稱' }}</strong><br>
     價格：${{ p['price'] or 0 }}
   </div>
+  <div class="info">
+  <strong>{{ p['name'] or '無名稱' }}</strong><br>
+  價格：${{ p['price'] or 0 }}<br>
+  目前庫存：{{ p['stock'] or 0 }}
+</div>
+
   <div class="actions">
     <a href="/edit/{{ p['id'] }}">✏️ 編輯</a>
     <form action="/delete/{{ p['id'] }}" method="post" style="display:inline;" onsubmit="return confirm('確定要刪除商品？')">
