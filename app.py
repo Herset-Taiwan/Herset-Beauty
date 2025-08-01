@@ -892,6 +892,7 @@ def edit_product(product_id):
             updated = {
                 "name": request.form.get('name', '').strip(),
                 "price": float(request.form.get('price', '0').strip()),
+                "stock": int(request.form.get('stock', '0').strip() or 0),
                 "intro": request.form.get('intro', '').strip(),
                 "feature": request.form.get('feature', '').strip(),
                 "spec": request.form.get('spec', '').strip(),
