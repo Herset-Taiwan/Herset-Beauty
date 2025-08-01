@@ -114,9 +114,92 @@
     .save-btn:hover {
       background-color: #E2B6A2;
     }
+
+    .modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content {
+  background-color: #fff;
+  margin: 20% auto;
+  padding: 30px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.modal-content p {
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.modal-btn {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.modal-btn.confirm {
+  background-color: #CDAFA1;
+  color: #fff;
+}
+
+.modal-btn.cancel {
+  background-color: #aaa;
+  color: #fff;
+}
+#back-btn {
+  background: #EADDD6;
+  color: #3C3C3C;
+  border: 1px solid #aaa;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+#back-btn:hover {
+  background: #d8c8c1;
+}
+
+
+
   </style>
 </head>
 <body>
+
+<!-- 彈出提示視窗 -->
+<div id="unsavedModal" class="modal">
+  <div class="modal-content">
+    <p>已編輯項目尚未儲存，是否先儲存再離開？</p>
+    <div class="modal-buttons">
+      <button id="saveAndLeave" class="modal-btn confirm">儲存後離開</button>
+      <button id="leaveWithoutSave" class="modal-btn cancel">不儲存直接離開</button>
+      <button id="cancelModal" class="modal-btn">取消</button>
+    </div>
+  </div>
+</div>
+<div style="max-width: 800px; margin: 30px auto 0;">
+  <button id="back-btn" style="margin-bottom: 10px;">← 返回</button>
+</div>
+
   <div class="form-container">
     <h2>編輯商品</h2>
     <form method="POST" enctype="multipart/form-data">
@@ -205,5 +288,61 @@
       });
     });
   </script>
+  <script>
+  let formOriginalData = null;
+
+  // 儲存初始表單資料
+  window.onload = () => {
+    const form = document.querySelector("form");
+    formOriginalData = new FormData(form);
+  };
+
+  function isFormEdited() {
+    const form = document.querySelector("form");
+    const currentData = new FormData(form);
+    for (let [key, value] of currentData.entries()) {
+      if (formOriginalData.getAll(key).toString() !== currentData.getAll(key).toString()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  const modal = document.getElementById("unsavedModal");
+  const backBtn = document.getElementById("back-btn");
+  const saveAndLeaveBtn = document.getElementById("saveAndLeave");
+  const leaveWithoutSaveBtn = document.getElementById("leaveWithoutSave");
+  const cancelModalBtn = document.getElementById("cancelModal");
+
+  backBtn.addEventListener("click", function () {
+    if (isFormEdited()) {
+      modal.style.display = "block";
+    } else {
+      window.history.back();
+    }
+  });
+
+  saveAndLeaveBtn.addEventListener("click", function () {
+    modal.style.display = "none";
+    document.querySelector("form").submit();
+  });
+
+  leaveWithoutSaveBtn.addEventListener("click", function () {
+    modal.style.display = "none";
+    window.history.back();
+  });
+
+  cancelModalBtn.addEventListener("click", function () {
+    modal.style.display = "none";
+  });
+
+  // 點背景也可以關閉 modal
+  window.onclick = function (event) {
+    if (event.target === modal) {
+      modal.style.display = "none";
+    }
+  };
+</script>
+
 </body>
 </html>
