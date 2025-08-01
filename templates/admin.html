@@ -289,8 +289,13 @@
   <img src="{{ p['image'] or '' }}" alt="{{ p['name'] }}">
   <div class="info">
     <strong>{{ p['name'] or '無名稱' }}</strong><br>
-    價格：${{ p['price'] or 0 }}
-    目前庫存：{{ p['stock'] or 0 }}
+    價格：${{ p['price'] or 0 }}<br>
+{% if p['stock'] == 0 %}
+  <span style="color: red; font-weight: bold;">已售完</span>
+{% else %}
+  目前庫存：{{ p['stock'] or 0 }}
+{% endif %}
+
   </div>
 
 
