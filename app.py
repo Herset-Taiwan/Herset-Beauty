@@ -828,6 +828,8 @@ def add_product():
         name = request.form.get('name', '').strip()
         price_str = request.form.get('price', '0').strip()
         price = float(price_str) if price_str else 0.0
+        stock_str = request.form.get('stock', '0').strip()
+        stock = int(stock_str) if stock_str else 0
         intro = request.form.get('intro', '').strip()
         feature = request.form.get('feature', '').strip()
         spec = request.form.get('spec', '').strip()
@@ -860,6 +862,7 @@ def add_product():
         data = {
             "name": name,
             "price": price,
+            "stock": stock,
             "image": image_urls[0],
             "images": image_urls,
             "intro": intro,
@@ -879,6 +882,7 @@ def add_product():
 
     except Exception as e:
         return f"新增商品時發生錯誤：{str(e)}", 500
+
 
 
 @app.route('/edit/<product_id>', methods=['GET', 'POST'])
