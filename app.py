@@ -740,6 +740,24 @@ def handle_ecpay_result():
             "paid_trade_no": merchant_trade_no
         }).eq("id", order["id"]).execute()
 
+            # 🔻 撈該訂單所有商品項目
+    item_res = supabase.table("order_items").select("*").eq("order_id", order["id"]).execute()
+    items = item_res.data or []
+
+    for item in items:
+        pid = item["product_id"]
+        qty = item["qty"]
+
+        # 🔻 查目前庫存
+        p_res = supabase.table("products").select("stock").eq("id", pid).single().execute()
+        if p_res.data:
+            current_stock = p_res.data["stock"] or 0
+            new_stock = max(current_stock - qty, 0)  # 最少為 0
+
+            # 🔻 更新庫存
+            supabase.table("products").update({"stock": new_stock}).eq("id", pid).execute()
+
+
     return "1|OK"  # 綠界固定格式，代表成功處理
 
 
