@@ -68,7 +68,18 @@
     </ul>
   </nav>
 </header>
-
+<!-- 首頁輪播圖 -->
+<div class="carousel-container">
+  <div class="carousel">
+    <img src="{{ url_for('static', filename='uploads/banner1.png') }}" class="carousel-img active">
+    <img src="{{ url_for('static', filename='uploads/banner2.png') }}" class="carousel-img">
+    <img src="{{ url_for('static', filename='uploads/banner3.jpg') }}" class="carousel-img">
+    <img src="{{ url_for('static', filename='uploads/banner4.png') }}" class="carousel-img">
+  
+  </div>
+  <div class="carousel-dots" id="carouselDots"></div>
+</div>
+{% endblock %}
 <!-- 主要內容區塊 -->
 {% block content %}{% endblock %}
 
