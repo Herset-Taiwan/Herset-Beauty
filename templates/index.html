@@ -3,12 +3,18 @@
 {% block title %}HERSET 官方網站｜天然保養 × 品味生活{% endblock %}
 
 {% block content %}
+
+<!-- 商品規格提示 -->
 <div class="spec-warning" id="spec-warning">請進入商品頁挑選規格</div>
+
+<!-- 商品缺貨提示 -->
+<div class="stock-warning" id="stock-warning">目前商品已售完，補貨中</div>
+
 <!-- 首頁輪播圖 -->
 <div class="carousel-container">
   <div class="carousel">
     <img src="{{ url_for('static', filename='uploads/banner1.png') }}" class="carousel-img active">
-    <img src="{{ url_for('static', filename='uploads/banner2.jpg') }}" class="carousel-img">
+    <img src="{{ url_for('static', filename='uploads/banner2.png') }}" class="carousel-img">
     <img src="{{ url_for('static', filename='uploads/banner3.jpg') }}" class="carousel-img">
   
   </div>
@@ -35,7 +41,8 @@
       <p class="price">${{ p['price'] }}</p>
     </div>
     <div class="btn-group">
-      <button onclick="addToCart(event, {{ p['id'] }}, {{ p['options'] | length }})">加入購物車</button>
+      <button onclick="addToCart(event, {{ p['id'] }}, {{ p['options'] | length }}, {{ p['stock'] or 0 }})">加入購物車</button>
+
       <a href="/product/{{ p['id'] }}" class="view-btn">查看商品</a>
     </div>
   </div>
@@ -130,19 +137,28 @@ function filterCategory(category) {
 
 
 // 加入購物車功能（加入規格判斷）
-function addToCart(event, productId, optionCount = 0) {
+function addToCart(event, productId, optionCount = 0, stock = 0) {
   event.preventDefault();
 
-  // 若商品規格有兩種以上，跳提示視窗
-  if (optionCount >= 2) {
-  const warning = document.getElementById("spec-warning");
-  warning.style.display = "block";
-  setTimeout(() => {
-    warning.style.display = "none";
-  }, 1500);
-  return;
-}
+  // 先檢查庫存
+  if (stock <= 0) {
+    const warning = document.getElementById("stock-warning");
+    warning.style.display = "block";
+    setTimeout(() => {
+      warning.style.display = "none";
+    }, 1500);
+    return;
+  }
 
+  // 若商品規格超過一項，提示請至商品頁挑選
+  if (optionCount >= 2) {
+    const warning = document.getElementById("spec-warning");
+    warning.style.display = "block";
+    setTimeout(() => {
+      warning.style.display = "none";
+    }, 1500);
+    return;
+  }
 
   // 否則照原本流程加入購物車
   fetch('/add_to_cart', {
@@ -161,6 +177,7 @@ function addToCart(event, productId, optionCount = 0) {
     }
   });
 }
+
 
 
 // 輪播圖
