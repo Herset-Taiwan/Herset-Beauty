@@ -2,17 +2,8 @@
 
 {% block title %}HERSET 官方網站｜天然保養 × 品味生活{% endblock %}
 
-{% block content %}
-
-<!-- 商品規格提示 -->
-<div class="spec-warning" id="spec-warning">請進入商品頁挑選規格</div>
-
-<!-- 商品缺貨提示 -->
-<div class="stock-warning" id="stock-warning">目前商品已售完，補貨中</div>
-
-
-{% extends "base.html" %}
-<!-- 首頁輪播圖 -->
+{% block banner %}
+<!-- 首頁輪播圖：只在首頁顯示 -->
 <div class="carousel-container">
   <div class="carousel">
     <img src="{{ url_for('static', filename='uploads/banner1.png') }}" class="carousel-img active">
@@ -20,11 +11,16 @@
     <img src="{{ url_for('static', filename='uploads/banner3.jpg') }}" class="carousel-img">
     <img src="{{ url_for('static', filename='uploads/banner4.png') }}" class="carousel-img">
   </div>
-
-  <!-- ✅ 改放在這邊，圖片下方 -->
   <div class="carousel-dots" id="carouselDots"></div>
 </div>
+{% endblock %}
 
+{% block content %}
+<!-- 商品規格提示 -->
+<div class="spec-warning" id="spec-warning">請進入商品頁挑選規格</div>
+
+<!-- 商品缺貨提示 -->
+<div class="stock-warning" id="stock-warning">目前商品已售完，補貨中</div>
 <!-- 分類區塊 -->
 <div class="sub-categories">
   <a onclick="filterCategory('全部商品')">全部商品</a>
