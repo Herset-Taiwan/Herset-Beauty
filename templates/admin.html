@@ -446,6 +446,7 @@ pageData.forEach(o => {
   let optionStr = i.option ? `（${i.option}）` : '';
   return `${i.product_name}${optionStr} × ${i.qty}（$${i.price}）`;
 }).join('<br>');
+
 const itemSubtotal = o.items.reduce((sum, i) => sum + (i.price * i.qty), 0);
 const shipping = o.shipping_fee || 0;
 const finalAmount = itemSubtotal + shipping;

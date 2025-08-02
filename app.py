@@ -219,7 +219,7 @@ def admin_dashboard():
             "product_name": item.get("product_name"),
             "qty": item.get("qty"),
             "price": item.get("price"),
-            "option": item.get("option", ""),
+            'option': item.get('option', '')
         })
 
     orders = []
