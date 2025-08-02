@@ -504,7 +504,8 @@ def checkout():
                 'product_name': product['name'],
                 'qty': item['qty'],
                 'price': product['price'],
-                'subtotal': subtotal
+                'subtotal': subtotal,
+                'option': item.get('option', '')
             })
 
     # 加入運費判斷
@@ -531,6 +532,7 @@ def checkout():
     for item in items:
         item['id'] = str(uuid4())             # ✅ 每筆都給一個唯一的 id
         item['order_id'] = order_id
+        item['option'] = item.get('option', '')
     supabase.table('order_items').insert(items).execute()
 
     # 清空購物車
