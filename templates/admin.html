@@ -443,9 +443,10 @@ function renderOrderPage(pageSize) {
   const pageData = filteredOrders.slice(start, end);
 pageData.forEach(o => {
   const itemList = o.items.map(i => {
-    const option = i.option && i.option.trim() !== "" ? `（${i.option}）` : '';
-    return `${i.product_name}${option} × ${i.qty}（$${i.price}）`;
-  }).join('<br>');
+  const optionLine = i.option && i.option.trim() !== "" ? `<div style="color:#888; margin-left:10px;">選項：${i.option}</div>` : '';
+  return `<div>${i.product_name} × ${i.qty}（$${i.price}）${optionLine}</div>`;
+}).join('');
+
 
   const itemSubtotal = o.items.reduce((sum, i) => sum + (i.price * i.qty), 0);
   const shipping = o.shipping_fee || 0;
