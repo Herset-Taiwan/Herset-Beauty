@@ -11,7 +11,7 @@
 <div class="stock-warning" id="stock-warning">目前商品已售完，補貨中</div>
 
 
-
+{% extends "base.html" %}
 <!-- 首頁輪播圖 -->
 <div class="carousel-container">
   <div class="carousel">
@@ -19,8 +19,9 @@
     <img src="{{ url_for('static', filename='uploads/banner2.png') }}" class="carousel-img">
     <img src="{{ url_for('static', filename='uploads/banner3.jpg') }}" class="carousel-img">
     <img src="{{ url_for('static', filename='uploads/banner4.png') }}" class="carousel-img">
-  
   </div>
+
+  <!-- ✅ 改放在這邊，圖片下方 -->
   <div class="carousel-dots" id="carouselDots"></div>
 </div>
 
