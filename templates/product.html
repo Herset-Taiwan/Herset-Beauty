@@ -211,7 +211,7 @@
 <div class="product-container">
   <div class="gallery">
     <div class="gallery-main">
-      <img id="main-img" src="{{ product['images'][0] if product['images'] else product['image'] }}" alt="product">
+      <img id="main-img" src="{{ product['image'] }}" alt="product">
     </div>
     <div class="gallery-thumbs">
       {% for img in product['images'] %}
