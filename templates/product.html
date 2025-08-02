@@ -222,10 +222,10 @@
     <h2>{{ product['name'] }}</h2>
     <div class="price">NT${{ "%.0f"|format(product['price']) }}</div>
 
-    {% if product['stock'] == 0 %}
-  <div style="color: red; font-weight: bold; margin-top: 10px;">商品已售完，補貨中</div>
-{% if false %}
-  <div style="margin-top: 10px; font-size: 15px;">剩餘庫存：{{ product['stock'] }}</div>
+   {% if product['stock'] == 0 %}
+  <div style="background-color: #ffe6e6; color: #b30000; font-weight: bold; padding: 10px; border-radius: 6px; margin-top: 10px;">
+    商品已售完，補貨中！
+  </div>
 {% endif %}
 
     <div class="options">
