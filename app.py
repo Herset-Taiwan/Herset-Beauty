@@ -201,30 +201,36 @@ def admin_dashboard():
     member_dict = {m["id"]: m for m in members}
 
     # ✅ 訂單
-    orders_raw = supabase.table("orders").select("*").order("created_at", desc=True).execute().data or []
-    order_items = supabase.table("order_items").select("*").execute().data or []
+orders_raw = supabase.table("orders").select("*").order("created_at", desc=True).execute().data or []
+order_items = supabase.table("order_items").select("*").execute().data or []
 
-    item_group = {}
-    for item in order_items:
-        item_group.setdefault(item["order_id"], []).append(item)
+item_group = {}
+for item in order_items:
+    item_group.setdefault(item["order_id"], []).append({
+        "product_name": item.get("product_name"),
+        "qty": item.get("qty"),
+        "price": item.get("price"),
+        "option": item.get("option", ""),  # ← 關鍵！補上規格
+    })
 
-    orders = []
-    for o in orders_raw:
-        o["items"] = item_group.get(o["id"], [])
-        member = member_dict.get(o["member_id"])
-        o["member"] = {
-            "account": member["account"] if member else "guest",
-            "name": member.get("name") if member else "訪客",
-            "phone": member.get("phone") if member else "—",
-            "address": member.get("address") if member else "—"
-        }
-        try:
-            utc_dt = parser.parse(o["created_at"])
-            o["created_local"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
-        except:
-            o["created_local"] = o["created_at"]
+orders = []
+for o in orders_raw:
+    o["items"] = item_group.get(o["id"], [])
+    member = member_dict.get(o["member_id"])
+    o["member"] = {
+        "account": member["account"] if member else "guest",
+        "name": member.get("name") if member else "訪客",
+        "phone": member.get("phone") if member else "—",
+        "address": member.get("address") if member else "—"
+    }
+    try:
+        utc_dt = parser.parse(o["created_at"])
+        o["created_local"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
+    except:
+        o["created_local"] = o["created_at"]
 
-        orders.append(o)
+    orders.append(o)
+
 
     return render_template("admin.html",
                            products=products,
