@@ -34,7 +34,7 @@
       <p class="price">${{ p['price'] }}</p>
     </div>
     <div class="btn-group">
-      <button onclick="addToCart(event, {{ p['id'] }})">加入購物車</button>
+      <button onclick="addToCart(event, {{ p['id'] }}, {{ p['options'] | length }})">加入購物車</button>
       <a href="/product/{{ p['id'] }}" class="view-btn">查看商品</a>
     </div>
   </div>
@@ -61,6 +61,13 @@
       border-radius: 8px;
       cursor: pointer;
       font-weight: bold;">立即補填資料</button>
+  </div>
+</div>
+<div id="spec-popup" class="modal" style="display:none; position:fixed; top:30%; left:50%; transform:translate(-50%, -50%); background:#fff; border-radius:10px; padding:20px; box-shadow:0 0 15px rgba(0,0,0,0.3); z-index:1000;">
+  <div style="text-align:center;">
+    <h3 style="margin-bottom: 10px;">請挑選商品規格</h3>
+    <p>此商品有多種規格，請前往商品頁面挑選。</p>
+    <button onclick="closeSpecPopup()" style="margin-top:15px; padding:10px 20px; background:#C6456C; color:#fff; border:none; border-radius:6px;">我知道了</button>
   </div>
 </div>
 {% endif %}
@@ -126,9 +133,17 @@ function filterCategory(category) {
 }
 
 
-// 加入購物車功能（保留原本）
-function addToCart(event, productId) {
+// 加入購物車功能（加入規格判斷）
+function addToCart(event, productId, optionCount = 0) {
   event.preventDefault();
+
+  // 若商品規格有兩種以上，跳提示視窗
+  if (optionCount >= 2) {
+    showSpecPopup();  // ← 顯示自訂視窗
+    return;
+  }
+
+  // 否則照原本流程加入購物車
   fetch('/add_to_cart', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -146,6 +161,7 @@ function addToCart(event, productId) {
   });
 }
 
+
 // 輪播圖
 let cur = 0;
 const banners = document.querySelectorAll('.carousel-img');
@@ -154,5 +170,15 @@ setInterval(() => {
   cur = (cur + 1) % banners.length;
   banners[cur].classList.add('active');
 }, 5000);
+
+// 商品規格提示視窗
+function showSpecPopup() {
+  document.getElementById("spec-popup").style.display = "block";
+}
+
+function closeSpecPopup() {
+  document.getElementById("spec-popup").style.display = "none";
+}
+
 </script>
 {% endblock %}
