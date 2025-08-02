@@ -443,60 +443,61 @@ function renderOrderPage(pageSize) {
   const pageData = filteredOrders.slice(start, end);
 pageData.forEach(o => {
   const itemList = o.items.map(i => {
-  let optionStr = i.option ? `（${i.option}）` : '';
-  return `${i.product_name}${optionStr} × ${i.qty}（$${i.price}）`;
-}).join('<br>');
+    const option = i.option && i.option.trim() !== "" ? `（${i.option}）` : '';
+    return `${i.product_name}${option} × ${i.qty}（$${i.price}）`;
+  }).join('<br>');
 
-const itemSubtotal = o.items.reduce((sum, i) => sum + (i.price * i.qty), 0);
-const shipping = o.shipping_fee || 0;
-const finalAmount = itemSubtotal + shipping;
+  const itemSubtotal = o.items.reduce((sum, i) => sum + (i.price * i.qty), 0);
+  const shipping = o.shipping_fee || 0;
+  const finalAmount = itemSubtotal + shipping;
 
   const div = document.createElement("div");
-div.className = "order-row";
-div.innerHTML = `
-  <div class="info ${o.status === 'shipped' ? 'order-box' : ''}">
-    ${o.status === 'shipped' ? `<div class="shipped-label">已出貨</div>` : ''}
-    <strong>訂單編號：</strong>#${o.id}<br>
-    <strong>訂單時間：</strong>${o.created_local}<br>
-    <hr style="border: 1px dashed #ccc; margin: 10px 0;">
-    <strong>購買商品：</strong><br>
-    ${itemList}<br>
-    <strong>商品小計：</strong>$${itemSubtotal}<br>
-    <strong>運費：</strong>$${shipping}${shipping === 0 ? '（免運）' : ''}<br>
-    <strong>總金額：</strong><span style="color:#e91e63;"><strong>$${finalAmount}</strong></span><br>
-    <strong>付款狀態：</strong>
-    <span class="badge ${o.payment_status === 'paid' ? 'green' : 'red'}">
-      ${o.payment_status === 'paid' ? '已付款' : '未付款'}
-    </span><br>
-    <hr style="border: 1px dashed #ccc; margin: 10px 0;">
-    <strong>會員帳號：</strong>${o.member.account}<br>
-    <strong>購買人：</strong>${o.member.name}<br>
-    <strong>電話：</strong>${o.member.phone}<br>
-    <strong>地址：</strong>${o.member.address}<br>
-    <hr style="border: 1px dashed #ccc; margin: 10px 0;">
-    <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
-      <strong>出貨狀態：</strong> ${o.status === 'shipped' ? '已出貨' : (o.status === 'paid' ? '已付款' : '待處理')}
-      <form method="POST" action="/admin0363/orders/update_status/${o.id}">
-        <strong style="margin-left: 20px;">修改狀態：</strong>
-        <select name="status" onchange="this.form.submit()">
-          <option value="pending" ${o.status === 'pending' ? 'selected' : ''}>待處理</option>
-          <option value="paid" ${o.status === 'paid' ? 'selected' : ''}>已付款</option>
-          <option value="shipped" ${o.status === 'shipped' ? 'selected' : ''}>已出貨</option>
-        </select>
-      </form>
+  div.className = "order-row";
+  div.innerHTML = `
+    <div class="info ${o.status === 'shipped' ? 'order-box' : ''}">
+      ${o.status === 'shipped' ? `<div class="shipped-label">已出貨</div>` : ''}
+      <strong>訂單編號：</strong>#${o.id}<br>
+      <strong>訂單時間：</strong>${o.created_local}<br>
+      <hr style="border: 1px dashed #ccc; margin: 10px 0;">
+      <strong>購買商品：</strong><br>
+      ${itemList}<br>
+      <strong>商品小計：</strong>$${itemSubtotal}<br>
+      <strong>運費：</strong>$${shipping}${shipping === 0 ? '（免運）' : ''}<br>
+      <strong>總金額：</strong><span style="color:#e91e63;"><strong>$${finalAmount}</strong></span><br>
+      <strong>付款狀態：</strong>
+      <span class="badge ${o.payment_status === 'paid' ? 'green' : 'red'}">
+        ${o.payment_status === 'paid' ? '已付款' : '未付款'}
+      </span><br>
+      <hr style="border: 1px dashed #ccc; margin: 10px 0;">
+      <strong>會員帳號：</strong>${o.member.account}<br>
+      <strong>購買人：</strong>${o.member.name}<br>
+      <strong>電話：</strong>${o.member.phone}<br>
+      <strong>地址：</strong>${o.member.address}<br>
+      <hr style="border: 1px dashed #ccc; margin: 10px 0;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+        <strong>出貨狀態：</strong> ${o.status === 'shipped' ? '已出貨' : (o.status === 'paid' ? '已付款' : '待處理')}
+        <form method="POST" action="/admin0363/orders/update_status/${o.id}">
+          <strong style="margin-left: 20px;">修改狀態：</strong>
+          <select name="status" onchange="this.form.submit()">
+            <option value="pending" ${o.status === 'pending' ? 'selected' : ''}>待處理</option>
+            <option value="paid" ${o.status === 'paid' ? 'selected' : ''}>已付款</option>
+            <option value="shipped" ${o.status === 'shipped' ? 'selected' : ''}>已出貨</option>
+          </select>
+        </form>
+      </div>
     </div>
-  </div>
 
-  <div class="actions" style="position: absolute; top: 10px; right: 10px;">
-    <button onclick="openDeleteDialog(${o.id})" style="color: #e91e63; border: none; background: none; cursor: pointer;">🗑️ 刪除</button>
-  </div>
+    <div class="actions" style="position: absolute; top: 10px; right: 10px;">
+      <button onclick="openDeleteDialog(${o.id})" style="color: #e91e63; border: none; background: none; cursor: pointer;">🗑️ 刪除</button>
+    </div>
 
-  <div style="position: absolute; bottom: 10px; right: 10px;">
-    <button onclick="printOrder(${o.id})" style="padding: 6px 12px; background: #e91e63; color: white; border: none; border-radius: 6px; cursor: pointer;">列印訂單</button>
-  </div>
-`;
+    <div style="position: absolute; bottom: 10px; right: 10px;">
+      <button onclick="printOrder(${o.id})" style="padding: 6px 12px; background: #e91e63; color: white; border: none; border-radius: 6px; cursor: pointer;">列印訂單</button>
+    </div>
+  `;
   container.appendChild(div);
 });
+
 
 
   // 分頁按鈕
