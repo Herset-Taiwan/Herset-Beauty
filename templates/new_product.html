@@ -99,50 +99,53 @@
   <form method="POST" action="/add_product" enctype="multipart/form-data">
     <h2>新增商品</h2>
 
-    <label>名稱</label>
-    <input type="text" name="name" required>
+<label>名稱</label>
+<input type="text" name="name" required>
 
-    <label>價格</label>
-    <input type="number" name="price" required>
-    
-    <label>庫存數量</label>
+<label>價格</label>
+<input type="number" name="price" required>
+
+<label>庫存數量</label>
 <input type="number" name="stock" min="0" required>
 
-    <!-- ✅ 多分類 selectize -->
-    <label>分類（可多選）</label>
-    <select id="categories" name="categories[]" multiple placeholder="請選擇或輸入分類">
-      <option value="身體保養">身體保養</option>
-      <option value="私密保養">私密保養</option>
-      <option value="寵物友善">寵物友善</option>
-      <option value="品牌嚴選">品牌嚴選</option>
-    </select>
+<label>分類（可多選）</label>
+<select id="categories" name="categories[]" multiple placeholder="請選擇或輸入分類">
+  <option value="身體保養">身體保養</option>
+  <option value="私密保養">私密保養</option>
+  <option value="寵物友善">寵物友善</option>
+  <option value="品牌嚴選">品牌嚴選</option>
+</select>
 
-    <label>上傳圖片（可多張）</label>
-    <input type="file" name="image_files" accept="image/*" multiple>
+<label>商品首頁圖（首頁列表顯示一張圖）</label>
+<input type="file" name="cover_image" accept="image/*" required>
 
-    <label>商品介紹</label>
-    <textarea name="intro" rows="3"></textarea>
+<label>商品圖片（可多張）</label>
+<input type="file" name="image_files" accept="image/*" multiple>
 
-    <label>商品特色</label>
-    <textarea name="feature" rows="3"></textarea>
+<label>商品介紹</label>
+<textarea name="intro" rows="3"></textarea>
 
-    <label>商品規格（可新增多個）</label>
-    <div id="options-wrapper">
+<label>商品特色</label>
+<textarea name="feature" rows="3"></textarea>
+
+<label>商品規格（可新增多個）</label>
+<div id="options-wrapper">
   <div class="option-group">
     <input type="text" name="options[]" placeholder="例：澄淨白茶感" />
     <button type="button" class="delete-option" onclick="removeOption(this)">✕</button>
   </div>
 </div>
 
-    <button type="button" onclick="addOption()">＋新增一個規格</button>
+<button type="button" onclick="addOption()">＋新增一個規格</button>
 
-    <label>商品規格描述</label>
-    <textarea name="spec" rows="3"></textarea>
+<label>商品規格描述</label>
+<textarea name="spec" rows="3"></textarea>
 
-    <label>商品成分</label>
-    <textarea name="ingredient" rows="3"></textarea>
+<label>商品成分</label>
+<textarea name="ingredient" rows="3"></textarea>
 
-    <button type="submit">新增商品</button>
+<button type="submit">新增商品</button>
+
   </form>
 
   <!-- ✅ jQuery + Selectize JS -->

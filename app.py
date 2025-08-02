@@ -871,10 +871,25 @@ def add_product():
         feature = request.form.get('feature', '').strip()
         spec = request.form.get('spec', '').strip()
         ingredient = request.form.get('ingredient', '').strip()
-        categories = request.form.getlist('categories[]')  # ✅ 多分類
+        categories = request.form.getlist('categories[]')
         options = request.form.getlist('options[]')
 
-        # ✅ 上傳圖片處理
+        # ✅ 上傳首頁主圖（單張）
+        cover_image_file = request.files.get("cover_image")
+        cover_url = ""
+        if cover_image_file and cover_image_file.filename:
+            filename = secure_filename(cover_image_file.filename)
+            unique_filename = f"{uuid.uuid4()}_{filename}"
+            cover_path = f"product_images/{unique_filename}"
+            with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                cover_image_file.save(tmp.name)
+                try:
+                    supabase.storage.from_("images").upload(cover_path, tmp.name)
+                    cover_url = supabase.storage.from_("images").get_public_url(cover_path)
+                except Exception as e:
+                    print("❗️主圖上傳錯誤：", e)
+
+        # ✅ 上傳其他圖片（多張）
         image_files = request.files.getlist("image_files")
         image_urls = []
         for file in image_files:
@@ -886,22 +901,21 @@ def add_product():
                     file.save(tmp.name)
                     try:
                         supabase.storage.from_("images").upload(storage_path, tmp.name)
+                        url = supabase.storage.from_("images").get_public_url(storage_path)
+                        image_urls.append(url)
                     except Exception as e:
                         print("❗️圖片上傳錯誤：", e)
-                        continue
-                url = supabase.storage.from_("images").get_public_url(storage_path)
-                image_urls.append(url)
 
-        if not image_urls:
-            return "請上傳至少一張圖片", 400
+        if not cover_url:
+            return "請上傳商品首頁主圖", 400
 
         # ✅ 建立商品資料
         data = {
             "name": name,
             "price": price,
             "stock": stock,
-            "image": image_urls[0],
-            "images": image_urls,
+            "image": cover_url,         # 主圖
+            "images": image_urls,       # 商品內頁圖
             "intro": intro,
             "feature": feature,
             "spec": spec,
@@ -922,6 +936,7 @@ def add_product():
 
 
 
+
 @app.route('/edit/<product_id>', methods=['GET', 'POST'])
 def edit_product(product_id):
     if request.method == 'POST':
@@ -938,10 +953,25 @@ def edit_product(product_id):
                 "categories": request.form.getlist('categories[]')
             }
 
-            # ✅ 保留舊圖
+            # ✅ 主圖（cover image）處理
+            cover_file = request.files.get("cover_image")
+            if cover_file and cover_file.filename:
+                filename = secure_filename(cover_file.filename)
+                unique_filename = f"{uuid.uuid4()}_{filename}"
+                storage_path = f"product_images/{unique_filename}"
+                with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                    cover_file.save(tmp.name)
+                    try:
+                        supabase.storage.from_("images").upload(storage_path, tmp.name)
+                        cover_url = supabase.storage.from_("images").get_public_url(storage_path)
+                        updated['image'] = cover_url
+                    except Exception as e:
+                        print("❗️主圖上傳錯誤：", e)
+
+            # ✅ 保留舊的其他圖片
             kept_images = request.form.getlist('existing_images[]')
 
-            # ✅ 處理新上傳圖
+            # ✅ 上傳新的其他圖片
             image_files = request.files.getlist("image_files")
             image_urls = []
             for file in image_files:
@@ -953,15 +983,16 @@ def edit_product(product_id):
                         file.save(tmp.name)
                         try:
                             supabase.storage.from_("images").upload(storage_path, tmp.name)
+                            url = supabase.storage.from_("images").get_public_url(storage_path)
+                            image_urls.append(url)
                         except Exception as e:
                             print("❗️圖片上傳錯誤：", e)
-                            continue
-                    url = supabase.storage.from_("images").get_public_url(storage_path)
-                    image_urls.append(url)
 
-            # ✅ 合併舊圖與新圖
+            # ✅ 合併圖片
             updated['images'] = kept_images + image_urls
-            if updated['images']:
+
+            # 若主圖尚未處理成功，但 images 有內容，取第一張當主圖
+            if 'image' not in updated and updated['images']:
                 updated['image'] = updated['images'][0]
 
             supabase.table("products").update(updated).eq("id", product_id).execute()
@@ -976,6 +1007,7 @@ def edit_product(product_id):
         if not product:
             return "找不到商品", 404
         return render_template("edit_product.html", product=product)
+
 
 
 

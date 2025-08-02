@@ -296,8 +296,12 @@
       </div>
       <button type="button" class="add-option-btn" onclick="addOptionField()">＋ 新增一個規格</button>
 
-      <label>上傳圖片（可多張）</label>
-      <input type="file" name="image_files" multiple>
+      <label>首頁商品圖（只會顯示一張）</label>
+<input type="file" name="cover_image_file" accept="image/*">
+
+<label>商品內頁圖片（可多張）</label>
+<input type="file" name="inner_image_files" multiple accept="image/*">
+
 
       {% if product['images'] %}
         <label>現有圖片：</label>
