@@ -201,7 +201,9 @@
   <a href="/cart" class="cart-indicator">
   <span class="cart-icon">🛒</span>
   <span class="cart-text">購物車</span>
-  <span class="cart-count" id="cart-count">{{ cart_count or 0 }}</span>
+  {% if cart_count and cart_count > 0 %}
+    <span class="cart-count" id="cart-count">{{ cart_count }}</span>
+  {% endif %}
 </a>
 
 </div>
