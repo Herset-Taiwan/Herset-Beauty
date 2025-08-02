@@ -263,10 +263,19 @@
     const option = selectedOption;
 
     if (!option) {
-      alert("請先選擇商品規格");
-      return;
-    }
-
+  showTip("⚠️ 請先選擇商品規格");
+  return;
+  
+}
+function showTip(message) {
+  const tip = document.getElementById('cart-tip');
+  tip.innerText = message;
+  tip.style.display = 'block';
+  setTimeout(() => {
+    tip.style.display = 'none';
+    tip.innerText = '✅ 已加入購物車！'; // 回復預設文字
+  }, 2000);
+}
     fetch('/add_to_cart', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
