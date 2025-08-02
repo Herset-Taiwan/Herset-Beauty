@@ -81,12 +81,13 @@
 {% block script %}
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  // 從網址參數取得 category，如果沒有就預設為「全部商品」
-  const urlParams = new URLSearchParams(window.location.search);
-  const category = urlParams.get("category") || "全部商品";
-
-  filterCategory(category);
-});
+  // 點擊分類選單的事件綁定
+  document.querySelectorAll('.sub-categories a').forEach(el => {
+    el.addEventListener('click', () => {
+      const category = el.textContent.trim();
+      filterCategory(category);
+    });
+  });
 
 
   // 初始化預設分類
