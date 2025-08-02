@@ -214,10 +214,14 @@
       <img id="main-img" src="{{ product['image'] }}" alt="product">
     </div>
     <div class="gallery-thumbs">
-      {% for img in product['images'] %}
-      <img src="{{ img }}" onclick="document.getElementById('main-img').src='{{ img }}'">
-      {% endfor %}
-    </div>
+  <!-- 主圖縮圖 -->
+  <img src="{{ product['image'] }}" onclick="document.getElementById('main-img').src='{{ product['image'] }}'">
+
+  <!-- 內頁圖片縮圖 -->
+  {% for img in product['images'] %}
+    <img src="{{ img }}" onclick="document.getElementById('main-img').src='{{ img }}'">
+  {% endfor %}
+</div>
   </div>
 
   <div class="info">
