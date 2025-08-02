@@ -17,15 +17,13 @@
     border: 1px solid #ddd;
     border-radius: 8px;
   }
-  form h2 {
-    text-align: center;
-    margin-bottom: 20px;
-  }
+
   label {
     display: block;
     margin-top: 12px;
     font-weight: bold;
   }
+
   input[type="text"],
   input[type="number"],
   textarea,
@@ -37,26 +35,13 @@
     border-radius: 5px;
     border: 1px solid #ccc;
   }
-  input[type="file"] {
-    margin-top: 8px;
-  }
-  button {
-    margin-top: 25px;
-    padding: 10px 20px;
-    background-color: #e91e63;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    width: 100%;
-  }
+
   .note {
     font-size: 13px;
     color: #777;
     margin-top: 3px;
   }
 
-  /* ✅ 商品規格樣式 */
   .option-group {
     display: flex;
     align-items: center;
@@ -77,6 +62,18 @@
     cursor: pointer;
   }
 
+  /* ✅ 修改 submit button 樣式 */
+  .submit-btn {
+    margin-top: 25px;
+    padding: 10px 20px;
+    background-color: #e91e63;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100%;
+  }
+
   /* ✅ Selectize 樣式：分類多選刪除按鈕 */
   .selectize-control .item .remove {
     color: #aaa;
@@ -88,6 +85,7 @@
     color: #d33;
   }
 </style>
+
 
 </head>
 <body>
@@ -140,7 +138,8 @@
 <label>商品成分</label>
 <textarea name="ingredient" rows="3"></textarea>
 
-<button type="submit">新增商品</button>
+<button type="submit" class="submit-btn">新增商品</button>
+
 
   </form>
 
