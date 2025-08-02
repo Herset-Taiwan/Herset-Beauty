@@ -498,8 +498,10 @@ footer {
 
 /*輪播圖下方顯示點點指示器*/
 .carousel-dots {
-  text-align: center;
-  margin-top: 12px;
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .carousel-dot {
