@@ -150,7 +150,11 @@
       border-radius: 5px;
       cursor: pointer;
     }
-
+.options button.selected {
+  background-color: #5E3C2C;
+  color: white;
+  border-color: #5E3C2C;
+}
     .cart-indicator {
       font-size: 1.2rem;
     }
@@ -213,6 +217,7 @@
     <input type="hidden" name="product_id" value="{{ product['id'] }}">
     <input type="hidden" name="qty" id="qty-input-checkout" value="1">
     <input type="hidden" name="action" value="checkout">
+    <input type="hidden" name="option" id="selected-option-input" value="">
     <button 
       type="submit" 
       {% if is_out_of_stock %}disabled style="opacity: 0.5; cursor: not-allowed;"{% endif %}
@@ -240,29 +245,32 @@
 </div>
 
 <script>
-  document.querySelectorAll('.tab-btn').forEach(btn => {
+  let selectedOption = "";
+
+  document.querySelectorAll('.options button').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      document.querySelectorAll('.tab-content > div').forEach(div => div.classList.remove('active'));
-      document.getElementById(btn.dataset.tab).classList.add('active');
+      document.querySelectorAll('.options button').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedOption = btn.innerText;
+
+      // 更新立即結帳隱藏欄位
+      document.getElementById('selected-option-input').value = selectedOption;
     });
   });
 
-  function adjustQty(n) {
-    const input = document.getElementById('qty');
-    let val = parseInt(input.value) + n;
-    if (val < 1) val = 1;
-    input.value = val;
-    document.getElementById('qty-input-checkout').value = val;
-  }
-
   function addToCart(productId) {
     const qty = parseInt(document.getElementById('qty').value);
+    const option = selectedOption;
+
+    if (!option) {
+      alert("請先選擇商品規格");
+      return;
+    }
+
     fetch('/add_to_cart', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `product_id=${productId}&qty=${qty}`
+      body: `product_id=${productId}&qty=${qty}&option=${encodeURIComponent(option)}`
     })
     .then(res => res.json())
     .then(data => {
@@ -290,6 +298,7 @@
     document.getElementById('qty-input-checkout').value = this.value;
   });
 </script>
+
 
 <div id="cart-tip" style="
   position: fixed;

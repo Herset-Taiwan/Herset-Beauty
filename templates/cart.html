@@ -176,22 +176,30 @@
       <div class="cart-item">
         <img src="{{ p['images'][0] }}" alt="{{ p['name'] }}">
         <div class="cart-info">
-          <strong>{{ p['name'] }}</strong><br>
-          ${{ p['price'] }} × {{ p['qty'] }} = ${{ p['subtotal'] }}
-        </div>
+  <strong>{{ p['name'] }}</strong><br>
+
+  {% if p.get('option') %}
+    <span style="color: #888; font-size: 0.9em;">選項：{{ p['option'] }}</span><br>
+  {% endif %}
+
+  ${{ p['price'] }} × {{ p['qty'] }} = ${{ p['subtotal'] }}
+</div>
         <div class="cart-actions">
           <form method="POST">
             <input type="hidden" name="product_id" value="{{ p['id'] }}">
+            <input type="hidden" name="option" value="{{ p['option'] }}">
             <input type="hidden" name="action" value="decrease">
             <button type="submit">−</button>
           </form>
           <form method="POST">
             <input type="hidden" name="product_id" value="{{ p['id'] }}">
+            <input type="hidden" name="option" value="{{ p['option'] }}">
             <input type="hidden" name="action" value="increase">
             <button type="submit">＋</button>
           </form>
           <form method="POST">
             <input type="hidden" name="product_id" value="{{ p['id'] }}">
+            <input type="hidden" name="option" value="{{ p['option'] }}">
             <input type="hidden" name="action" value="remove">
             <button type="submit">🗑️ 移除</button>
           </form>

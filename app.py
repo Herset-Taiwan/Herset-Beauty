@@ -411,11 +411,13 @@ def cart():
     if request.method == 'POST':
         action = request.form.get('action')
         product_id = request.form.get('product_id')
+        option = request.form.get('option') or ''  # ✅ 加入選項判斷
         cart = session.get('cart', [])
 
         for item in cart:
             pid = item.get('product_id') or item.get('id')
-            if pid == product_id:
+            item_option = item.get('option') or ''
+            if pid == product_id and item_option == option:
                 if action == 'increase':
                     item['qty'] += 1
                 elif action == 'decrease' and item['qty'] > 1:
@@ -426,6 +428,7 @@ def cart():
 
         session['cart'] = cart
         return redirect(url_for('cart'))
+
 
     # GET 顯示購物車內容
     cart_items = session.get('cart', [])
@@ -972,7 +975,8 @@ def delete_product(product_id):
 def add_to_cart():
     product_id = request.form.get('product_id')
     qty = int(request.form.get('qty', 1))
-    action = request.form.get('action')  # 👈 新增這一行
+    option = request.form.get('option', '')  # ✅ 新增：抓取規格
+    action = request.form.get('action')  # checkout or not
 
     # 找商品
     res = supabase.table('products').select('*').eq('id', product_id).execute()
@@ -986,10 +990,10 @@ def add_to_cart():
 
     cart = session['cart']
 
-    # 檢查是否已存在
+    # 檢查是否已存在相同商品+相同規格
     found = False
     for item in cart:
-        if item.get('product_id') == product_id:
+        if item.get('product_id') == product_id and item.get('option') == option:
             item['qty'] += qty
             found = True
             break
@@ -1000,18 +1004,16 @@ def add_to_cart():
             'name': product['name'],
             'price': product['price'],
             'images': product['images'],
-            'qty': qty
+            'qty': qty,
+            'option': option  # ✅ 存入商品規格
         })
 
     session['cart'] = cart
 
-    # ✅ 若是立即結帳就 redirect
     if action == 'checkout':
         return redirect('/cart')
 
-    # AJAX 呼叫就回傳 JSON
     return jsonify(success=True, count=sum(item['qty'] for item in cart))
-
 
 
 
