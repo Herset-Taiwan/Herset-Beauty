@@ -200,7 +200,7 @@ function showBanner(index) {
 function createDots() {
   banners.forEach((_, i) => {
     const dot = document.createElement('span');
-    dot.className = i === 0 ? 'active' : '';
+    dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
     dot.addEventListener('click', () => {
       showBanner(i);
       resetAutoSlide();

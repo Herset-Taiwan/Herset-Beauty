@@ -499,21 +499,22 @@ footer {
 /*輪播圖下方顯示點點指示器*/
 .carousel-dots {
   text-align: center;
-  margin-top: 10px;
+  margin-top: 12px;
 }
 
-.carousel-dots span {
+.carousel-dot {
   display: inline-block;
   width: 10px;
   height: 10px;
   margin: 0 6px;
-  border-radius: 50%;
   background-color: #ccc;
+  border-radius: 50%;
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
 
-.carousel-dots .active {
+
+.carousel-dot.active {
   background-color: #e91e63;
 }
 
