@@ -594,47 +594,96 @@ function printOrder(orderId) {
           .btn-print { display: none; }
         }
       </style>
-    </head>
-    <body>
-      <h1>出貨單</h1>
+    <!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>出貨單</title>
+  <style>
+    body {
+      font-family: "Segoe UI", "Noto Sans TC", sans-serif;
+      padding: 40px;
+      background-color: #fff;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      color: #e91e63;
+      margin-bottom: 30px;
+    }
+    .info p {
+      margin: 5px 0;
+      font-size: 15px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 30px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 12px;
+      text-align: center;
+      font-size: 15px;
+    }
+    th {
+      background-color: #f9f9f9;
+    }
+    td .option-text {
+      color: #777;
+      font-size: 13px;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
 
-      <div class="info">
-        <p><strong>賣場名稱：</strong>Herset</p>
-        <p><strong>訂單編號：</strong>ON${order.id.toString().padStart(10, '0')}</p>
-        <p><strong>訂單日期：</strong>${order.created_local.split(" ")[0]}</p>
-        <p><strong>物流廠商：</strong>宅配</p>
-        <p><strong>收件人姓名：</strong>${order.member.name}</p>
-        <p><strong>聯絡電話：</strong>${order.member.phone}</p>
-      </div>
+  <h1>出貨單</h1>
 
-      <table>
-        <thead>
-          <tr>
-            <th>項次</th>
-            <th>銷售項目</th>
-            <th>料號</th>
-            <th>出貨數量</th>
-            <th>檢查A</th>
-            <th>檢查B</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${itemsHtml}
-          <tr>
-            <td colspan="3"><strong>總件數</strong></td>
-            <td colspan="3"><strong>${totalQty}</strong></td>
-          </tr>
-        </tbody>
-      </table>
+  <div class="info">
+    <p><strong>賣場名稱：</strong>Herset</p>
+    <p><strong>訂單編號：</strong>ON${order.id.toString().padStart(10, '0')}</p>
+    <p><strong>訂單日期：</strong>${order.created_local.split(" ")[0]}</p>
+    <p><strong>物流廠商：</strong>宅配</p>
+    <p><strong>收件人姓名：</strong>${order.member.name}</p>
+    <p><strong>聯絡電話：</strong>${order.member.phone}</p>
+  </div>
 
-      <div class="note">
-        感謝您購買本商品，若有缺件、瑕疵、破損等問題請於3天內與我們聯繫。聯絡電話：0972-XXX-XXX<br>
-        若需換貨請務必保留原包裝並附回本單據。
-      </div>
+  <table>
+    <thead>
+      <tr>
+        <th>項次</th>
+        <th>銷售項目</th>
+        <th>料號</th>
+        <th>出貨數量</th>
+        <th>檢查A</th>
+        <th>檢查B</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${order.items.map((item, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td>
+            ${item.product_name}
+            ${item.option ? `<div class="option-text">選項：${item.option}</div>` : ''}
+          </td>
+          <td>—</td>
+          <td>${item.qty}</td>
+          <td></td>
+          <td></td>
+        </tr>
+      `).join('')}
+      <tr>
+        <td colspan="3"><strong>總件數</strong></td>
+        <td colspan="3"><strong>${order.items.reduce((sum, i) => sum + i.qty, 0)}</strong></td>
+      </tr>
+    </tbody>
+  </table>
 
-      <button class="btn-print" onclick="window.print()">列印</button>
-    </body>
-    </html>
+</body>
+</html>
+
   `);
 
   printWindow.document.close();
