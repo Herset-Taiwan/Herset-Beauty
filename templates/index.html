@@ -198,6 +198,7 @@ function showBanner(index) {
 }
 
 function createDots() {
+  dotContainer.innerHTML = '';
   banners.forEach((_, i) => {
     const dot = document.createElement('span');
     dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');

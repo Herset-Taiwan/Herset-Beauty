@@ -510,13 +510,13 @@ footer {
   background-color: #ccc;
   border-radius: 50%;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.3s;
 }
-
 
 .carousel-dot.active {
-  background-color: #e91e63;
+  background-color: #C6456C; /* 活動點點顏色（可換） */
 }
+
 
 
 
