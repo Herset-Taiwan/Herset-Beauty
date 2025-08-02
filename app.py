@@ -28,17 +28,13 @@ from uuid import uuid4
 from flask import Response
 from flask import request, render_template, Response
 from flask import render_template, session, redirect
-from flask import Markup
+from flask import Flask, render_template, Markup
 
 
 load_dotenv()
 
-@app.template_filter('nl2br')
-def nl2br_filter(s):
-    if s is None:
-        return ''
-    return Markup(s.replace('\n', '<br>\n'))
 
+    
 def generate_check_mac_value(params, hash_key, hash_iv):
     # 1. 將參數依照字母順序排列
     sorted_params = sorted(params.items())
@@ -75,6 +71,13 @@ app.config['MAIL_USERNAME'] = 'hersetbeauty@gmail.com'
 app.config['MAIL_PASSWORD'] = 'xlwn swew zqkk fdkt'
 app.config['MAIL_DEFAULT_SENDER'] = 'hersetbeauty@gmail.com'
 mail = Mail(app)
+
+
+@app.template_filter('nl2br')
+def nl2br_filter(s):
+    if s is None:
+        return ''
+    return Markup(s.replace('\n', '<br>\n'))
 
 @app.route('/')
 def index():
