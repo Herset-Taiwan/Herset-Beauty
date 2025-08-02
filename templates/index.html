@@ -10,6 +10,8 @@
 <!-- 商品缺貨提示 -->
 <div class="stock-warning" id="stock-warning">目前商品已售完，補貨中</div>
 
+<div class="carousel-dots" id="carouselDots"></div>
+
 <!-- 首頁輪播圖 -->
 <div class="carousel-container">
   <div class="carousel">
@@ -182,13 +184,48 @@ function addToCart(event, productId, optionCount = 0, stock = 0) {
 
 
 // 輪播圖
+// ✅ 輪播圖（含點點控制）
 let cur = 0;
 const banners = document.querySelectorAll('.carousel-img');
-setInterval(() => {
-  banners[cur].classList.remove('active');
+const dotContainer = document.getElementById('carouselDots');
+
+function showBanner(index) {
+  banners.forEach((img, i) => {
+    img.classList.toggle('active', i === index);
+  });
+  document.querySelectorAll('#carouselDots span').forEach((dot, i) => {
+    dot.classList.toggle('active', i === index);
+  });
+  cur = index;
+}
+
+function createDots() {
+  banners.forEach((_, i) => {
+    const dot = document.createElement('span');
+    dot.className = i === 0 ? 'active' : '';
+    dot.addEventListener('click', () => {
+      showBanner(i);
+      resetAutoSlide();
+    });
+    dotContainer.appendChild(dot);
+  });
+}
+
+function autoSlide() {
   cur = (cur + 1) % banners.length;
-  banners[cur].classList.add('active');
-}, 5000);
+  showBanner(cur);
+}
+
+let autoInterval = setInterval(autoSlide, 5000);
+
+function resetAutoSlide() {
+  clearInterval(autoInterval);
+  autoInterval = setInterval(autoSlide, 5000);
+}
+
+createDots();
+showBanner(0);
+
 
 // 商品規格提示視窗
 function showSpecPopup() {
