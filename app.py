@@ -969,6 +969,11 @@ def edit_product(product_id):
                         updated['image'] = cover_url
                     except Exception as e:
                         print("❗️主圖上傳錯誤：", e)
+    else:
+    # ✅ 如果沒有上傳新封面，使用原本封面圖（如果存在）
+        existing_cover = request.form.get("existing_cover_image")
+        if existing_cover:
+            updated["image"] = existing_cover
 
             # ✅ 保留舊的其他圖片
             kept_images = request.form.getlist('existing_images[]')

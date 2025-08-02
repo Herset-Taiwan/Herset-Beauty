@@ -317,15 +317,16 @@
 
       <label>首頁商品圖（只會顯示一張）</label>
 <input type="file" name="cover_image_file" accept="image/*">
-{% if product['cover_image'] %}
+{% if product['image'] %}
   <div class="image-preview">
     <div class="image-box">
-      <img src="{{ product['cover_image'] }}">
-      <input type="hidden" name="existing_cover_image" value="{{ product['cover_image'] }}">
+      <img src="{{ product['image'] }}">
+      <input type="hidden" name="existing_cover_image" value="{{ product['image'] }}">
       <button type="button" class="delete-img-btn" onclick="this.parentNode.remove()">✖</button>
     </div>
   </div>
 {% endif %}
+
 
 <label>商品內頁圖片（可多張）</label>
 <input type="file" name="inner_image_files" multiple accept="image/*">
