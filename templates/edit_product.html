@@ -205,7 +205,23 @@
 #back-btn:hover {
   background: #d8c8c1;
 }
-
+.option-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+.option-row input {
+  flex: 1;
+}
+.delete-option-btn {
+  background-color: #e91e63;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
 
   </style>
 </head>
@@ -271,8 +287,12 @@
       <label>商品規格（可新增多個）</label>
       <div id="options-container" class="options-container">
         {% for opt in product['options'] or [] %}
-          <input type="text" name="options[]" value="{{ opt }}">
-        {% endfor %}
+  <div class="option-row">
+    <input type="text" name="options[]" value="{{ opt }}">
+    <button type="button" class="delete-option-btn" onclick="removeOption(this)">✕</button>
+  </div>
+{% endfor %}
+
       </div>
       <button type="button" class="add-option-btn" onclick="addOptionField()">＋ 新增一個規格</button>
 
@@ -301,13 +321,21 @@
   <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
   <script>
     function addOptionField() {
-      const container = document.getElementById('options-container');
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.name = 'options[]';
-      input.placeholder = '例：澄淨白茶感';
-      container.appendChild(input);
-    }
+  const container = document.getElementById('options-container');
+  const row = document.createElement('div');
+  row.className = 'option-row';
+  row.innerHTML = `
+    <input type="text" name="options[]" placeholder="例：澄淨白茶感">
+    <button type="button" class="delete-option-btn" onclick="removeOption(this)">✕</button>
+  `;
+  container.appendChild(row);
+}
+
+function removeOption(button) {
+  const row = button.parentElement;
+  row.remove();
+}
+
 
     $(document).ready(function () {
       $('#categories').selectize({

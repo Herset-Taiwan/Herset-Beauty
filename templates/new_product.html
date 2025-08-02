@@ -71,6 +71,27 @@
   .selectize-control .item .remove:hover {
     color: #d33;
   }
+
+  .option-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 5px;
+}
+
+.option-group input {
+  flex: 1;
+}
+
+.delete-option {
+  background-color: #e91e63;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
   </style>
 </head>
 <body>
@@ -107,10 +128,12 @@
 
     <label>商品規格（可新增多個）</label>
     <div id="options-wrapper">
-      <div class="option-group">
-        <input type="text" name="options[]" placeholder="例：澄淨白茶感" />
-      </div>
-    </div>
+  <div class="option-group">
+    <input type="text" name="options[]" placeholder="例：澄淨白茶感" />
+    <button type="button" class="delete-option" onclick="removeOption(this)">✕</button>
+  </div>
+</div>
+
     <button type="button" onclick="addOption()">＋新增一個規格</button>
 
     <label>商品規格描述</label>
@@ -127,12 +150,20 @@
   <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
   <script>
     function addOption() {
-      const wrapper = document.getElementById('options-wrapper');
-      const div = document.createElement('div');
-      div.className = 'option-group';
-      div.innerHTML = '<input type="text" name="options[]" placeholder="例：加強保濕" />';
-      wrapper.appendChild(div);
-    }
+  const wrapper = document.getElementById('options-wrapper');
+  const div = document.createElement('div');
+  div.className = 'option-group';
+  div.innerHTML = `
+    <input type="text" name="options[]" placeholder="例：加強保濕" />
+    <button type="button" class="delete-option" onclick="removeOption(this)">✕</button>
+  `;
+  wrapper.appendChild(div);
+}
+
+function removeOption(btn) {
+  btn.parentElement.remove();
+}
+
 
     $(document).ready(function () {
   const $select = $('#categories').selectize({

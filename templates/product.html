@@ -156,8 +156,41 @@
   border-color: #5E3C2C;
 }
     .cart-indicator {
-      font-size: 1.2rem;
-    }
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #F3E5E1;
+  color: #3C3C3C;
+  padding: 8px 14px;
+  border-radius: 30px;
+  text-decoration: none;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: background 0.3s ease;
+}
+
+.cart-indicator:hover {
+  background: #EADDD6;
+}
+
+.cart-icon {
+  font-size: 18px;
+}
+
+.cart-text {
+  font-size: 15px;
+}
+
+.cart-count {
+  background-color: #C04848;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 13px;
+  min-width: 20px;
+  text-align: center;
+}
+
   </style>
 </head>
 
@@ -165,7 +198,12 @@
 
 <div class="header-bar">
   <button class="back-btn" onclick="history.back()">← 返回首頁</button>
-  <a href="/cart" class="cart-indicator">🛒 購物車 <span id="cart-count">{{ cart_count or 0 }}</span></a>
+  <a href="/cart" class="cart-indicator">
+  <span class="cart-icon">🛒</span>
+  <span class="cart-text">購物車</span>
+  <span class="cart-count" id="cart-count">{{ cart_count or 0 }}</span>
+</a>
+
 </div>
 
 <div class="product-container">
@@ -186,7 +224,7 @@
 
     {% if product['stock'] == 0 %}
   <div style="color: red; font-weight: bold; margin-top: 10px;">商品已售完，補貨中</div>
-{% else %}
+{% if false %}
   <div style="margin-top: 10px; font-size: 15px;">剩餘庫存：{{ product['stock'] }}</div>
 {% endif %}
 
