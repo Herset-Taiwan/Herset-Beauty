@@ -415,7 +415,7 @@ def cart():
         cart = session.get('cart', [])
 
         for item in cart:
-            pid = item.get('product_id') or item.get('id')
+            pid = item.get('product_id')  # ✅ 統一用 product_id
             item_option = item.get('option') or ''
             if pid == product_id and item_option == option:
                 if action == 'increase':
@@ -429,14 +429,13 @@ def cart():
         session['cart'] = cart
         return redirect(url_for('cart'))
 
-
     # GET 顯示購物車內容
     cart_items = session.get('cart', [])
     products = []
     total = 0
 
     for item in cart_items:
-        pid = item.get('product_id') or item.get('id')
+        pid = item.get('product_id')
         if not pid:
             continue
 
@@ -445,6 +444,7 @@ def cart():
             product = res.data
             product['qty'] = item.get('qty', 1)
             product['subtotal'] = product['qty'] * product['price']
+            product['option'] = item.get('option', '')  # ✅ 加入 option
             products.append(product)
             total += product['subtotal']
 
@@ -459,6 +459,7 @@ def cart():
                            shipping_fee=shipping_fee,
                            final_total=final_total,
                            free_shipping_diff=free_shipping_diff)
+
 
 
 #結帳
