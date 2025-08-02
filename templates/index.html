@@ -63,6 +63,8 @@
       font-weight: bold;">立即補填資料</button>
   </div>
 </div>
+
+{% endif %}
 <div id="spec-popup" class="modal" style="display:none; position:fixed; top:30%; left:50%; transform:translate(-50%, -50%); background:#fff; border-radius:10px; padding:20px; box-shadow:0 0 15px rgba(0,0,0,0.3); z-index:1000;">
   <div style="text-align:center;">
     <h3 style="margin-bottom: 10px;">請挑選商品規格</h3>
@@ -70,7 +72,6 @@
     <button onclick="closeSpecPopup()" style="margin-top:15px; padding:10px 20px; background:#C6456C; color:#fff; border:none; border-radius:6px;">我知道了</button>
   </div>
 </div>
-{% endif %}
 
 {% endblock %}
 
