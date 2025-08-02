@@ -80,8 +80,22 @@
   <div class="carousel-dots" id="carouselDots"></div>
 </div>
 {% endblock %}
+
+<!-- 分類區塊 -->
+{% block subcategory %}
+<div class="sub-categories">
+  <a href="/?category=全部">全部商品</a>
+  <a href="/?category=身體保養">身體保養</a>
+  <a href="/?category=香氛系列">香氛系列</a>
+  <a href="/?category=寵物友善">寵物友善</a>
+  <a href="/?category=品牌嚴選">品牌嚴選</a>
+</div>
+{% endblock %}
+
 <!-- 主要內容區塊 -->
 {% block content %}{% endblock %}
+
+
 
 <!-- 頁尾 -->
 <footer style="background: #f4d8cc; padding: 40px 20px; font-family: sans-serif; font-size: 14px;">
