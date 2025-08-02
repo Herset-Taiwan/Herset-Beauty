@@ -955,7 +955,7 @@ def edit_product(product_id):
                 "categories": request.form.getlist('categories[]')
             }
 
-            # ✅ 主圖（cover image）處理
+            # ✅ 主圖處理
             cover_file = request.files.get("cover_image_file")
             if cover_file and cover_file.filename:
                 filename = secure_filename(cover_file.filename)
@@ -974,8 +974,27 @@ def edit_product(product_id):
                 if existing_cover:
                     updated["image"] = existing_cover
 
-            # 🟡 其餘圖片處理（略）...
-            # 你可以接續下面的 kept_images, image_files 上傳邏輯
+            # ✅ 其餘圖片處理
+            kept_images = request.form.getlist("existing_images[]")
+            image_files = request.files.getlist("image_files")
+            image_urls = []
+            for file in image_files:
+                if file and file.filename:
+                    filename = secure_filename(file.filename)
+                    unique_filename = f"{uuid.uuid4()}_{filename}"
+                    storage_path = f"product_images/{unique_filename}"
+                    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                        file.save(tmp.name)
+                        try:
+                            supabase.storage.from_("images").upload(storage_path, tmp.name)
+                            url = supabase.storage.from_("images").get_public_url(storage_path)
+                            image_urls.append(url)
+                        except Exception as e:
+                            print("❗️圖片上傳錯誤：", e)
+
+            updated['images'] = kept_images + image_urls
+            if 'image' not in updated and updated['images']:
+                updated['image'] = updated['images'][0]
 
             supabase.table("products").update(updated).eq("id", product_id).execute()
             return redirect('/admin0363/dashboard?tab=products')
