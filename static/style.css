@@ -428,10 +428,10 @@ footer {
 /* 首頁照片輪播相關 */
 .carousel-container {
   width: 100%;
-  max-height: 400px;
-  overflow: hidden;
   position: relative;
   margin: 0 auto 40px;
+  padding-bottom: 40px; /* 加這行：保留底部空間給點點 */
+  overflow: visible;    /* 改這行：讓點點能顯示在圖片下方 */
 }
 
 .carousel {
