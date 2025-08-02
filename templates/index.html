@@ -3,6 +3,7 @@
 {% block title %}HERSET 官方網站｜天然保養 × 品味生活{% endblock %}
 
 {% block content %}
+<div class="spec-warning" id="spec-warning">請進入商品頁挑選規格</div>
 <!-- 首頁輪播圖 -->
 <div class="carousel-container">
   <div class="carousel">
@@ -65,13 +66,7 @@
 </div>
 
 {% endif %}
-<div id="spec-popup" class="modal" style="display:none; position:fixed; top:30%; left:50%; transform:translate(-50%, -50%); background:#fff; border-radius:10px; padding:20px; box-shadow:0 0 15px rgba(0,0,0,0.3); z-index:1000;">
-  <div style="text-align:center;">
-    <h3 style="margin-bottom: 10px;">請挑選商品規格</h3>
-    <p>此商品有多種規格，請前往商品頁面挑選。</p>
-    <button onclick="closeSpecPopup()" style="margin-top:15px; padding:10px 20px; background:#C6456C; color:#fff; border:none; border-radius:6px;">我知道了</button>
-  </div>
-</div>
+
 
 {% endblock %}
 
@@ -140,9 +135,14 @@ function addToCart(event, productId, optionCount = 0) {
 
   // 若商品規格有兩種以上，跳提示視窗
   if (optionCount >= 2) {
-    showSpecPopup();  // ← 顯示自訂視窗
-    return;
-  }
+  const warning = document.getElementById("spec-warning");
+  warning.style.display = "block";
+  setTimeout(() => {
+    warning.style.display = "none";
+  }, 1500);
+  return;
+}
+
 
   // 否則照原本流程加入購物車
   fetch('/add_to_cart', {

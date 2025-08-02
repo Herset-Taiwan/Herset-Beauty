@@ -464,7 +464,20 @@ footer {
   margin-bottom: 30px;
   font-size: 24px;
 }
-
+/*請進入商品頁選擇規格提示訊息*/
+.spec-warning {
+  display: none;
+  position: fixed;
+  top: 100px;
+  right: 20px;
+  background-color: #C6456C;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  z-index: 1001;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
 
 
 
