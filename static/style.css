@@ -468,8 +468,9 @@ footer {
 .spec-warning {
   display: none;
   position: fixed;
-  top: 100px;
-  right: 20px;
+  top: 40px; /* 頂部距離 */
+  left: 50%;  /* 水平居中 */
+  transform: translateX(-50%);  /* 往左移一半寬度達到正中 */
   background-color: #C6456C;
   color: white;
   padding: 10px 20px;
@@ -478,6 +479,7 @@ footer {
   z-index: 1001;
   box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
+
 
 
 
