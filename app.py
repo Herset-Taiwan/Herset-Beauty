@@ -877,7 +877,7 @@ def add_product():
         options = request.form.getlist('options[]')
 
         # ✅ 上傳首頁主圖（單張）
-        cover_image_file = request.files.get("cover_image")
+        cover_image_file = request.files.get("cover_image_file")
         cover_url = ""
         if cover_image_file and cover_image_file.filename:
             filename = secure_filename(cover_image_file.filename)
@@ -956,7 +956,7 @@ def edit_product(product_id):
             }
 
             # ✅ 主圖（cover image）處理
-            cover_file = request.files.get("cover_image")
+            cover_file = request.files.get("cover_image_file")
             if cover_file and cover_file.filename:
                 filename = secure_filename(cover_file.filename)
                 unique_filename = f"{uuid.uuid4()}_{filename}"

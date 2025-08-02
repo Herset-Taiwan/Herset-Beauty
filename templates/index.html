@@ -35,7 +35,7 @@
   {% for p in products %}
   <div class="product-card" data-category="{{ p['categories'] | join(',') if p['categories'] else '全部' }}">
     <a href="/product/{{ p['id'] }}">
-      <img src="{{ p['images'][0] if p['images'] else '' }}" alt="{{ p['name'] }}">
+      <img src="{{ p['image'] or (p['images'][0] if p['images'] else '') }}" alt="{{ p['name'] }}">
     </a>
     <div class="product-info">
       <h2>{{ p['name'] }}</h2>
