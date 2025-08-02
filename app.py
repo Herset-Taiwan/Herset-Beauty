@@ -202,7 +202,7 @@ def admin_dashboard():
 
     # ✅ 訂單
     orders_raw = supabase.table("orders").select("*").order("created_at", desc=True).execute().data or []
-    order_items = supabase.table("order_items").select("*").execute().data or []
+    order_items = supabase.table("order_items").select("*, product:products(name, images)").execute().data or []
 
     item_group = {}
     for item in order_items:
