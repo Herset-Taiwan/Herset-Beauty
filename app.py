@@ -87,11 +87,15 @@ def index():
 
     # ✅ 篩選分類（如果有傳入且不是「全部」）
     if category and category != '全部':
-        products = [p for p in products if p.get('category') == category]
+        products = [
+            p for p in products
+            if category in (p.get('categories') or [])  # ← categories 是 jsonb list
+        ]
 
     cart = session.get('cart', [])
     cart_count = sum(item['qty'] for item in cart)
     return render_template("index.html", products=products, cart_count=cart_count)
+
 
 # ✅ SEO相關
 @app.route('/robots.txt')
