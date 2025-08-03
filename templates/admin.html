@@ -283,18 +283,31 @@
 
 
       <a href="/admin/new" class="add-btn">＋ 新增商品</a>
-      {% if products %}
-        {% for p in products %}
-<div class="product-row">
-  <img src="{{ p['image'] or '' }}" alt="{{ p['name'] }}">
-  <div class="info">
-    <strong>{{ p['name'] or '無名稱' }}</strong><br>
-    價格：${{ p['price'] or 0 }}<br>
-{% if p['stock'] == 0 %}
-  <span style="color: red; font-weight: bold;">已售完</span>
-{% else %}
-  目前庫存：{{ p['stock'] or 0 }}
+{% if products %}
+  {% for p in products %}
+    <div class="product-row">
+      <img src="{{ p['image'] or '' }}" alt="{{ p['name'] }}">
+      <div class="info">
+        <strong>{{ p['name'] or '無名稱' }}</strong><br>
+
+        {% if p.get('discount_price') %}
+          價格：
+          <span style="text-decoration: line-through; color: #888;">${{ "%.0f"|format(p['price']) }}</span>
+          <span style="color: red; font-weight: bold; margin-left: 6px;">${{ "%.0f"|format(p['discount_price']) }}</span><br>
+        {% else %}
+          價格：${{ "%.0f"|format(p['price']) }}<br>
+        {% endif %}
+
+        {% if p['stock'] == 0 %}
+          <span style="color: red; font-weight: bold;">已售完</span>
+        {% else %}
+          目前庫存：{{ p['stock'] or 0 }}
+        {% endif %}
+      </div>
+    </div>
+  {% endfor %}
 {% endif %}
+
 
   </div>
 
