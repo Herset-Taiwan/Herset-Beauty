@@ -1080,15 +1080,17 @@ def add_to_cart():
 
     if not found:
         cart.append({
-    'product_id': product_id,
+    'id': product_id,  # 加上這行！購物車畫面需要用到
+    'product_id': product_id,  # 這行可保留給內部比對用
     'name': product['name'],
     'price': float(final_price),
     'original_price': float(product['price']),
     'discount_price': product.get('discount_price'),
-    'images': product['images'],
+    'images': product.get('images', []),
     'qty': qty,
     'option': option
 })
+
 
 
     session['cart'] = cart
