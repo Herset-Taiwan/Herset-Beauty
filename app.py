@@ -1059,9 +1059,9 @@ def add_to_cart():
         return jsonify(success=False), 404
     product = res.data[0]
 
-    # ✅ 價格判斷邏輯
-    original_price = product['price']
-    discount_price = product.get('discount_price') or 0
+    # ✅ 價格判斷邏輯（保證是 float）
+    original_price = float(product.get('price') or 0)
+    discount_price = float(product.get('discount_price') or 0)
     final_price = discount_price if discount_price and discount_price < original_price else original_price
 
     # 初始化購物車
@@ -1078,21 +1078,21 @@ def add_to_cart():
             found = True
             break
 
+    # 加入新商品
     if not found:
         cart.append({
-    'id': product_id,  # 加上這行！購物車畫面需要用到
-    'product_id': product_id,  # 這行可保留給內部比對用
-    'name': product['name'],
-    'price': float(final_price),
-    'original_price': float(product['price']),
-    'discount_price': float(product.get('discount_price') or 0),
-    'images': product.get('images', []),
-    'qty': qty,
-    'option': option
-})
+            'id': product_id,
+            'product_id': product_id,
+            'name': product['name'],
+            'price': final_price,
+            'original_price': original_price,
+            'discount_price': discount_price,
+            'images': product.get('images', []),
+            'qty': qty,
+            'option': option
+        })
 
-
-
+    # 更新 session
     session['cart'] = cart
 
     if action == 'checkout':
