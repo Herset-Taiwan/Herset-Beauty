@@ -288,7 +288,15 @@ function loadCategory(categoryName) {
       }
 
       const currentContent = document.querySelector('#product-container');
-      currentContent.innerHTML = newContent.innerHTML;
+      currentContent.classList.remove("show");
+currentContent.classList.add("fade");
+
+setTimeout(() => {
+  currentContent.innerHTML = newContent.innerHTML;
+  currentContent.classList.remove("fade");
+  currentContent.classList.add("show");
+}, 100); // 可調整時間
+
 
       // 更新 active 樣式
       document.querySelectorAll('.sub-categories a').forEach(a => {

@@ -92,6 +92,18 @@ footer {
   text-decoration: underline;
 }
 
+
+/* 商品切換效果 */
+#product-container.fade {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+#product-container.show {
+  opacity: 1;
+}
+
+
 /* ===== Banner 區塊 ===== */
 .banner {
   text-align: center;

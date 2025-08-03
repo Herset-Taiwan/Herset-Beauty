@@ -24,7 +24,7 @@
 
 
 <!-- 商品清單 -->
-<div id="product-container">
+<div id="product-container" class="show">
   <section class="product-list">
     {% for p in products %}
     <div class="product-card" data-category="{{ p['categories'] | join(',') if p['categories'] else '全部' }}">
