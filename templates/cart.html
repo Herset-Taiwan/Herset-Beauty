@@ -182,7 +182,14 @@
     <span style="color: #888; font-size: 0.9em;">選項：{{ p['option'] }}</span><br>
   {% endif %}
 
-  ${{ p['price'] }} × {{ p['qty'] }} = ${{ p['subtotal'] }}
+  {% if p.get('discount_price') %}
+  <del>${{ "%.0f"|format(p['price']) }}</del>
+  <span style="color:red; font-weight:bold;">${{ "%.0f"|format(p['discount_price']) }}</span>
+  × {{ p['qty'] }} = ${{ "%.0f"|format(p['discount_price'] * p['qty']) }}
+{% else %}
+  ${{ "%.0f"|format(p['price']) }} × {{ p['qty'] }} = ${{ "%.0f"|format(p['price'] * p['qty']) }}
+{% endif %}
+
 </div>
         <div class="cart-actions">
           <form method="POST">

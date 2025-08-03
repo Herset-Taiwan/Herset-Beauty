@@ -431,13 +431,11 @@ def cart():
     if request.method == 'POST':
         action = request.form.get('action')
         product_id = request.form.get('product_id')
-        option = request.form.get('option') or ''  # ✅ 加入選項判斷
+        option = request.form.get('option') or ''
         cart = session.get('cart', [])
 
         for item in cart:
-            pid = item.get('product_id')  # ✅ 統一用 product_id
-            item_option = item.get('option') or ''
-            if pid == product_id and item_option == option:
+            if item.get('product_id') == product_id and (item.get('option') or '') == option:
                 if action == 'increase':
                     item['qty'] += 1
                 elif action == 'decrease' and item['qty'] > 1:
@@ -462,13 +460,18 @@ def cart():
         res = supabase.table("products").select("*").eq("id", pid).single().execute()
         if res.data:
             product = res.data
-            product['qty'] = item.get('qty', 1)
-            product['subtotal'] = product['qty'] * product['price']
-            product['option'] = item.get('option', '')  # ✅ 加入 option
+            # ✅ 以購物車中當下加入的 price 為準
+            item_price = item.get('price', product.get('discount_price') or product.get('price'))
+            qty = item.get('qty', 1)
+
+            product['price'] = item_price
+            product['qty'] = qty
+            product['option'] = item.get('option', '')
+            product['subtotal'] = item_price * qty
+
             products.append(product)
             total += product['subtotal']
 
-    # 運費邏輯
     shipping_fee = 0 if total >= 2000 else 80
     final_total = total + shipping_fee
     free_shipping_diff = 0 if total >= 2000 else 2000 - total
@@ -479,6 +482,7 @@ def cart():
                            shipping_fee=shipping_fee,
                            final_total=final_total,
                            free_shipping_diff=free_shipping_diff)
+
 
 
 
@@ -499,34 +503,41 @@ def checkout():
     items = []
 
     for item in cart_items:
-        res = supabase.table("products").select("*").eq("id", item['product_id']).single().execute()
+        # 撈出當前商品資訊（但只拿必要資訊）
+        res = supabase.table("products").select("id,name,price,discount_price").eq("id", item['product_id']).single().execute()
         product = res.data
         if product:
-            subtotal = item['qty'] * product['price']
+            # ✅ 優先使用購物車中記錄的價格
+            item_price = item.get('price') or product.get('discount_price') or product['price']
+            qty = item.get('qty', 1)
+            subtotal = item_price * qty
             total += subtotal
+
             items.append({
                 'product_id': str(product['id']),
                 'product_name': product['name'],
-                'qty': item['qty'],
-                'price': product['price'],
+                'qty': qty,
+                'price': item_price,
                 'subtotal': subtotal,
                 'option': item.get('option', '')
             })
 
-    # 加入運費判斷
+    # ✅ 運費判斷
     shipping_fee = 0 if total >= 2000 else 80
     final_total = total + shipping_fee
 
     from uuid import uuid4
     from pytz import timezone
+    from datetime import datetime
     tz = timezone("Asia/Taipei")
     merchant_trade_no = "HS" + uuid4().hex[:12]
     created_at = datetime.now(tz).isoformat()
 
+    # ✅ 建立訂單資料
     order_data = {
         'member_id': member_id,
         'total_amount': final_total,
-        'shipping_fee': shipping_fee,  # ← 若你的 orders 表沒有這欄位，可拿掉
+        'shipping_fee': shipping_fee,
         'status': 'pending',
         'created_at': created_at,
         'MerchantTradeNo': merchant_trade_no
@@ -534,18 +545,22 @@ def checkout():
     result = supabase.table('orders').insert(order_data).execute()
     order_id = result.data[0]['id']
 
+    # ✅ 寫入每筆商品明細
     for item in items:
-        item['id'] = str(uuid4())             # ✅ 每筆都給一個唯一的 id
+        item['id'] = str(uuid4())
         item['order_id'] = order_id
         item['option'] = item.get('option', '')
+
     supabase.table('order_items').insert(items).execute()
 
-    # 清空購物車
+    # ✅ 清空購物車
     session['cart'] = []
 
-    # 暫存 trade_no 準備付款用
+    # ✅ 暫存交易編號（後續綠界付款用）
     session['current_trade_no'] = merchant_trade_no
+
     return redirect("/choose-payment")
+
 
 
 @app.route('/choose-payment')
@@ -872,6 +887,11 @@ def add_product():
         name = request.form.get('name', '').strip()
         price_str = request.form.get('price', '0').strip()
         price = float(price_str) if price_str else 0.0
+
+        # ✅ 新增：處理優惠價欄位
+        discount_price_str = request.form.get("discount_price", "").strip()
+        discount_price = float(discount_price_str) if discount_price_str else None
+
         stock_str = request.form.get('stock', '0').strip()
         stock = int(stock_str) if stock_str else 0
         intro = request.form.get('intro', '').strip()
@@ -916,13 +936,14 @@ def add_product():
         if not cover_url:
             return "請上傳商品首頁主圖", 400
 
-        # ✅ 建立商品資料
+        # ✅ 建立商品資料（含優惠價）
         data = {
             "name": name,
             "price": price,
+            "discount_price": discount_price,  # ✅ 新增欄位
             "stock": stock,
-            "image": cover_url,         # 主圖
-            "images": image_urls,       # 商品內頁圖
+            "image": cover_url,
+            "images": image_urls,
             "intro": intro,
             "feature": feature,
             "spec": spec,
@@ -944,6 +965,7 @@ def add_product():
 
 
 
+
 @app.route('/edit/<product_id>', methods=['GET', 'POST'])
 def edit_product(product_id):
     if request.method == 'POST':
@@ -951,6 +973,7 @@ def edit_product(product_id):
             updated = {
                 "name": request.form.get('name', '').strip(),
                 "price": float(request.form.get('price', '0').strip()),
+                "discount_price": float(request.form.get('discount_price').strip()) if request.form.get('discount_price') else None,
                 "stock": int(request.form.get('stock', '0').strip() or 0),
                 "intro": request.form.get('intro', '').strip(),
                 "feature": request.form.get('feature', '').strip(),
@@ -1027,8 +1050,8 @@ def delete_product(product_id):
 def add_to_cart():
     product_id = request.form.get('product_id')
     qty = int(request.form.get('qty', 1))
-    option = request.form.get('option', '')  # ✅ 新增：抓取規格
-    action = request.form.get('action')  # checkout or not
+    option = request.form.get('option', '')
+    action = request.form.get('action')
 
     # 找商品
     res = supabase.table('products').select('*').eq('id', product_id).execute()
@@ -1036,13 +1059,16 @@ def add_to_cart():
         return jsonify(success=False), 404
     product = res.data[0]
 
+    # ✅ 決定要使用的價格
+    final_price = product.get('discount_price') or product['price']
+
     # 初始化購物車
     if 'cart' not in session:
         session['cart'] = []
 
     cart = session['cart']
 
-    # 檢查是否已存在相同商品+相同規格
+    # 檢查是否已存在相同商品 + 相同規格
     found = False
     for item in cart:
         if item.get('product_id') == product_id and item.get('option') == option:
@@ -1054,10 +1080,10 @@ def add_to_cart():
         cart.append({
             'product_id': product_id,
             'name': product['name'],
-            'price': product['price'],
+            'price': final_price,  # ✅ 使用優惠價或原價
             'images': product['images'],
             'qty': qty,
-            'option': option  # ✅ 存入商品規格
+            'option': option
         })
 
     session['cart'] = cart
@@ -1066,6 +1092,7 @@ def add_to_cart():
         return redirect('/cart')
 
     return jsonify(success=True, count=sum(item['qty'] for item in cart))
+
 
 
 
