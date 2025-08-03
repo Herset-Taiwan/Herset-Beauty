@@ -1059,9 +1059,10 @@ def add_to_cart():
         return jsonify(success=False), 404
     product = res.data[0]
 
-    # ✅ 決定要使用的價格（優惠價優先）
-    final_price = product.get('discount_price') or product['price']
+    # ✅ 價格判斷邏輯
     original_price = product['price']
+    discount_price = product.get('discount_price') or 0
+    final_price = discount_price if discount_price and discount_price < original_price else original_price
 
     # 初始化購物車
     if 'cart' not in session:
@@ -1082,7 +1083,8 @@ def add_to_cart():
             'product_id': product_id,
             'name': product['name'],
             'price': final_price,
-            'original_price': original_price,  # ✅ 加上原價
+            'original_price': original_price,
+            'discount_price': discount_price,
             'images': product['images'],
             'qty': qty,
             'option': option
