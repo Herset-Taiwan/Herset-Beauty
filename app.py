@@ -1084,7 +1084,7 @@ def add_to_cart():
     'name': product['name'],
     'price': float(final_price),
     'original_price': float(product['price']),
-    'discount_price': float(product['discount_price']) if product.get('discount_price') else 0,
+    'discount_price': product.get('discount_price'),
     'images': product['images'],
     'qty': qty,
     'option': option
