@@ -245,22 +245,31 @@
 
 <div class="product-container">
   <div class="gallery">
-  <div class="gallery-main">
-    {% if '新品特價' in product['tags'] %}
-      <div class="label-badge badge-sale">新品特價</div>
-    {% endif %}
-    {% if '主打商品' in product['tags'] %}
-      <div class="label-badge badge-hot">主打商品</div>
-    {% endif %}
-    <img id="main-img" src="{{ product['image'] }}" alt="product">
-  </div>
-  <div class="gallery-thumbs">
-    <img src="{{ product['image'] }}" onclick="document.getElementById('main-img').src='{{ product['image'] }}'">
-    {% for img in product['images'] %}
-      <img src="{{ img }}" onclick="document.getElementById('main-img').src='{{ img }}'">
-    {% endfor %}
+    <div class="gallery-main" style="position: relative;">
+      <div class="label-group">
+        {% for tag in product['tags'] %}
+          <div class="label-badge
+                      {% if tag == '新品優惠' %}badge-sale{% endif %}
+                      {% if tag == '主打商品' %}badge-hot{% endif %}
+                      {% if tag == '限量販售' %}badge-limited{% endif %}
+                      {% if tag == '熱銷推薦' %}badge-recommend{% endif %}
+                      {% if tag == '天然成分' %}badge-natural{% endif %}">
+            {{ tag }}
+          </div>
+        {% endfor %}
+      </div>
+      <img id="main-img" src="{{ product['image'] }}" alt="product">
+    </div>
+
+    <div class="gallery-thumbs">
+      <img src="{{ product['image'] }}" onclick="document.getElementById('main-img').src='{{ product['image'] }}'">
+      {% for img in product['images'] %}
+        <img src="{{ img }}" onclick="document.getElementById('main-img').src='{{ img }}'">
+      {% endfor %}
+    </div>
   </div>
 </div>
+
 
 
   <div class="info">

@@ -537,18 +537,17 @@ footer {
 /*商品標籤樣式*/
 .label-badge {
   position: relative;
-  padding: 6px 14px;            /* 內距加大 */
-  font-size: 14px;              /* 字體加大 */
-  font-weight: 600;             /* 更醒目的粗度 */
+  padding: 6px 14px;
+  font-size: 14px;
+  font-weight: 600;
   color: white;
-  border-radius: 24px;          /* 邊角稍微圓潤一點 */
+  border-radius: 24px;
   line-height: 1.2;
   white-space: nowrap;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
   animation: popIn 0.3s ease;
-  letter-spacing: 0.5px;        /* 字距拉一點點更大器 */
+  letter-spacing: 0.5px;
 }
-
 
 .label-group {
   position: absolute;
@@ -563,20 +562,28 @@ footer {
 .badge-sale {
   background: #e53935;
 }
+
 .badge-hot {
   background: #f57c00;
 }
+
 .badge-recommend {
   background: #00796b;
 }
+
 .badge-natural {
   background: #689f38;
+}
+
+.badge-limited {
+  background: #9c27b0; /* 紫色風格，可依你喜好再調 */
 }
 
 @keyframes popIn {
   0% { transform: scale(0.6); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
 }
+
 
 
 
