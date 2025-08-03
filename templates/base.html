@@ -264,6 +264,12 @@ function cancelCloseProfile() {
 
 <script>
 function loadCategory(categoryName) {
+  // ✅ 沒有商品容器就跳轉回首頁
+  if (!document.querySelector('#product-container')) {
+    window.location.href = '/?category=' + encodeURIComponent(categoryName);
+    return;
+  }
+
   fetch('/?category=' + encodeURIComponent(categoryName))
     .then(response => response.text())
     .then(html => {
@@ -285,13 +291,13 @@ function loadCategory(categoryName) {
         }
       });
 
-      // 更新網址（可選）
       history.replaceState(null, '', '/?category=' + encodeURIComponent(categoryName));
     })
     .catch(err => {
       console.error('分類載入失敗:', err);
     });
 }
+
 </script>
 
 
