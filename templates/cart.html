@@ -205,6 +205,12 @@
   </span>
 </div>
 
+  <span style="margin-left: 6px; color: #555;">× {{ p['qty'] }} =</span>
+  <span style="margin-left: 4px; font-weight: bold;">
+    ${{ "%.0f"|format(unit_price * p['qty']) }}
+  </span>
+</div>
+
 × {{ p['qty'] }} = ${{ "%.0f"|format(unit_price * p['qty']) }}
 
 
