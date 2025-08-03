@@ -1080,15 +1080,16 @@ def add_to_cart():
 
     if not found:
         cart.append({
-            'product_id': product_id,
-            'name': product['name'],
-            'price': final_price,
-            'original_price': original_price,
-            'discount_price': discount_price,
-            'images': product['images'],
-            'qty': qty,
-            'option': option
-        })
+    'product_id': product_id,
+    'name': product['name'],
+    'price': float(final_price),
+    'original_price': float(product['price']),
+    'discount_price': float(product['discount_price']) if product.get('discount_price') else 0,
+    'images': product['images'],
+    'qty': qty,
+    'option': option
+})
+
 
     session['cart'] = cart
 

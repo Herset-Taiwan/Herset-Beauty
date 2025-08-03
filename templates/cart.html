@@ -159,8 +159,8 @@
             {% endif %}
 
             {% set price = p['price'] | float %}
-{% set original = p.get('original_price') | float %}
-{% set discount = p.get('discount_price') | float %}
+{% set original = p.get('original_price', price) | float %}
+{% set discount = p.get('discount_price', 0) | float %}
 
 {% if discount and discount < original %}
   <span style="color:#999; text-decoration: line-through;">${{ '%.0f' % original }}</span>
