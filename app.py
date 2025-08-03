@@ -468,6 +468,8 @@ def cart():
             product['qty'] = qty
             product['option'] = item.get('option', '')
             product['subtotal'] = item_price * qty
+            product['original_price'] = item.get('original_price') or float(product.get('price') or 0)
+            product['discount_price'] = item.get('discount_price') or float(product.get('discount_price') or 0)
 
             products.append(product)
             total += product['subtotal']
