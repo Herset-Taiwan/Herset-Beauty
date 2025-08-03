@@ -536,61 +536,46 @@ footer {
 
 /*商品標籤樣式*/
 .label-badge {
-  padding: 6px 12px;
-  font-size: 13px;
-  font-weight: bold;
+  position: relative;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
   color: white;
-  border-radius: 30px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  border-radius: 20px;
+  line-height: 1.2;
   white-space: nowrap;
-  animation: popIn 0.4s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  animation: popIn 0.3s ease;
 }
 
-.badge-sale {
-  background: #e53935;
-}
-
-.badge-hot {
-  background: #f57c00;
-  top: 48px;
-}
-
-.badge-recommend {
-  background: #00796b;
-  top: 80px;
-}
-
-.badge-natural {
-  background: #689f38;
-  top: 112px;
-}
-
-.label-badge {
-  position: absolute;
-  left: 10px;
-  padding: 6px 12px;
-  font-size: 13px;
-  font-weight: bold;
-  color: white;
-  border-radius: 30px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  z-index: 10;
-}
 .label-group {
   position: absolute;
-  top: 10px;
-  left: 10px;
+  top: 12px;
+  left: 12px;
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   z-index: 10;
 }
 
+.badge-sale {
+  background: #e53935;
+}
+.badge-hot {
+  background: #f57c00;
+}
+.badge-recommend {
+  background: #00796b;
+}
+.badge-natural {
+  background: #689f38;
+}
 
 @keyframes popIn {
   0% { transform: scale(0.6); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
 }
+
 
 
 
