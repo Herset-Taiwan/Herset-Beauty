@@ -103,6 +103,11 @@ footer {
   opacity: 1;
 }
 
+.product-card.hidden {
+  visibility: hidden;
+  position: absolute;
+  pointer-events: none;
+}
 
 /* ===== Banner 區塊 ===== */
 .banner {

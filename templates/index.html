@@ -96,7 +96,12 @@ function filterCategory(category) {
     if (category === '全部商品') {
   el.style.display = 'block';
 } else {
-  el.style.display = categories.includes(category) ? 'block' : 'none';
+  if (category === '全部商品' || categories.includes(category)) {
+  el.classList.remove('hidden');
+} else {
+  el.classList.add('hidden');
+}
+
 }
 
   });
