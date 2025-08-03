@@ -98,25 +98,39 @@
 
 
 <!-- 頁尾 -->
-<div style="min-width: 200px;">
-  <h4 style="margin-bottom: 10px;">關注我們</h4>
-  <div style="display: flex; gap: 10px;">
-    <a href="https://www.facebook.com/profile.php?id=61575912508195#" target="_blank">
-      <img src="{{ url_for('static', filename='icons/facebook.png') }}" class="social-icon" alt="Facebook">
-    </a>
-    <a href="https://www.instagram.com/hello.herset?igsh=OHN2bHc2OGYxcXQ0&utm_source=qr" target="_blank">
-      <img src="{{ url_for('static', filename='icons/instagram.png') }}" class="social-icon" alt="Instagram">
-    </a>
-    <a href="https://line.me/R/ti/p/@013ylkcz?oat_content=qr" target="_blank">
-      <img src="{{ url_for('static', filename='icons/line.png') }}" class="social-icon" alt="LINE">
-    </a>
-    <a href="https://www.youtube.com/你的頻道網址" target="_blank">
-      <img src="{{ url_for('static', filename='icons/youtube.png') }}" class="social-icon" alt="YouTube">
-    </a>
-  </div>
-</div>
+<footer style="background: #f4d8cc; padding: 40px 20px; font-family: sans-serif; font-size: 14px;">
+  <div style="display: flex; justify-content: space-around; flex-wrap: wrap; align-items: flex-start;">
+    
+    <!-- 左邊標語 -->
+    <div style="max-width: 300px; margin: 10px;">
+      <h3 style="font-weight: bold;">
+        Style should feel like home.<br>
+        And home is not a place<br>
+        -It's a feeling.
+      </h3>
+    </div>
 
-    <div style="min-width: 200px;">
+    <!-- 中間社群 -->
+    <div style="min-width: 200px; margin: 10px;">
+      <h4 style="margin-bottom: 10px;">關注我們</h4>
+      <div style="display: flex; gap: 10px;">
+        <a href="https://www.facebook.com/profile.php?id=61575912508195#" target="_blank">
+          <img src="{{ url_for('static', filename='icons/facebook.png') }}" class="social-icon" alt="Facebook">
+        </a>
+        <a href="https://www.instagram.com/hello.herset?igsh=OHN2bHc2OGYxcXQ0&utm_source=qr" target="_blank">
+          <img src="{{ url_for('static', filename='icons/instagram.png') }}" class="social-icon" alt="Instagram">
+        </a>
+        <a href="https://line.me/R/ti/p/@013ylkcz?oat_content=qr" target="_blank">
+          <img src="{{ url_for('static', filename='icons/line.png') }}" class="social-icon" alt="LINE">
+        </a>
+        <a href="https://www.youtube.com/你的頻道網址" target="_blank">
+          <img src="{{ url_for('static', filename='icons/youtube.png') }}" class="social-icon" alt="YouTube">
+        </a>
+      </div>
+    </div>
+
+    <!-- 右邊訂購問題 -->
+    <div style="min-width: 200px; margin: 10px;">
       <h4 style="margin-bottom: 10px;">訂購問題</h4>
       <ul style="list-style: none; padding: 0;">
         <li><a href="/about">關於我們</a></li>
@@ -127,11 +141,13 @@
         <li>產品常見FAQ</li>
       </ul>
     </div>
-    <div style="min-width: 200px;">
-      <h4 style="margin-bottom: 10px; text-align: center;">支付方式</h4>
-      <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">
-        <img src="{{ url_for('static', filename='icons/visa.png') }}">
-        <img src="{{ url_for('static', filename='icons/linepay.png') }}">
+
+    <!-- 右下支付方式 -->
+    <div style="min-width: 200px; margin: 10px; text-align: center;">
+      <h4 style="margin-bottom: 10px;">支付方式</h4>
+      <div style="display: flex; justify-content: center; gap: 10px;">
+        <img src="{{ url_for('static', filename='icons/visa.png') }}" class="social-icon" alt="VISA">
+        <img src="{{ url_for('static', filename='icons/linepay.png') }}" class="social-icon" alt="LINE PAY">
       </div>
     </div>
   </div>
