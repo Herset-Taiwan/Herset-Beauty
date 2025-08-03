@@ -115,6 +115,13 @@
   <option value="品牌嚴選">品牌嚴選</option>
 </select>
 
+<label>商品標籤（可多選）</label>
+<select id="tags" name="tags" multiple placeholder="請選擇標籤">
+  <option value="新品特價">新品特價</option>
+  <option value="主打商品">主打商品</option>
+  <option value="限量販售">限量販售</option>
+</select>
+
 <label>商品首頁圖（首頁列表顯示一張圖）</label>
 <input type="file" name="cover_image" accept="image/*" required>
 
@@ -168,16 +175,24 @@ function removeOption(btn) {
 }
 
 
-    $(document).ready(function () {
-  const $select = $('#categories').selectize({
+$(document).ready(function () {
+  // 分類多選
+  $('#categories').selectize({
     plugins: ['remove_button'],
     delimiter: ',',
     persist: false,
+    create: false
+  });
 
-    // 🔒 禁止新增分類（拿掉 create: true）
+  // 標籤多選
+  $('#tags').selectize({
+    plugins: ['remove_button'],
+    delimiter: ',',
+    persist: false,
     create: false
   });
 });
+
 
   </script>
 

@@ -901,6 +901,7 @@ def add_product():
         spec = request.form.get('spec', '').strip()
         ingredient = request.form.get('ingredient', '').strip()
         categories = request.form.getlist('categories[]')
+        tags = request.form.getlist('tags')  # ✅ 取得多選標籤
         options = request.form.getlist('options[]')
 
         # ✅ 上傳首頁主圖（單張）
@@ -951,7 +952,8 @@ def add_product():
             "spec": spec,
             "ingredient": ingredient,
             "options": options,
-            "categories": categories
+            "categories": categories,
+            "tags": tags
         }
 
         response = supabase.table("products").insert(data).execute()
@@ -967,7 +969,7 @@ def add_product():
 
 
 
-
+#修改商品
 @app.route('/edit/<product_id>', methods=['GET', 'POST'])
 def edit_product(product_id):
     if request.method == 'POST':
@@ -982,7 +984,8 @@ def edit_product(product_id):
                 "spec": request.form.get('spec', '').strip(),
                 "ingredient": request.form.get('ingredient', '').strip(),
                 "options": request.form.getlist('options[]'),
-                "categories": request.form.getlist('categories[]')
+                "categories": request.form.getlist('categories[]'),
+                "tags": request.form.getlist('tags')
             }
 
             # ✅ 主圖處理
@@ -1041,7 +1044,7 @@ def edit_product(product_id):
 
 
 
-
+#刪除商品
 @app.route('/delete/<product_id>', methods=['POST'])
 def delete_product(product_id):
 

@@ -295,6 +295,20 @@
   {% endfor %}
 </select>
 
+<label>標籤（可多選 + 可新增）</label>
+<select id="tags" name="tags" multiple placeholder="請選擇或輸入標籤">
+  {% set all_tags = ['新品特價', '熱銷推薦', '限量販售', '天然成分', '溫和呵護'] %}
+  {% for tag in all_tags %}
+    <option value="{{ tag }}" {% if product['tags'] and tag in product['tags'] %}selected{% endif %}>{{ tag }}</option>
+  {% endfor %}
+
+  {# 額外補充：若 tags 有使用者自訂的也要顯示出來 #}
+  {% for tag in product['tags'] or [] %}
+    {% if tag not in all_tags %}
+      <option value="{{ tag }}" selected>{{ tag }}</option>
+    {% endif %}
+  {% endfor %}
+</select>
 
       <label>商品介紹</label>
       <textarea name="intro">{{ product['intro'] }}</textarea>
@@ -377,13 +391,21 @@ function removeOption(button) {
 
 
     $(document).ready(function () {
-      $('#categories').selectize({
-        plugins: ['remove_button'],
-        delimiter: ',',
-        persist: false,
-        create: true
-      });
-    });
+  $('#categories').selectize({
+    plugins: ['remove_button'],
+    delimiter: ',',
+    persist: false,
+    create: true
+  });
+
+  $('#tags').selectize({
+    plugins: ['remove_button'],
+    delimiter: ',',
+    persist: false,
+    create: true
+  });
+});
+
   </script>
   <script>
   let formOriginalData = null;

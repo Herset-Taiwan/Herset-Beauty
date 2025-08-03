@@ -191,6 +191,40 @@
   text-align: center;
 }
 
+/* 標籤樣式 */
+.label-badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 30px;
+  color: white;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  z-index: 10;
+  animation: popIn 0.4s ease;
+}
+
+.badge-sale {
+  background: #e53935;
+}
+
+.badge-hot {
+  background: #f57c00;
+  top: 56px;
+}
+
+.gallery-main {
+  position: relative; /* 🧠 為了讓 label-badge 可以絕對定位 */
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+
   </style>
 </head>
 
@@ -211,19 +245,23 @@
 
 <div class="product-container">
   <div class="gallery">
-    <div class="gallery-main">
-      <img id="main-img" src="{{ product['image'] }}" alt="product">
-    </div>
-    <div class="gallery-thumbs">
-  <!-- 主圖縮圖 -->
-  <img src="{{ product['image'] }}" onclick="document.getElementById('main-img').src='{{ product['image'] }}'">
-
-  <!-- 內頁圖片縮圖 -->
-  {% for img in product['images'] %}
-    <img src="{{ img }}" onclick="document.getElementById('main-img').src='{{ img }}'">
-  {% endfor %}
-</div>
+  <div class="gallery-main">
+    {% if '新品特價' in product['tags'] %}
+      <div class="label-badge badge-sale">新品特價</div>
+    {% endif %}
+    {% if '主打商品' in product['tags'] %}
+      <div class="label-badge badge-hot">主打商品</div>
+    {% endif %}
+    <img id="main-img" src="{{ product['image'] }}" alt="product">
   </div>
+  <div class="gallery-thumbs">
+    <img src="{{ product['image'] }}" onclick="document.getElementById('main-img').src='{{ product['image'] }}'">
+    {% for img in product['images'] %}
+      <img src="{{ img }}" onclick="document.getElementById('main-img').src='{{ img }}'">
+    {% endfor %}
+  </div>
+</div>
+
 
   <div class="info">
     <h2>{{ product['name'] }}</h2>
