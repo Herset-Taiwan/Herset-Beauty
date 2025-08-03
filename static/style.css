@@ -553,12 +553,34 @@ footer {
 }
 
 .badge-sale {
-  background: linear-gradient(135deg, #e53935, #ff7043); /* 紅橘漸層 */
+  background: #e53935;
 }
 
 .badge-hot {
-  background: linear-gradient(135deg, #ff9800, #ffc107); /* 橘黃漸層 */
-  top: 40px;
+  background: #f57c00;
+  top: 48px;
+}
+
+.badge-recommend {
+  background: #00796b;
+  top: 80px;
+}
+
+.badge-natural {
+  background: #689f38;
+  top: 112px;
+}
+
+.label-badge {
+  position: absolute;
+  left: 10px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: bold;
+  color: white;
+  border-radius: 30px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  z-index: 10;
 }
 
 @keyframes popIn {
