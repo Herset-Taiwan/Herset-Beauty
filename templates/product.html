@@ -305,42 +305,29 @@
       document.querySelectorAll('.options button').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       selectedOption = btn.innerText;
-
-      // 更新立即結帳隱藏欄位
       document.getElementById('selected-option-input').value = selectedOption;
     });
   });
+
+  function adjustQty(delta) {
+    const qtyInput = document.getElementById('qty');
+    let current = parseInt(qtyInput.value);
+    if (isNaN(current)) current = 1;
+    current += delta;
+    if (current < 1) current = 1;
+    qtyInput.value = current;
+    document.getElementById('qty-input-checkout').value = current;
+  }
 
   function addToCart(productId) {
     const qty = parseInt(document.getElementById('qty').value);
     const option = selectedOption;
 
     if (!option) {
-  showTip("⚠️ 請先選擇商品規格");
-  return;
-  
-}
+      showTip("⚠️ 請先選擇商品規格");
+      return;
+    }
 
-function adjustQty(delta) {
-  const qtyInput = document.getElementById('qty');
-  let current = parseInt(qtyInput.value);
-  current += delta;
-  if (current < 1) current = 1;
-  qtyInput.value = current;
-
-  // 也同步更新立即結帳用的 hidden 欄位
-  document.getElementById('qty-input-checkout').value = current;
-}
-
-function showTip(message) {
-  const tip = document.getElementById('cart-tip');
-  tip.innerText = message;
-  tip.style.display = 'block';
-  setTimeout(() => {
-    tip.style.display = 'none';
-    tip.innerText = '✅ 已加入購物車！'; // 回復預設文字
-  }, 2000);
-}
     fetch('/add_to_cart', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -350,15 +337,11 @@ function showTip(message) {
     .then(data => {
       if (data.success) {
         const countEl = document.getElementById('cart-count');
-        if (countEl) countEl.innerText = data.count;
-
-        const tip = document.getElementById('cart-tip');
-        if (tip) {
-          tip.style.display = 'block';
-          setTimeout(() => {
-            tip.style.display = 'none';
-          }, 2000);
+        if (countEl) {
+          countEl.innerText = data.count;
+          countEl.style.display = 'inline-block';
         }
+        showTip('✅ 已加入購物車！');
       } else {
         alert("加入購物車失敗");
       }
@@ -368,25 +351,32 @@ function showTip(message) {
     });
   }
 
-  document.getElementById('qty').addEventListener('input', function() {
+  document.getElementById('qty').addEventListener('input', function () {
     document.getElementById('qty-input-checkout').value = this.value;
   });
 
-  // tab 切換邏輯
-document.querySelectorAll('.tab-btn').forEach(button => {
-  button.addEventListener('click', () => {
-    // 移除所有 active class
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    document.querySelectorAll('.tab-content > div').forEach(tab => tab.classList.remove('active'));
+  function showTip(message) {
+    const tip = document.getElementById('cart-tip');
+    tip.innerText = message;
+    tip.style.display = 'block';
+    setTimeout(() => {
+      tip.style.display = 'none';
+      tip.innerText = '✅ 已加入購物車！';
+    }, 2000);
+  }
 
-    // 設定目前按下的為 active
-    button.classList.add('active');
-    const tabId = button.dataset.tab;
-    document.getElementById(tabId).classList.add('active');
+  // tab 切換
+  document.querySelectorAll('.tab-btn').forEach(button => {
+    button.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content > div').forEach(tab => tab.classList.remove('active'));
+      button.classList.add('active');
+      const tabId = button.dataset.tab;
+      document.getElementById(tabId).classList.add('active');
+    });
   });
-});
-
 </script>
+
 
 
 <div id="cart-tip" style="
