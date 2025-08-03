@@ -8,7 +8,6 @@
     body {
       background-color: #f9f5f5;
     }
-
     .cart-container {
       max-width: 900px;
       margin: 40px auto;
@@ -17,30 +16,22 @@
       border-radius: 10px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.08);
     }
-
-   .member-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  font-size: 16px;
-  color: #5A4B45;
-}
-
-.member-info .account {
-  font-weight: bold;
-  color: #CDAFA1;
-  margin-left: 4px;
-}
-.member-info .right {
-  margin-left: auto;
-}
-
-    .member-info span {
+    .member-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      font-size: 16px;
+      color: #5A4B45;
+    }
+    .member-info .account {
       font-weight: bold;
       color: #CDAFA1;
+      margin-left: 4px;
     }
-
+    .member-info .right {
+      margin-left: auto;
+    }
     .login-btn {
       background: #CDAFA1;
       color: white;
@@ -50,19 +41,16 @@
       font-weight: bold;
       text-decoration: none;
     }
-
     h2 {
       color: #3C3C3C;
       margin-bottom: 20px;
     }
-
     .cart-item {
       display: flex;
       align-items: center;
       border-bottom: 1px solid #eee;
       padding: 15px 0;
     }
-
     .cart-item img {
       width: 80px;
       height: 80px;
@@ -71,21 +59,17 @@
       border-radius: 6px;
       border: 1px solid #ddd;
     }
-
     .cart-info {
       flex: 1;
     }
-
     .cart-actions {
       display: flex;
       gap: 6px;
       align-items: center;
     }
-
     .cart-actions form {
       display: inline;
     }
-
     .cart-actions button {
       padding: 5px 10px;
       font-size: 15px;
@@ -94,11 +78,9 @@
       border-radius: 5px;
       cursor: pointer;
     }
-
     .cart-actions button:hover {
       background-color: #eee;
     }
-
     .total {
       text-align: right;
       font-size: 1.3rem;
@@ -106,7 +88,6 @@
       margin-top: 30px;
       color: #3C3C3C;
     }
-
     .checkout-btn {
       margin-top: 20px;
       background-color: #e91e63;
@@ -119,11 +100,9 @@
       float: right;
       cursor: pointer;
     }
-
     .checkout-btn:hover {
       background-color: #d81b60;
     }
-
     .back-btn {
       display: inline-block;
       margin-top: 40px;
@@ -131,11 +110,9 @@
       text-decoration: none;
       font-weight: bold;
     }
-
     .back-btn:hover {
       text-decoration: underline;
     }
-
     .flash-message {
       background-color: #ffe6e6;
       color: #c00;
@@ -149,17 +126,16 @@
   <div class="cart-container">
     <h2>🛒 我的購物車</h2>
 
-   <div class="member-info">
-  {% if session.member_id %}
-    <div class="left">您好：會員 <span class="account">{{ session.user['account'] }}</span></div>
-  {% else %}
-    <div class="left">您尚未登入會員，請先登入會員才可結帳。</div>
-    <div class="right">
-      <a class="login-btn" href="/login?next=cart">登入會員</a>
+    <div class="member-info">
+      {% if session.member_id %}
+        <div class="left">您好：會員 <span class="account">{{ session.user['account'] }}</span></div>
+      {% else %}
+        <div class="left">您尚未登入會員，請先登入會員才可結帳。</div>
+        <div class="right">
+          <a class="login-btn" href="/login?next=cart">登入會員</a>
+        </div>
+      {% endif %}
     </div>
-  {% endif %}
-</div>
-
 
     {% with messages = get_flashed_messages() %}
       {% if messages %}
@@ -172,78 +148,68 @@
     {% endwith %}
 
     {% if products %}
-  {% for p in products %}
-  <div class="cart-item">
-    <img src="{{ p['images'][0] }}" alt="{{ p['name'] }}">
-    <div class="cart-info">
-      <strong>{{ p['name'] }}</strong><br>
+      {% for p in products %}
+        <div class="cart-item">
+          <img src="{{ p['images'][0] }}" alt="{{ p['name'] }}">
+          <div class="cart-info">
+            <strong>{{ p['name'] }}</strong><br>
 
-      {% if p.get('option') %}
-        <span style="color: #888; font-size: 0.9em;">選項：{{ p['option'] }}</span><br>
-      {% endif %}
+            {% if p.get('option') %}
+              <span style="color: #888; font-size: 0.9em;">選項：{{ p['option'] }}</span><br>
+            {% endif %}
 
-      {% set price = p['price'] | float %}
-{% set discount = p.get('discount_price') %}
-{% if discount is not none and discount|float > 0 and discount|float < price %}
-  <span style="color:#999; text-decoration: line-through;">${{ '%.0f' % price }}</span>
-  <span style="color: #e91e63; font-weight: bold;">${{ '%.0f' % discount|float }}</span>
-  × {{ p['qty'] }} =
-  <span style="color: #e91e63; font-weight: bold;">${{ '%.0f' % (discount|float * p['qty']) }}</span>
-{% else %}
-  ${{ '%.0f' % price }} × {{ p['qty'] }} = ${{ '%.0f' % p['subtotal'] }}
-{% endif %}
+            {% set price = p['price'] | float %}
+            {% set discount = p.get('discount_price') %}
+            {% if discount is not none and discount|float > 0 and discount|float < price %}
+              <span style="color:#999; text-decoration: line-through;">${{ '%.0f' % price }}</span>
+              <span style="color: #e91e63; font-weight: bold;">${{ '%.0f' % discount|float }}</span>
+              × {{ p['qty'] }} =
+              <span style="color: #e91e63; font-weight: bold;">${{ '%.0f' % (discount|float * p['qty']) }}</span>
+            {% else %}
+              ${{ '%.0f' % price }} × {{ p['qty'] }} = ${{ '%.0f' % p['subtotal'] }}
+            {% endif %}
+          </div>
 
+          <div class="cart-actions">
+            <form method="POST">
+              <input type="hidden" name="product_id" value="{{ p['id'] }}">
+              <input type="hidden" name="option" value="{{ p['option'] }}">
+              <input type="hidden" name="action" value="decrease">
+              <button type="submit">−</button>
+            </form>
+            <form method="POST">
+              <input type="hidden" name="product_id" value="{{ p['id'] }}">
+              <input type="hidden" name="option" value="{{ p['option'] }}">
+              <input type="hidden" name="action" value="increase">
+              <button type="submit">＋</button>
+            </form>
+            <form method="POST">
+              <input type="hidden" name="product_id" value="{{ p['id'] }}">
+              <input type="hidden" name="option" value="{{ p['option'] }}">
+              <input type="hidden" name="action" value="remove">
+              <button type="submit">🗑️ 移除</button>
+            </form>
+          </div>
+        </div>
+      {% endfor %}
 
-  <span style="color:#999; text-decoration: line-through;">${{ '%.0f' % price }}</span>
-  <span style="color: #e91e63; font-weight: bold;">${{ '%.0f' % discount }}</span>
-  × {{ p['qty'] }} =
-  <span style="color: #e91e63; font-weight: bold;">${{ '%.0f' % (discount * p['qty']) }}</span>
-{% else %}
-  ${{ '%.0f' % price }} × {{ p['qty'] }} = ${{ '%.0f' % p['subtotal'] }}
-{% endif %}
+      <div class="total">
+        商品總金額：${{ '%.0f' % total }}<br>
+        運費：
+        {% if shipping_fee == 0 %}
+          免運費（已達 $2000 免運門檻）
+        {% else %}
+          ${{ '%.0f' % shipping_fee }}（還差 ${{ '%.0f' % free_shipping_diff }} 可享免運）
+        {% endif %}<br>
+        <strong>應付總金額：${{ '%.0f' % final_total }}</strong>
+      </div>
 
-    </div>
-
-    <div class="cart-actions">
-      <form method="POST">
-        <input type="hidden" name="product_id" value="{{ p['id'] }}">
-        <input type="hidden" name="option" value="{{ p['option'] }}">
-        <input type="hidden" name="action" value="decrease">
-        <button type="submit">−</button>
+      <form method="POST" action="/checkout">
+        <button type="submit" class="checkout-btn">結帳</button>
       </form>
-      <form method="POST">
-        <input type="hidden" name="product_id" value="{{ p['id'] }}">
-        <input type="hidden" name="option" value="{{ p['option'] }}">
-        <input type="hidden" name="action" value="increase">
-        <button type="submit">＋</button>
-      </form>
-      <form method="POST">
-        <input type="hidden" name="product_id" value="{{ p['id'] }}">
-        <input type="hidden" name="option" value="{{ p['option'] }}">
-        <input type="hidden" name="action" value="remove">
-        <button type="submit">🗑️ 移除</button>
-      </form>
-    </div>
-  </div>
-  {% endfor %}
-
-  <div class="total">
-    商品總金額：${{ '%.0f' % total }}<br>
-    運費：
-    {% if shipping_fee == 0 %}
-      免運費（已達 $2000 免運門檻）
     {% else %}
-      ${{ '%.0f' % shipping_fee }}（還差 ${{ '%.0f' % free_shipping_diff }} 可享免運）
-    {% endif %}<br>
-    <strong>應付總金額：${{ '%.0f' % final_total }}</strong>
-  </div>
-
-  <form method="POST" action="/checkout">
-    <button type="submit" class="checkout-btn">結帳</button>
-  </form>
-{% else %}
-  <p>目前尚無商品。</p>
-{% endif %}
+      <p>目前尚無商品。</p>
+    {% endif %}
 
     <a href="/" class="back-btn">← 繼續購物</a>
   </div>
