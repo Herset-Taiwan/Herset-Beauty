@@ -24,9 +24,10 @@
 
 
 <!-- 商品清單 -->
-<section class="product-list">
-  {% for p in products %}
-  <div class="product-card" data-category="{{ p['categories'] | join(',') if p['categories'] else '全部' }}">
+<div id="product-container">
+  <section class="product-list">
+    {% for p in products %}
+    <div class="product-card" data-category="{{ p['categories'] | join(',') if p['categories'] else '全部' }}">
     <a href="/product/{{ p['id'] }}">
       <img src="{{ p['image'] or (p['images'][0] if p['images'] else '') }}" alt="{{ p['name'] }}">
     </a>
@@ -42,6 +43,7 @@
   </div>
   {% endfor %}
 </section>
+</div>
 
 <!-- 首頁標語區 -->
 <section class="banner">
