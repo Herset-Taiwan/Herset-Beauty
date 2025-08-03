@@ -96,17 +96,6 @@ def index():
     cart_count = sum(item['qty'] for item in cart)
     return render_template("index.html", products=products, cart_count=cart_count)
 
-#  點類別後商品呈現
-@app.route('/get_products')
-def get_products():
-    category = request.args.get('category')
-    res = supabase.table("products").select("*").execute()
-    products = res.data
-
-    if category and category != '全部':
-        products = [p for p in products if category in (p.get('categories') or [])]
-
-    return jsonify(products)
 
 
 # ✅ SEO相關

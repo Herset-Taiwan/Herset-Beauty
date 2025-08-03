@@ -21,12 +21,34 @@
 
 <!-- 商品缺貨提示 -->
 <div class="stock-warning" id="stock-warning">目前商品已售完，補貨中</div>
+<!-- 分類區塊 -->
+<div class="sub-categories">
+  <a onclick="filterCategory('全部商品')">全部商品</a>
+  <a onclick="filterCategory('身體保養')">身體保養</a>
+  <a onclick="filterCategory('生活香氛')">生活香氛</a>
+  <a onclick="filterCategory('寵物友善')">寵物友善</a>
+  <a onclick="filterCategory('品牌嚴選')">品牌嚴選</a>
+</div>
 
-<!-- 商品顯示區塊 -->
-<div id="product-list" class="product-grid" style="display:flex; flex-wrap:wrap; justify-content:center; gap:30px; margin-top:30px;"></div>
+<!-- 商品清單 -->
+<section class="product-list">
+  {% for p in products %}
+  <div class="product-card" data-category="{{ p['categories'] | join(',') if p['categories'] else '全部' }}">
+    <a href="/product/{{ p['id'] }}">
+      <img src="{{ p['image'] or (p['images'][0] if p['images'] else '') }}" alt="{{ p['name'] }}">
+    </a>
+    <div class="product-info">
+      <h2>{{ p['name'] }}</h2>
+      <p class="price">${{ p['price'] }}</p>
+    </div>
+    <div class="btn-group">
+      <button onclick="addToCart(event, {{ p['id'] }}, {{ p['options'] | length }}, {{ p['stock'] or 0 }})">加入購物車</button>
 
-
-
+      <a href="/product/{{ p['id'] }}" class="view-btn">查看商品</a>
+    </div>
+  </div>
+  {% endfor %}
+</section>
 
 <!-- 首頁標語區 -->
 <section class="banner">
@@ -57,38 +79,6 @@
 {% endblock %}
 
 {% block script %}
-
-<script>
-async function loadProducts(category) {
-  const response = await fetch(`/get_products?category=${encodeURIComponent(category)}`);
-  const products = await response.json();
-
-  const container = document.getElementById('product-list');
-  container.innerHTML = ''; // 清空舊的
-
-  if (products.length === 0) {
-    container.innerHTML = `<div style="padding: 40px; text-align:center;">🚫 查無商品</div>`;
-    return;
-  }
-
-  products.forEach(p => {
-    const card = document.createElement('div');
-    card.className = 'product-card';
-    card.innerHTML = `
-      <img src="${p.image}" alt="${p.name}">
-      <h3>${p.name}</h3>
-      <p>$${p.price}</p>
-      <button onclick="addToCart(event, ${p.id})">加入購物車</button>
-    `;
-    container.appendChild(card);
-  });
-}
-
-// 初始載入全部商品
-window.onload = () => loadProducts('全部');
-</script>
-
-
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   // 點擊分類選單的事件綁定
