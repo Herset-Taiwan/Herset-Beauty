@@ -29,18 +29,20 @@
     {% for p in products %}
     <div class="product-card" data-category="{{ p['categories'] | join(',') if p['categories'] else '全部' }}">
   <a href="/product/{{ p['id'] }}" style="position: relative; display: block;">
+  <div class="label-group">
     {% for tag in p['tags'] %}
-  <div class="label-badge
-              {% if tag == '新品特價' %}badge-sale{% endif %}
-              {% if tag == '主打商品' %}badge-hot{% endif %}
-              {% if tag == '熱銷推薦' %}badge-recommend{% endif %}
-              {% if tag == '天然成分' %}badge-natural{% endif %}">
-    {{ tag }}
+      <div class="label-badge
+                  {% if tag == '新品特價' %}badge-sale{% endif %}
+                  {% if tag == '主打商品' %}badge-hot{% endif %}
+                  {% if tag == '熱銷推薦' %}badge-recommend{% endif %}
+                  {% if tag == '天然成分' %}badge-natural{% endif %}">
+        {{ tag }}
+      </div>
+    {% endfor %}
   </div>
-{% endfor %}
+  <img src="{{ p['image'] or (p['images'][0] if p['images'] else '') }}" alt="{{ p['name'] }}">
+</a>
 
-    <img src="{{ p['image'] or (p['images'][0] if p['images'] else '') }}" alt="{{ p['name'] }}">
-  </a>
 
     <div class="product-info">
       <h2>{{ p['name'] }}</h2>

@@ -536,20 +536,14 @@ footer {
 
 /*商品標籤樣式*/
 .label-badge {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  padding: 4px 12px;
+  padding: 6px 12px;
   font-size: 13px;
-  font-weight: 600;
-  border-radius: 999px;
-  color: #fff;
-  background: linear-gradient(135deg, #ff4d4f, #ff7a45);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-  z-index: 10;
-  animation: popIn 0.4s ease;
-  line-height: 1.2;
+  font-weight: bold;
+  color: white;
+  border-radius: 30px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
   white-space: nowrap;
+  animation: popIn 0.4s ease;
 }
 
 .badge-sale {
@@ -582,6 +576,16 @@ footer {
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
   z-index: 10;
 }
+.label-group {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  z-index: 10;
+}
+
 
 @keyframes popIn {
   0% { transform: scale(0.6); opacity: 0; }
