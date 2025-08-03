@@ -321,12 +321,23 @@
 
   function addToCart(productId) {
     const qty = parseInt(document.getElementById('qty').value);
-    const option = selectedOption;
+    let option = selectedOption;
+const optionButtons = document.querySelectorAll('.options button');
 
-    if (!option) {
-      showTip("⚠️ 請先選擇商品規格");
-      return;
-    }
+if (!option) {
+  if (optionButtons.length === 1) {
+    option = optionButtons[0].innerText;
+    selectedOption = option;
+    document.getElementById('selected-option-input').value = option;
+    optionButtons[0].classList.add('selected');
+  } else if (optionButtons.length === 0) {
+    option = ""; // 沒有規格
+  } else {
+    showTip("⚠️ 請先選擇商品規格");
+    return;
+  }
+}
+
 
     fetch('/add_to_cart', {
       method: 'POST',
@@ -375,6 +386,16 @@
       document.getElementById(tabId).classList.add('active');
     });
   });
+
+  window.addEventListener('DOMContentLoaded', () => {
+  const optionButtons = document.querySelectorAll('.options button');
+  if (optionButtons.length === 1) {
+    optionButtons[0].classList.add('selected');
+    selectedOption = optionButtons[0].innerText;
+    document.getElementById('selected-option-input').value = selectedOption;
+  }
+});
+
 </script>
 
 
