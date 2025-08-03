@@ -66,3 +66,13 @@ function confirmCloseProfile() {
   document.getElementById("profile-modal").style.display = "none";
 }
 
+let currentCategory = null;
+
+function filterCategory(categoryName) {
+  currentCategory = categoryName;
+  // 清除目前商品、重新載入
+  document.querySelector("#product-list").innerHTML = '';
+  fetch(`/api/products?category=${encodeURIComponent(categoryName)}`)
+    .then(res => res.json())
+    .then(products => renderProducts(products));
+}
