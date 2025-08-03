@@ -297,7 +297,7 @@
 
 <label>標籤（可多選 + 可新增）</label>
 <select id="tags" name="tags" multiple placeholder="請選擇或輸入標籤">
-  {% set all_tags = ['新品特價', '熱銷推薦', '限量販售', '天然成分', '溫和呵護'] %}
+  {% set all_tags = ['新品優惠', '熱銷推薦', '限量販售', '天然成分', '主打商品'] %}
   {% for tag in all_tags %}
     <option value="{{ tag }}" {% if product['tags'] and tag in product['tags'] %}selected{% endif %}>{{ tag }}</option>
   {% endfor %}
