@@ -537,16 +537,18 @@ footer {
 /*商品標籤樣式*/
 .label-badge {
   position: relative;
-  padding: 4px 10px;
-  font-size: 12px;
-  font-weight: 500;
+  padding: 6px 14px;            /* 內距加大 */
+  font-size: 14px;              /* 字體加大 */
+  font-weight: 600;             /* 更醒目的粗度 */
   color: white;
-  border-radius: 20px;
+  border-radius: 24px;          /* 邊角稍微圓潤一點 */
   line-height: 1.2;
   white-space: nowrap;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
   animation: popIn 0.3s ease;
+  letter-spacing: 0.5px;        /* 字距拉一點點更大器 */
 }
+
 
 .label-group {
   position: absolute;
