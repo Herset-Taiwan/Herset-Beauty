@@ -159,15 +159,18 @@
             {% endif %}
 
             {% set price = p['price'] | float %}
-            {% set discount = p.get('discount_price') %}
-            {% if discount is not none and discount|float > 0 and discount|float < price %}
-              <span style="color:#999; text-decoration: line-through;">${{ '%.0f' % price }}</span>
-              <span style="color: #e91e63; font-weight: bold;">${{ '%.0f' % discount|float }}</span>
-              × {{ p['qty'] }} =
-              <span style="color: #e91e63; font-weight: bold;">${{ '%.0f' % (discount|float * p['qty']) }}</span>
-            {% else %}
-              ${{ '%.0f' % price }} × {{ p['qty'] }} = ${{ '%.0f' % p['subtotal'] }}
-            {% endif %}
+{% set original = p.get('original_price') | float %}
+{% set discount = p.get('discount_price') | float %}
+
+{% if discount and discount < original %}
+  <span style="color:#999; text-decoration: line-through;">${{ '%.0f' % original }}</span>
+  <span style="color: #e91e63; font-weight: bold;">${{ '%.0f' % discount }}</span>
+  × {{ p['qty'] }} =
+  <span style="color: #e91e63; font-weight: bold;">${{ '%.0f' % (discount * p['qty']) }}</span>
+{% else %}
+  ${{ '%.0f' % price }} × {{ p['qty'] }} = ${{ '%.0f' % (price * p['qty']) }}
+{% endif %}
+
           </div>
 
           <div class="cart-actions">
