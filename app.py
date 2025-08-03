@@ -883,6 +883,7 @@ def new_product():
     return render_template("new_product.html")
 
 
+#新增商品
 @app.route('/add_product', methods=['POST'])
 def add_product():
     try:
