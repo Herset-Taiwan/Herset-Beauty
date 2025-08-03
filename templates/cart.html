@@ -182,36 +182,29 @@
     <span style="color: #888; font-size: 0.9em;">選項：{{ p['option'] }}</span><br>
   {% endif %}
 
-  {% set unit_price = p['discount_price'] if p.get('discount_price') else p['price'] %}
-<div style="margin-top: 6px;">
+  <div class="price-block" style="margin-top: 6px; display: flex; align-items: center; flex-wrap: wrap; gap: 6px;">
   {% set unit_price = p['discount_price'] if p.get('discount_price') else p['price'] %}
 
   {% if p.get('discount_price') %}
-    <span style="font-size: 0.9em; color: #999; text-decoration: line-through; margin-right: 8px;">
-      ${{ "%.0f"|format(p['price']) }}
+    <span class="original-price" style="font-size: 0.9em; color: #999; text-decoration: line-through;">
+      ${{ "%.0f"|format(p.get('original_price', p['price'])) }}
     </span>
-    <span style="color: #e91e63; font-size: 1.1em; font-weight: bold;">
+    <span class="discount-price" style="color: #e91e63; font-size: 1.1em; font-weight: bold;">
       ${{ "%.0f"|format(p['discount_price']) }}
     </span>
   {% else %}
-    <span style="font-size: 1.1em; font-weight: bold;">
+    <span class="regular-price" style="font-size: 1.1em; font-weight: bold;">
       ${{ "%.0f"|format(p['price']) }}
     </span>
   {% endif %}
 
-  <span style="margin-left: 6px; color: #555;">× {{ p['qty'] }} =</span>
-  <span style="margin-left: 4px; font-weight: bold;">
+  <span style="color: #555;">× {{ p['qty'] }} =</span>
+  <span class="subtotal" style="font-weight: bold;">
     ${{ "%.0f"|format(unit_price * p['qty']) }}
   </span>
 </div>
 
-  <span style="margin-left: 6px; color: #555;">× {{ p['qty'] }} =</span>
-  <span style="margin-left: 4px; font-weight: bold;">
-    ${{ "%.0f"|format(unit_price * p['qty']) }}
-  </span>
 </div>
-
-× {{ p['qty'] }} = ${{ "%.0f"|format(unit_price * p['qty']) }}
 
 
 </div>
