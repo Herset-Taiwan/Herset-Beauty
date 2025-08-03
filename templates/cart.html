@@ -182,14 +182,18 @@
         <span style="color: #888; font-size: 0.9em;">選項：{{ p['option'] }}</span><br>
       {% endif %}
 
-      {% if p['discount_price'] and p['discount_price'] < p['price'] %}
-        <span style="color:#999; text-decoration: line-through;">${{ '%.0f' % p['price'] }}</span>
-        <span style="color: #e91e63; font-weight: bold;">${{ '%.0f' % p['discount_price'] }}</span>
-        × {{ p['qty'] }} =
-        <span style="color: #e91e63; font-weight: bold;">${{ '%.0f' % (p['discount_price'] * p['qty']) }}</span>
-      {% else %}
-        ${{ '%.0f' % p['price'] }} × {{ p['qty'] }} = ${{ '%.0f' % p['subtotal'] }}
-      {% endif %}
+      {% set price = p['price'] | float %}
+{% set discount = p['discount_price'] | float %}
+
+{% if discount and discount < price %}
+  <span style="color:#999; text-decoration: line-through;">${{ '%.0f' % price }}</span>
+  <span style="color: #e91e63; font-weight: bold;">${{ '%.0f' % discount }}</span>
+  × {{ p['qty'] }} =
+  <span style="color: #e91e63; font-weight: bold;">${{ '%.0f' % (discount * p['qty']) }}</span>
+{% else %}
+  ${{ '%.0f' % price }} × {{ p['qty'] }} = ${{ '%.0f' % p['subtotal'] }}
+{% endif %}
+
     </div>
 
     <div class="cart-actions">

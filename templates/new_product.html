@@ -97,14 +97,15 @@
 <input type="text" name="name" required>
 
 <label>價格</label>
-<input type="number" name="price" required>
+<input type="number" name="price" required step="1" min="0">
 
 <label>優惠價（選填）</label>
-<input type="number" name="discount_price" placeholder="留空則不顯示優惠價">
+<input type="number" name="discount_price" placeholder="留空則不顯示優惠價" step="1" min="0">
 <div class="note">若填寫，前台會顯示為紅字優惠價並劃掉原價</div>
 
 <label>庫存數量</label>
-<input type="number" name="stock" min="0" required>
+<input type="number" name="stock" required step="1" min="0">
+
 
 <label>分類（可多選）</label>
 <select id="categories" name="categories[]" multiple placeholder="請選擇或輸入分類">

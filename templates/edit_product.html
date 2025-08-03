@@ -266,17 +266,17 @@
     <form method="POST" enctype="multipart/form-data">
       <label>商品名稱</label>
       <input type="text" name="name" value="{{ product['name'] }}" required>
-      
+
       <!-- 原價欄位 -->
-      <label>價格</label>
-      <input type="number" name="price" value="{{ product['price'] }}" required>
+<label>價格</label>
+<input type="number" name="price" value="{{ product['price'] }}" required step="1" min="0">
 
-      <!-- 優惠價欄位 -->
+<!-- 優惠價欄位 -->
 <label>優惠價（選填）</label>
-<input type="number" name="discount_price" value="{{ product.get('discount_price', '') }}" step="0.1"><br>
+<input type="number" name="discount_price" value="{{ product.get('discount_price', '') }}" step="1" min="0">
 
-      <label>庫存數量</label>
-      <input type="number" name="stock" value="{{ product['stock'] or 0 }}" required min="0">
+<label>庫存數量</label>
+<input type="number" name="stock" value="{{ product['stock'] or 0 }}" required step="1" min="0">
 
 
       <!-- ✅ 多分類欄位 -->
