@@ -1048,6 +1048,8 @@ def delete_product(product_id):
     supabase.table("products").delete().eq("id", product_id).execute()
     return redirect('/admin0363/dashboard')
 
+
+# 加入購物車
 @app.route('/add_to_cart', methods=['POST'])
 def add_to_cart():
     product_id = request.form.get('product_id')
@@ -1055,24 +1057,25 @@ def add_to_cart():
     option = request.form.get('option', '')
     action = request.form.get('action')
 
-    # 取得商品
+    # 取得商品資料
     res = supabase.table('products').select('*').eq('id', product_id).execute()
     if not res.data:
-        return jsonify(success=False), 404
+        return jsonify(success=False, message="找不到商品"), 404
+
     product = res.data[0]
 
-    # ✅ 強制轉 float，解決 Decimal 問題
+    # ✅ 強制轉 float，解決 Decimal 問題（避免 JSON 序列化出錯）
     original_price = float(product.get('price') or 0)
     discount_price = float(product.get('discount_price') or 0)
     final_price = discount_price if discount_price and discount_price < original_price else original_price
 
-    # 初始化購物車
+    # ✅ 初始化購物車 session（第一次加入）
     if 'cart' not in session:
         session['cart'] = []
 
     cart = session['cart']
 
-    # 檢查是否已存在相同商品 + 相同規格
+    # ✅ 檢查購物車中是否已有相同商品與規格（option）
     found = False
     for item in cart:
         if item.get('product_id') == product_id and item.get('option') == option:
@@ -1080,7 +1083,7 @@ def add_to_cart():
             found = True
             break
 
-    # 加入新商品
+    # ✅ 若無則新增項目
     if not found:
         cart.append({
             'id': product_id,
@@ -1094,14 +1097,16 @@ def add_to_cart():
             'option': option
         })
 
-    # 更新 session
+    # ✅ 寫回 session
     session['cart'] = cart
 
+    # ✅ 若為立即結帳，轉導至購物車頁面
     if action == 'checkout':
         return redirect('/cart')
 
-    return jsonify(success=True, count=sum(item['qty'] for item in cart))
-
+    # ✅ 成功回傳 JSON，包含目前購物車總數量
+    total_qty = sum(item['qty'] for item in cart)
+    return jsonify(success=True, count=total_qty)
 
 
 

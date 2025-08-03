@@ -201,9 +201,10 @@
   <a href="/cart" class="cart-indicator">
   <span class="cart-icon">🛒</span>
   <span class="cart-text">購物車</span>
-  {% if cart_count and cart_count > 0 %}
-    <span class="cart-count" id="cart-count">{{ cart_count }}</span>
-  {% endif %}
+  <span class="cart-count" id="cart-count" {% if not cart_count or cart_count == 0 %}style="display:none"{% endif %}>
+  {{ cart_count or 0 }}
+</span>
+
 </a>
 
 </div>
@@ -319,6 +320,18 @@
   return;
   
 }
+
+function adjustQty(delta) {
+  const qtyInput = document.getElementById('qty');
+  let current = parseInt(qtyInput.value);
+  current += delta;
+  if (current < 1) current = 1;
+  qtyInput.value = current;
+
+  // 也同步更新立即結帳用的 hidden 欄位
+  document.getElementById('qty-input-checkout').value = current;
+}
+
 function showTip(message) {
   const tip = document.getElementById('cart-tip');
   tip.innerText = message;
