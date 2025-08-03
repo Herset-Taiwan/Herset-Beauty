@@ -206,6 +206,16 @@
   animation: popIn 0.4s ease;
 }
 
+.label-group {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  display: flex;         /* ✅ 關鍵：讓多個標籤並排顯示 */
+  flex-wrap: wrap;
+  gap: 6px;
+  z-index: 10;
+}
+
 .badge-sale {
   background: #e53935;
 }
@@ -218,6 +228,7 @@
 .gallery-main {
   position: relative; /* 🧠 為了讓 label-badge 可以絕對定位 */
 }
+
 
 @keyframes popIn {
   0% { transform: scale(0.6); opacity: 0; }
