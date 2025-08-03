@@ -288,14 +288,14 @@ function loadCategory(categoryName) {
       }
 
       const currentContent = document.querySelector('#product-container');
-      currentContent.classList.remove("show");
-currentContent.classList.add("fade");
+      currentContent.style.transition = "opacity 0.3s ease";
+currentContent.style.opacity = 0;
 
 setTimeout(() => {
   currentContent.innerHTML = newContent.innerHTML;
-  currentContent.classList.remove("fade");
-  currentContent.classList.add("show");
-}, 100); // 可調整時間
+  currentContent.style.opacity = 1;
+}, 300);
+
 
 
       // 更新 active 樣式
