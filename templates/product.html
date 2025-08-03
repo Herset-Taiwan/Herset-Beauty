@@ -193,7 +193,6 @@
 
 /* 標籤樣式 */
 .label-badge {
-  position: absolute;
   top: 16px;
   left: 16px;
   padding: 8px 14px;
@@ -210,9 +209,9 @@
   position: absolute;
   top: 16px;
   left: 16px;
-  display: flex;         /* ✅ 關鍵：讓多個標籤並排顯示 */
-  flex-wrap: wrap;
-  gap: 6px;
+  display: flex;         /* ✅ 並排 */
+  flex-wrap: wrap;       /* ✅ 可換行 */
+  gap: 6px;              /* ✅ 間距 */
   z-index: 10;
 }
 
