@@ -1053,13 +1053,13 @@ def add_to_cart():
     option = request.form.get('option', '')
     action = request.form.get('action')
 
-    # 找商品
+    # 取得商品
     res = supabase.table('products').select('*').eq('id', product_id).execute()
     if not res.data:
         return jsonify(success=False), 404
     product = res.data[0]
 
-    # ✅ 價格判斷邏輯（保證是 float）
+    # ✅ 強制轉 float，解決 Decimal 問題
     original_price = float(product.get('price') or 0)
     discount_price = float(product.get('discount_price') or 0)
     final_price = discount_price if discount_price and discount_price < original_price else original_price
@@ -1099,7 +1099,6 @@ def add_to_cart():
         return redirect('/cart')
 
     return jsonify(success=True, count=sum(item['qty'] for item in cart))
-
 
 
 
