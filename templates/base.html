@@ -264,23 +264,31 @@ function cancelCloseProfile() {
 
 <script>
 function loadCategory(categoryName) {
-  // ✅ 沒有商品容器就跳轉回首頁
-  if (!document.querySelector('#product-container')) {
-    window.location.href = '/?category=' + encodeURIComponent(categoryName);
+  const hasProductContainer = document.querySelector('#product-container');
+
+  const targetUrl = '/?category=' + encodeURIComponent(categoryName);
+
+  if (!hasProductContainer) {
+    // 如果不是在首頁（沒有商品容器），就直接跳轉回首頁
+    window.location.href = targetUrl;
     return;
   }
 
-  fetch('/?category=' + encodeURIComponent(categoryName))
+  // ✅ 首頁才用 AJAX 載入
+  fetch(targetUrl)
     .then(response => response.text())
     .then(html => {
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = html;
 
       const newContent = tempDiv.querySelector('#product-container');
-      const currentContent = document.querySelector('#product-container');
-      if (newContent && currentContent) {
-        currentContent.innerHTML = newContent.innerHTML;
+      if (!newContent) {
+        console.error("無法從回應中找到 #product-container");
+        return;
       }
+
+      const currentContent = document.querySelector('#product-container');
+      currentContent.innerHTML = newContent.innerHTML;
 
       // 更新 active 樣式
       document.querySelectorAll('.sub-categories a').forEach(a => {
@@ -291,14 +299,14 @@ function loadCategory(categoryName) {
         }
       });
 
-      history.replaceState(null, '', '/?category=' + encodeURIComponent(categoryName));
+      history.replaceState(null, '', targetUrl);
     })
     .catch(err => {
       console.error('分類載入失敗:', err);
     });
 }
-
 </script>
+
 
 
 
