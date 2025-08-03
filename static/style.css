@@ -534,6 +534,34 @@ footer {
   background-color: #C6456C;
 }
 
+/*商品標籤樣式*/
+.label-badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 30px;
+  color: white;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  z-index: 10;
+  animation: popIn 0.4s ease;
+}
+
+.badge-sale {
+  background: #e53935;
+}
+
+.badge-hot {
+  background: #f57c00;
+  top: 56px;
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
 
 
 
