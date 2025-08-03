@@ -244,6 +244,7 @@
 </div>
 
 <div class="product-container">
+  <!-- 左側圖片區塊 -->
   <div class="gallery">
     <div class="gallery-main" style="position: relative;">
       <div class="label-group">
@@ -268,32 +269,30 @@
       {% endfor %}
     </div>
   </div>
-</div>
 
-
-
+  <!-- 右側商品資訊區塊 -->
   <div class="info">
     <h2>{{ product['name'] }}</h2>
+
     <div class="price">
-  {% if product.get('discount_price') %}
-    <span style="text-decoration: line-through; color: #888;">NT${{ "%.0f"|format(product['price']) }}</span>
-    <span style="color: red; font-size: 24px; font-weight: bold; margin-left: 10px;">NT${{ "%.0f"|format(product['discount_price']) }}</span>
-  {% else %}
-    NT${{ "%.0f"|format(product['price']) }}
-  {% endif %}
-</div>
+      {% if product.get('discount_price') %}
+        <span style="text-decoration: line-through; color: #888;">NT${{ "%.0f"|format(product['price']) }}</span>
+        <span style="color: red; font-size: 24px; font-weight: bold; margin-left: 10px;">NT${{ "%.0f"|format(product['discount_price']) }}</span>
+      {% else %}
+        NT${{ "%.0f"|format(product['price']) }}
+      {% endif %}
+    </div>
 
-
-   {% if product['stock'] == 0 %}
-  <div style="background-color: #ffe6e6; color: #b30000; font-weight: bold; padding: 10px; border-radius: 6px; margin-top: 10px;">
-    商品已售完，補貨中！
-  </div>
-{% endif %}
+    {% if product['stock'] == 0 %}
+      <div style="background-color: #ffe6e6; color: #b30000; font-weight: bold; padding: 10px; border-radius: 6px; margin-top: 10px;">
+        商品已售完，補貨中！
+      </div>
+    {% endif %}
 
     <div class="options">
       <label>選項：</label><br>
       {% for opt in product['options'] %}
-      <button>{{ opt }}</button>
+        <button>{{ opt }}</button>
       {% endfor %}
     </div>
 
@@ -304,31 +303,31 @@
       <button onclick="adjustQty(1)">+</button>
     </div>
 
-   {% set is_out_of_stock = product['stock'] == 0 %}
-<div class="actions">
-  <button 
-    onclick="addToCart({{ product['id'] }})" 
-    {% if is_out_of_stock %}disabled style="opacity: 0.5; cursor: not-allowed;"{% endif %}
-  >
-    加入購物車
-  </button>
+    {% set is_out_of_stock = product['stock'] == 0 %}
+    <div class="actions">
+      <button 
+        onclick="addToCart({{ product['id'] }})" 
+        {% if is_out_of_stock %}disabled style="opacity: 0.5; cursor: not-allowed;"{% endif %}
+      >
+        加入購物車
+      </button>
 
-  <form action="/add_to_cart" method="post" style="display:inline;">
-    <input type="hidden" name="product_id" value="{{ product['id'] }}">
-    <input type="hidden" name="qty" id="qty-input-checkout" value="1">
-    <input type="hidden" name="action" value="checkout">
-    <input type="hidden" name="option" id="selected-option-input" value="">
-    <button 
-      type="submit" 
-      {% if is_out_of_stock %}disabled style="opacity: 0.5; cursor: not-allowed;"{% endif %}
-    >
-      立即結帳
-    </button>
-  </form>
-</div>
+      <form action="/add_to_cart" method="post" style="display:inline;">
+        <input type="hidden" name="product_id" value="{{ product['id'] }}">
+        <input type="hidden" name="qty" id="qty-input-checkout" value="1">
+        <input type="hidden" name="action" value="checkout">
+        <input type="hidden" name="option" id="selected-option-input" value="">
+        <button 
+          type="submit" 
+          {% if is_out_of_stock %}disabled style="opacity: 0.5; cursor: not-allowed;"{% endif %}
+        >
+          立即結帳
+        </button>
+      </form>
+    </div>
+  </div> <!-- 👈 info 結束 -->
+</div> <!-- 👈 product-container 結束 -->
 
-  </div>
-</div>
 
 <div class="tabs">
   <button class="tab-btn active" data-tab="intro">商品介紹</button>
