@@ -238,14 +238,14 @@
 </div>
 
 
-      <form method="POST" action="/checkout">
-        <button type="submit" class="checkout-btn">結帳</button>
-      </form>
-    {% else %}
-      <p>目前尚無商品。</p>
-    {% endif %}
+      <div class="actions-row" style="display: flex; justify-content: space-between; align-items: center; margin-top: 40px;">
+  <a href="/" class="back-btn">← 繼續購物</a>
 
-    <a href="/" class="back-btn">← 繼續購物</a>
+  <form method="POST" action="/checkout">
+    <button type="submit" class="checkout-btn">結帳</button>
+  </form>
+</div>
+
   </div>
 </body>
 </html>
