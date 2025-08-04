@@ -1390,7 +1390,7 @@ def reply_message(msg_id):
         "is_read": False,
         "reply_text": reply_text
     }).eq("id", str(msg_id)).execute()
-
+    print("✅ 更新結果：", result)
     flash("已回覆留言", "success")
     return redirect("/admin0363/dashboard?tab=messages")
 
