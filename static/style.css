@@ -534,22 +534,26 @@ footer {
   background-color: #C6456C;
 }
 
-/*商品標籤樣式*/
+/* 商品標籤樣式 - 漸層 + 陰影 + 光澤 */
 .label-badge {
   position: relative;
-  padding: 6px 14px;            /* 內距加大 */
-  font-size: 14px;              /* 字體加大 */
-  font-weight: 600;             /* 更醒目的粗度 */
+  padding: 6px 14px;
+  font-size: 14px;
+  font-weight: 600;
   color: white;
-  border-radius: 24px;          /* 邊角稍微圓潤一點 */
+  border-radius: 24px;
   line-height: 1.2;
   white-space: nowrap;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    inset 0 -1px 0 rgba(255,255,255,0.2),
+    inset 0 1px 1px rgba(255,255,255,0.15),
+    0 3px 8px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 1px rgba(0,0,0,0.3);
   animation: popIn 0.3s ease;
-  letter-spacing: 0.5px;        /* 字距拉一點點更大器 */
+  letter-spacing: 0.5px;
 }
 
-
+/* 標籤容器群組 */
 .label-group {
   position: absolute;
   top: 12px;
@@ -560,23 +564,28 @@ footer {
   z-index: 10;
 }
 
+/* 各類標籤漸層背景 */
 .badge-sale {
-  background: #e53935;
+  background: linear-gradient(to bottom, #f75a5a, #c62828);
 }
+
 .badge-hot {
-  background: #f57c00;
+  background: linear-gradient(to bottom, #f7a547, #e07c00);
 }
+
 .badge-recommend {
-  background: #00796b;
+  background: linear-gradient(to bottom, #00bfa5, #00796b);
 }
+
 .badge-natural {
-  background: #689f38;
+  background: linear-gradient(to bottom, #aed581, #689f38);
 }
 
 .badge-limited {
-  background: #9c27b0; /* 紫色風格，可依你喜好再調 */
+  background: linear-gradient(to bottom, #ba68c8, #8e24aa);
 }
 
+/* 彈出動畫 */
 @keyframes popIn {
   0% { transform: scale(0.6); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
