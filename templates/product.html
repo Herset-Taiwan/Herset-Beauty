@@ -328,8 +328,8 @@
 
     <div class="price-box">
   {% if product.get('discount_price') %}
+        <div class="price-original">NT${{ "%.0f"|format(product['price']) }}</div>
     <div class="price-discount">NT${{ "%.0f"|format(product['discount_price']) }}</div>
-    <div class="price-original">NT${{ "%.0f"|format(product['price']) }}</div>
   {% else %}
     <div class="price-regular">NT${{ "%.0f"|format(product['price']) }}</div>
   {% endif %}
