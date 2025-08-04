@@ -61,6 +61,21 @@
       {% endif %}
     </div>
     {% endfor %}
+
+<div class="pagination" style="text-align: center; margin-top: 30px;">
+  {% if has_prev %}
+    <a href="{{ url_for('member_messages', page=page-1) }}"
+       style="margin-right: 10px; padding: 6px 12px; background: #eee; border-radius: 6px; text-decoration: none;">← 上一頁</a>
+  {% endif %}
+  {% if has_next %}
+    <a href="{{ url_for('member_messages', page=page+1) }}"
+       style="margin-left: 10px; padding: 6px 12px; background: #eee; border-radius: 6px; text-decoration: none;">下一頁 →</a>
+  {% endif %}
+</div>
+
+
+
+
   {% else %}
     <p style="text-align: center; color: gray;">您尚未留言過任何問題</p>
   {% endif %}

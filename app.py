@@ -1452,25 +1452,33 @@ def member_messages():
 
     tz = timezone("Asia/Taipei")
     member_id = session["member_id"]
+    page = int(request.args.get("page", 1))
+    per_page = 5
 
-    # 取得該會員所有留言（新 → 舊）
-    messages = supabase.table("messages") \
+    # 全部留言（新 → 舊）
+    all_messages = supabase.table("messages") \
         .select("*") \
         .eq("member_id", member_id) \
         .order("created_at", desc=True) \
         .execute().data or []
 
-    for m in messages:
-        # 顯示台灣時間
+    # 顯示台灣時間 & 是否為新回覆
+    for m in all_messages:
         try:
             m["local_created_at"] = parser.parse(m["created_at"]).astimezone(tz).strftime("%Y-%m-%d %H:%M")
         except:
             m["local_created_at"] = m["created_at"]
-
-        # 判斷是否為新回覆
         m["is_new"] = m.get("is_replied") and not m.get("is_read")
 
-    # 將新回覆設為已讀
+    # 分頁
+    total = len(all_messages)
+    start = (page - 1) * per_page
+    end = start + per_page
+    messages = all_messages[start:end]
+    has_prev = page > 1
+    has_next = end < total
+
+    # 設為已讀
     if messages:
         supabase.table("messages") \
             .update({"is_read": True}) \
@@ -1479,10 +1487,14 @@ def member_messages():
             .eq("is_read", False) \
             .execute()
 
-    # 清除提示訊息
     session["has_new_reply"] = False
 
-    return render_template("member_messages.html", messages=messages)
+    return render_template("member_messages.html",
+                           messages=messages,
+                           page=page,
+                           has_prev=has_prev,
+                           has_next=has_next)
+
 
 
 
