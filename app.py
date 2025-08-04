@@ -1381,15 +1381,21 @@ def reply_message(msg_id):
     if not session.get("admin_logged_in"):
         return redirect("/admin0363")
 
+    msg_id = str(msg_id)  # ✅ 強制轉成字串
     reply_text = request.form.get("reply")
     print("🔍 回覆內容：", reply_text)
     print("🔑 留言ID：", msg_id)
 
+    # 可以先確認是否查得到
+    found = supabase.table("messages").select("id").eq("id", msg_id).execute()
+    print("🔎 查詢結果：", found)
+
+    # 執行更新
     result = supabase.table("messages").update({
         "is_replied": True,
         "is_read": False,
         "reply_text": reply_text,
-        "updated_at": datetime.utcnow().isoformat()  # ✅ 用 ISO 時間格式
+        "updated_at": datetime.utcnow().isoformat()
     }).eq("id", msg_id).execute()
 
     print("✅ 更新結果：", result)
