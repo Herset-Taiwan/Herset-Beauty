@@ -211,7 +211,7 @@ def admin_dashboard():
             "product_name": item.get("product_name"),
             "qty": item.get("qty"),
             "price": item.get("price"),
-            'option': item.get('option', '')
+            "option": item.get("option", "")
         })
 
     orders = []
@@ -229,15 +229,26 @@ def admin_dashboard():
             o["created_local"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
         except:
             o["created_local"] = o["created_at"]
-
         orders.append(o)
 
+    # ✅ 留言
+    messages_res = supabase.table("messages").select("*").order("created_at", desc=True).execute()
+    member_ids = list({m['member_id'] for m in messages_res.data})
+    name_map = {}
+    if member_ids:
+        members_res = supabase.table("members").select("id, name").in_("id", member_ids).execute()
+        name_map = {m['id']: m['name'] for m in members_res.data}
+    for m in messages_res.data:
+        m["member_name"] = name_map.get(m["member_id"], "未知")
+
+    # ✅ 最終 return
     return render_template("admin.html",
+                           tab=tab,
+                           selected_categories=selected_categories,
                            products=products,
                            members=members,
                            orders=orders,
-                           tab=tab,
-                           selected_categories=selected_categories)
+                           messages=messages_res.data)
 
 
 
@@ -1363,23 +1374,6 @@ def submit_message():
     flash("留言送出成功，我們將盡快與您聯繫", "success")
     return render_template("message_success.html")
 
-#admin顯示與回覆留言
-@app.route("/admin0363/messages")
-def admin_messages():
-    if not session.get("admin_logged_in"):
-        return redirect("/admin0363")
-
-    # 抓留言與會員名稱
-    messages_res = supabase.table("messages").select("*").order("created_at", desc=True).execute()
-    member_ids = list({m['member_id'] for m in messages_res.data})
-    members_res = supabase.table("members").select("id, name").in_("id", member_ids).execute()
-    member_dict = {m['id']: m['name'] for m in members_res.data}
-
-    # 加入會員名稱
-    for m in messages_res.data:
-        m["member_name"] = member_dict.get(m["member_id"], "未知")
-
-    return render_template("admin.html", tab="messages", messages=messages_res.data)
 
 #回覆留言（設為已回覆）
 @app.route("/admin0363/messages/reply/<msg_id>", methods=["POST"])
@@ -1395,7 +1389,8 @@ def reply_message(msg_id):
 
     # 可另外存回覆內容到另一表或 log
     flash("已回覆留言", "success")
-    return redirect("/admin0363/messages")
+    return redirect("/admin0363/dashboard?tab=messages")
+
 
 
 #全站共用留言has_new_reply
