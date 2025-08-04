@@ -170,13 +170,13 @@ footer {
   justify-content: center;
 }
 .price-box {
-  margin-top: 16px;
+  min-height: 38px;  /* ⭐️ 根據你想要的空間微調，38px 可以容納兩行價格 */
   display: flex;
-  align-items: flex-end;
-  justify-content: center; /* ⭐️ 強制置中整組價格 */
-  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   flex-wrap: wrap;
-  font-family: 'Noto Sans TC', sans-serif;
+  margin: 6px 0 10px;
 }
 
 .price-original {
