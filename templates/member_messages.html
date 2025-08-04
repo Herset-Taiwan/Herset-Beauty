@@ -1,15 +1,18 @@
 {% extends "base.html" %}
 
 {% block title %}我的留言 - HERSET{% endblock %}
+{% block banner %}{% endblock %}
+
 
 {% block content %}
+
 <div class="container" style="max-width: 800px; margin: 40px auto;">
   <h2 style="text-align: center; color: #e91e63;">📨 我的留言</h2>
 
   {% if messages %}
     {% for msg in messages %}
     <div style="background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px;">
-      <p><strong>留言時間：</strong>{{ msg['created_at'].replace('T', ' ')[:16] }}</p>
+      <p><strong>留言時間：</strong>{{ msg['local_created_at'] }}</p>
       {% if msg['is_new'] %}
   <span style="color: red; font-weight: bold; margin-left: 10px;">🔔 新回覆</span>
 {% endif %}

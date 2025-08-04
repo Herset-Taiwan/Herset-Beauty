@@ -238,8 +238,14 @@ def admin_dashboard():
     if member_ids:
         members_res = supabase.table("members").select("id, name").in_("id", member_ids).execute()
         name_map = {m['id']: m['name'] for m in members_res.data}
+
     for m in messages_res.data:
         m["member_name"] = name_map.get(m["member_id"], "未知")
+        try:
+            utc_dt = parser.parse(m["created_at"])
+            m["local_created_at"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M")
+        except:
+            m["local_created_at"] = m["created_at"]
 
     # ✅ 最終 return（這一段不要拆開）
     return render_template("admin.html",
@@ -249,6 +255,7 @@ def admin_dashboard():
                            members=members,
                            orders=orders,
                            messages=messages_res.data)
+
 
 
 
@@ -1451,6 +1458,13 @@ def member_messages():
         .eq("member_id", member_id) \
         .order("created_at", desc=True) \
         .execute().data or []
+
+    # ➤ 補上時區轉換
+    tz = timezone("Asia/Taipei")
+    for msg in messages:
+        utc_time = parser.parse(msg["created_at"])
+        local_time = utc_time.astimezone(tz)
+        msg["local_created_at"] = local_time.strftime("%Y-%m-%d %H:%M")
 
     # 將有回覆但還沒讀的留言設為已讀
     if messages:
