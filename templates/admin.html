@@ -249,6 +249,8 @@
       <button class="tab-btn active" onclick="switchTab('products')">商品管理</button>
       <button class="tab-btn" onclick="switchTab('members')">會員系統管理</button>
       <button class="tab-btn" onclick="switchTab('orders')">訂單管理系統</button>
+      <button class="tab-btn" onclick="switchTab('messages')">留言管理</button>
+
     </div>
 
     <div id="products" class="tab-content active">
@@ -345,6 +347,50 @@
     <div id="orders" class="tab-content">
   <h2>訂單管理系統</h2>
 
+
+<!-- 留言訊息 -->
+ <div id="messages" class="tab-content">
+  <h2>留言管理</h2>
+
+  {% for msg in messages %}
+  <div class="order-row">
+    <div class="info">
+      <strong>時間：</strong>{{ msg['created_at'].split('T')[0] }}<br>
+      <strong>會員：</strong>{{ msg['member_name'] or '未知會員' }}<br>
+      <strong>類型：</strong>{{ msg['type'] }}<br>
+      <strong>主題：</strong>{{ msg['subject'] }}<br>
+      {% if msg['order_number'] %}
+        <strong>訂單編號：</strong>{{ msg['order_number'] }}<br>
+      {% endif %}
+      <strong>內容：</strong><br>
+      <div style="white-space: pre-wrap;">{{ msg['content'] }}</div><br>
+      {% if msg['attachment_path'] %}
+        📎 <a href="/{{ msg['attachment_path'] }}" target="_blank">下載附件</a><br>
+      {% endif %}
+      <strong>狀態：</strong>
+      {% if msg['is_replied'] %}
+        <span class="badge green">已回覆</span>
+      {% else %}
+        <span class="badge red">未回覆</span>
+      {% endif %}
+    </div>
+
+    <div class="actions">
+      {% if not msg['is_replied'] %}
+      <form method="POST" action="/admin0363/messages/reply/{{ msg['id'] }}">
+        <textarea name="reply" rows="3" placeholder="輸入回覆內容..." required style="margin-top: 10px; width: 240px;"></textarea><br>
+        <button type="submit" style="color: #e91e63; border: none; background: none; font-weight: bold;">📩 回覆留言</button>
+      </form>
+      {% else %}
+      <div style="margin-top: 10px; color: #666;">✅ 已回覆</div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+
+
   <!-- 篩選與搜尋列 -->
   <div style="margin-bottom: 15px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
     <label>狀態：</label>
@@ -401,6 +447,7 @@ function switchTab(tabId) {
     filterOrders();  // ✅ 主動顯示訂單
   }
 }
+
 
 
 

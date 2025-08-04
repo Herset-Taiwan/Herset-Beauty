@@ -1363,8 +1363,42 @@ def submit_message():
     flash("留言送出成功，我們將盡快與您聯繫", "success")
     return render_template("message_success.html")
 
+#admin顯示與回覆留言
+@app.route("/admin0363/messages")
+def admin_messages():
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
 
-#全站共用has_new_reply
+    # 抓留言與會員名稱
+    messages_res = supabase.table("messages").select("*").order("created_at", desc=True).execute()
+    member_ids = list({m['member_id'] for m in messages_res.data})
+    members_res = supabase.table("members").select("id, name").in_("id", member_ids).execute()
+    member_dict = {m['id']: m['name'] for m in members_res.data}
+
+    # 加入會員名稱
+    for m in messages_res.data:
+        m["member_name"] = member_dict.get(m["member_id"], "未知")
+
+    return render_template("admin.html", tab="messages", messages=messages_res.data)
+
+#回覆留言（設為已回覆）
+@app.route("/admin0363/messages/reply/<msg_id>", methods=["POST"])
+def reply_message(msg_id):
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
+
+    reply_text = request.form.get("reply")
+    supabase.table("messages").update({
+        "is_replied": True,
+        "is_read": False  # 將會員設為未讀，以顯示提示
+    }).eq("id", msg_id).execute()
+
+    # 可另外存回覆內容到另一表或 log
+    flash("已回覆留言", "success")
+    return redirect("/admin0363/messages")
+
+
+#全站共用留言has_new_reply
 @app.context_processor
 def inject_has_new_reply():
     has_reply = False
