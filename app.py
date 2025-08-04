@@ -1357,7 +1357,7 @@ def submit_message():
         "content": content,
         "order_number": order_number,
         "attachment_path": file_path,
-        "created_at": datetime.utcnow()
+        "created_at": datetime.utcnow().isoformat()
     }).execute()
 
     flash("留言送出成功，我們將盡快與您聯繫", "success")
