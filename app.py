@@ -1382,12 +1382,14 @@ def reply_message(msg_id):
         return redirect("/admin0363")
 
     reply_text = request.form.get("reply")
+    print("🔍 回覆內容：", reply_text)
+    print("🔑 留言ID：", msg_id)
 
     supabase.table("messages").update({
         "is_replied": True,
         "is_read": False,
-        "reply_text": reply_text  # ✅ 正確存回覆內容
-    }).eq("id", msg_id).execute()
+        "reply_text": reply_text
+    }).eq("id", str(msg_id)).execute()
 
     flash("已回覆留言", "success")
     return redirect("/admin0363/dashboard?tab=messages")
