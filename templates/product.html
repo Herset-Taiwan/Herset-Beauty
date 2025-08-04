@@ -52,9 +52,10 @@
 
     .info h2 { margin-top: 0; }
  /* 商品頁縮圖樣式 */
- .thumbnail.selected {
+.thumbnail.selected {
   border: 2px solid #C7A7A3;
   border-radius: 6px;
+  box-shadow: 0 0 0 3px #f5eae7;
 }
 .product-thumbnails img {
   border-radius: 8px;
@@ -361,12 +362,12 @@
       <img id="main-img" src="{{ product['image'] }}" alt="product">
     </div>
 
-    <div class="gallery-thumbs">
-      <img src="{{ product['image'] }}" onclick="document.getElementById('main-img').src='{{ product['image'] }}'">
-      {% for img in product['images'] %}
-        <img src="{{ img }}" onclick="document.getElementById('main-img').src='{{ img }}'">
-      {% endfor %}
-    </div>
+    <div class="gallery-thumbs" id="thumbs">
+  <img src="{{ product['image'] }}" class="thumbnail">
+  {% for img in product['images'] %}
+    <img src="{{ img }}" class="thumbnail">
+  {% endfor %}
+</div>
   </div>
 
   <!-- 右側商品資訊區塊 -->
@@ -543,6 +544,28 @@ if (!option) {
     document.getElementById('selected-option-input').value = selectedOption;
   }
 });
+
+// 替換主圖並加上 .selected 樣式
+document.addEventListener('DOMContentLoaded', () => {
+  const mainImg = document.getElementById('main-img');
+  const thumbs = document.querySelectorAll('.gallery-thumbs .thumbnail');
+
+  thumbs.forEach(thumb => {
+    thumb.addEventListener('click', () => {
+      mainImg.src = thumb.src;
+
+      thumbs.forEach(t => t.classList.remove('selected'));
+      thumb.classList.add('selected');
+    });
+  });
+
+  // 預設第一張選中
+  if (thumbs.length > 0) {
+    thumbs[0].classList.add('selected');
+  }
+});
+
+
 
 </script>
 
