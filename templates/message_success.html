@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}留言成功｜HERSET{% endblock %}
+
+{% block content %}
+<style>
+  .thank-you-wrapper {
+    max-width: 600px;
+    margin: 80px auto;
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    text-align: center;
+    animation: fadeIn 1s ease-in-out;
+  }
+
+  .thank-you-wrapper img {
+    width: 100px;
+    margin-bottom: 20px;
+  }
+
+  .thank-you-wrapper h2 {
+    font-size: 28px;
+    color: #c08474;
+    margin-bottom: 10px;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .thank-you-wrapper p {
+    font-size: 16px;
+    color: #444;
+    margin-bottom: 30px;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .thank-you-wrapper a {
+    font-size: 15px;
+    color: #c08474;
+    text-decoration: underline;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+
+<div class="thank-you-wrapper">
+  <img src="{{ url_for('static', filename='icons/check-heart.png') }}" alt="成功圖示">
+  <h2>留言已送出</h2>
+  <p>我們已收到您的詢問，HERSET 將盡快與您聯繫 💌<br>3 秒後自動返回首頁…</p>
+  <a href="/">← 手動回首頁</a>
+</div>
+
+<script>
+  setTimeout(() => {
+    window.location.href = "/";
+  }, 3000);
+</script>
+{% endblock %}
