@@ -375,12 +375,12 @@
   <div id="order-list"></div>
   <div id="order-pagination" style="margin-top: 10px; text-align:center;"></div>
 </div>
-
+<!-- 留言管理 -->
 <div id="messages" class="tab-content">
   <h2>留言管理</h2>
 
   {% for msg in messages %}
-  <div class="order-row">
+  <div class="order-row" style="margin-bottom: 40px;">
     <div class="info">
       <strong>時間：</strong>{{ msg['created_at'].split('T')[0] }}<br>
       <strong>會員：</strong>{{ msg['member_name'] or '未知會員' }}<br>
@@ -402,57 +402,58 @@
       {% endif %}
     </div>
 
-    <!-- ✅ 回覆留言區塊（剛剛那一段放這裡） -->
-    <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: flex-start; gap: 40px;">
-      <!-- 左側：顯示已儲存的回覆內容 -->
-      <div style="flex: 1;">
-        <label style="font-weight: bold; display: block; margin-bottom: 6px;">回覆內容：</label>
-        <div style="
-          white-space: pre-wrap;
-          background: #fafafa;
-          border: 1px solid #ddd;
-          padding: 12px;
-          border-radius: 10px;
-          min-height: 80px;
-          font-size: 15px;
-          color: #444;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        ">
-          {{ msg['reply_text'] or '（尚未回覆）' }}
-        </div>
-      </div>
+    <!-- ✅ 回覆表單（支援修改模式） -->
+    <form method="POST" action="/admin0363/messages/reply/{{ msg['id'] }}" onsubmit="return confirm('確定要儲存這筆回覆嗎？')">
+      <label for="reply" style="font-weight: bold; display: block; margin-top: 20px;">回覆內容：</label>
+      <textarea id="reply-text-{{ msg['id'] }}" name="reply" rows="4"
+        style="
+          width: 100%;
+          padding: 10px;
+          border: 1px solid #ccc;
+          border-radius: 6px;
+          font-size: 14px;
+          resize: vertical;
+          box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+        "
+        {% if msg['is_replied'] %}readonly{% endif %}
+      >{{ msg['reply_text'] or '' }}</textarea>
 
-      <!-- 右側：編輯回覆表單 -->
-      <div style="flex: 1;">
-        <form method="POST" action="/admin0363/messages/reply/{{ msg['id'] }}">
-          <label for="reply" style="font-weight: bold; display: block; margin-bottom: 6px;">編輯回覆：</label>
-          <textarea name="reply" rows="4" required style="
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 14px;
-            resize: vertical;
-            box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
-          ">{{ msg['reply_text'] or '' }}</textarea>
-          <button type="submit" style="
-            margin-top: 10px;
-            background-color: #e91e63;
-            color: white;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-          ">
-            {% if msg['is_replied'] %}✏️ 修改回覆{% else %}📩 回覆留言{% endif %}
-          </button>
-        </form>
-      </div>
-    </div>
+      <button type="{% if msg['is_replied'] %}button{% else %}submit{% endif %}"
+        id="reply-btn-{{ msg['id'] }}"
+        onclick="{% if msg['is_replied'] %}enableEdit('{{ msg['id'] }}'){% endif %}"
+        style="
+          margin-top: 10px;
+          background-color: #e91e63;
+          color: white;
+          padding: 8px 16px;
+          border: none;
+          border-radius: 6px;
+          font-weight: bold;
+          cursor: pointer;
+        ">
+        {% if msg['is_replied'] %}✏️ 修改回覆{% else %}📩 確認回覆{% endif %}
+      </button>
+    </form>
+
   </div>
   {% endfor %}
 </div>
+
+<!-- ✅ JavaScript：切換編輯模式 -->
+<script>
+  function enableEdit(id) {
+    const textarea = document.getElementById('reply-text-' + id);
+    const button = document.getElementById('reply-btn-' + id);
+
+    textarea.removeAttribute('readonly');
+    textarea.focus();
+
+    button.innerText = "✅ 確認回覆";
+    button.type = "submit";
+    button.onclick = null;
+  }
+</script>
+
 
 <!-- 自訂的刪除確認視窗 -->
 <div id="deleteModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#00000088; z-index:1000; justify-content:center; align-items:center;">
