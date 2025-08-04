@@ -84,7 +84,7 @@ def nl2br_filter(s):
 
 @app.route('/')
 def index():
-    category = request.args.get('category')
+    category = request.args.get('category')  # 抓網址的 category 參數
     res = supabase.table("products").select("*").execute()
     products = res.data
 
@@ -92,24 +92,12 @@ def index():
     if category and category != '全部':
         products = [
             p for p in products
-            if category in (p.get('categories') or [])
+            if category in (p.get('categories') or [])  # ← categories 是 jsonb list
         ]
 
     cart = session.get('cart', [])
     cart_count = sum(item['qty'] for item in cart)
-
-    # ✅ 判斷是否有新留言回覆
-    has_reply = False
-    if 'member_id' in session:
-        reply_res = supabase.table("messages") \
-            .select("id") \
-            .eq("member_id", session['member_id']) \
-            .eq("is_replied", True) \
-            .eq("is_read", False) \
-            .execute()
-        has_reply = len(reply_res.data) > 0
-
-    return render_template("index.html", products=products, cart_count=cart_count, has_new_reply=has_reply)
+    return render_template("index.html", products=products, cart_count=cart_count)
 
 
 # ✅ SEO相關
@@ -1388,6 +1376,21 @@ def submit_message():
     flash("留言已送出，我們會儘快回覆您！")
     return redirect('/message')
 
+
+#全站共用has_new_reply
+@app.context_processor
+def inject_has_new_reply():
+    has_reply = False
+    if 'member_id' in session:
+        res = supabase.table("messages") \
+            .select("id") \
+            .eq("member_id", session['member_id']) \
+            .eq("is_replied", True) \
+            .eq("is_read", False) \
+            .execute()
+        has_reply = len(res.data) > 0
+
+    return dict(has_new_reply=has_reply)
 
 
 

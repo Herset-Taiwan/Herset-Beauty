@@ -45,6 +45,11 @@
   <nav class="main-nav">
     <ul>
       <li><a href="/">HOME</a></li>
+
+          {% if session.get('user') %}
+      <li><a href="/message">商品詢問</a></li>
+    {% endif %}
+
       <!--<li><a href="/about">關於我們</a></li>-->
       {% if session.get('user') %}
   <li class="dropdown">
