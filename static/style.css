@@ -118,6 +118,12 @@ footer {
 }
 
 /* ===== 商品清單 ===== */
+.product-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+}
+
 .product-list {
   display: flex;
   flex-wrap: wrap;
