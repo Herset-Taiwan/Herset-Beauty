@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}我的留言 - HERSET{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 800px; margin: 40px auto;">
+  <h2 style="text-align: center; color: #e91e63;">📨 我的留言</h2>
+
+  {% if messages %}
+    {% for msg in messages %}
+    <div style="background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px;">
+      <p><strong>留言時間：</strong>{{ msg['created_at'].split('T')[0] }}</p>
+      <p><strong>類型：</strong>{{ msg['type'] }}</p>
+      <p><strong>主題：</strong>{{ msg['subject'] }}</p>
+      {% if msg['order_number'] %}
+        <p><strong>訂單編號：</strong>{{ msg['order_number'] }}</p>
+      {% endif %}
+      <p><strong>留言內容：</strong><br>
+        <span style="white-space: pre-wrap;">{{ msg['content'] }}</span>
+      </p>
+
+      {% if msg['reply_text'] %}
+        <hr style="margin: 15px 0;">
+        <p><strong style="color: #4caf50;">管理員回覆：</strong><br>
+          <span style="white-space: pre-wrap; color: #333;">{{ msg['reply_text'] }}</span>
+        </p>
+      {% else %}
+        <p><span style="color: gray;">尚未收到回覆</span></p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  {% else %}
+    <p style="text-align: center; color: gray;">您尚未留言過任何問題</p>
+  {% endif %}
+</div>
+{% endblock %}
