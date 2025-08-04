@@ -172,6 +172,28 @@ footer {
 }
 /* ===== 商品價格樣式 ===== */
 
+.price-discount, .price-regular {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.price-discount .amount,
+.price-regular .amount {
+  font-size: 28px;         /* ✅ 數字大字 */
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  font-family: 'DM Sans', sans-serif;
+  color: #C04848;
+}
+
+.price-discount .currency,
+.price-regular .currency {
+  font-size: 14px;         /* ✅ NT 小字 */
+  font-weight: 500;
+  line-height: 1;
+}
+
 .price-box:has(.price-regular) {
   justify-content: center;
 }
@@ -204,9 +226,9 @@ footer {
   background: #C04848;
   font-family: 'Rubik', sans-serif;
   color: white;
-  font-size: 14px;
+  font-size: 12px;         /* ✅ 折扣小一點 */
   font-weight: bold;
-  padding: 4px 10px;
+  padding: 3px 8px;        /* ✅ 空間縮小 */
   border-radius: 20px;
   display: inline-block;
 }
