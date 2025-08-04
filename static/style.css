@@ -173,6 +173,7 @@ footer {
   margin-top: 16px;
   display: flex;
   align-items: flex-end;
+  justify-content: center; /* ⭐️ 強制置中整組價格 */
   gap: 12px;
   flex-wrap: wrap;
   font-family: 'Noto Sans TC', sans-serif;
