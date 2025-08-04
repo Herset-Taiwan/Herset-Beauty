@@ -1381,15 +1381,26 @@ def reply_message(msg_id):
     if not session.get("admin_logged_in"):
         return redirect("/admin0363")
 
-    reply_text = request.form.get("reply", "").strip()
+    # ✅ 印出整個表單，確認是否有收到 reply 欄位
+    print("📦 表單內容：", request.form)
 
-    print("🔍 回覆內容：", reply_text)
+    reply_text = request.form.get("reply", "").strip()
+    print("🔍 回覆內容：", repr(reply_text))
     print("🔑 留言ID：", msg_id)
 
-    # 查看看資料有沒有抓到
+    if not reply_text:
+        flash("回覆內容不能為空", "danger")
+        return redirect("/admin0363/dashboard?tab=messages")
+
+    # ✅ 先查資料是否存在
     result_check = supabase.table("messages").select("id").eq("id", msg_id).execute()
     print("🔎 查詢結果：", result_check)
 
+    if not result_check.data:
+        flash("找不到這筆留言資料", "danger")
+        return redirect("/admin0363/dashboard?tab=messages")
+
+    # ✅ 更新留言
     result = supabase.table("messages").update({
         "is_replied": True,
         "is_read": False,
