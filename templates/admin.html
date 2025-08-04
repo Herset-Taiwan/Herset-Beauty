@@ -384,7 +384,7 @@
   {% for msg in messages %}
   <div class="order-row" style="margin-bottom: 40px;">
     <div class="info">
-      <strong>時間：</strong>{{ msg['created_at'].split('T')[0] }}<br>
+      <strong>時間：</strong>{{ msg['created_at'].replace('T', ' ')[:16] }}<br>
       <strong>會員：</strong>{{ msg['member_name'] or '未知會員' }}<br>
       <strong>類型：</strong>{{ msg['type'] }}<br>
       <strong>主題：</strong>{{ msg['subject'] }}<br>
