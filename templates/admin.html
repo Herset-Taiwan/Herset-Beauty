@@ -376,54 +376,56 @@
   <div id="order-pagination" style="margin-top: 10px; text-align:center;"></div>
 </div>
 
-<!-- 留言訊息 -->
- <div id="messages" class="tab-content">
+<!-- 回覆留言區塊 -->
+<div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: flex-start; gap: 40px;">
 
-  <h2>留言管理</h2>
-
-  {% for msg in messages %}
-  <div class="order-row">
-    <div class="info">
-      <strong>時間：</strong>{{ msg['created_at'].split('T')[0] }}<br>
-      <strong>會員：</strong>{{ msg['member_name'] or '未知會員' }}<br>
-      <strong>類型：</strong>{{ msg['type'] }}<br>
-      <strong>主題：</strong>{{ msg['subject'] }}<br>
-      {% if msg['order_number'] %}
-        <strong>訂單編號：</strong>{{ msg['order_number'] }}<br>
-      {% endif %}
-      <strong>內容：</strong><br>
-      <div style="white-space: pre-wrap;">{{ msg['content'] }}</div><br>
-      {% if msg['attachment_path'] %}
-        📎 <a href="/{{ msg['attachment_path'] }}" target="_blank">下載附件</a><br>
-      {% endif %}
-      <strong>狀態：</strong>
-      {% if msg['is_replied'] %}
-        <span class="badge green">已回覆</span>
-      {% else %}
-        <span class="badge red">未回覆</span>
-      {% endif %}
-      {% if msg['is_replied'] and msg['reply_text'] %}
-  <div style="margin-top: 10px;">
-    <strong>回覆內容：</strong><br>
-    <div style="white-space: pre-wrap; background: #f9f9f9; border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
-      {{ msg['reply_text'] }}
+  <!-- 左側：顯示已儲存的回覆內容 -->
+  <div style="flex: 1;">
+    <label style="font-weight: bold; display: block; margin-bottom: 6px;">回覆內容：</label>
+    <div style="
+      white-space: pre-wrap;
+      background: #fafafa;
+      border: 1px solid #ddd;
+      padding: 12px;
+      border-radius: 10px;
+      min-height: 80px;
+      font-size: 15px;
+      color: #444;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    ">
+      {{ msg['reply_text'] or '（尚未回覆）' }}
     </div>
   </div>
-{% endif %}
 
-    </div>
-
-    <div class="actions">
-      <form method="POST" action="/admin0363/messages/reply/{{ msg['id'] }}">
-  <label for="reply"><strong>回覆內容：</strong></label><br>
-  <textarea name="reply" rows="3" placeholder="輸入回覆內容..." required style="margin-top: 10px; width: 240px;">{{ msg['reply_text'] or '' }}</textarea><br>
-  <button type="submit" style="color: #e91e63; border: none; background: none; font-weight: bold;">
-    {% if msg['is_replied'] %}✏️ 修改回覆{% else %}📩 回覆留言{% endif %}
-  </button>
-</form>
-
-    </div>
+  <!-- 右側：編輯回覆表單 -->
+  <div style="flex: 1;">
+    <form method="POST" action="/admin0363/messages/reply/{{ msg['id'] }}">
+      <label for="reply" style="font-weight: bold; display: block; margin-bottom: 6px;">編輯回覆：</label>
+      <textarea name="reply" rows="4" required style="
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 14px;
+        resize: vertical;
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+      ">{{ msg['reply_text'] or '' }}</textarea>
+      <button type="submit" style="
+        margin-top: 10px;
+        background-color: #e91e63;
+        color: white;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        font-weight: bold;
+        cursor: pointer;
+      ">
+        {% if msg['is_replied'] %}✏️ 修改回覆{% else %}📩 回覆留言{% endif %}
+      </button>
+    </form>
   </div>
+</div>
+
   {% endfor %}
 </div>
 
