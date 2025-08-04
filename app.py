@@ -1337,30 +1337,30 @@ def submit_message():
     file = request.files.get('attachment')
     file_path = None
 
-    # 儲存檔案
     if file and file.filename:
         filename = secure_filename(file.filename)
         save_dir = 'static/uploads/messages'
         os.makedirs(save_dir, exist_ok=True)
-        filepath = os.path.join(save_dir, f"{uuid.uuid4().hex}_{filename}")
-        file.save(filepath)
-        file_path = filepath
+        filepath = os.path.join(save_dir, f"{uuid4().hex}_{filename}")
+        try:
+            file.save(filepath)
+            file_path = filepath
+        except Exception:
+            flash("檔案上傳失敗，請確認格式與大小", "danger")
+            return redirect('/message')
 
-    # 寫入資料庫
     supabase.table("messages").insert({
-        "id": str(uuid.uuid4()),
+        "id": str(uuid4()),
         "member_id": session['member_id'],
         "type": type,
         "subject": subject,
         "content": content,
         "order_number": order_number,
         "attachment_path": file_path,
-        "created_at": datetime.datetime.utcnow()
+        "created_at": datetime.utcnow()
     }).execute()
 
-    flash("檔案上傳失敗，請確認格式與大小", "danger")
     flash("留言送出成功，我們將盡快與您聯繫", "success")
-
     return redirect('/message')
 
 
