@@ -56,7 +56,21 @@
   border: 2px solid #C7A7A3;
   border-radius: 6px;
 }
+.product-thumbnails img {
+  border-radius: 8px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
 
+.product-thumbnails img:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+}
+
+.product-thumbnails img.selected {
+  outline: 2px solid #a36d60;
+  box-shadow: 0 0 0 3px #f5eae7;
+}
 
 
 /* 價格樣式 */
