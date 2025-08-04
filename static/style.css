@@ -178,14 +178,20 @@ footer {
   gap: 2px;
 }
 
-.price-discount .amount,
-.price-regular .amount {
-  font-size: 28px;         /* ✅ 數字大字 */
+.price-discount .amount {
+  font-size: 28px;
   font-weight: 800;
-  letter-spacing: 0.5px;
+  color: #C04848; /* ✅ 折扣價紅色 */
   font-family: 'DM Sans', sans-serif;
-  color: #C04848;
 }
+
+.price-regular .amount {
+  font-size: 28px;
+  font-weight: 800;
+  color: #333;    /* ✅ 原價維持黑色或深灰 */
+  font-family: 'DM Sans', sans-serif;
+}
+
 
 .price-discount .currency,
 .price-regular .currency {
