@@ -165,28 +165,40 @@ footer {
   text-align: center;/* 商品名稱置中 */
 }
 /* ===== 商品價格樣式 ===== */
-.price {
-  margin-top: 10px;
+.price-box {
+  margin-top: 16px;
   display: flex;
-  align-items: baseline;
-  gap: 8px;
-  justify-content: center;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
   font-family: 'Noto Sans TC', sans-serif;
 }
 
 .price-original {
+  font-size: 16px;
+  color: #999;
   text-decoration: line-through;
-  color: #aaa;
-  font-size: 14px;
-  font-weight: 400;
+  font-weight: 500;
 }
 
 .price-discount {
+  font-size: 26px;
   color: #C04848;
-  font-size: 20px;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.5px;
 }
+
+.discount-tag {
+  background: #C04848;
+  color: white;
+  font-size: 13px;
+  font-weight: bold;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-block;
+  line-height: 1;
+}
+
 
 /* ===== 按鈕樣式 ===== */
 .btn-group button,
