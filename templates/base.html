@@ -298,6 +298,16 @@ function loadCategory(categoryName) {
     });
 }
 
+// ✅ 初始同步目前分類樣式
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  const category = params.get('category') || '全部';
+  document.querySelectorAll('.sub-categories a').forEach(a => {
+    a.classList.toggle('active', a.textContent.trim() === category);
+  });
+});
+
+
 </script>
 
 

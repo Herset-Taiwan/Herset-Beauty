@@ -82,16 +82,21 @@ footer {
   text-decoration: none;
   color: #5A4B45;
   font-weight: bold;
-  font-size: 20px; /* 🟢 新增這行放大字體 */
+  font-size: 20px;
   cursor: pointer;
-  transition: color 0.3s ease;
+  transition: color 0.3s ease, border-bottom 0.3s ease;
 }
 
 .sub-categories a:hover {
-  color: #E2B6A2; /* 陶土裸橘 */
+  color: #E2B6A2;
   text-decoration: underline;
 }
 
+/* 目前選中分類的高亮樣式 */
+.sub-categories a.active {
+  color: #C04848;
+  border-bottom: 2px solid #C04848;
+}
 
 /* 商品切換效果 */
 #product-container.fade {
@@ -107,6 +112,25 @@ footer {
   visibility: hidden;
   position: absolute;
   pointer-events: none;
+}
+
+
+/* 類別效果 */
+.category-bar a {
+  color: #444;
+  font-weight: bold;
+  padding: 10px 20px;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.category-bar a:hover {
+  color: #C04848;
+}
+
+.category-bar a.active {
+  color: #C04848; /* 紅色高亮 */
+  border-bottom: 2px solid #C04848;
 }
 
 /* ===== Banner 區塊 ===== */
@@ -688,3 +712,5 @@ footer ul li a:visited {
   background: white;
   padding: 4px;
 }
+
+
