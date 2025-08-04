@@ -11,7 +11,20 @@
 
   {% if messages %}
     {% for msg in messages %}
-   <div style="position: relative; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px;">
+   <div style="
+  position: relative;
+  background: #fafafa;
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid #eee;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+  margin: 30px 0;
+  transition: box-shadow 0.3s ease;"
+  onmouseover="this.style.boxShadow='0 8px 16px rgba(0,0,0,0.08)'"
+  onmouseout="this.style.boxShadow='0 4px 10px rgba(0, 0, 0, 0.03)'"
+>
+
+
       <p><strong>留言時間：</strong>{{ msg['local_created_at'] }}</p>
       {% if msg['is_new'] %}
   <span style="
