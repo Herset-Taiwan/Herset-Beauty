@@ -86,10 +86,20 @@
 }
 
 .price-discount {
-  font-size: 26px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700;
   color: #C04848;
-  font-weight: 800;
   letter-spacing: 0.5px;
+}
+
+.price-discount .currency {
+  font-size: 18px;
+  vertical-align: baseline;
+}
+
+.price-discount .amount {
+  font-size: 28px;
+  margin-left: 2px;
 }
 
 .price-original {
@@ -378,7 +388,9 @@
     <div class="price-box">
   {% if product.get('discount_price') %}
     <div class="price-original">NT${{ "%.0f"|format(product['price']) }}</div>
-    <div class="price-discount">NT${{ "%.0f"|format(product['discount_price']) }}</div>
+    <div class="price-discount">
+  <span class="currency">NT$</span><span class="amount">{{ "%.0f"|format(product['discount_price']) }}</span>
+</div>
     {% set discount_rate = (product['discount_price'] / product['price'] * 10)|round(1, 'floor') %}
     <div class="discount-tag">{{ discount_rate }}折</div>
   {% else %}

@@ -187,27 +187,28 @@ footer {
 
 .price-original {
   font-size: 16px;
-  color: #999;
+  font-family: 'Noto Sans TC', sans-serif;
   text-decoration: line-through;
-  font-weight: 500;
+  color: #999;
 }
 
 .price-discount {
-  font-size: 26px;
+  font-size: 28px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700;
   color: #C04848;
-  font-weight: 800;
   letter-spacing: 0.5px;
 }
 
 .discount-tag {
   background: #C04848;
+  font-family: 'Rubik', sans-serif;
   color: white;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: bold;
   padding: 4px 10px;
   border-radius: 20px;
   display: inline-block;
-  line-height: 1;
 }
 
 
