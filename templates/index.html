@@ -45,22 +45,20 @@
 </a>
 
 
-{% for product in products %}
-  <div class="product-card">
-    <h3>{{ product['name'] }}</h3>
-    <div class="price-box">
-      {% if product.get('discount_price') %}
-        <div class="price-original">NT${{ "%.0f"|format(product['price']) }}</div>
-        <div class="price-discount">NT${{ "%.0f"|format(product['discount_price']) }}</div>
-        {% set discount_rate = (product['discount_price'] / product['price'] * 10)|round(1, 'floor') %}
-        <div class="discount-tag">{{ discount_rate }}折</div>
-      {% else %}
-        <div class="price-regular">NT${{ "%.0f"|format(product['price']) }}</div>
-      {% endif %}
+    <div class="product-info">
+      <h2>{{ p['name'] }}</h2>
+      <div class="price-box">
+  {% if p.get('discount_price') %}
+    <div class="price-original">NT${{ "%.0f"|format(p['price']) }}</div>
+    <div class="price-discount">NT${{ "%.0f"|format(p['discount_price']) }}</div>
+    {% set discount_rate = (p['discount_price'] / p['price'] * 10)|round(1, 'floor') %}
+    <div class="discount-tag">{{ discount_rate }}折</div>
+  {% else %}
+    <div class="price-regular">NT${{ "%.0f"|format(p['price']) }}</div>
+  {% endif %}
+</div>
     </div>
-  </div>
-{% endfor %}
-
+    
     <div class="btn-group">
       <button onclick="addToCart(event, {{ p['id'] }}, {{ p['options'] | length }}, {{ p['stock'] or 0 }})">加入購物車</button>
 
