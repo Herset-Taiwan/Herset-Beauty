@@ -1,36 +1,20 @@
-from pytz import timezone
-from pytz import timezone
-tz = timezone("Asia/Taipei")
-from flask import request
-from datetime import datetime
-from dateutil import parser
-from flask import send_from_directory
-
-from flask import Flask, render_template, request, redirect, session, url_for, jsonify, flash
-from flask import render_template, request, redirect, session, flash
+from flask import Flask, render_template, request, redirect, session, url_for, jsonify, flash, send_from_directory, Response, Markup
 from werkzeug.utils import secure_filename
 from supabase import create_client, Client
 from flask_mail import Mail, Message
+from datetime import datetime
+from dateutil import parser
+from pytz import timezone
+from dotenv import load_dotenv
+from uuid import uuid4, UUID
 import os
 import tempfile
-import uuid
-from dotenv import load_dotenv
-from uuid import UUID
 import urllib.parse
 import hashlib
 import random
-import datetime
 import time
-from utils import generate_check_mac_value
-from datetime import datetime
+
 from utils import generate_check_mac_value, generate_ecpay_form
-from utils import generate_ecpay_form
-from uuid import uuid4
-from flask import Response
-from flask import request, render_template, Response
-from flask import render_template, session, redirect
-from flask import Flask, render_template, Markup
-from flask import flash
 
 
 
