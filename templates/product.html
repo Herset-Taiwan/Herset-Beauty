@@ -52,12 +52,36 @@
 
     .info h2 { margin-top: 0; }
 
-    .price {
-      color: #C04848;
-      font-size: 22px;
-      font-weight: bold;
-      margin: 10px 0;
-    }
+/* 價格樣式 */
+
+    .price-box {
+  margin-top: 16px;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.price-discount {
+  font-size: 26px;
+  color: #C04848;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.price-original {
+  font-size: 16px;
+  color: #999;
+  text-decoration: line-through;
+  font-weight: 500;
+}
+
+.price-regular {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+}
+
 
     .options, .qty, .actions { margin-top: 20px; }
 
@@ -302,14 +326,14 @@
   <div class="info">
     <h2>{{ product['name'] }}</h2>
 
-    <div class="price">
-      {% if product.get('discount_price') %}
-        <span style="text-decoration: line-through; color: #888;">NT${{ "%.0f"|format(product['price']) }}</span>
-        <span style="color: red; font-size: 24px; font-weight: bold; margin-left: 10px;">NT${{ "%.0f"|format(product['discount_price']) }}</span>
-      {% else %}
-        NT${{ "%.0f"|format(product['price']) }}
-      {% endif %}
-    </div>
+    <div class="price-box">
+  {% if product.get('discount_price') %}
+    <div class="price-discount">NT${{ "%.0f"|format(product['discount_price']) }}</div>
+    <div class="price-original">NT${{ "%.0f"|format(product['price']) }}</div>
+  {% else %}
+    <div class="price-regular">NT${{ "%.0f"|format(product['price']) }}</div>
+  {% endif %}
+</div>
 
     {% if product['stock'] == 0 %}
       <div style="background-color: #ffe6e6; color: #b30000; font-weight: bold; padding: 10px; border-radius: 6px; margin-top: 10px;">
