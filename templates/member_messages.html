@@ -9,7 +9,7 @@
   {% if messages %}
     {% for msg in messages %}
     <div style="background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px;">
-      <p><strong>留言時間：</strong>{{ msg['created_at'].split('T')[0] }}</p>
+      <p><strong>留言時間：</strong>{{ msg['created_at'].replace('T', ' ')[:16] }}</p>
       <p><strong>類型：</strong>{{ msg['type'] }}</p>
       <p><strong>主題：</strong>{{ msg['subject'] }}</p>
       {% if msg['order_number'] %}
