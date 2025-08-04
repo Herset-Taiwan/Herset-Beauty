@@ -1347,8 +1347,7 @@ def submit_message():
             file_path = filepath
         except Exception:
             flash("檔案上傳失敗，請確認格式與大小", "danger")
-            return render_template("message_success.html")
-
+            return redirect('/message')
 
     supabase.table("messages").insert({
         "id": str(uuid4()),
@@ -1362,7 +1361,7 @@ def submit_message():
     }).execute()
 
     flash("留言送出成功，我們將盡快與您聯繫", "success")
-    return redirect('/message')
+    return render_template("message_success.html")
 
 
 #全站共用has_new_reply
