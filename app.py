@@ -7,6 +7,7 @@ from dateutil import parser
 from flask import send_from_directory
 
 from flask import Flask, render_template, request, redirect, session, url_for, jsonify, flash
+from flask import render_template, request, redirect, session, flash
 from werkzeug.utils import secure_filename
 from supabase import create_client, Client
 from flask_mail import Mail, Message
@@ -29,6 +30,8 @@ from flask import Response
 from flask import request, render_template, Response
 from flask import render_template, session, redirect
 from flask import Flask, render_template, Markup
+
+
 
 
 load_dotenv()
@@ -81,7 +84,7 @@ def nl2br_filter(s):
 
 @app.route('/')
 def index():
-    category = request.args.get('category')  # 抓網址的 category 參數
+    category = request.args.get('category')
     res = supabase.table("products").select("*").execute()
     products = res.data
 
@@ -89,13 +92,24 @@ def index():
     if category and category != '全部':
         products = [
             p for p in products
-            if category in (p.get('categories') or [])  # ← categories 是 jsonb list
+            if category in (p.get('categories') or [])
         ]
 
     cart = session.get('cart', [])
     cart_count = sum(item['qty'] for item in cart)
-    return render_template("index.html", products=products, cart_count=cart_count)
 
+    # ✅ 判斷是否有新留言回覆
+    has_reply = False
+    if 'member_id' in session:
+        reply_res = supabase.table("messages") \
+            .select("id") \
+            .eq("member_id", session['member_id']) \
+            .eq("is_replied", True) \
+            .eq("is_read", False) \
+            .execute()
+        has_reply = len(reply_res.data) > 0
+
+    return render_template("index.html", products=products, cart_count=cart_count, has_new_reply=has_reply)
 
 
 # ✅ SEO相關
@@ -1327,6 +1341,52 @@ def change_password():
         return render_template('change_password.html', success="密碼已更新成功")
 
     return render_template('change_password.html')
+
+# 聊聊訊息路由
+
+@app.route('/message')
+def message_form():
+    if 'member_id' not in session:
+        return redirect('/login')
+    return render_template('message_form.html')
+
+
+@app.route('/submit_message', methods=['POST'])
+def submit_message():
+    if 'member_id' not in session:
+        return redirect('/login')
+
+    type = request.form['type']
+    subject = request.form['subject']
+    content = request.form['content']
+    order_number = request.form.get('order_number') or None
+
+    file = request.files.get('attachment')
+    file_path = None
+
+    # 儲存檔案
+    if file and file.filename:
+        filename = secure_filename(file.filename)
+        save_dir = 'static/uploads/messages'
+        os.makedirs(save_dir, exist_ok=True)
+        filepath = os.path.join(save_dir, f"{uuid.uuid4().hex}_{filename}")
+        file.save(filepath)
+        file_path = filepath
+
+    # 寫入資料庫
+    supabase.table("messages").insert({
+        "id": str(uuid.uuid4()),
+        "member_id": session['member_id'],
+        "type": type,
+        "subject": subject,
+        "content": content,
+        "order_number": order_number,
+        "attachment_path": file_path,
+        "created_at": datetime.datetime.utcnow()
+    }).execute()
+
+    flash("留言已送出，我們會儘快回覆您！")
+    return redirect('/message')
 
 
 

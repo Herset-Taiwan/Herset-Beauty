@@ -47,18 +47,24 @@
       <li><a href="/">HOME</a></li>
       <!--<li><a href="/about">關於我們</a></li>-->
       {% if session.get('user') %}
-        <li class="dropdown">
-          <a href="#">👤 會員中心</a>
-          <ul class="dropdown-menu">
-            <li><a href="/order-history">歷史訂單</a></li>
-            <li><a href="#" onclick="openProfileModal()">會員資料</a></li>
-            <li><a href="/change-password">🔒 修改密碼</a></li>
-            <li><a href="/logout">登出</a></li>
-          </ul>
-        </li>
-      {% else %}
-        <li><a href="/login">👤 會員登入</a></li>
-      {% endif %}
+  <li class="dropdown">
+    <a href="#">👤 會員中心</a>
+    <ul class="dropdown-menu">
+      <li><a href="/order-history">歷史訂單</a></li>
+      <li><a href="#" onclick="openProfileModal()">會員資料</a></li>
+      <li><a href="/change-password">🔒 修改密碼</a></li>
+      <li><a href="/logout">登出</a></li>
+    </ul>
+  </li>
+  {% if has_new_reply %}
+    <li>
+      <a href="/message" style="color: red;">📩 有新留言</a>
+    </li>
+  {% endif %}
+{% else %}
+  <li><a href="/login">👤 會員登入</a></li>
+{% endif %}
+
       <li>
         <a href="/cart" class="cart-btn">🛒 購物車
           {% if cart_count > 0 %}

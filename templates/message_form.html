@@ -1,0 +1,38 @@
+<h2>商品詢問 / 留言</h2>
+
+<form action="/submit_message" method="POST" enctype="multipart/form-data">
+  <label>留言類型：</label>
+  <select name="type" id="type" onchange="toggleOrderField()">
+    <option value="商品問題">商品問題</option>
+    <option value="訂單問題">訂單問題</option>
+    <option value="其他">其他</option>
+  </select>
+  <br><br>
+
+  <label>主題：</label>
+  <input type="text" name="subject" required>
+  <br><br>
+
+  <div id="orderField" style="display: none;">
+    <label>訂單編號：</label>
+    <input type="text" name="order_number">
+    <br><br>
+  </div>
+
+  <label>留言內容：</label><br>
+  <textarea name="content" rows="5" cols="50" required></textarea>
+  <br><br>
+
+  <label>附加檔案：</label>
+  <input type="file" name="attachment" accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.txt,.zip">
+  <br><br>
+
+  <button type="submit">送出留言</button>
+</form>
+
+<script>
+function toggleOrderField() {
+  const type = document.getElementById('type').value;
+  document.getElementById('orderField').style.display = (type === '訂單問題') ? 'block' : 'none';
+}
+</script>
