@@ -1385,18 +1385,17 @@ def reply_message(msg_id):
     print("🔍 回覆內容：", reply_text)
     print("🔑 留言ID：", msg_id)
 
-    # ✅ 正確定義 result
+    # ✅ 加入判斷 print 並執行更新
     result = supabase.table("messages").update({
         "is_replied": True,
         "is_read": False,
         "reply_text": reply_text
-    }).eq("id", str(msg_id)).execute()
+    }).eq("id", msg_id).execute()
 
-    print("✅ 更新結果：", result)  # 這邊才不會報錯
+    print("✅ 更新結果：", result)
 
     flash("已回覆留言", "success")
     return redirect("/admin0363/dashboard?tab=messages")
-
 
 
 
