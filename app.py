@@ -1385,13 +1385,13 @@ def reply_message(msg_id):
 
     supabase.table("messages").update({
         "is_replied": True,
-        "is_read": False,            # 會員還沒看 → 未讀提示
-        "reply_text": reply_text,   # ✅ 寫入回覆內容
-        "updated_at": "now()"       # 若你想更新修改時間
+        "is_read": False,
+        "reply_text": reply_text  # ✅ 正確存回覆內容
     }).eq("id", msg_id).execute()
 
     flash("已回覆留言", "success")
     return redirect("/admin0363/dashboard?tab=messages")
+
 
 
 #每次頁面刷新時都會自動檢查是否有新回覆
