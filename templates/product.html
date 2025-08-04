@@ -168,12 +168,28 @@
     }
 
     .back-btn {
-      background: #eee;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: bold;
+  font-size: 14px;
+  padding: 8px 16px;
+  border-radius: 30px;
+  border: 1px solid #c7b8b1;
+  background-color: #f3e5e1;
+  color: #5e3c2c;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.back-btn:hover {
+  background-color: #eadad5;
+  color: #3e2b24;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+
 .options button.selected {
   background-color: #5E3C2C;
   color: white;
@@ -283,7 +299,7 @@
 <body class="product-page">
 
 <div class="header-bar">
-  <button class="back-btn" onclick="history.back()">← 返回首頁</button>
+  <a href="/" class="back-btn">← 返回首頁</a>
   <a href="/cart" class="cart-indicator">
   <span class="cart-icon">🛒</span>
   <span class="cart-text">購物車</span>
