@@ -54,12 +54,13 @@
 
 /* 價格樣式 */
 
-    .price-box {
+  .price-box {
   margin-top: 16px;
   display: flex;
   align-items: flex-end;
   gap: 12px;
   flex-wrap: wrap;
+  font-family: 'Noto Sans TC', sans-serif;
 }
 
 .price-discount {
@@ -81,7 +82,16 @@
   font-weight: bold;
   color: #333;
 }
-
+.discount-tag {
+  background: #C04848;
+  color: white;
+  font-size: 13px;
+  font-weight: bold;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-block;
+  line-height: 1;
+}
 
     .options, .qty, .actions { margin-top: 20px; }
 
@@ -342,10 +352,13 @@
   <div class="info">
     <h2>{{ product['name'] }}</h2>
 
+<!-- 商品價格區塊 -->
     <div class="price-box">
   {% if product.get('discount_price') %}
-        <div class="price-original">NT${{ "%.0f"|format(product['price']) }}</div>
+    <div class="price-original">NT${{ "%.0f"|format(product['price']) }}</div>
     <div class="price-discount">NT${{ "%.0f"|format(product['discount_price']) }}</div>
+    {% set discount_rate = (product['discount_price'] / product['price'] * 10)|round(1, 'floor') %}
+    <div class="discount-tag">{{ discount_rate }}折</div>
   {% else %}
     <div class="price-regular">NT${{ "%.0f"|format(product['price']) }}</div>
   {% endif %}
