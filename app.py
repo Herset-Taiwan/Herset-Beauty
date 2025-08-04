@@ -1382,19 +1382,24 @@ def reply_message(msg_id):
         return redirect("/admin0363")
 
     reply_text = request.form.get("reply", "").strip()
-    if not reply_text:
-        flash("回覆內容不可為空白", "error")
-        return redirect("/admin0363/dashboard?tab=messages")
+
+    print("🔍 回覆內容：", reply_text)
+    print("🔑 留言ID：", msg_id)
+
+    # 查看看資料有沒有抓到
+    result_check = supabase.table("messages").select("id").eq("id", msg_id).execute()
+    print("🔎 查詢結果：", result_check)
 
     result = supabase.table("messages").update({
         "is_replied": True,
         "is_read": False,
         "reply_text": reply_text
     }).eq("id", msg_id).execute()
-
     print("✅ 更新結果：", result)
+
     flash("已回覆留言", "success")
     return redirect("/admin0363/dashboard?tab=messages")
+
 
 
 
