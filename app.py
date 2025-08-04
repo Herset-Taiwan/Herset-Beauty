@@ -1450,6 +1450,7 @@ def member_messages():
     if "member_id" not in session:
         return redirect("/login")
 
+    tz = timezone("Asia/Taipei")
     member_id = session["member_id"]
 
     # 取得該會員所有留言（新 → 舊）
@@ -1459,14 +1460,17 @@ def member_messages():
         .order("created_at", desc=True) \
         .execute().data or []
 
-    # ➤ 補上時區轉換
-    tz = timezone("Asia/Taipei")
-    for msg in messages:
-        utc_time = parser.parse(msg["created_at"])
-        local_time = utc_time.astimezone(tz)
-        msg["local_created_at"] = local_time.strftime("%Y-%m-%d %H:%M")
+    for m in messages:
+        # 顯示台灣時間
+        try:
+            m["local_created_at"] = parser.parse(m["created_at"]).astimezone(tz).strftime("%Y-%m-%d %H:%M")
+        except:
+            m["local_created_at"] = m["created_at"]
 
-    # 將有回覆但還沒讀的留言設為已讀
+        # 判斷是否為新回覆
+        m["is_new"] = m.get("is_replied") and not m.get("is_read")
+
+    # 將新回覆設為已讀
     if messages:
         supabase.table("messages") \
             .update({"is_read": True}) \
