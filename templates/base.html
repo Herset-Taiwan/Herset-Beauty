@@ -36,6 +36,13 @@
 <div class="add-success" id="add-success">已加入購物車！</div>
 <div class="save-success" id="save-success">資料已更新完成！</div>
 
+<!-- 新訊息提示 -->
+{% if session.get('member_id') and session.get('has_new_reply') %}
+<div style="background: #ffebee; color: #c62828; padding: 10px; text-align: center; font-weight: bold;">
+  📩 您有新的留言回覆，請前往會員中心查看。
+</div>
+{% endif %}
+
 <!-- 導覽列 -->
 <header class="main-header">
   <a href="/" class="logo-area" style="text-decoration: none; color: inherit;">

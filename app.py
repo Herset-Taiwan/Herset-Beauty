@@ -1382,14 +1382,58 @@ def reply_message(msg_id):
         return redirect("/admin0363")
 
     reply_text = request.form.get("reply")
+
+    # ✅ 把回覆文字存進 reply_text 欄位
     supabase.table("messages").update({
         "is_replied": True,
-        "is_read": False  # 將會員設為未讀，以顯示提示
+        "is_read": False,
+        "reply_text": reply_text  # ⬅️ 加這行就對了
     }).eq("id", msg_id).execute()
 
-    # 可另外存回覆內容到另一表或 log
     flash("已回覆留言", "success")
     return redirect("/admin0363/dashboard?tab=messages")
+
+#每次頁面刷新時都會自動檢查是否有新回覆
+@app.before_request
+def check_member_messages():
+    if "member_id" in session:
+        member_id = session["member_id"]
+        res = supabase.table("messages") \
+            .select("id") \
+            .eq("member_id", member_id) \
+            .eq("is_replied", True) \
+            .eq("is_read", False) \
+            .execute()
+        session["has_new_reply"] = bool(res.data)
+    else:
+        session.pop("has_new_reply", None)
+
+#當會員查看訊息時標記為已讀
+@app.route("/member/messages")
+def member_messages():
+    if "member_id" not in session:
+        return redirect("/login")
+
+    member_id = session["member_id"]
+    
+    # 取得留言
+    messages = supabase.table("messages") \
+        .select("*") \
+        .eq("member_id", member_id) \
+        .order("created_at", desc=True) \
+        .execute().data
+
+    # 更新為已讀
+    supabase.table("messages") \
+        .update({"is_read": True}) \
+        .eq("member_id", member_id) \
+        .eq("is_replied", True) \
+        .eq("is_read", False) \
+        .execute()
+
+    session["has_new_reply"] = False  # 清除提示
+
+    return render_template("member_messages.html", messages=messages)
 
 
 
