@@ -1376,6 +1376,8 @@ def submit_message():
 
 
 #回覆留言（設為已回覆）
+from datetime import datetime
+
 @app.route("/admin0363/messages/reply/<msg_id>", methods=["POST"])
 def reply_message(msg_id):
     if not session.get("admin_logged_in"):
@@ -1391,7 +1393,7 @@ def reply_message(msg_id):
         flash("回覆內容不能為空", "danger")
         return redirect("/admin0363/dashboard?tab=messages")
 
-    # 先查資料是否存在
+    # 查詢是否有這筆留言
     result_check = supabase.table("messages").select("id").eq("id", msg_id).execute()
     print("🔎 查詢結果：", result_check)
 
@@ -1399,7 +1401,7 @@ def reply_message(msg_id):
         flash("找不到這筆留言資料", "danger")
         return redirect("/admin0363/dashboard?tab=messages")
 
-    # 強制更新 updated_at 避免資料完全沒變不觸發更新
+    # 更新留言（強制觸發 updated_at）
     now = datetime.utcnow().isoformat()
     result = supabase.table("messages").update({
         "is_replied": True,
@@ -1407,11 +1409,15 @@ def reply_message(msg_id):
         "reply_text": reply_text,
         "updated_at": now
     }).eq("id", msg_id).execute()
-
     print("✅ 更新結果：", result)
+
+    # 驗證是否真的寫入成功
+    verify = supabase.table("messages").select("reply_text", "is_replied", "updated_at").eq("id", msg_id).execute()
+    print("📌 更新後確認：", verify.data)
 
     flash("已回覆留言", "success")
     return redirect("/admin0363/dashboard?tab=messages")
+
 
 
 
