@@ -402,17 +402,26 @@
       {% else %}
         <span class="badge red">未回覆</span>
       {% endif %}
+      {% if msg['is_replied'] and msg['reply_text'] %}
+  <div style="margin-top: 10px;">
+    <strong>回覆內容：</strong><br>
+    <div style="white-space: pre-wrap; background: #f9f9f9; border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
+      {{ msg['reply_text'] }}
+    </div>
+  </div>
+{% endif %}
+
     </div>
 
     <div class="actions">
-      {% if not msg['is_replied'] %}
       <form method="POST" action="/admin0363/messages/reply/{{ msg['id'] }}">
-        <textarea name="reply" rows="3" placeholder="輸入回覆內容..." required style="margin-top: 10px; width: 240px;"></textarea><br>
-        <button type="submit" style="color: #e91e63; border: none; background: none; font-weight: bold;">📩 回覆留言</button>
-      </form>
-      {% else %}
-      <div style="margin-top: 10px; color: #666;">✅ 已回覆</div>
-      {% endif %}
+  <label for="reply"><strong>回覆內容：</strong></label><br>
+  <textarea name="reply" rows="3" placeholder="輸入回覆內容..." required style="margin-top: 10px; width: 240px;">{{ msg['reply_text'] or '' }}</textarea><br>
+  <button type="submit" style="color: #e91e63; border: none; background: none; font-weight: bold;">
+    {% if msg['is_replied'] %}✏️ 修改回覆{% else %}📩 回覆留言{% endif %}
+  </button>
+</form>
+
     </div>
   </div>
   {% endfor %}
