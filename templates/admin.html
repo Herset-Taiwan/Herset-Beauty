@@ -349,7 +349,8 @@
 
 
 <!-- 留言訊息 -->
- <div id="messages" class="tab-content">
+ <div id="tab-messages" class="tab-content" style="{% if tab != 'messages' %}display:none{% endif %}">
+
   <h2>留言管理</h2>
 
   {% for msg in messages %}
