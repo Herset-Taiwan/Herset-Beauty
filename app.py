@@ -30,6 +30,7 @@ from flask import Response
 from flask import request, render_template, Response
 from flask import render_template, session, redirect
 from flask import Flask, render_template, Markup
+from flask import flash
 
 
 
@@ -1373,7 +1374,9 @@ def submit_message():
         "created_at": datetime.datetime.utcnow()
     }).execute()
 
-    flash("留言已送出，我們會儘快回覆您！")
+    flash("檔案上傳失敗，請確認格式與大小", "danger")
+    flash("留言送出成功，我們將盡快與您聯繫", "success")
+
     return redirect('/message')
 
 

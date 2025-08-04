@@ -321,6 +321,46 @@ window.addEventListener('DOMContentLoaded', () => {
 
 </script>
 
+<!-- 留言送出成功提示 -->
+<div id="toast-message" class="toast" style="display: none;"></div>
+
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const toast = document.getElementById('toast-message');
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        const [category, message] = {{ messages[0]|tojson }};
+        toast.textContent = message;
+        toast.style.display = 'block';
+        toast.style.backgroundColor = category === 'success' ? '#c08474' : '#e91e63';
+
+        setTimeout(() => {
+          toast.style.opacity = 0;
+          setTimeout(() => { toast.style.display = 'none'; toast.style.opacity = 1; }, 1000);
+        }, 3000);
+      {% endif %}
+    {% endwith %}
+  });
+</script>
+
+<style>
+.toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 14px 28px;
+  border-radius: 8px;
+  background: #c08474;
+  color: white;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transition: opacity 0.6s ease;
+}
+</style>
+
 
 
 
