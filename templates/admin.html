@@ -272,6 +272,8 @@
 <link href="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/css/selectize.default.css" rel="stylesheet" />
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
   $(function () {
     $('#category-filter').selectize({
@@ -402,42 +404,24 @@
       {% endif %}
     </div>
 
-    <!-- ✅ 回覆表單（支援修改模式） -->
-    <form method="POST" action="/admin0363/messages/reply/{{ msg['id'] }}" onsubmit="return confirm('確定要儲存這筆回覆嗎？')">
+    <!-- ✅ 回覆表單 -->
+    <form id="reply-form-{{ msg['id'] }}" method="POST" action="/admin0363/messages/reply/{{ msg['id'] }}">
       <label for="reply" style="font-weight: bold; display: block; margin-top: 20px;">回覆內容：</label>
       <textarea id="reply-text-{{ msg['id'] }}" name="reply" rows="4"
-        style="
-          width: 100%;
-          padding: 10px;
-          border: 1px solid #ccc;
-          border-radius: 6px;
-          font-size: 14px;
-          resize: vertical;
-          box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
-        "
         {% if msg['is_replied'] %}readonly{% endif %}
-      >{{ msg['reply_text'] or '' }}</textarea>
+        style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; resize: vertical; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">{{ msg['reply_text'] or '' }}</textarea>
 
-      <button type="{% if msg['is_replied'] %}button{% else %}submit{% endif %}"
+      <button type="button"
         id="reply-btn-{{ msg['id'] }}"
-        onclick="{% if msg['is_replied'] %}enableEdit('{{ msg['id'] }}'){% endif %}"
-        style="
-          margin-top: 10px;
-          background-color: #e91e63;
-          color: white;
-          padding: 8px 16px;
-          border: none;
-          border-radius: 6px;
-          font-weight: bold;
-          cursor: pointer;
-        ">
+        onclick="{% if msg['is_replied'] %}enableEdit('{{ msg['id'] }}'){% else %}confirmReply('{{ msg['id'] }}'){% endif %}"
+        style="margin-top: 10px; background-color: #e91e63; color: white; padding: 8px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
         {% if msg['is_replied'] %}✏️ 修改回覆{% else %}📩 確認回覆{% endif %}
       </button>
     </form>
-
   </div>
   {% endfor %}
 </div>
+
 
 <!-- ✅ JavaScript：切換編輯模式 -->
 <script>
@@ -871,6 +855,37 @@ function confirmDelete() {
   });
 }
 
+</script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  function enableEdit(id) {
+    const textarea = document.getElementById('reply-text-' + id);
+    const button = document.getElementById('reply-btn-' + id);
+
+    textarea.removeAttribute('readonly');
+    textarea.focus();
+
+    button.innerText = "✅ 確認回覆";
+    button.setAttribute("onclick", `confirmReply('${id}')`);
+  }
+
+  function confirmReply(id) {
+    Swal.fire({
+      title: '確認送出回覆？',
+      text: '這筆回覆將會被儲存',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: '✅ 確認送出',
+      cancelButtonText: '取消',
+      confirmButtonColor: '#e91e63'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        document.getElementById('reply-form-' + id).submit();
+      }
+    });
+  }
 </script>
 
 
