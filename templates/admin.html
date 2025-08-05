@@ -283,6 +283,14 @@
 
 <!-- 正中間的頁籤按鈕 -->
 <div class="tabs">
+  <button class="tab-btn {% if tab == 'products' %}active{% endif %}" onclick="switchTab('products')">
+    商品管理
+  </button>
+
+  <button class="tab-btn {% if tab == 'members' %}active{% endif %}" onclick="switchTab('members')">
+    會員系統管理
+  </button>
+
   <button class="tab-btn {% if tab == 'orders' %}active{% endif %}" onclick="switchTab('orders')">
     訂單管理系統
     {% if new_order_alert %}
@@ -297,6 +305,7 @@
     {% endif %}
   </button>
 </div>
+
 
 
 
