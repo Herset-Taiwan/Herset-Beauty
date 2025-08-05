@@ -494,39 +494,32 @@
 
   {% for msg in messages %}
   <div class="order-row" style="position: relative; margin-bottom: 40px;">
-         <!-- ✅ 右上角提示 -->
+  <!-- 右上角提示 -->
   <div class="msg-top-right">
     {% if not msg['is_replied'] and msg.is_new %}
       <span class="badge red">📩 新留言</span>
+    {% elif msg['is_replied'] %}
+      <span class="badge green">🟩 已回覆</span>
     {% else %}
-      {% if msg['is_replied'] %}
-        <span class="badge green">已回覆</span>
-      {% else %}
-        <span class="badge red">未回覆</span>
-      {% endif %}
+      <span class="badge red">🔴 未回覆</span>
     {% endif %}
   </div>
 
+  <div class="info">
+    <strong>時間：</strong>{{ msg['local_created_at'] }}<br>
+    <strong>會員：</strong>{{ msg['member_name'] or '未知會員' }}<br>
+    <strong>類型：</strong>{{ msg['type'] }}<br>
+    <strong>主題：</strong>{{ msg['subject'] }}<br>
+    {% if msg['order_number'] %}
+      <strong>訂單編號：</strong>{{ msg['order_number'] }}<br>
+    {% endif %}
+    <strong>內容：</strong><br>
+    <div style="white-space: pre-wrap;">{{ msg['content'] }}</div><br>
+    {% if msg['attachment_path'] %}
+      📎 <a href="/{{ msg['attachment_path'] }}" target="_blank">下載附件</a><br>
+    {% endif %}
 
-    <div class="info">
-      <strong>時間：</strong>{{ msg['local_created_at'] }}<br>
-      <strong>會員：</strong>{{ msg['member_name'] or '未知會員' }}<br>
-      <strong>類型：</strong>{{ msg['type'] }}<br>
-      <strong>主題：</strong>{{ msg['subject'] }}<br>
-      {% if msg['order_number'] %}
-        <strong>訂單編號：</strong>{{ msg['order_number'] }}<br>
-      {% endif %}
-      <strong>內容：</strong><br>
-      <div style="white-space: pre-wrap;">{{ msg['content'] }}</div><br>
-      {% if msg['attachment_path'] %}
-        📎 <a href="/{{ msg['attachment_path'] }}" target="_blank">下載附件</a><br>
-      {% endif %}
-
-
-    
-
-
-    <!-- ✅ 回覆表單 -->
+    <!-- 回覆表單 -->
     <form id="reply-form-{{ msg['id'] }}" method="POST" action="/admin0363/messages/reply/{{ msg['id'] }}">
       <label for="reply" style="font-weight: bold; display: block; margin-top: 20px;">回覆內容：</label>
       <textarea id="reply-text-{{ msg['id'] }}" name="reply" rows="4"
@@ -541,6 +534,8 @@
       </button>
     </form>
   </div>
+</div>
+
   {% endfor %}
 
   <!-- 留言上下頁 -->
