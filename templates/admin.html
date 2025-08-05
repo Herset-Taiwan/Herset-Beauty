@@ -411,7 +411,10 @@
     {% for t in all_types %}
       <option value="{{ t }}" {% if request.args.get('type') == t %}selected{% endif %}>{{ t }}</option>
     {% endfor %}
-<!-- 留言上下頁 -->
+
+  </select>
+
+  <!-- 留言上下頁 -->
 <div class="pagination">
   {% if msg_page > 1 %}
     <a class="page-btn" href="?tab=messages&msg_page={{ msg_page - 1 }}&reply_status={{ request.args.get('reply_status', 'all') }}&type={{ request.args.get('type', '') }}&keyword={{ request.args.get('keyword', '') }}">← 上一頁</a>
@@ -423,9 +426,6 @@
     <a class="page-btn" href="?tab=messages&msg_page={{ msg_page + 1 }}&reply_status={{ request.args.get('reply_status', 'all') }}&type={{ request.args.get('type', '') }}&keyword={{ request.args.get('keyword', '') }}">下一頁 →</a>
   {% endif %}
 </div>
-
-
-  </select>
 
   <label style="margin-left: 10px;">會員名稱：</label>
   <input type="text" name="keyword" value="{{ request.args.get('keyword', '') }}" placeholder="輸入會員名稱" style="padding: 4px 8px;">
