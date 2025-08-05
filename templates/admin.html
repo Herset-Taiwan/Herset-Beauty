@@ -257,6 +257,17 @@
   50% { opacity: 0.4; }
 }
 
+.msg-reply-status {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+.msg-top-right {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
 
 </style>
 
@@ -468,9 +479,18 @@
 
   {% for msg in messages %}
   <div class="order-row" style="position: relative; margin-bottom: 40px;">
-    {% if msg.is_new %}
-  <span class="badge red" style="position: absolute; top: 10px; right: 10px;">新留言</span>
-{% endif %}
+         <!-- ✅ 右上角提示 -->
+  <div class="msg-top-right">
+    {% if not msg['is_replied'] and msg.is_new %}
+      <span class="badge red">📩 新留言</span>
+    {% else %}
+      {% if msg['is_replied'] %}
+        <span class="badge green">已回覆</span>
+      {% else %}
+        <span class="badge red">未回覆</span>
+      {% endif %}
+    {% endif %}
+  </div>
 
 
     <div class="info">
@@ -486,13 +506,7 @@
       {% if msg['attachment_path'] %}
         📎 <a href="/{{ msg['attachment_path'] }}" target="_blank">下載附件</a><br>
       {% endif %}
-      <strong>狀態：</strong>
-      {% if msg['is_replied'] %}
-        <span class="badge green">已回覆</span>
-      {% else %}
-        <span class="badge red">未回覆</span>
-      {% endif %}
-    </div>
+
 
     
 
