@@ -225,7 +225,8 @@ def admin_dashboard():
             "address": member.get("address") if member else "—"     
         }
         # ✅ 判斷此訂單是否為新訂單（尚未出貨 且 尚未點過「訂單管理系統」）
-        o["is_new"] = o.get("status") != "shipped" and not session.get("seen_orders")
+        o["is_new"] = bool(o.get("status") != "shipped" and not session.get("seen_orders"))
+
         try:
             utc_dt = parser.parse(o["created_at"])
             o["created_local"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
@@ -244,7 +245,8 @@ def admin_dashboard():
     for m in messages_res.data:
         m["member_name"] = name_map.get(m["member_id"], "未知")
           # ✅ 判斷此留言是否為新留言（尚未回覆 且 尚未點過「留言管理」）
-        m["is_new"] = not m.get("is_replied") and not session.get("seen_messages")
+        m["is_new"] = bool(not m.get("is_replied") and not session.get("seen_messages"))
+
         try:
             utc_dt = parser.parse(m["created_at"])
             m["local_created_at"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M")

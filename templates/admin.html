@@ -246,16 +246,10 @@
 
 
     <div class="tabs">
-  <a href="/admin0363/dashboard?tab=products" class="tab-btn {% if tab == 'products' %}active{% endif %}">商品管理</a>
-  <a href="/admin0363/dashboard?tab=members" class="tab-btn {% if tab == 'members' %}active{% endif %}">會員系統管理</a>
-  <a href="/admin0363/dashboard?tab=orders" class="tab-btn {% if tab == 'orders' %}active{% endif %}">
-    訂單管理系統
-    {% if new_order_alert %}<span class="badge red">新</span>{% endif %}
-  </a>
-  <a href="/admin0363/dashboard?tab=messages" class="tab-btn {% if tab == 'messages' %}active{% endif %}">
-    留言管理
-    {% if new_message_alert %}<span class="badge red">新</span>{% endif %}
-  </a>
+  <button class="tab-btn" onclick="switchTab('products')">商品管理</button>
+  <button class="tab-btn" onclick="switchTab('members')">會員系統管理</button>
+  <button class="tab-btn" onclick="switchTab('orders')">訂單管理系統</button>
+  <button class="tab-btn" onclick="switchTab('messages')">留言管理</button>
 </div>
 
 
@@ -538,8 +532,9 @@ pageData.forEach(o => {
   const div = document.createElement("div");
   div.className = "order-row";
   div.innerHTML = `
-   ${o.is_new ? '<span class="badge red" style="position:absolute; top:10px; left:10px;">新訂單</span>' : ''}
-    <div class="info ${o.status === 'shipped' ? 'order-box' : ''}">
+  ${o.is_new === true ? '<span class="badge red" style="position:absolute; top:10px; left:10px;">新訂單</span>' : ''}
+  <div class="info ${o.status === 'shipped' ? 'order-box' : ''}">
+
       ${o.status === 'shipped' ? `<div class="shipped-label">已出貨</div>` : ''}
       <strong>訂單編號：</strong>#${o.id}<br>
       <strong>訂單時間：</strong>${o.created_local}<br>
@@ -781,28 +776,30 @@ function printOrder(orderId) {
 
 
 
+
 window.addEventListener('DOMContentLoaded', () => {
   const urlParams = new URLSearchParams(window.location.search);
   const tab = urlParams.get('tab');
+
   if (tab) {
-    switchTab(tab);
-    if (tab === "orders") {
-      filterOrders();  // ✅ 加這行
-    }
-  } else {
-    switchTab("products");
+    // 第一次進入 dashboard 時會從 URL 記錄 tab，讓後端可以清除提示
+    localStorage.setItem("admin_last_tab", tab);
+  }
+
+  // 從 localStorage 拿最後的 tab，如果沒有預設是 products
+  const rememberedTab = localStorage.getItem("admin_last_tab") || "products";
+  switchTab(rememberedTab);
+
+  if (rememberedTab === "orders") {
+    filterOrders();
   }
 
   document.querySelectorAll(".member-row").forEach(m => m.style.display = "block");
-  // ✅ 主動初始化訂單顯示（不管一開始進哪個分頁）
-filteredOrders = allOrders;
-renderOrderPage(parseInt(document.getElementById("pageSizeSelect").value));
-
+  filteredOrders = allOrders;
+  renderOrderPage(parseInt(document.getElementById("pageSizeSelect").value));
 });
-
-
-
 </script>
+
 
 
 <script>
