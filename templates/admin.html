@@ -382,10 +382,11 @@
   <h2>留言管理</h2>
 
   {% for msg in messages %}
-  <div class="order-row" style="margin-bottom: 40px;">
+  <div class="order-row" style="position: relative; margin-bottom: 40px;">
     {% if msg.is_new %}
-    <span class="badge red" style="position: absolute; top: 10px; left: 10px;">新留言</span>
-  {% endif %}
+  <span class="badge red" style="position: absolute; top: 10px; right: 10px;">新留言</span>
+{% endif %}
+
     <div class="info">
       <strong>時間：</strong>{{ msg['local_created_at'] }}<br>
       <strong>會員：</strong>{{ msg['member_name'] or '未知會員' }}<br>
@@ -532,7 +533,7 @@ pageData.forEach(o => {
   const div = document.createElement("div");
   div.className = "order-row";
   div.innerHTML = `
-  ${o.is_new === true ? '<span class="badge red" style="position:absolute; top:10px; left:10px;">新訂單</span>' : ''}
+  ${o.is_new === true ? '<span class="badge red" style="position:absolute; top:38px; right:10px; padding: 2px 8px; font-size: 11px;">新訂單</span>' : ''}
   <div class="info ${o.status === 'shipped' ? 'order-box' : ''}">
 
       ${o.status === 'shipped' ? `<div class="shipped-label">已出貨</div>` : ''}
