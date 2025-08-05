@@ -246,21 +246,18 @@
 
 
     <div class="tabs">
-  <button class="tab-btn active" onclick="switchTab('products')">商品管理</button>
-  <button class="tab-btn" onclick="switchTab('members')">會員系統管理</button>
-  <button class="tab-btn" onclick="switchTab('orders')">
+  <a href="/admin0363/dashboard?tab=products" class="tab-btn {% if tab == 'products' %}active{% endif %}">商品管理</a>
+  <a href="/admin0363/dashboard?tab=members" class="tab-btn {% if tab == 'members' %}active{% endif %}">會員系統管理</a>
+  <a href="/admin0363/dashboard?tab=orders" class="tab-btn {% if tab == 'orders' %}active{% endif %}">
     訂單管理系統
-    {% if new_order_alert %}
-      <span class="badge red" style="margin-left:6px;">新</span>
-    {% endif %}
-  </button>
-  <button class="tab-btn" onclick="switchTab('messages')">
+    {% if new_order_alert %}<span class="badge red">新</span>{% endif %}
+  </a>
+  <a href="/admin0363/dashboard?tab=messages" class="tab-btn {% if tab == 'messages' %}active{% endif %}">
     留言管理
-    {% if new_message_alert %}
-      <span class="badge red" style="margin-left:6px;">新</span>
-    {% endif %}
-  </button>
+    {% if new_message_alert %}<span class="badge red">新</span>{% endif %}
+  </a>
 </div>
+
 
     <div id="products" class="tab-content active">
       <h2>商品管理</h2>
@@ -392,6 +389,9 @@
 
   {% for msg in messages %}
   <div class="order-row" style="margin-bottom: 40px;">
+    {% if msg.is_new %}
+    <span class="badge red" style="position: absolute; top: 10px; left: 10px;">新留言</span>
+  {% endif %}
     <div class="info">
       <strong>時間：</strong>{{ msg['local_created_at'] }}<br>
       <strong>會員：</strong>{{ msg['member_name'] or '未知會員' }}<br>
@@ -538,6 +538,7 @@ pageData.forEach(o => {
   const div = document.createElement("div");
   div.className = "order-row";
   div.innerHTML = `
+   ${o.is_new ? '<span class="badge red" style="position:absolute; top:10px; left:10px;">新訂單</span>' : ''}
     <div class="info ${o.status === 'shipped' ? 'order-box' : ''}">
       ${o.status === 'shipped' ? `<div class="shipped-label">已出貨</div>` : ''}
       <strong>訂單編號：</strong>#${o.id}<br>
