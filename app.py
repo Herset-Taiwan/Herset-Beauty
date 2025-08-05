@@ -247,16 +247,28 @@ def admin_dashboard():
         except:
             m["local_created_at"] = m["created_at"]
 
-    # ✅ 最終 return（這一段不要拆開）
+    # ✅ 記錄是否已查看留言/訂單（tab 切換）
+    if tab == "orders":
+        session["seen_orders"] = True
+    if tab == "messages":
+        session["seen_messages"] = True
+
+    # ✅ 判斷是否需要顯示提示
+    new_order_alert = any(o.get("status") != "shipped" for o in orders)
+    new_message_alert = any(not m.get("is_replied") for m in messages_res.data)
+    show_order_alert = new_order_alert and not session.get("seen_orders")
+    show_message_alert = new_message_alert and not session.get("seen_messages")
+
+    # ✅ 最終 return
     return render_template("admin.html",
                            tab=tab,
                            selected_categories=selected_categories,
                            products=products,
                            members=members,
                            orders=orders,
-                           messages=messages_res.data)
-
-
+                           messages=messages_res.data,
+                           new_order_alert=show_order_alert,
+                           new_message_alert=show_message_alert)
 
 
 
@@ -264,6 +276,8 @@ def admin_dashboard():
 @app.route("/admin0363/logout")
 def admin_logout():
     session.pop("admin_logged_in", None)
+    session.pop("seen_orders", None)       # ✅ 清除訂單提示
+    session.pop("seen_messages", None)     # ✅ 清除留言提示
     return redirect("/admin0363")
 
 
