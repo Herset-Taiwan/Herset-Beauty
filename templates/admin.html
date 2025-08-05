@@ -258,12 +258,21 @@
 {% endwith %}
 
 
-    <div class="tabs">
-  <button class="tab-btn" onclick="switchTab('products')">商品管理</button>
-  <button class="tab-btn" onclick="switchTab('members')">會員系統管理</button>
-  <button class="tab-btn" onclick="switchTab('orders')">訂單管理系統</button>
-  <button class="tab-btn" onclick="switchTab('messages')">留言管理</button>
+<div class="tabs">
+  <button class="tab-btn {% if tab == 'products' %}active{% endif %}" onclick="switchTab('products')">商品管理</button>
+  <button class="tab-btn {% if tab == 'members' %}active{% endif %}" onclick="switchTab('members')">會員系統管理</button>
+
+  <button class="tab-btn {% if tab == 'orders' %}active{% endif %}" onclick="switchTab('orders')">
+    訂單管理系統
+    {% if new_order_alert %}<span class="badge red" style="margin-left: 6px;">新</span>{% endif %}
+  </button>
+
+  <button class="tab-btn {% if tab == 'messages' %}active{% endif %}" onclick="switchTab('messages')">
+    留言管理
+    {% if new_message_alert %}<span class="badge red" style="margin-left: 6px;">新</span>{% endif %}
+  </button>
 </div>
+
 
 
     <div id="products" class="tab-content active">
