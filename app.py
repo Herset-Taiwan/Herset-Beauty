@@ -315,8 +315,6 @@ def mark_seen_orders():
 @app.route("/admin0363/logout")
 def admin_logout():
     session.pop("admin_logged_in", None)
-    session.pop("seen_orders", None)       # ✅ 清除訂單提示
-    session.pop("seen_messages", None)     # ✅ 清除留言提示
     return redirect("/admin0363")
 
 
