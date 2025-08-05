@@ -804,10 +804,7 @@ function printOrder(orderId) {
 }
 
 
-
-
-
-
+localStorage.removeItem("admin_last_tab");
 window.addEventListener('DOMContentLoaded', () => {
   const urlParams = new URLSearchParams(window.location.search);
   const tab = urlParams.get('tab');
@@ -818,7 +815,9 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   // 從 localStorage 拿最後的 tab，如果沒有預設是 products
-  const rememberedTab = localStorage.getItem("admin_last_tab") || "products";
+  const rememberedTab = ["products", "members", "orders", "messages"].includes(localStorage.getItem("admin_last_tab"))
+  ? localStorage.getItem("admin_last_tab")
+  : "products";
   switchTab(rememberedTab);
 
   if (rememberedTab === "orders") {
