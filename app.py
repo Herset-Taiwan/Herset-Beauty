@@ -276,7 +276,10 @@ def admin_dashboard():
                            new_order_alert=show_order_alert,
                            new_message_alert=show_message_alert)
 
-
+@app.route("/admin0363/mark_seen_orders", methods=["POST"])
+def mark_seen_orders():
+    session["seen_orders"] = True
+    return '', 204
 
 #admin登出功能
 @app.route("/admin0363/logout")

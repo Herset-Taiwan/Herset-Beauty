@@ -472,6 +472,8 @@ function switchTab(tabId) {
 
   if (tabId === "orders") {
     filterOrders();  // ✅ 主動顯示訂單
+      // 🔥 第一次切 orders 頁面時通知後端更新 session
+  fetch("/admin0363/mark_seen_orders", { method: "POST" });
   }
 }
 
