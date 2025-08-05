@@ -467,6 +467,15 @@
   <!-- 留言搜尋功能 -->
     <form method="GET" action="/admin0363/dashboard" style="margin-bottom: 20px;">
   <input type="hidden" name="tab" value="messages">
+  <label style="margin-left: 10px;">每頁顯示：</label>
+<select name="msg_page_size" onchange="this.form.submit()">
+  {% set selected_size = request.args.get('msg_page_size', '10') %}
+  <option value="5" {% if selected_size == '5' %}selected{% endif %}>5</option>
+  <option value="10" {% if selected_size == '10' %}selected{% endif %}>10</option>
+  <option value="20" {% if selected_size == '20' %}selected{% endif %}>20</option>
+  <option value="50" {% if selected_size == '50' %}selected{% endif %}>50</option>
+</select>
+筆
   <label>回覆狀態：</label>
   <select name="reply_status">
     <option value="all">全部</option>
@@ -541,15 +550,16 @@
   <!-- 留言上下頁 -->
 <div class="pagination">
   {% if msg_page > 1 %}
-    <a class="page-btn" href="?tab=messages&msg_page={{ msg_page - 1 }}&reply_status={{ request.args.get('reply_status', 'all') }}&type={{ request.args.get('type', '') }}&keyword={{ request.args.get('keyword', '') }}">← 上一頁</a>
+    <a class="page-btn" href="?tab=messages&msg_page={{ msg_page - 1 }}&reply_status={{ request.args.get('reply_status', 'all') }}&type={{ request.args.get('type', '') }}&keyword={{ request.args.get('keyword', '') }}&msg_page_size={{ request.args.get('msg_page_size', 10) }}">← 上一頁</a>
   {% endif %}
 
   <span style="margin: 0 10px;">第 {{ msg_page }} 頁 / 共 {{ msg_total_pages }} 頁</span>
 
   {% if msg_page < msg_total_pages %}
-    <a class="page-btn" href="?tab=messages&msg_page={{ msg_page + 1 }}&reply_status={{ request.args.get('reply_status', 'all') }}&type={{ request.args.get('type', '') }}&keyword={{ request.args.get('keyword', '') }}">下一頁 →</a>
+    <a class="page-btn" href="?tab=messages&msg_page={{ msg_page + 1 }}&reply_status={{ request.args.get('reply_status', 'all') }}&type={{ request.args.get('type', '') }}&keyword={{ request.args.get('keyword', '') }}&msg_page_size={{ request.args.get('msg_page_size', 10) }}">下一頁 →</a>
   {% endif %}
 </div>
+
 </div>
 
 

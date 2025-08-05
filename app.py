@@ -271,7 +271,8 @@ def admin_dashboard():
 
             # ✅ 留言分頁邏輯（每頁 10 筆）
     msg_page = int(request.args.get("msg_page", 1))
-    msg_page_size = 5
+    msg_page_size = int(request.args.get("msg_page_size", 10))
+
     msg_total_pages = max(1, (len(filtered_messages) + msg_page_size - 1) // msg_page_size)
 
     start = (msg_page - 1) * msg_page_size
