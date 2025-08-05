@@ -269,6 +269,16 @@ def admin_dashboard():
         if match_status and match_type and match_name:
             filtered_messages.append(m)
 
+            # ✅ 留言分頁邏輯（每頁 10 筆）
+    msg_page = int(request.args.get("msg_page", 1))
+    msg_page_size = 10
+    msg_total_pages = max(1, (len(filtered_messages) + msg_page_size - 1) // msg_page_size)
+
+    start = (msg_page - 1) * msg_page_size
+    end = start + msg_page_size
+    paged_messages = filtered_messages[start:end]
+
+
     # ✅ 記錄是否已查看留言/訂單（tab 切換）
     if tab == "orders":
         session["seen_orders"] = True
@@ -283,14 +293,17 @@ def admin_dashboard():
 
     # ✅ 最終 return
     return render_template("admin.html",
-                           tab=tab,
-                           selected_categories=selected_categories,
-                           products=products,
-                           members=members,
-                           orders=orders,
-                           messages=filtered_messages,
-                           new_order_alert=show_order_alert,
-                           new_message_alert=show_message_alert)
+                       tab=tab,
+                       selected_categories=selected_categories,
+                       products=products,
+                       members=members,
+                       orders=orders,
+                       messages=paged_messages,  # ✅ 換成分頁後的留言
+                       new_order_alert=show_order_alert,
+                       new_message_alert=show_message_alert,
+                       msg_page=msg_page,
+                       msg_total_pages=msg_total_pages)
+
 
 
 @app.route("/admin0363/mark_seen_orders", methods=["POST"])
