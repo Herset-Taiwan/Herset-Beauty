@@ -517,6 +517,7 @@
     {% endif %}
   </div>
 
+  <!-- 留言內容 -->
   <div class="info">
     <strong>時間：</strong>{{ msg['local_created_at'] }}<br>
     <strong>會員：</strong>{{ msg['member_name'] or '未知會員' }}<br>
@@ -530,33 +531,35 @@
     {% if msg['attachment_path'] %}
       📎 <a href="/{{ msg['attachment_path'] }}" target="_blank">下載附件</a><br>
     {% endif %}
+  </div> <!-- ✅ 關閉 .info 在這裡 -->
 
-    <!-- 回覆表單 -->
-<form id="reply-form-{{ msg['id'] }}" method="POST" action="/admin0363/messages/reply/{{ msg['id'] }}">
-  <label style="font-weight: bold; display: block; margin-top: 20px;">回覆內容：</label>
+  <!-- ✅ 回覆表單獨立在 info 之外 -->
+  <form id="reply-form-{{ msg['id'] }}" method="POST" action="/admin0363/messages/reply/{{ msg['id'] }}">
+    <label style="font-weight: bold; display: block; margin-top: 20px;">回覆內容：</label>
 
-  {% if msg['is_replied'] %}
-  <div id="reply-display-{{ msg['id'] }}"
-       style="white-space: pre-wrap; background: #f9f9f9; padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc;">
-    {{ msg['reply_text'] or '' }}
-  </div>
-  {% endif %}
+    {% if msg['is_replied'] %}
+    <div id="reply-display-{{ msg['id'] }}"
+         style="white-space: pre-wrap; background: #f9f9f9; padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc;">
+      {{ msg['reply_text'] or '' }}
+    </div>
+    {% endif %}
 
-  <textarea id="reply-text-{{ msg['id'] }}" name="reply" rows="4"
-    class="reply-textarea {% if msg['is_replied'] %}hidden{% endif %}"
-    {% if msg['is_replied'] %}readonly{% endif %}
-    style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; resize: vertical;">
-    {{ msg['reply_text'] or '' }}
-  </textarea>
+    <textarea id="reply-text-{{ msg['id'] }}" name="reply" rows="4"
+      class="reply-textarea {% if msg['is_replied'] %}hidden{% endif %}"
+      {% if msg['is_replied'] %}readonly{% endif %}
+      style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; resize: vertical;">
+      {{ msg['reply_text'] or '' }}
+    </textarea>
 
-  <button type="button"
-    id="reply-btn-{{ msg['id'] }}"
-    onclick="{% if msg['is_replied'] %}enableEdit('{{ msg['id'] }}'){% else %}confirmReply('{{ msg['id'] }}'){% endif %}"
-    style="margin-top: 10px; background-color: #e91e63; color: white; padding: 8px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
-    {% if msg['is_replied'] %}✏️ 修改回覆{% else %}📩 確認回覆{% endif %}
-  </button>
-</form>
+    <button type="button"
+      id="reply-btn-{{ msg['id'] }}"
+      onclick="{% if msg['is_replied'] %}enableEdit('{{ msg['id'] }}'){% else %}confirmReply('{{ msg['id'] }}'){% endif %}"
+      style="margin-top: 10px; background-color: #e91e63; color: white; padding: 8px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
+      {% if msg['is_replied'] %}✏️ 修改回覆{% else %}📩 確認回覆{% endif %}
+    </button>
+  </form>
 </div>
+
 
 
   {% endfor %}
