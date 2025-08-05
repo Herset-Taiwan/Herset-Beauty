@@ -533,32 +533,40 @@
     {% endif %}
   </div> <!-- ✅ 關閉 .info 在這裡 -->
 
-  <!-- ✅ 回覆表單獨立在 info 之外 -->
-  <form id="reply-form-{{ msg['id'] }}" method="POST" action="/admin0363/messages/reply/{{ msg['id'] }}">
-    <label style="font-weight: bold; display: block; margin-top: 20px;">回覆內容：</label>
+  <!-- 回覆表單 -->
+<form id="reply-form-{{ msg['id'] }}" method="POST" action="/admin0363/messages/reply/{{ msg['id'] }}">
+  <label style="font-weight: bold; display: block; margin-top: 20px;">回覆內容：</label>
 
-    {% if msg['is_replied'] %}
-    <div id="reply-display-{{ msg['id'] }}"
-         style="white-space: pre-wrap; background: #f9f9f9; padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc;">
-      {{ msg['reply_text'] or '' }}
-    </div>
-    {% endif %}
+  {% if msg['is_replied'] %}
+  <div id="reply-display-{{ msg['id'] }}"
+       style="white-space: pre-wrap; background: #f9f9f9; padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc;">
+    {{ msg['reply_text'] or '' }}
+  </div>
+  {% endif %}
 
-    <textarea id="reply-text-{{ msg['id'] }}" name="reply" rows="4"
-      class="reply-textarea {% if msg['is_replied'] %}hidden{% endif %}"
-      {% if msg['is_replied'] %}readonly{% endif %}
-      style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; resize: vertical;">
-      {{ msg['reply_text'] or '' }}
-    </textarea>
+  <textarea id="reply-text-{{ msg['id'] }}" name="reply" rows="4"
+    class="reply-textarea {% if msg['is_replied'] %}hidden{% endif %}"
+    {% if msg['is_replied'] %}readonly{% endif %}
+    style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; resize: vertical;">{{ msg['reply_text'] or '' }}</textarea>
 
+  <div style="margin-top: 10px;">
     <button type="button"
       id="reply-btn-{{ msg['id'] }}"
       onclick="{% if msg['is_replied'] %}enableEdit('{{ msg['id'] }}'){% else %}confirmReply('{{ msg['id'] }}'){% endif %}"
-      style="margin-top: 10px; background-color: #e91e63; color: white; padding: 8px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
+      style="background-color: #e91e63; color: white; padding: 8px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
       {% if msg['is_replied'] %}✏️ 修改回覆{% else %}📩 確認回覆{% endif %}
     </button>
-  </form>
-</div>
+
+    <!-- 取消按鈕（預設隱藏） -->
+    <button type="button"
+      id="cancel-btn-{{ msg['id'] }}"
+      onclick="cancelEdit('{{ msg['id'] }}')"
+      style="margin-left: 10px; background-color: #aaa; color: white; padding: 8px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; display: none;">
+      ❌ 取消
+    </button>
+  </div>
+</form>
+
 
 
 
@@ -1007,38 +1015,38 @@ function confirmDelete() {
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-  function enableEdit(id) {
+function enableEdit(id) {
   const textarea = document.getElementById('reply-text-' + id);
-  const button = document.getElementById('reply-btn-' + id);
   const display = document.getElementById('reply-display-' + id);
+  const replyBtn = document.getElementById('reply-btn-' + id);
+  const cancelBtn = document.getElementById('cancel-btn-' + id);
 
-  if (display) display.style.display = "none";  // ✅ 隱藏文字版本
-  textarea.classList.remove('hidden');          // ✅ 顯示 textarea
+  textarea.classList.remove('hidden');
   textarea.removeAttribute('readonly');
-  textarea.focus();
+  if (display) display.style.display = 'none';
 
-  button.innerText = "✅ 確認回覆";
-  button.setAttribute("onclick", `confirmReply('${id}')`);
+  replyBtn.innerText = '✅ 確認回覆';
+  replyBtn.type = 'submit';
+  cancelBtn.style.display = 'inline-block';
 }
 
+function cancelEdit(id) {
+  const textarea = document.getElementById('reply-text-' + id);
+  const display = document.getElementById('reply-display-' + id);
+  const replyBtn = document.getElementById('reply-btn-' + id);
+  const cancelBtn = document.getElementById('cancel-btn-' + id);
 
+  textarea.classList.add('hidden');
+  textarea.setAttribute('readonly', 'readonly');
+  if (display) display.style.display = 'block';
 
-  function confirmReply(id) {
-    Swal.fire({
-      title: '確認送出回覆？',
-      text: '這筆回覆將會被儲存',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: '✅ 確認送出',
-      cancelButtonText: '取消',
-      confirmButtonColor: '#e91e63'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        document.getElementById('reply-form-' + id).submit();
-      }
-    });
-  }
+  replyBtn.innerText = '✏️ 修改回覆';
+  replyBtn.type = 'button';
+  replyBtn.setAttribute('onclick', `enableEdit('${id}')`);
+  cancelBtn.style.display = 'none';
+}
 </script>
+
 
 
 
