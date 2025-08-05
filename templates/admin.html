@@ -377,6 +377,7 @@
   <div id="order-list"></div>
   <div id="order-pagination" style="margin-top: 10px; text-align:center;"></div>
 </div>
+
 <!-- 留言管理 -->
 <div id="messages" class="tab-content">
   <h2>留言管理</h2>
@@ -407,6 +408,32 @@
         <span class="badge red">未回覆</span>
       {% endif %}
     </div>
+
+    <!-- 留言搜尋功能 -->
+    <form method="GET" action="/admin0363/dashboard" style="margin-bottom: 20px;">
+  <input type="hidden" name="tab" value="messages">
+  <label>回覆狀態：</label>
+  <select name="reply_status">
+    <option value="all">全部</option>
+    <option value="replied" {% if request.args.get('reply_status') == 'replied' %}selected{% endif %}>已回覆</option>
+    <option value="unreplied" {% if request.args.get('reply_status') == 'unreplied' %}selected{% endif %}>未回覆</option>
+  </select>
+
+  <label style="margin-left: 10px;">問題類型：</label>
+  <select name="type">
+    <option value="">全部</option>
+    {% set all_types = messages | map(attribute='type') | unique %}
+    {% for t in all_types %}
+      <option value="{{ t }}" {% if request.args.get('type') == t %}selected{% endif %}>{{ t }}</option>
+    {% endfor %}
+  </select>
+
+  <label style="margin-left: 10px;">會員名稱：</label>
+  <input type="text" name="keyword" value="{{ request.args.get('keyword', '') }}" placeholder="輸入會員名稱" style="padding: 4px 8px;">
+
+  <button type="submit" style="margin-left: 10px;">🔍 搜尋</button>
+</form>
+
 
     <!-- ✅ 回覆表單 -->
     <form id="reply-form-{{ msg['id'] }}" method="POST" action="/admin0363/messages/reply/{{ msg['id'] }}">

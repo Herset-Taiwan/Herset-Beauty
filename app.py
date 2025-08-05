@@ -222,9 +222,8 @@ def admin_dashboard():
             "account": member["account"] if member else "guest",
             "name": member.get("name") if member else "訪客",
             "phone": member.get("phone") if member else "—",
-            "address": member.get("address") if member else "—"     
+            "address": member.get("address") if member else "—"
         }
-        # ✅ 判斷此訂單是否為新訂單（尚未出貨 且 尚未點過「訂單管理系統」）
         o["is_new"] = bool(o.get("status") != "shipped" and not session.get("seen_orders"))
 
         try:
@@ -234,6 +233,11 @@ def admin_dashboard():
             o["created_local"] = o["created_at"]
         orders.append(o)
 
+    # ✅ 讀取留言搜尋參數
+    reply_status = request.args.get("reply_status", "all")
+    msg_type = request.args.get("type", "")
+    keyword = request.args.get("keyword", "").lower()
+
     # ✅ 留言
     messages_res = supabase.table("messages").select("*").order("created_at", desc=True).execute()
     member_ids = list({m['member_id'] for m in messages_res.data})
@@ -242,9 +246,10 @@ def admin_dashboard():
         members_res = supabase.table("members").select("id, name").in_("id", member_ids).execute()
         name_map = {m['id']: m['name'] for m in members_res.data}
 
+    # ✅ 留言欄位轉換 + 篩選
+    filtered_messages = []
     for m in messages_res.data:
         m["member_name"] = name_map.get(m["member_id"], "未知")
-          # ✅ 判斷此留言是否為新留言（尚未回覆 且 尚未點過「留言管理」）
         m["is_new"] = bool(not m.get("is_replied") and not session.get("seen_messages"))
 
         try:
@@ -252,6 +257,17 @@ def admin_dashboard():
             m["local_created_at"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M")
         except:
             m["local_created_at"] = m["created_at"]
+
+        match_status = (
+            reply_status == "all" or
+            (reply_status == "replied" and m.get("is_replied")) or
+            (reply_status == "unreplied" and not m.get("is_replied"))
+        )
+        match_type = not msg_type or m.get("type") == msg_type
+        match_name = not keyword or keyword in m.get("member_name", "").lower()
+
+        if match_status and match_type and match_name:
+            filtered_messages.append(m)
 
     # ✅ 記錄是否已查看留言/訂單（tab 切換）
     if tab == "orders":
@@ -272,9 +288,10 @@ def admin_dashboard():
                            products=products,
                            members=members,
                            orders=orders,
-                           messages=messages_res.data,
+                           messages=filtered_messages,
                            new_order_alert=show_order_alert,
                            new_message_alert=show_message_alert)
+
 
 @app.route("/admin0363/mark_seen_orders", methods=["POST"])
 def mark_seen_orders():
