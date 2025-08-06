@@ -1049,5 +1049,8 @@ body:not(.product-page) .info {
   color: #e91e63; /* 刪除粉紅色 */
 }
 
+.tab-content:empty {
+  display: none;
+}
 
 /* ====== 後台 admin 樣式結束 ====== */
