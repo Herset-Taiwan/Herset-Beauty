@@ -1,13 +1,15 @@
 <h2>會員系統管理</h2>
-<form class="search-form" method="GET" action="/admin/members">
-  <input type="text" name="keyword" placeholder="輸入帳號、姓名、電話或Email...">
-  <input type="hidden" name="tab" value="members">
+
+<!-- 搜尋表單 -->
+<form class="search-form" onsubmit="event.preventDefault(); searchMembers();">
+  <input type="text" id="memberKeyword" placeholder="輸入帳號、姓名、電話或Email...">
   <button type="submit">搜尋</button>
 </form>
 
+<!-- 會員清單 -->
 <div id="member-list">
   {% for m in members %}
-  <div class="member-row">
+  <div class="member-row" style="margin: 12px 0; padding: 12px; border: 1px solid #ccc; border-radius: 8px;">
     <div class="info">
       <strong>帳號：</strong>{{ m['account'] }}<br>
       <strong>信箱：</strong>{{ m['email'] or '—' }}<br><br>
@@ -20,3 +22,19 @@
   </div>
   {% endfor %}
 </div>
+
+<!-- 搜尋功能 -->
+<script>
+  function searchMembers() {
+    const keyword = document.getElementById("memberKeyword").value.toLowerCase().trim();
+    document.querySelectorAll(".member-row").forEach(row => {
+      const text = row.innerText.toLowerCase();
+      row.style.display = text.includes(keyword) ? "block" : "none";
+    });
+  }
+
+  // 頁面一進來先顯示全部
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".member-row").forEach(m => m.style.display = "block");
+  });
+</script>

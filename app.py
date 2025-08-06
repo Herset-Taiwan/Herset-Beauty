@@ -6,6 +6,7 @@ from datetime import datetime
 from dateutil import parser
 from pytz import timezone
 from dotenv import load_dotenv
+import uuid
 from uuid import uuid4, UUID
 import os
 import tempfile
