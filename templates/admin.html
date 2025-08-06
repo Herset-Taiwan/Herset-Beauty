@@ -546,6 +546,41 @@ function searchMembers() {
 }
 </script>
 
+<script>
+function initProductFilter() {
+  const selectEl = document.getElementById('categoryFilter');
+  if (!selectEl) return; // 🛑 若找不到就不做
+
+  $('#categoryFilter').selectize({
+    plugins: ['remove_button'],
+    delimiter: ',',
+    persist: false
+  });
+}
+
+function filterProducts() {
+  const selected = $('#categoryFilter').val();
+  if (!selected || selected.length === 0) {
+    document.querySelectorAll('.product-row').forEach(p => p.style.display = 'flex');
+    return;
+  }
+
+  document.querySelectorAll('.product-row').forEach(p => {
+    const categories = p.getAttribute('data-categories') || '';
+    const matched = selected.some(cat => categories.includes(cat));
+    p.style.display = matched ? 'flex' : 'none';
+  });
+}
+
+// 每次載入 products 頁籤就初始化
+const tabObserver = new MutationObserver(() => {
+  if (document.querySelector('#products.tab-content.active')) {
+    initProductFilter();
+  }
+});
+tabObserver.observe(document.body, { childList: true, subtree: true });
+</script>
+
 
 </body>
 </html>

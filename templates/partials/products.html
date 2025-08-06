@@ -47,27 +47,4 @@
 <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
 
 
-<script>
-function filterProducts() {
-  const selected = $('#categoryFilter').val(); // Selectize multiple
-  if (!selected || selected.length === 0) {
-    document.querySelectorAll('.product-row').forEach(p => p.style.display = 'flex');
-    return;
-  }
-
-  document.querySelectorAll('.product-row').forEach(p => {
-    const categories = p.getAttribute('data-categories') || '';
-    const matched = selected.some(cat => categories.includes(cat));
-    p.style.display = matched ? 'flex' : 'none';
-  });
-}
-
-// 初始化 Selectize
-$(function () {
-  $('#categoryFilter').selectize({
-    plugins: ['remove_button'],
-    delimiter: ',',
-    persist: false
-  });
-});
 </script>
