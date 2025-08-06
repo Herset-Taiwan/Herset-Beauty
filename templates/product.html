@@ -493,7 +493,7 @@
   let selectedOption = "";
 
   window.addEventListener('DOMContentLoaded', () => {
-    // ✅ 商品選項（規格）點選
+    // 商品選項按鈕初始化
     const optionButtons = document.querySelectorAll('.options button');
     optionButtons.forEach(btn => {
       btn.addEventListener('click', () => {
@@ -504,33 +504,33 @@
       });
     });
 
-    // ✅ 預設選中第一個選項（如果只有一個）
+    // 若只有一個選項，預設選取
     if (optionButtons.length === 1) {
       optionButtons[0].classList.add('selected');
       selectedOption = optionButtons[0].innerText;
       document.getElementById('selected-option-input').value = selectedOption;
     }
 
-    // ✅ 數量輸入變更 → 更新隱藏欄位
-    const qtyInput = document.getElementById('qty');
-    qtyInput.addEventListener('input', function () {
+    // 數量變更時更新結帳用欄位
+    document.getElementById('qty').addEventListener('input', function () {
       document.getElementById('qty-input-checkout').value = this.value;
     });
 
-    // ✅ tab 切換
+    // tab 切換功能
     document.querySelectorAll('.tab-btn').forEach(button => {
       button.addEventListener('click', () => {
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         document.querySelectorAll('.tab-content > div').forEach(tab => tab.classList.remove('active'));
-        button.classList.add('active');
         const tabId = button.dataset.tab;
         document.getElementById(tabId).classList.add('active');
+        button.classList.add('active');
       });
     });
 
-    // ✅ 主圖切換
+    // 主圖切換邏輯
     const mainImg = document.getElementById('main-img');
     const thumbs = document.querySelectorAll('.gallery-thumbs .thumbnail');
+
     thumbs.forEach(thumb => {
       thumb.addEventListener('click', () => {
         mainImg.src = thumb.src;
@@ -538,6 +538,7 @@
         thumb.classList.add('selected');
       });
     });
+
     if (thumbs.length > 0) {
       thumbs[0].classList.add('selected');
     }
@@ -605,6 +606,7 @@
     }, 2000);
   }
 </script>
+
 
 
 
