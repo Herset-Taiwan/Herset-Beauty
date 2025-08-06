@@ -160,10 +160,22 @@ def admin_login():
         username = request.form["username"]
         password = request.form["password"]
         if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
-            session["admin_logged_in"] = True
-            session["seen_orders"] = True      # ✅ 視為登入當下已查看
-            session["seen_messages"] = True    # ✅ 同時處理留言提示
-            return redirect("/admin0363/dashboard")
+    session["admin_logged_in"] = True
+
+    # 登入當下抓出目前所有訂單和留言（用來初始 seen 狀態）
+    orders = supabase.table("orders").select("status").execute().data or []
+    messages = supabase.table("messages").select("is_replied").execute().data or []
+
+    # 如果登入當下就有未出貨訂單 → 不設為已讀，讓警示跳出
+    has_unshipped_order = any(o["status"] != "shipped" for o in orders)
+    session["seen_orders"] = not has_unshipped_order
+
+    # 如果登入當下就有未回覆留言 → 不設為已讀，讓警示跳出
+    has_unreplied_message = any(not m["is_replied"] for m in messages)
+    session["seen_messages"] = not has_unreplied_message
+
+    return redirect("/admin0363/dashboard")
+
         else:
             return render_template("admin_login.html", error="帳號或密碼錯誤")
     return render_template("admin_login.html")
