@@ -894,6 +894,7 @@ def product_detail(product_id):
 
     res = supabase.table("products").select("*").eq("id", product_id).single().execute()
     product = res.data
+    print("👉 商品內容：", product)
     if not product:
         return "找不到商品", 404
     cart = session.get('cart', [])
