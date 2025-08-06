@@ -19,7 +19,7 @@ from utils import generate_check_mac_value, generate_ecpay_form
 
 load_dotenv()
 
-unique_filename = f"{uuid.uuid4()}_{filename}"
+
     
 def generate_check_mac_value(params, hash_key, hash_iv):
     # 1. 將參數依照字母順序排列
