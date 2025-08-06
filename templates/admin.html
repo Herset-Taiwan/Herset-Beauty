@@ -50,48 +50,57 @@
     {% endif %}
   </button>
 
-  <!-- 延遲載入用空容器 -->
+ <!-- 🔻 tabs 區塊，只放按鈕 -->
+<div class="tabs">
+  <button class="tab-btn" onclick="switchTab('products')">商品管理</button>
+  <button class="tab-btn" onclick="switchTab('members')">會員系統管理</button>
+  <button class="tab-btn" onclick="switchTab('orders')">訂單管理系統</button>
+  <button class="tab-btn" onclick="switchTab('messages')">留言管理</button>
+</div>
+
+<!-- 🔻 tab 內容：一律放 tabs 外面 -->
+<div id="products" class="tab-content active">商品內容</div>
 <div id="members" class="tab-content" data-loaded="false"></div>
 <div id="orders" class="tab-content" data-loaded="false"></div>
 <div id="messages" class="tab-content" data-loaded="false"></div>
 
+
+ <div id="products" class="tab-content active">
+  <a href="/admin/new" class="add-btn">＋ 新增商品</a>
+  {% if products %}
+    {% for p in products %}
+      <div class="product-row">
+        <img src="{{ p['image'] or '' }}" alt="{{ p['name'] }}">
+        <div class="info">
+          <strong>{{ p['name'] or '無名稱' }}</strong><br>
+
+          {% if p.get('discount_price') %}
+            價格：<span style="text-decoration: line-through; color: #888;">${{ p['price'] }}</span>
+                 <span style="color: red; font-weight: bold; margin-left: 5px;">${{ p['discount_price'] }}</span><br>
+          {% else %}
+            價格：${{ p['price'] }}<br>
+          {% endif %}
+
+          {% if p['stock'] == 0 %}
+            <span style="color: red; font-weight: bold;">已售完</span>
+          {% else %}
+            目前庫存：{{ p['stock'] or 0 }}
+          {% endif %}
+        </div>
+
+        <div class="actions">
+          <a href="/edit/{{ p['id'] }}">✏️ 編輯</a>
+          <form action="/delete/{{ p['id'] }}" method="post" style="display:inline;" onsubmit="return confirm('確定要刪除商品？')">
+            <button type="submit" style="color: #e91e63; border: none; background: none; cursor: pointer;">🗑️ 刪除</button>
+          </form>
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p style="color: gray;">目前沒有任何商品</p>
+  {% endif %}
 </div>
 
-
-      <a href="/admin/new" class="add-btn">＋ 新增商品</a>
-{% if products %}
-  {% for p in products %}
-    <div class="product-row">
-      <img src="{{ p['image'] or '' }}" alt="{{ p['name'] }}">
-      <div class="info">
-        <strong>{{ p['name'] or '無名稱' }}</strong><br>
-
-        {% if p.get('discount_price') %}
-          價格：<span style="text-decoration: line-through; color: #888;">${{ p['price'] }}</span>
-               <span style="color: red; font-weight: bold; margin-left: 5px;">${{ p['discount_price'] }}</span><br>
-        {% else %}
-          價格：${{ p['price'] }}<br>
-        {% endif %}
-
-        {% if p['stock'] == 0 %}
-          <span style="color: red; font-weight: bold;">已售完</span>
-        {% else %}
-          目前庫存：{{ p['stock'] or 0 }}
-        {% endif %}
-      </div>
-
-      <div class="actions">
-        <a href="/edit/{{ p['id'] }}">✏️ 編輯</a>
-        <form action="/delete/{{ p['id'] }}" method="post" style="display:inline;" onsubmit="return confirm('確定要刪除商品？')">
-          <button type="submit" style="color: #e91e63; border: none; background: none; cursor: pointer;">🗑️ 刪除</button>
-        </form>
-      </div>
-    </div>
-  {% endfor %}
-{% else %}
-  <p style="color: gray;">目前沒有任何商品</p>
-{% endif %}
-    </div>
 
   
 
