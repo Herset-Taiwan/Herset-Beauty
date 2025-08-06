@@ -467,11 +467,13 @@
       <strong>訂單時間：</strong>{{ o.created_local }}<br>
       <hr style="border: 1px dashed #ccc; margin: 10px 0;">
       <strong>購買商品：</strong><br>
-      {% for i in o.items %}
+      {% for i in o["items"] %}
+
         <div>{{ i.product_name }} × {{ i.qty }}（${{ i.price }}）{% if i.option %}<div style="color:#888; margin-left:10px;">選項：{{ i.option }}</div>{% endif %}</div>
       {% endfor %}
       <br>
-      <strong>總金額：</strong><span style="color:#e91e63;"><strong>${{ o.items | sum(attribute='price', start=0) }}</strong></span><br>
+      <strong>總金額：</strong><span style="color:#e91e63;"><strong>${{ o["items"] | sum(attribute='price', start=0) }}</strong></span>
+
       <strong>付款狀態：</strong>
       <span class="badge {{ 'green' if o.payment_status == 'paid' else 'red' }}">
         {{ '已付款' if o.payment_status == 'paid' else '未付款' }}
