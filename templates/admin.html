@@ -49,20 +49,8 @@
       <span class="badge-icon">📩 新留言</span>
     {% endif %}
   </button>
+  </div>
 
- <!-- 🔻 tabs 區塊，只放按鈕 -->
-<div class="tabs">
-  <button class="tab-btn" onclick="switchTab('products')">商品管理</button>
-  <button class="tab-btn" onclick="switchTab('members')">會員系統管理</button>
-  <button class="tab-btn" onclick="switchTab('orders')">訂單管理系統</button>
-  <button class="tab-btn" onclick="switchTab('messages')">留言管理</button>
-</div>
-
-<!-- 🔻 tab 內容：一律放 tabs 外面 -->
-<div id="products" class="tab-content active">商品內容</div>
-<div id="members" class="tab-content" data-loaded="false"></div>
-<div id="orders" class="tab-content" data-loaded="false"></div>
-<div id="messages" class="tab-content" data-loaded="false"></div>
 
 
  <div id="products" class="tab-content active">
@@ -100,9 +88,9 @@
     <p style="color: gray;">目前沒有任何商品</p>
   {% endif %}
 </div>
-
-
-  
+<div id="members" class="tab-content" data-loaded="false"></div>
+<div id="orders" class="tab-content" data-loaded="false"></div>
+<div id="messages" class="tab-content" data-loaded="false"></div>
 
   <script>
 function switchTab(tabId) {
