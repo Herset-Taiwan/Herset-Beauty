@@ -797,11 +797,11 @@ body {
     color: white;
   }
 
-  .tab-content {
-    display: none;
-  }
+  body:not(.product-page) .tab-content {
+  display: none;
+}
 
- .tab-content.active {
+ body:not(.product-page) .tab-content.active {
     display: block;
   }
 
