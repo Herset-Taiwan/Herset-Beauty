@@ -400,7 +400,7 @@ def load_tab_content(tab_name):
                 o["created_local"] = o["created_at"]
             orders.append(o)
 
-        return render_template("partials/orders.html", orders=orders)
+        return jsonify(orders=orders)
 
     elif tab_name == "messages":
         messages = supabase.table("messages").select("*").order("created_at", desc=True).execute().data or []
