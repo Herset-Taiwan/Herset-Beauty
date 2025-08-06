@@ -12,16 +12,13 @@
     }
 
     .product-container {
-      display: flex;
-      max-width: 900px;
-      margin: 20px auto 0;
-      gap: 40px;
-      background: white;
-      padding: 40px;
-      border-radius: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-
+  display: flex;
+  flex-wrap: wrap; /* ✅ 防止跑版 */
+  align-items: flex-start;
+  justify-content: space-between;
+  max-width: 900px;
+  margin: 20px auto;
+}
     .gallery {
       flex: 1;
     }
@@ -47,8 +44,9 @@
     }
 
     .info {
-      flex: 1;
-    }
+  flex: 1;
+  min-width: 300px;
+}
 
     .info h2 { margin-top: 0; }
  /* 商品頁縮圖樣式 */
@@ -334,6 +332,30 @@
   100% { transform: scale(1); opacity: 1; }
 }
 
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+  align-items: center;
+}
+.actions form {
+  margin: 0;
+}
+.actions button,
+.actions form button {
+  padding: 10px 20px;
+  background-color: #5E3C2C;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.actions button:hover,
+.actions form button:hover {
+  background-color: #7A4F3D;
+}
+
 
   </style>
 </head>
@@ -470,13 +492,55 @@
 <script>
   let selectedOption = "";
 
-  document.querySelectorAll('.options button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.options button').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      selectedOption = btn.innerText;
-      document.getElementById('selected-option-input').value = selectedOption;
+  window.addEventListener('DOMContentLoaded', () => {
+    // ✅ 商品選項（規格）點選
+    const optionButtons = document.querySelectorAll('.options button');
+    optionButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        optionButtons.forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedOption = btn.innerText;
+        document.getElementById('selected-option-input').value = selectedOption;
+      });
     });
+
+    // ✅ 預設選中第一個選項（如果只有一個）
+    if (optionButtons.length === 1) {
+      optionButtons[0].classList.add('selected');
+      selectedOption = optionButtons[0].innerText;
+      document.getElementById('selected-option-input').value = selectedOption;
+    }
+
+    // ✅ 數量輸入變更 → 更新隱藏欄位
+    const qtyInput = document.getElementById('qty');
+    qtyInput.addEventListener('input', function () {
+      document.getElementById('qty-input-checkout').value = this.value;
+    });
+
+    // ✅ tab 切換
+    document.querySelectorAll('.tab-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content > div').forEach(tab => tab.classList.remove('active'));
+        button.classList.add('active');
+        const tabId = button.dataset.tab;
+        document.getElementById(tabId).classList.add('active');
+      });
+    });
+
+    // ✅ 主圖切換
+    const mainImg = document.getElementById('main-img');
+    const thumbs = document.querySelectorAll('.gallery-thumbs .thumbnail');
+    thumbs.forEach(thumb => {
+      thumb.addEventListener('click', () => {
+        mainImg.src = thumb.src;
+        thumbs.forEach(t => t.classList.remove('selected'));
+        thumb.classList.add('selected');
+      });
+    });
+    if (thumbs.length > 0) {
+      thumbs[0].classList.add('selected');
+    }
   });
 
   function adjustQty(delta) {
@@ -492,22 +556,21 @@
   function addToCart(productId) {
     const qty = parseInt(document.getElementById('qty').value);
     let option = selectedOption;
-const optionButtons = document.querySelectorAll('.options button');
+    const optionButtons = document.querySelectorAll('.options button');
 
-if (!option) {
-  if (optionButtons.length === 1) {
-    option = optionButtons[0].innerText;
-    selectedOption = option;
-    document.getElementById('selected-option-input').value = option;
-    optionButtons[0].classList.add('selected');
-  } else if (optionButtons.length === 0) {
-    option = ""; // 沒有規格
-  } else {
-    showTip("⚠️ 請先選擇商品規格");
-    return;
-  }
-}
-
+    if (!option) {
+      if (optionButtons.length === 1) {
+        option = optionButtons[0].innerText;
+        selectedOption = option;
+        document.getElementById('selected-option-input').value = option;
+        optionButtons[0].classList.add('selected');
+      } else if (optionButtons.length === 0) {
+        option = ""; // 無選項
+      } else {
+        showTip("⚠️ 請先選擇商品規格");
+        return;
+      }
+    }
 
     fetch('/add_to_cart', {
       method: 'POST',
@@ -532,10 +595,6 @@ if (!option) {
     });
   }
 
-  document.getElementById('qty').addEventListener('input', function () {
-    document.getElementById('qty-input-checkout').value = this.value;
-  });
-
   function showTip(message) {
     const tip = document.getElementById('cart-tip');
     tip.innerText = message;
@@ -545,50 +604,8 @@ if (!option) {
       tip.innerText = '✅ 已加入購物車！';
     }, 2000);
   }
-
-  // tab 切換
-  document.querySelectorAll('.tab-btn').forEach(button => {
-    button.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      document.querySelectorAll('.tab-content > div').forEach(tab => tab.classList.remove('active'));
-      button.classList.add('active');
-      const tabId = button.dataset.tab;
-      document.getElementById(tabId).classList.add('active');
-    });
-  });
-
-  window.addEventListener('DOMContentLoaded', () => {
-  const optionButtons = document.querySelectorAll('.options button');
-  if (optionButtons.length === 1) {
-    optionButtons[0].classList.add('selected');
-    selectedOption = optionButtons[0].innerText;
-    document.getElementById('selected-option-input').value = selectedOption;
-  }
-});
-
-// 替換主圖並加上 .selected 樣式
-document.addEventListener('DOMContentLoaded', () => {
-  const mainImg = document.getElementById('main-img');
-  const thumbs = document.querySelectorAll('.gallery-thumbs .thumbnail');
-
-  thumbs.forEach(thumb => {
-    thumb.addEventListener('click', () => {
-      mainImg.src = thumb.src;
-
-      thumbs.forEach(t => t.classList.remove('selected'));
-      thumb.classList.add('selected');
-    });
-  });
-
-  // 預設第一張選中
-  if (thumbs.length > 0) {
-    thumbs[0].classList.add('selected');
-  }
-});
-
-
-
 </script>
+
 
 
 
