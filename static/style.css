@@ -752,14 +752,7 @@ body {
   right: 16px;
 }
 
-  .actions button {
-    background: none;
-    border: none;
-    color: #e91e63;
-    font-weight: bold;
-    cursor: pointer;
-    font-size: 14px;
-  }
+
 
   .add-btn {
     display: inline-block;
@@ -1021,6 +1014,31 @@ body:not(.product-page) .info {
   font-size: 14px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   z-index: 10;
+}
+/* ✅ 專門控制商品卡片右上角的 編輯/刪除 區塊定位 */
+.product-row .actions {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  gap: 12px;
+}
+
+.product-row .actions button {
+  background: none;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+}
+
+.product-row .actions button:first-child {
+  color: #3f51b5; /* 編輯藍色 */
+}
+
+.product-row .actions button:last-child {
+  color: #e91e63; /* 刪除粉紅色 */
 }
 
 
