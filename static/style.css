@@ -787,11 +787,26 @@ body {
   }
 
 .tabs {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 30px;
-  }
+  display: flex;
+  margin: 40px auto 0;
+  max-width: 900px;
+  border: 1px solid #ccc;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  background: white;
+  overflow: hidden;
+}
+.tabs button.active {
+  background: white;
+  border: none;
+  font-weight: bold;
+  z-index: 2;
+}
 
+.tab-content {
+  margin-top: -1px; /* ✅ 把上下交界蓋住 */
+  border-radius: 0 0 8px 8px;
+}
   .tab-btn.active {
     background: #e91e63;
     color: white;
