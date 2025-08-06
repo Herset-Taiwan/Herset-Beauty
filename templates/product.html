@@ -205,55 +205,62 @@ body.product-page .tab-btn.active {
       background-color: #7A4F3D;
     }
 
-  .product-tabs {
+ .product-tabs {
   display: flex;
   justify-content: center;
   max-width: 900px;
-  margin: 40px auto 0;
-  background: white;
-  border-bottom: 1px solid #ccc;
-  position: relative;
-  z-index: 1;
+  margin: 50px auto 0;
+  background: transparent;
+  gap: 0;
 }
 .product-tab-btn {
-  padding: 10px 20px;
-  border: 1px solid #ccc;
+  flex: 1;
+  padding: 14px 20px;
+  background: #f7f1ee;
+  color: #6c4c3c;
+  border: 1px solid #d5c6be;
   border-bottom: none;
-  background: #f5f5f5;
   font-weight: bold;
+  font-size: 16px;
+  letter-spacing: 1px;
   cursor: pointer;
-  border-radius: 8px 8px 0 0;
-  margin: 0 -1px; /* ❗避免邊框重疊 */
-  z-index: 1;
-  position: relative;
+  transition: all 0.2s ease;
+  border-radius: 12px 12px 0 0;
 }
-
-.product-tab-btn:last-child {
+.product-tab-btn:not(:last-child) {
   border-right: none;
 }
 
 .product-tab-btn.active {
   background: white;
-  z-index: 2;
-  color: #333;
+  color: #3e2a23;
+  position: relative;
+  z-index: 3;
+  border: 1px solid #d5c6be;
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 -2px 4px rgba(0,0,0,0.03);
 }
 
 
 .product-tab-content {
-  border: 1px solid #ccc;
-  border-top: none;
-  padding: 20px;
   background: white;
+  border: 1px solid #d5c6be;
+  border-radius: 0 0 12px 12px;
   max-width: 900px;
   margin: 0 auto 60px;
-  border-radius: 0 0 8px 8px;
-  position: relative;
-  z-index: 1;
+  padding: 30px;
+  font-size: 15px;
+  line-height: 1.9;
+  color: #3b3b3b;
+  font-family: "Noto Sans TC", sans-serif;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.04);
 }
 
 .product-tab-content > div {
   display: none;
 }
+
 .product-tab-content > div.active {
   display: block;
 }
