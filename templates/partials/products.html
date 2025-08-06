@@ -1,14 +1,15 @@
-<!-- 🔍 分類搜尋 -->
-<div style="margin-bottom: 20px;">
+<!-- 🔍 分類搜尋（仿照訂單搜尋） -->
+<div style="margin-bottom: 15px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
   <label>分類篩選：</label>
-  <select id="categoryFilter" multiple onchange="filterProducts()">
+  <select id="categoryFilter" multiple onchange="filterProducts()" style="min-width: 220px;">
     {% set all_categories = ['身體保養', '私密保養', '寵物友善', '品牌嚴選'] %}
     {% for cat in all_categories %}
       <option value="{{ cat }}">{{ cat }}</option>
     {% endfor %}
   </select>
-  <button type="button" onclick="filterProducts()">搜尋</button>
 </div>
+
+
 <div class="tab-inner"></div>
 <a href="/admin/new" class="add-btn">＋ 新增商品</a>
 {% if products %}
