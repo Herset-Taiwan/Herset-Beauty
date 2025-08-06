@@ -432,37 +432,93 @@
       </div>
     </div>
 
+
     <div id="orders" class="tab-content">
+
   <h2>訂單管理系統</h2>
 
+<form id="order-filter-form" method="get" action="/admin0363/dashboard">
+  <input type="hidden" name="tab" value="orders">
+  <input type="hidden" name="order_page" id="order_page_input" value="{{ order_page or 1 }}">
 
-
-
-  <!-- 篩選與搜尋列 -->
-  <div style="margin-bottom: 15px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
-    <label>狀態：</label>
-    <select id="statusFilter" onchange="filterOrders()">
-      <option value="all">全部</option>
-      <option value="unshipped">未出貨</option>
-      <option value="shipped">已出貨</option>
-    </select>
-
+  <div class="filter-bar">
     <label>搜尋訂單：</label>
-    <input type="text" id="orderSearch" oninput="filterOrders()" placeholder="輸入訂單編號、會員帳號、姓名">
+    <input type="text" name="keyword" placeholder="輸入訂單編號、會員帳號、姓名" value="{{ request.args.get('keyword', '') }}">
 
-    <label>每頁顯示：</label>
-    <select id="pageSizeSelect" onchange="filterOrders()">
-      <option value="5">5</option>
-      <option value="10" selected>10</option>
-      <option value="20">20</option>
-      <option value="50">50</option>
+    <label style="margin-left: 10px;">狀態：</label>
+    <select name="status">
+      <option value="all">全部</option>
+      <option value="unshipped" {% if request.args.get('status') == 'unshipped' %}selected{% endif %}>未出貨</option>
+      <option value="shipped" {% if request.args.get('status') == 'shipped' %}selected{% endif %}>已出貨</option>
     </select>
-  </div>
 
-  <!-- 訂單列表 + 分頁 -->
-  <div id="order-list"></div>
-  <div id="order-pagination" style="margin-top: 10px; text-align:center;"></div>
+    <button type="submit" style="margin-left: 10px;">🔍 搜尋</button>
+  </div>
+</form>
+
+{% for o in orders %}
+  <div class="order-row">
+    {% if o.is_new %}
+      <span class="badge red" style="position:absolute; top:38px; right:10px; padding: 2px 8px; font-size: 11px;">新訂單</span>
+    {% endif %}
+    <div class="info {{ 'order-box' if o.status == 'shipped' else '' }}">
+      {% if o.status == 'shipped' %}<div class="shipped-label">已出貨</div>{% endif %}
+      <strong>訂單編號：</strong>#{{ o.id }}<br>
+      <strong>訂單時間：</strong>{{ o.created_local }}<br>
+      <hr style="border: 1px dashed #ccc; margin: 10px 0;">
+      <strong>購買商品：</strong><br>
+      {% for i in o.items %}
+        <div>{{ i.product_name }} × {{ i.qty }}（${{ i.price }}）{% if i.option %}<div style="color:#888; margin-left:10px;">選項：{{ i.option }}</div>{% endif %}</div>
+      {% endfor %}
+      <br>
+      <strong>總金額：</strong><span style="color:#e91e63;"><strong>${{ o.items | sum(attribute='price', start=0) }}</strong></span><br>
+      <strong>付款狀態：</strong>
+      <span class="badge {{ 'green' if o.payment_status == 'paid' else 'red' }}">
+        {{ '已付款' if o.payment_status == 'paid' else '未付款' }}
+      </span><br>
+      <hr style="border: 1px dashed #ccc; margin: 10px 0;">
+      <strong>會員帳號：</strong>{{ o.member.account }}<br>
+      <strong>購買人：</strong>{{ o.member.name }}<br>
+      <strong>電話：</strong>{{ o.member.phone }}<br>
+      <strong>地址：</strong>{{ o.member.address }}<br>
+      <hr style="border: 1px dashed #ccc; margin: 10px 0;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+        <strong>出貨狀態：</strong> {{ '已出貨' if o.status == 'shipped' else '已付款' if o.status == 'paid' else '待處理' }}
+        <form method="POST" action="/admin0363/orders/update_status/{{ o.id }}">
+          <strong style="margin-left: 20px;">修改狀態：</strong>
+          <select name="status" onchange="this.form.submit()">
+            <option value="pending" {% if o.status == 'pending' %}selected{% endif %}>待處理</option>
+            <option value="paid" {% if o.status == 'paid' %}selected{% endif %}>已付款</option>
+            <option value="shipped" {% if o.status == 'shipped' %}selected{% endif %}>已出貨</option>
+          </select>
+        </form>
+      </div>
+    </div>
+
+    <div class="actions" style="position: absolute; top: 10px; right: 10px;">
+      <button onclick="openDeleteDialog({{ o.id }})" style="color: #e91e63; border: none; background: none; cursor: pointer;">🗑️ 刪除</button>
+    </div>
+
+    <div style="position: absolute; bottom: 10px; right: 10px;">
+      <button onclick="printOrder({{ o.id }})" style="padding: 6px 12px; background: #e91e63; color: white; border: none; border-radius: 6px; cursor: pointer;">列印訂單</button>
+    </div>
+  </div>
+{% endfor %}
+
+<div class="pagination">
+  <button onclick="goToOrderPage({{ order_page - 1 }})" {% if order_page <= 1 %}disabled{% endif %}>← 上一頁</button>
+  <span style="margin: 0 10px;">第 {{ order_page }} 頁 / 共 {{ (order_total_count // 20) + 1 }} 頁</span>
+  <button onclick="goToOrderPage({{ order_page + 1 }})" {% if order_page * 20 >= order_total_count %}disabled{% endif %}>下一頁 →</button>
 </div>
+
+<script>
+function goToOrderPage(page) {
+  document.getElementById("order_page_input").value = page;
+  document.getElementById("order-filter-form").submit();
+}
+</script>
+
+
 
 <!-- 留言管理 -->
 <div id="messages" class="tab-content">
@@ -622,106 +678,6 @@ function switchTab(tabId) {
 
 
 
-
-let allOrders = {{ orders | tojson }};
-let filteredOrders = [];
-let currentPage = 1;
-
-function filterOrders() {
-  const keyword = document.getElementById("orderSearch").value?.toLowerCase() || "";
-  const status = document.getElementById("statusFilter").value;
-  const pageSize = parseInt(document.getElementById("pageSizeSelect").value);
-  currentPage = 1;
-
-  filteredOrders = allOrders.filter(o => {
-    const matchKeyword =
-      o.id.toString().includes(keyword) ||
-      (o.member?.account?.toLowerCase().includes(keyword)) ||
-      (o.member?.name?.toLowerCase().includes(keyword));
-
-    const matchStatus =
-      status === "all" ||
-      (status === "unshipped" && o.status !== "shipped") ||
-      (status === "shipped" && o.status === "shipped");
-
-    return matchKeyword && matchStatus;
-  });
-
-  renderOrderPage(pageSize);
-}
-
-
-function renderOrderPage(pageSize) {
-  const container = document.getElementById("order-list");
-  const pagination = document.getElementById("order-pagination");
-  pagination.className = "pagination";
-  container.innerHTML = '';
-  pagination.innerHTML = '';
-
-  const totalPages = Math.ceil(filteredOrders.length / pageSize);
-  const start = (currentPage - 1) * pageSize;
-  const end = start + pageSize;
-
-  const pageData = filteredOrders.slice(start, end);
-pageData.forEach(o => {
-  const itemList = o.items.map(i => {
-  const optionLine = i.option && i.option.trim() !== "" ? `<div style="color:#888; margin-left:10px;">選項：${i.option}</div>` : '';
-  return `<div>${i.product_name} × ${i.qty}（$${i.price}）${optionLine}</div>`;
-}).join('');
-
-
-  const itemSubtotal = o.items.reduce((sum, i) => sum + (i.price * i.qty), 0);
-  const shipping = o.shipping_fee || 0;
-  const finalAmount = itemSubtotal + shipping;
-
-  const div = document.createElement("div");
-  div.className = "order-row";
-  div.innerHTML = `
-  ${o.is_new === true ? '<span class="badge red" style="position:absolute; top:38px; right:10px; padding: 2px 8px; font-size: 11px;">新訂單</span>' : ''}
-  <div class="info ${o.status === 'shipped' ? 'order-box' : ''}">
-
-      ${o.status === 'shipped' ? `<div class="shipped-label">已出貨</div>` : ''}
-      <strong>訂單編號：</strong>#${o.id}<br>
-      <strong>訂單時間：</strong>${o.created_local}<br>
-      <hr style="border: 1px dashed #ccc; margin: 10px 0;">
-      <strong>購買商品：</strong><br>
-      ${itemList}<br>
-      <strong>商品小計：</strong>$${itemSubtotal}<br>
-      <strong>運費：</strong>$${shipping}${shipping === 0 ? '（免運）' : ''}<br>
-      <strong>總金額：</strong><span style="color:#e91e63;"><strong>$${finalAmount}</strong></span><br>
-      <strong>付款狀態：</strong>
-      <span class="badge ${o.payment_status === 'paid' ? 'green' : 'red'}">
-        ${o.payment_status === 'paid' ? '已付款' : '未付款'}
-      </span><br>
-      <hr style="border: 1px dashed #ccc; margin: 10px 0;">
-      <strong>會員帳號：</strong>${o.member.account}<br>
-      <strong>購買人：</strong>${o.member.name}<br>
-      <strong>電話：</strong>${o.member.phone}<br>
-      <strong>地址：</strong>${o.member.address}<br>
-      <hr style="border: 1px dashed #ccc; margin: 10px 0;">
-      <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
-        <strong>出貨狀態：</strong> ${o.status === 'shipped' ? '已出貨' : (o.status === 'paid' ? '已付款' : '待處理')}
-        <form method="POST" action="/admin0363/orders/update_status/${o.id}">
-          <strong style="margin-left: 20px;">修改狀態：</strong>
-          <select name="status" onchange="this.form.submit()">
-            <option value="pending" ${o.status === 'pending' ? 'selected' : ''}>待處理</option>
-            <option value="paid" ${o.status === 'paid' ? 'selected' : ''}>已付款</option>
-            <option value="shipped" ${o.status === 'shipped' ? 'selected' : ''}>已出貨</option>
-          </select>
-        </form>
-      </div>
-    </div>
-
-    <div class="actions" style="position: absolute; top: 10px; right: 10px;">
-      <button onclick="openDeleteDialog(${o.id})" style="color: #e91e63; border: none; background: none; cursor: pointer;">🗑️ 刪除</button>
-    </div>
-
-    <div style="position: absolute; bottom: 10px; right: 10px;">
-      <button onclick="printOrder(${o.id})" style="padding: 6px 12px; background: #e91e63; color: white; border: none; border-radius: 6px; cursor: pointer;">列印訂單</button>
-    </div>
-  `;
-  container.appendChild(div);
-});
 
 
 
@@ -934,13 +890,10 @@ window.addEventListener('DOMContentLoaded', () => {
   : "products";
   switchTab(rememberedTab);
 
-  if (rememberedTab === "orders") {
-    filterOrders();
-  }
+  
 
   document.querySelectorAll(".member-row").forEach(m => m.style.display = "block");
-  filteredOrders = allOrders;
-  renderOrderPage(parseInt(document.getElementById("pageSizeSelect").value));
+  
 });
 </script>
 
