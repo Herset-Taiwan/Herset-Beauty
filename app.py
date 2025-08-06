@@ -161,6 +161,8 @@ def admin_login():
         password = request.form["password"]
         if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
             session["admin_logged_in"] = True
+            session["seen_orders"] = True      # ✅ 視為登入當下已查看
+            session["seen_messages"] = True    # ✅ 同時處理留言提示
             return redirect("/admin0363/dashboard")
         else:
             return render_template("admin_login.html", error="帳號或密碼錯誤")
