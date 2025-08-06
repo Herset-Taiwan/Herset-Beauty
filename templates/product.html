@@ -452,11 +452,20 @@
 </div>
 
 <div class="tab-content">
-  <div id="intro" class="active">{{ product['intro'] | nl2br }}</div>
-  <div id="feature">{{ product['feature'] | nl2br }}</div>
-  <div id="spec">{{ product['spec'] | nl2br }}</div>
-  <div id="ingredient">{{ product['ingredient'] | nl2br }}</div>
+  <div id="intro" class="active">
+    {{ product.get('intro') or '尚無商品介紹' | nl2br }}
+  </div>
+  <div id="feature">
+    {{ product.get('feature') or '尚無特色資訊' | nl2br }}
+  </div>
+  <div id="spec">
+    {{ product.get('spec') or '尚無規格資訊' | nl2br }}
+  </div>
+  <div id="ingredient">
+    {{ product.get('ingredient') or '尚無成分資訊' | nl2br }}
+  </div>
 </div>
+
 
 <script>
   let selectedOption = "";
