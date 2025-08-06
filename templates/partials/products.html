@@ -2,7 +2,7 @@
 <a href="/admin/new" class="add-btn">＋ 新增商品</a>
 {% if products %}
   {% for p in products %}
-    <div class="product-row">
+    <div class="product-row" data-categories="{{ ','.join(p['categories']) if p.get('categories') else '' }}">
       <img src="{{ p['image'] or '' }}" alt="{{ p['name'] }}">
       <div class="info">
         <strong>{{ p['name'] or '無名稱' }}</strong><br>
@@ -29,3 +29,45 @@
 {% else %}
   <p style="color: gray;">目前沒有任何商品</p>
 {% endif %}
+
+<!-- 🔍 分類搜尋 -->
+<div style="margin-bottom: 20px;">
+  <label>分類篩選：</label>
+  <select id="categoryFilter" multiple>
+    {% set all_categories = ['身體保養', '私密保養', '寵物友善', '品牌嚴選'] %}
+    {% for cat in all_categories %}
+      <option value="{{ cat }}">{{ cat }}</option>
+    {% endfor %}
+  </select>
+  <button type="button" onclick="filterProducts()">搜尋</button>
+</div>
+
+<!-- Selectize 樣式 + JS -->
+<link href="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/css/selectize.default.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
+
+
+<script>
+function filterProducts() {
+  const selected = $('#categoryFilter').val(); // Selectize multiple
+  if (!selected || selected.length === 0) {
+    document.querySelectorAll('.product-row').forEach(p => p.style.display = 'flex');
+    return;
+  }
+
+  document.querySelectorAll('.product-row').forEach(p => {
+    const categories = p.getAttribute('data-categories') || '';
+    const matched = selected.some(cat => categories.includes(cat));
+    p.style.display = matched ? 'flex' : 'none';
+  });
+}
+
+// 初始化 Selectize
+$(function () {
+  $('#categoryFilter').selectize({
+    plugins: ['remove_button'],
+    delimiter: ',',
+    persist: false
+  });
+});
+</script>
