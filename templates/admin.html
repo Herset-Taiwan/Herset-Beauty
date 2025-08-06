@@ -566,17 +566,17 @@ function filterProducts() {
   });
 }
 
-function initProductFilter() {
+document.addEventListener("DOMContentLoaded", function () {
   const selectEl = document.getElementById('categoryFilter');
-  if (!selectEl || $(selectEl)[0].selectize) return; // 防止重複初始化
-
-  $('#categoryFilter').selectize({
-    plugins: ['remove_button'],
-    delimiter: ',',
-    persist: false,
-    onChange: filterProducts
-  });
-}
+  if (selectEl && !$(selectEl)[0].selectize) {
+    $('#categoryFilter').selectize({
+      plugins: ['remove_button'],
+      delimiter: ',',
+      persist: false,
+      onChange: filterProducts
+    });
+  }
+});
 
 // ✅ 偵測 products tab 被載入時自動初始化
 const tabObserver = new MutationObserver(() => {
@@ -585,6 +585,19 @@ const tabObserver = new MutationObserver(() => {
   }
 });
 tabObserver.observe(document.body, { childList: true, subtree: true });
+
+
+function initProductFilter() {
+  const selectEl = document.getElementById('categoryFilter');
+  if (selectEl && !$(selectEl)[0].selectize) {
+    $('#categoryFilter').selectize({
+      plugins: ['remove_button'],
+      delimiter: ',',
+      persist: false,
+      onChange: filterProducts
+    });
+  }
+}
 </script>
 
 
