@@ -796,6 +796,7 @@ body {
   background: white;
   overflow: hidden;
 }
+
 .tabs button.active {
   background: white;
   border: none;
