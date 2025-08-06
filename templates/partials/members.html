@@ -23,7 +23,7 @@
   {% endfor %}
 </div>
 
-<!-- 搜尋功能 -->
+<!-- 搜尋功能
 <script>
   function searchMembers() {
     const keyword = document.getElementById("memberKeyword").value.toLowerCase().trim();
@@ -32,7 +32,7 @@
       row.style.display = text.includes(keyword) ? "block" : "none";
     });
   }
-
+-->
   // 頁面一進來先顯示全部
   document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".member-row").forEach(m => m.style.display = "block");

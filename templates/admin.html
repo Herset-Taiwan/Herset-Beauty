@@ -536,7 +536,15 @@ function confirmReply(id) {
 }
 </script>
 
-
+<script>
+function searchMembers() {
+  const keyword = document.getElementById("memberKeyword").value.toLowerCase().trim();
+  document.querySelectorAll(".member-row").forEach(row => {
+    const text = row.textContent.toLowerCase();
+    row.style.display = text.includes(keyword) ? "block" : "none";
+  });
+}
+</script>
 
 
 </body>
