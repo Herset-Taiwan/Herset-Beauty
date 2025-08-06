@@ -420,6 +420,10 @@ def load_tab_content(tab_name):
                 m["local_created_at"] = m["created_at"]
 
         return render_template("partials/messages.html", messages=messages)
+    
+    elif tab_name == "products":
+        products = supabase.table("products").select("*").execute().data or []
+        return render_template("partials/products.html", products=products)
 
     return "未知頁籤", 400
 
