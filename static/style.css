@@ -1053,4 +1053,8 @@ body:not(.product-page) .info {
   display: none;
 }
 
+.tab-content:not(.active) {
+  display: none !important;
+}
+
 /* ====== 後台 admin 樣式結束 ====== */

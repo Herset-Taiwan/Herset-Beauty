@@ -410,7 +410,8 @@ window.addEventListener('DOMContentLoaded', () => {
   const rememberedTab = ["products", "members", "orders", "messages"].includes(localStorage.getItem("admin_last_tab"))
   ? localStorage.getItem("admin_last_tab")
   : "products";
-  switchTab(rememberedTab);
+
+switchTab(rememberedTab || "products");
 
   if (rememberedTab === "orders") {
     filterOrders();
