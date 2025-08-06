@@ -343,6 +343,87 @@ def admin_dashboard():
     )
 
 
+@app.route('/admin0363/tab/<tab_name>')
+def load_tab_content(tab_name):
+    if not session.get("admin_logged_in"):
+        return "未登入", 403
+
+    from pytz import timezone
+    from dateutil import parser
+    tz = timezone("Asia/Taipei")
+
+    if tab_name == "members":
+        members = supabase.table("members").select("*").order("created_at", desc=True).execute().data or []
+        for m in members:
+            try:
+                if m.get("created_at"):
+                    utc_dt = parser.parse(m["created_at"])
+                    m["created_at"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
+            except:
+                pass
+        return render_template("partials/members.html", members=members)
+
+    elif tab_name == "orders":
+        # 載入訂單（不分頁，全部前端處理）
+        orders_raw = supabase.table("orders").select("*").order("created_at", desc=True).execute().data or []
+
+        order_ids = [o["id"] for o in orders_raw]
+        member_ids = list({o.get("member_id") for o in orders_raw if o.get("member_id")})
+
+        order_items = supabase.table("order_items").select("*").in_("order_id", order_ids).execute().data or []
+        member_res = supabase.table("members").select("id, account, name, phone, address").in_("id", member_ids).execute().data or []
+        member_dict = {m['id']: m for m in member_res}
+
+        item_group = {}
+        for item in order_items:
+            item_group.setdefault(item["order_id"], []).append({
+                "product_name": item.get("product_name"),
+                "qty": item.get("qty"),
+                "price": item.get("price"),
+                "option": item.get("option", "")
+            })
+
+        orders = []
+        for o in orders_raw:
+            o["items"] = item_group.get(o["id"], [])
+            m = member_dict.get(o["member_id"])
+            o["member"] = {
+                "account": m["account"] if m else "guest",
+                "name": m.get("name") if m else "訪客",
+                "phone": m.get("phone") if m else "—",
+                "address": m.get("address") if m else "—"
+            }
+            o["is_new"] = bool(o.get("status") != "shipped" and not session.get("seen_orders"))
+            try:
+                o["created_local"] = parser.parse(o["created_at"]).astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
+            except:
+                o["created_local"] = o["created_at"]
+            orders.append(o)
+
+        return render_template("partials/orders.html", orders=orders)
+
+    elif tab_name == "messages":
+        messages = supabase.table("messages").select("*").order("created_at", desc=True).execute().data or []
+        member_ids = list({m['member_id'] for m in messages})
+        name_map = {}
+        if member_ids:
+            members_res = supabase.table("members").select("id, name").in_("id", member_ids).execute()
+            name_map = {m['id']: m['name'] for m in members_res.data}
+
+        for m in messages:
+            m["member_name"] = name_map.get(m["member_id"], "未知")
+            m["is_new"] = bool(not m.get("is_replied") and not session.get("seen_messages"))
+            try:
+                utc_dt = parser.parse(m["created_at"])
+                m["local_created_at"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M")
+            except:
+                m["local_created_at"] = m["created_at"]
+
+        return render_template("partials/messages.html", messages=messages)
+
+    return "未知頁籤", 400
+
+
 
 
 @app.route("/admin0363/mark_seen_orders", methods=["POST"])

@@ -4,290 +4,6 @@
   <meta charset="UTF-8">
   <title>管理後台 - HERSET BEAUTY</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <style>
-  body {
-    font-family: "Segoe UI", "Noto Sans TC", sans-serif;
-    background: #f6f7f9;
-    color: #333;
-    margin: 0;
-    padding: 0;
-  }
-
-  .admin-container {
-    max-width: 1100px;
-    margin: 50px auto;
-    padding: 0 20px;
-  }
-
-  .tabs {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 30px;
-  }
-
-  .tab-btn {
-    padding: 10px 24px;
-    border: none;
-    background: #ddd;
-    cursor: pointer;
-    font-weight: bold;
-    border-radius: 8px 8px 0 0;
-    margin-right: 5px;
-    transition: all 0.2s ease;
-  }
-
-  .tab-btn:hover {
-    background: #bbb;
-  }
-
-  .tab-btn.active {
-    background: #e91e63;
-    color: white;
-  }
-
-  .tab-content {
-    display: none;
-  }
-
-  .tab-content.active {
-    display: block;
-  }
-
-  .section {
-    margin-bottom: 40px;
-  }
-
-  .filter-bar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    align-items: center;
-    margin-bottom: 20px;
-    background: #fff;
-    padding: 15px 20px;
-    border-radius: 10px;
-    border: 1px solid #eee;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  }
-
-  .filter-bar label {
-    font-weight: bold;
-  }
-
-  .filter-bar input,
-  .filter-bar select {
-    padding: 6px 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-family: inherit;
-    min-width: 140px;
-  }
-
-  .order-row {
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-    transition: transform 0.2s ease;
-    position: relative;
-  }
-
-  .order-row:hover {
-    transform: translateY(-2px);
-  }
-
-  .info {
-    line-height: 1.8;
-  }
-
-  .badge {
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: bold;
-    color: white;
-    margin-left: 8px;
-  }
-
-  .badge.green {
-    background-color: #4caf50;
-  }
-
-  .badge.red {
-    background-color: #f44336;
-  }
-
-  .actions {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-  }
-
-  .actions button {
-    background: none;
-    border: none;
-    color: #e91e63;
-    font-weight: bold;
-    cursor: pointer;
-    font-size: 14px;
-  }
-
-  .pagination {
-    display: flex;
-    justify-content: center;
-    margin-top: 20px;
-  }
-
-  .pagination button {
-    padding: 6px 12px;
-    margin: 0 5px;
-    background-color: #ffe4ed;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: bold;
-    color: #5a4b45;
-  }
-
-  .pagination button:disabled {
-    background-color: #eee;
-    cursor: default;
-    color: #999;
-  }
-
-  .add-btn {
-    display: inline-block;
-    margin-bottom: 20px;
-    padding: 8px 16px;
-    background-color: #e91e63;
-    color: white;
-    text-decoration: none;
-    border-radius: 5px;
-  }
-
-  .product-row,
-  .member-row {
-    display: flex;
-    align-items: center;
-    border: 1px solid #eee;
-    padding: 16px 24px;
-    margin-bottom: 16px;
-    background-color: #fff;
-    border-radius: 10px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-    position: relative;
-  }
-
-  .product-row img {
-    width: 80px;
-    height: 80px;
-    object-fit: cover;
-    margin-right: 20px;
-    border-radius: 8px;
-  }
-
-  .search-form input {
-    padding: 6px 10px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-  }
-
-  .info strong {
-  display: inline-block;
-  min-width: 100px;
-}
-/* 訂單出貨完成樣式*/
-.order-box {
-  position: relative;
-}
-
-.shipped-label {
-  position: absolute;
-  top: 10px;
-  right: -40px;
-  background: #4caf50;
-  color: white;
-  font-weight: bold;
-  transform: rotate(45deg);
-  width: 140px;
-  text-align: center;
-  padding: 5px 0;
-  font-size: 14px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-  z-index: 10;
-}
-/* 留言上下頁*/
-.page-btn {
-  padding: 6px 12px;
-  background: #ffe4ed;
-  color: #5a4b45;
-  text-decoration: none;
-  border-radius: 6px;
-  font-weight: bold;
-  margin: 0 4px;
-}
-.page-btn:hover {
-  background: #e91e63;
-  color: white;
-}
-
-/* 新訂單(新留言)提示樣式*/
-
-
-.tab-btn {
-  position: relative;
-}
-.badge-icon {
-  display: inline-block;
-  background: linear-gradient(135deg, #ff7c8a, #e91e63);
-  color: white;
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 20px;
-  margin-left: 8px;
-  font-weight: bold;
-  animation: fadeBlink 1.6s infinite;
-  vertical-align: middle;
-}
-
-@keyframes fadeBlink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
-.msg-reply-status {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-}
-.msg-top-right {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-}
-.msg-top-right {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 6px;
-  z-index: 2;
-}
-
-.info {
-  line-height: 1.8;
-  padding-right: 120px; /* 預留右上角狀態空間 */
-}
-.reply-textarea.hidden {
-  display: none;
-}
-
-
-</style>
 
 </head>
 <body>
@@ -333,43 +49,13 @@
       <span class="badge-icon">📩 新留言</span>
     {% endif %}
   </button>
+
+  <!-- 延遲載入用空容器 -->
+<div id="members" class="tab-content" data-loaded="false"></div>
+<div id="orders" class="tab-content" data-loaded="false"></div>
+<div id="messages" class="tab-content" data-loaded="false"></div>
+
 </div>
-
-
-
-
-
-    <div id="products" class="tab-content active">
-      <h2>商品管理</h2>
-<form method="GET" action="/admin0363/dashboard" style="margin-bottom: 20px;">
-  <input type="hidden" name="tab" value="products">
-  <label>分類篩選：</label>
-  <select id="category-filter" name="category" multiple>
-    {% set all_categories = ['身體保養', '私密保養', '寵物友善', '品牌嚴選'] %}
-    {% for cat in all_categories %}
-      <option value="{{ cat }}" {% if cat in selected_categories %}selected{% endif %}>{{ cat }}</option>
-    {% endfor %}
-  </select>
-  <button type="submit">搜尋</button>
-</form>
-
-
-<!-- 引入 jQuery + Selectize -->
-<link href="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/css/selectize.default.css" rel="stylesheet" />
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-<script>
-  $(function () {
-    $('#category-filter').selectize({
-      plugins: ['remove_button'],
-      delimiter: ',',
-      persist: false,
-      create: true
-    });
-  });
-</script>
 
 
       <a href="/admin/new" class="add-btn">＋ 新增商品</a>
@@ -407,200 +93,7 @@
 {% endif %}
     </div>
 
-    <div id="members" class="tab-content">
-      <h2>會員系統管理</h2>
-      <form class="search-form" method="GET" action="/admin/members">
-        <input type="text" name="keyword" placeholder="輸入帳號、姓名、電話或Email...">
-        <input type="hidden" name="tab" value="members">
-        <button type="submit">搜尋</button>
-      </form>
-
-      <div id="member-list">
-        {% for m in members %}
-        <div class="member-row">
-          <div class="info">
-            <strong>帳號：</strong>{{ m['account'] }}<br>
-            <strong>信箱：</strong>{{ m['email'] or '—' }}<br><br>
-            <strong>姓名：</strong>{{ m['name'] or m['username'] or '—' }}<br>
-            <strong>電話：</strong>{{ m['phone'] or '—' }}<br>
-            <strong>地址：</strong>{{ m['address'] or '—' }}<br>
-            <strong>訂單備註：</strong>{{ m['note'] or '—' }}<br>
-            <strong>註冊時間：</strong>{{ m['created_at'] or '—' }}
-          </div>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-
-    <div id="orders" class="tab-content">
-  <h2>訂單管理系統</h2>
-
-
-
-
-  <!-- 篩選與搜尋列 -->
-  <div style="margin-bottom: 15px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
-    <label>狀態：</label>
-    <select id="statusFilter" onchange="filterOrders()">
-      <option value="all">全部</option>
-      <option value="unshipped">未出貨</option>
-      <option value="shipped">已出貨</option>
-    </select>
-
-    <label>搜尋訂單：</label>
-    <input type="text" id="orderSearch" oninput="filterOrders()" placeholder="輸入訂單編號、會員帳號、姓名">
-
-    <label>每頁顯示：</label>
-    <select id="pageSizeSelect" onchange="filterOrders()">
-      <option value="5">5</option>
-      <option value="10" selected>10</option>
-      <option value="20">20</option>
-      <option value="50">50</option>
-    </select>
-  </div>
-
-  <!-- 訂單列表 + 分頁 -->
-  <div id="order-list"></div>
-  <div id="order-pagination" style="margin-top: 10px; text-align:center;"></div>
-</div>
-
-<!-- 留言管理 -->
-<div id="messages" class="tab-content">
-  <h2>留言管理</h2>
-  <!-- 留言搜尋功能 -->
-    <form method="GET" action="/admin0363/dashboard" style="margin-bottom: 20px;">
-  <input type="hidden" name="tab" value="messages">
-  <label style="margin-left: 10px;">每頁顯示：</label>
-<select name="msg_page_size" onchange="this.form.submit()">
-  {% set selected_size = request.args.get('msg_page_size', '10') %}
-  <option value="5" {% if selected_size == '5' %}selected{% endif %}>5</option>
-  <option value="10" {% if selected_size == '10' %}selected{% endif %}>10</option>
-  <option value="20" {% if selected_size == '20' %}selected{% endif %}>20</option>
-  <option value="50" {% if selected_size == '50' %}selected{% endif %}>50</option>
-</select>
-筆
-  <label>回覆狀態：</label>
-  <select name="reply_status">
-    <option value="all">全部</option>
-    <option value="replied" {% if request.args.get('reply_status') == 'replied' %}selected{% endif %}>已回覆</option>
-    <option value="unreplied" {% if request.args.get('reply_status') == 'unreplied' %}selected{% endif %}>未回覆</option>
-  </select>
-
-  <label style="margin-left: 10px;">問題類型：</label>
-  <select name="type">
-    <option value="">全部</option>
-    {% set all_types = messages | map(attribute='type') | unique %}
-    {% for t in all_types %}
-      <option value="{{ t }}" {% if request.args.get('type') == t %}selected{% endif %}>{{ t }}</option>
-    {% endfor %}
-
-  </select>
-
   
-
-  <label style="margin-left: 10px;">會員名稱：</label>
-  <input type="text" name="keyword" value="{{ request.args.get('keyword', '') }}" placeholder="輸入會員名稱" style="padding: 4px 8px;">
-
-  <button type="submit" style="margin-left: 10px;">🔍 搜尋</button>
-</form>
-
-  {% for msg in messages %}
-<div class="order-row" style="position: relative; margin-bottom: 40px;">
-  <!-- 右上角提示 -->
-  <div class="msg-top-right">
-    {% if not msg['is_replied'] and msg.is_new %}
-      <span class="badge red">📩 新留言</span>
-    {% elif msg['is_replied'] %}
-      <span class="badge green">🟩 已回覆</span>
-    {% else %}
-      <span class="badge red">🔴 未回覆</span>
-    {% endif %}
-  </div>
-
-  <div class="info">
-    <strong>時間：</strong>{{ msg['local_created_at'] }}<br>
-    <strong>會員：</strong>{{ msg['member_name'] or '未知會員' }}<br>
-    <strong>類型：</strong>{{ msg['type'] }}<br>
-    <strong>主題：</strong>{{ msg['subject'] }}<br>
-    {% if msg['order_number'] %}
-      <strong>訂單編號：</strong>{{ msg['order_number'] }}<br>
-    {% endif %}
-    <strong>內容：</strong><br>
-    <div style="white-space: pre-wrap;">{{ msg['content'] }}</div><br>
-    {% if msg['attachment_path'] %}
-      📎 <a href="/{{ msg['attachment_path'] }}" target="_blank">下載附件</a><br>
-    {% endif %}
-
-    <!-- 回覆表單 -->
-    <form id="reply-form-{{ msg['id'] }}" method="POST" action="/admin0363/messages/reply/{{ msg['id'] }}">
-      <label style="font-weight: bold; display: block; margin-top: 20px;">回覆內容：</label>
-
-      {% if msg['is_replied'] %}
-      <div id="reply-display-{{ msg['id'] }}"
-           style="white-space: pre-wrap; background: #f9f9f9; padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc;">
-        {{ msg['reply_text'] or '' }}
-      </div>
-      {% endif %}
-
-      <textarea id="reply-text-{{ msg['id'] }}" name="reply" rows="4"
-        class="reply-textarea {% if msg['is_replied'] %}hidden{% endif %}"
-        {% if msg['is_replied'] %}readonly{% endif %}
-        style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; resize: vertical;">{{ msg['reply_text'] or '' }}</textarea>
-
-      <div style="margin-top: 10px;">
-        <button type="button"
-          id="reply-btn-{{ msg['id'] }}"
-          onclick="{% if msg['is_replied'] %}enableEdit('{{ msg['id'] }}'){% else %}confirmReply('{{ msg['id'] }}'){% endif %}"
-          style="background-color: #e91e63; color: white; padding: 8px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
-          {% if msg['is_replied'] %}✏️ 修改回覆{% else %}📩 確認回覆{% endif %}
-        </button>
-
-        <button type="button"
-          id="cancel-btn-{{ msg['id'] }}"
-          onclick="cancelEdit('{{ msg['id'] }}')"
-          style="margin-left: 10px; background-color: #aaa; color: white; padding: 8px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; display: none;">
-          ❌ 取消
-        </button>
-      </div>
-    </form>
-  </div> <!-- .info -->
-</div> <!-- .order-row -->
-{% endfor %}
-
-
-  <!-- 留言上下頁 -->
-<div class="pagination">
-  {% if msg_page > 1 %}
-    <a class="page-btn" href="?tab=messages&msg_page={{ msg_page - 1 }}&reply_status={{ request.args.get('reply_status', 'all') }}&type={{ request.args.get('type', '') }}&keyword={{ request.args.get('keyword', '') }}&msg_page_size={{ request.args.get('msg_page_size', 10) }}">← 上一頁</a>
-  {% endif %}
-
-  <span style="margin: 0 10px;">第 {{ msg_page }} 頁 / 共 {{ msg_total_pages }} 頁</span>
-
-  {% if msg_page < msg_total_pages %}
-    <a class="page-btn" href="?tab=messages&msg_page={{ msg_page + 1 }}&reply_status={{ request.args.get('reply_status', 'all') }}&type={{ request.args.get('type', '') }}&keyword={{ request.args.get('keyword', '') }}&msg_page_size={{ request.args.get('msg_page_size', 10) }}">下一頁 →</a>
-  {% endif %}
-</div>
-
-</div>
-
-
-
-<!-- 自訂的刪除確認視窗 -->
-<div id="deleteModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#00000088; z-index:1000; justify-content:center; align-items:center;">
-  <div style="background:white; padding:30px; border-radius:12px; max-width:400px; width:90%;">
-    <h3 style="margin-top:0;">⚠️ 確認刪除訂單</h3>
-    <p>您確定要刪除這筆訂單嗎？請輸入管理員帳號與密碼確認。</p>
-    <input id="adminUser" placeholder="管理員帳號" style="width:100%; padding:6px; margin-top:10px;"><br>
-    <input id="adminPass" type="password" placeholder="管理員密碼" style="width:100%; padding:6px; margin-top:10px;"><br>
-    <div style="margin-top:15px; text-align:right;">
-      <button onclick="closeDeleteDialog()" style="margin-right:10px;">取消</button>
-      <button onclick="confirmDelete()" style="background:#e91e63; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer;">確認刪除</button>
-    </div>
-    <input type="hidden" id="deleteOrderId">
-  </div>
-</div>
-
-
 
   <script>
 function switchTab(tabId) {
@@ -609,23 +102,36 @@ function switchTab(tabId) {
   tabs.forEach(t => t.classList.remove('active'));
   buttons.forEach(b => b.classList.remove('active'));
 
-  document.getElementById(tabId).classList.add('active');
   document.querySelector('.tab-btn[onclick*="' + tabId + '"]').classList.add('active');
 
-  if (tabId === "orders") {
-    filterOrders();  // ✅ 主動顯示訂單
-      // 🔥 第一次切 orders 頁面時通知後端更新 session
-  fetch("/admin0363/mark_seen_orders", { method: "POST" });
+  const tabContent = document.getElementById(tabId);
+
+  // 如果內容已經載入過，就直接顯示
+  if (tabContent.dataset.loaded === "true") {
+    tabContent.classList.add('active');
+    return;
   }
+
+  // 載入 loading 畫面
+  tabContent.innerHTML = '<p style="text-align:center;">載入中...</p>';
+  tabContent.classList.add('active');
+
+  fetch(`/admin0363/tab/${tabId}`)
+    .then(res => res.text())
+    .then(html => {
+      tabContent.innerHTML = html;
+      tabContent.dataset.loaded = "true";
+
+      if (tabId === "orders") {
+        filterOrders();  // 初始化訂單頁
+        fetch("/admin0363/mark_seen_orders", { method: "POST" });
+      }
+    })
+    .catch(err => {
+      tabContent.innerHTML = "<p style='color:red;'>載入失敗</p>";
+    });
 }
 
-
-
-
-
-let allOrders = {{ orders | tojson }};
-let filteredOrders = [];
-let currentPage = 1;
 
 function filterOrders() {
   const keyword = document.getElementById("orderSearch").value?.toLowerCase() || "";
