@@ -12,18 +12,15 @@
     }
 
     .product-container {
-  display: flex;
-  flex-wrap: wrap; /* ✅ 可換行避免壓縮跑版 */
-  align-items: flex-start; /* ✅ 垂直頂端對齊，避免右邊浮上去 */
-
-  max-width: 900px;
-  margin: 20px auto 0;
-  gap: 40px;
-  background: white;
-  padding: 40px;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-}
+      display: flex;
+      max-width: 900px;
+      margin: 20px auto 0;
+      gap: 40px;
+      background: white;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
 
     .gallery {
       flex: 1;
@@ -50,9 +47,8 @@
     }
 
     .info {
-  flex: 1 1 300px;
-  min-width: 0;
-}
+      flex: 1;
+    }
 
     .info h2 { margin-top: 0; }
  /* 商品頁縮圖樣式 */
@@ -139,18 +135,6 @@
       margin: 6px 4px;
       cursor: pointer;
     }
-
-
-    .actions {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-top: 20px;
-}
-
-.actions form {
-  margin: 0;
-}
 
     .options button:hover {
       background: #eee;
@@ -468,63 +452,22 @@
 </div>
 
 <div class="tab-content">
-  <div id="intro" class="active">{{ product['intro'] or '尚無介紹內容' }}</div>
-  <div id="feature">{{ product['feature'] or '尚無特色內容' }}</div>
-  <div id="spec">{{ product['spec'] or '尚無規格資料' }}</div>
-  <div id="ingredient">{{ product['ingredient'] or '尚無成分資料' }}</div>
+  <div id="intro" class="active">{{ product['intro'] | nl2br }}</div>
+  <div id="feature">{{ product['feature'] | nl2br }}</div>
+  <div id="spec">{{ product['spec'] | nl2br }}</div>
+  <div id="ingredient">{{ product['ingredient'] | nl2br }}</div>
 </div>
 
 <script>
   let selectedOption = "";
 
-  window.addEventListener('DOMContentLoaded', () => {
-    // 選項按鈕邏輯
-    const optionButtons = document.querySelectorAll('.options button');
-    optionButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        optionButtons.forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        selectedOption = btn.innerText;
-        document.getElementById('selected-option-input').value = selectedOption;
-      });
-    });
-
-    // 預設選中第一個選項（若只有一個）
-    if (optionButtons.length === 1) {
-      optionButtons[0].classList.add('selected');
-      selectedOption = optionButtons[0].innerText;
+  document.querySelectorAll('.options button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.options button').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedOption = btn.innerText;
       document.getElementById('selected-option-input').value = selectedOption;
-    }
-
-    // 數量輸入 → 同步結帳欄位
-    document.getElementById('qty').addEventListener('input', function () {
-      document.getElementById('qty-input-checkout').value = this.value;
     });
-
-    // tab 切換邏輯
-    document.querySelectorAll('.tab-btn').forEach(button => {
-      button.addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        document.querySelectorAll('.tab-content > div').forEach(tab => tab.classList.remove('active'));
-        button.classList.add('active');
-        const tabId = button.dataset.tab;
-        document.getElementById(tabId).classList.add('active');
-      });
-    });
-
-    // 主圖切換
-    const mainImg = document.getElementById('main-img');
-    const thumbs = document.querySelectorAll('.gallery-thumbs .thumbnail');
-    thumbs.forEach(thumb => {
-      thumb.addEventListener('click', () => {
-        mainImg.src = thumb.src;
-        thumbs.forEach(t => t.classList.remove('selected'));
-        thumb.classList.add('selected');
-      });
-    });
-    if (thumbs.length > 0) {
-      thumbs[0].classList.add('selected');
-    }
   });
 
   function adjustQty(delta) {
@@ -540,21 +483,22 @@
   function addToCart(productId) {
     const qty = parseInt(document.getElementById('qty').value);
     let option = selectedOption;
-    const optionButtons = document.querySelectorAll('.options button');
+const optionButtons = document.querySelectorAll('.options button');
 
-    if (!option) {
-      if (optionButtons.length === 1) {
-        option = optionButtons[0].innerText;
-        selectedOption = option;
-        document.getElementById('selected-option-input').value = option;
-        optionButtons[0].classList.add('selected');
-      } else if (optionButtons.length === 0) {
-        option = ""; // 沒有規格
-      } else {
-        showTip("⚠️ 請先選擇商品規格");
-        return;
-      }
-    }
+if (!option) {
+  if (optionButtons.length === 1) {
+    option = optionButtons[0].innerText;
+    selectedOption = option;
+    document.getElementById('selected-option-input').value = option;
+    optionButtons[0].classList.add('selected');
+  } else if (optionButtons.length === 0) {
+    option = ""; // 沒有規格
+  } else {
+    showTip("⚠️ 請先選擇商品規格");
+    return;
+  }
+}
+
 
     fetch('/add_to_cart', {
       method: 'POST',
@@ -579,6 +523,10 @@
     });
   }
 
+  document.getElementById('qty').addEventListener('input', function () {
+    document.getElementById('qty-input-checkout').value = this.value;
+  });
+
   function showTip(message) {
     const tip = document.getElementById('cart-tip');
     tip.innerText = message;
@@ -588,8 +536,50 @@
       tip.innerText = '✅ 已加入購物車！';
     }, 2000);
   }
-</script>
 
+  // tab 切換
+  document.querySelectorAll('.tab-btn').forEach(button => {
+    button.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content > div').forEach(tab => tab.classList.remove('active'));
+      button.classList.add('active');
+      const tabId = button.dataset.tab;
+      document.getElementById(tabId).classList.add('active');
+    });
+  });
+
+  window.addEventListener('DOMContentLoaded', () => {
+  const optionButtons = document.querySelectorAll('.options button');
+  if (optionButtons.length === 1) {
+    optionButtons[0].classList.add('selected');
+    selectedOption = optionButtons[0].innerText;
+    document.getElementById('selected-option-input').value = selectedOption;
+  }
+});
+
+// 替換主圖並加上 .selected 樣式
+document.addEventListener('DOMContentLoaded', () => {
+  const mainImg = document.getElementById('main-img');
+  const thumbs = document.querySelectorAll('.gallery-thumbs .thumbnail');
+
+  thumbs.forEach(thumb => {
+    thumb.addEventListener('click', () => {
+      mainImg.src = thumb.src;
+
+      thumbs.forEach(t => t.classList.remove('selected'));
+      thumb.classList.add('selected');
+    });
+  });
+
+  // 預設第一張選中
+  if (thumbs.length > 0) {
+    thumbs[0].classList.add('selected');
+  }
+});
+
+
+
+</script>
 
 
 
