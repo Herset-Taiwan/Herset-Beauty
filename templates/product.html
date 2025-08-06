@@ -452,10 +452,10 @@
 </div>
 
 <div class="tab-content">
-  <div id="intro" class="active">{{ product['intro'] | nl2br }}</div>
-  <div id="feature">{{ product['feature'] | nl2br }}</div>
-  <div id="spec">{{ product['spec'] | nl2br }}</div>
-  <div id="ingredient">{{ product['ingredient'] | nl2br }}</div>
+  <div id="intro" class="tab-pane active">{{ product['intro'] | nl2br }}</div>
+  <div id="feature" class="tab-pane">{{ product['feature'] | nl2br }}</div>
+  <div id="spec" class="tab-pane">{{ product['spec'] | nl2br }}</div>
+  <div id="ingredient" class="tab-pane">{{ product['ingredient'] | nl2br }}</div>
 </div>
 
 <script>
@@ -576,8 +576,6 @@ document.addEventListener('DOMContentLoaded', () => {
     thumbs[0].classList.add('selected');
   }
 });
-
-
 
 </script>
 
