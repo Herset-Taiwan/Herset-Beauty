@@ -6,23 +6,20 @@ from datetime import datetime
 from dateutil import parser
 from pytz import timezone
 from dotenv import load_dotenv
-import uuid
-from uuid import uuid4, UUID
 import os
 import tempfile
 import urllib.parse
 import hashlib
 import random
 import time
+import uuid
 
 from utils import generate_check_mac_value, generate_ecpay_form
 
 
-
-
 load_dotenv()
 
-
+unique_filename = f"{uuid.uuid4()}_{filename}"
     
 def generate_check_mac_value(params, hash_key, hash_iv):
     # 1. 將參數依照字母順序排列
@@ -1146,6 +1143,8 @@ def add_product():
         return redirect('/admin0363/dashboard?tab=products')
 
     except Exception as e:
+        print("🔥 商品新增錯誤：", e)
+        traceback.print_exc()
         return f"新增商品時發生錯誤：{str(e)}", 500
 
 
