@@ -199,11 +199,10 @@ def admin_dashboard():
         product_query = product_query.or_(','.join(filters))
     products = product_query.execute().data or []
 
-    # ✅ 會員
+    # ✅ 會員（全部載入，用於會員管理頁）
     members = supabase.table("members").select(
         "id, account, username, name, phone, email, address, note, created_at"
     ).execute().data or []
-
     for m in members:
         try:
             if m.get("created_at"):
@@ -211,12 +210,31 @@ def admin_dashboard():
                 m["created_at"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
         except:
             m["created_at"] = m.get("created_at", "—")
-
     member_dict = {m["id"]: m for m in members}
 
-    # ✅ 訂單
-    orders_raw = supabase.table("orders").select("*").order("created_at", desc=True).execute().data or []
-    order_items = supabase.table("order_items").select("*").execute().data or []
+    # ✅ 訂單：後端分頁
+    order_page = int(request.args.get("order_page", 1))
+    order_page_size = int(request.args.get("order_page_size", 20))
+    order_start = (order_page - 1) * order_page_size
+    order_end = order_start + order_page_size - 1
+
+    # 訂單總數（給前端擴充用）
+    order_total_res = supabase.table("orders").select("id", count="exact").execute()
+    order_total_count = order_total_res.count or 0
+
+    # 當頁訂單
+    orders_raw = supabase.table("orders") \
+        .select("*") \
+        .order("created_at", desc=True) \
+        .range(order_start, order_end) \
+        .execute().data or []
+
+    order_ids = [o["id"] for o in orders_raw]
+    member_ids = list({o["member_id"] for o in orders_raw if o.get("member_id")})
+
+    order_items = supabase.table("order_items").select("*").in_("order_id", order_ids).execute().data or []
+    members_res = supabase.table("members").select("id, account, name, phone, address").in_("id", member_ids).execute().data or []
+    member_dict = {m["id"]: m for m in members_res}
 
     item_group = {}
     for item in order_items:
@@ -238,7 +256,6 @@ def admin_dashboard():
             "address": member.get("address") if member else "—"
         }
         o["is_new"] = bool(o.get("status") != "shipped" and not session.get("seen_orders"))
-
         try:
             utc_dt = parser.parse(o["created_at"])
             o["created_local"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
@@ -246,20 +263,34 @@ def admin_dashboard():
             o["created_local"] = o["created_at"]
         orders.append(o)
 
-    # ✅ 讀取留言搜尋參數
+    # ✅ 留言搜尋 + 分頁
     reply_status = request.args.get("reply_status", "all")
     msg_type = request.args.get("type", "")
     keyword = request.args.get("keyword", "").lower()
 
-    # ✅ 留言
-    messages_res = supabase.table("messages").select("*").order("created_at", desc=True).execute()
+    msg_page = int(request.args.get("msg_page", 1))
+    msg_page_size = int(request.args.get("msg_page_size", 10))
+    msg_start = (msg_page - 1) * msg_page_size
+    msg_end = msg_start + msg_page_size - 1
+
+    # 留言總數
+    total_count_res = supabase.table("messages").select("id", count="exact").execute()
+    msg_total_count = total_count_res.count or 0
+    msg_total_pages = max(1, (msg_total_count + msg_page_size - 1) // msg_page_size)
+
+    # 當頁留言
+    messages_res = supabase.table("messages") \
+        .select("*") \
+        .order("created_at", desc=True) \
+        .range(msg_start, msg_end) \
+        .execute()
+
     member_ids = list({m['member_id'] for m in messages_res.data})
     name_map = {}
     if member_ids:
         members_res = supabase.table("members").select("id, name").in_("id", member_ids).execute()
         name_map = {m['id']: m['name'] for m in members_res.data}
 
-    # ✅ 留言欄位轉換 + 篩選
     filtered_messages = []
     for m in messages_res.data:
         m["member_name"] = name_map.get(m["member_id"], "未知")
@@ -282,16 +313,7 @@ def admin_dashboard():
         if match_status and match_type and match_name:
             filtered_messages.append(m)
 
-            # ✅ 留言分頁邏輯（每頁 10 筆）
-    msg_page = int(request.args.get("msg_page", 1))
-    msg_page_size = int(request.args.get("msg_page_size", 10))
-
-    msg_total_pages = max(1, (len(filtered_messages) + msg_page_size - 1) // msg_page_size)
-
-    start = (msg_page - 1) * msg_page_size
-    end = start + msg_page_size
-    paged_messages = filtered_messages[start:end]
-
+    paged_messages = filtered_messages
 
     # ✅ 記錄是否已查看留言/訂單（tab 切換）
     if tab == "orders":
@@ -305,18 +327,21 @@ def admin_dashboard():
     show_order_alert = new_order_alert and not session.get("seen_orders")
     show_message_alert = new_message_alert and not session.get("seen_messages")
 
-    # ✅ 最終 return
     return render_template("admin.html",
-                       tab=tab,
-                       selected_categories=selected_categories,
-                       products=products,
-                       members=members,
-                       orders=orders,
-                       messages=paged_messages,  # ✅ 換成分頁後的留言
-                       new_order_alert=show_order_alert,
-                       new_message_alert=show_message_alert,
-                       msg_page=msg_page,
-                       msg_total_pages=msg_total_pages)
+        tab=tab,
+        selected_categories=selected_categories,
+        products=products,
+        members=members,
+        orders=orders,
+        messages=paged_messages,
+        new_order_alert=show_order_alert,
+        new_message_alert=show_message_alert,
+        msg_page=msg_page,
+        msg_total_pages=msg_total_pages,
+        order_page=order_page,
+        order_total_count=order_total_count
+    )
+
 
 
 
