@@ -1,6 +1,11 @@
-<p style="color: green;">✅ orders.html 載入成功</p>
+
 <h2>訂單管理系統</h2>
 
+<script>
+  let allOrders = {{ orders | tojson | safe }};
+  let currentPage = 1;
+  let filteredOrders = allOrders;
+</script>
 <div style="margin-bottom: 15px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
   <label>狀態：</label>
   <select id="statusFilter" onchange="filterOrders()">
