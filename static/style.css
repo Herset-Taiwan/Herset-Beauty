@@ -789,13 +789,15 @@ body {
 
 .tabs {
   display: flex;
+  flex-wrap: wrap;          /* ✅ 避免被非按鈕元素撐開 */
   margin: 40px auto 0;
   max-width: 900px;
-  border: 1px solid #ccc;
   border-bottom: none;
   border-radius: 8px 8px 0 0;
-  background: white;
-  overflow: hidden;
+  background: transparent;  /* ✅ 不給背景 */
+  padding: 0;
+  overflow: visible;
+  border: none;
 }
 
 .tabs button.active {
