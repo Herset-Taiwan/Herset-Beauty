@@ -1022,7 +1022,9 @@ function enableEdit(id) {
   if (display) display.style.display = 'none';
 
   replyBtn.innerText = '✅ 確認回覆';
-  replyBtn.type = 'submit';
+  replyBtn.type = 'button';
+  replyBtn.setAttribute('onclick', `confirmReply('${id}')`);
+
   cancelBtn.style.display = 'inline-block';
 }
 
@@ -1040,6 +1042,18 @@ function cancelEdit(id) {
   replyBtn.type = 'button';
   replyBtn.setAttribute('onclick', `enableEdit('${id}')`);
   cancelBtn.style.display = 'none';
+}
+</script>
+<script>
+function confirmReply(id) {
+  const textarea = document.getElementById('reply-text-' + id);
+  const reply = textarea.value.trim();
+  if (!reply) {
+    Swal.fire("錯誤", "回覆內容不能為空", "error");
+    return;
+  }
+
+  document.getElementById("reply-form-" + id).submit();
 }
 </script>
 
