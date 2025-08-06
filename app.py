@@ -1,34 +1,22 @@
-from pytz import timezone
-from pytz import timezone
-tz = timezone("Asia/Taipei")
-from flask import request
-from datetime import datetime
-from dateutil import parser
-from flask import send_from_directory
 
-from flask import Flask, render_template, request, redirect, session, url_for, jsonify, flash
+from flask import Flask, render_template, request, redirect, session, url_for, jsonify, flash, send_from_directory, Response, Markup
 from werkzeug.utils import secure_filename
 from supabase import create_client, Client
 from flask_mail import Mail, Message
+from datetime import datetime
+from dateutil import parser
+from pytz import timezone
+from dotenv import load_dotenv
+from uuid import uuid4
 import os
 import tempfile
-import uuid
-from dotenv import load_dotenv
-from uuid import UUID
 import urllib.parse
 import hashlib
 import random
-import datetime
 import time
-from utils import generate_check_mac_value
-from datetime import datetime
+import uuid
+
 from utils import generate_check_mac_value, generate_ecpay_form
-from utils import generate_ecpay_form
-from uuid import uuid4
-from flask import Response
-from flask import request, render_template, Response
-from flask import render_template, session, redirect
-from flask import Flask, render_template, Markup
 
 
 load_dotenv()
@@ -95,7 +83,6 @@ def index():
     cart = session.get('cart', [])
     cart_count = sum(item['qty'] for item in cart)
     return render_template("index.html", products=products, cart_count=cart_count)
-
 
 
 # ✅ SEO相關
@@ -166,7 +153,6 @@ def verify_admin_for_delete():
 
 
 
-# 後台登入畫面（網址：https://herset.co/admin0363）
 @app.route("/admin0363", methods=["GET", "POST"])
 def admin_login():
     if request.method == "POST":
@@ -174,10 +160,24 @@ def admin_login():
         password = request.form["password"]
         if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
             session["admin_logged_in"] = True
+
+            # 登入當下抓出目前所有訂單和留言（用來初始 seen 狀態）
+            orders = supabase.table("orders").select("status").execute().data or []
+            messages = supabase.table("messages").select("is_replied").execute().data or []
+
+            # 如果登入當下就有未出貨訂單 → 不設為已讀，讓警示跳出
+            has_unshipped_order = any(o["status"] != "shipped" for o in orders)
+            session["seen_orders"] = not has_unshipped_order
+
+            # 如果登入當下就有未回覆留言 → 不設為已讀，讓警示跳出
+            has_unreplied_message = any(not m["is_replied"] for m in messages)
+            session["seen_messages"] = not has_unreplied_message
+
             return redirect("/admin0363/dashboard")
         else:
             return render_template("admin_login.html", error="帳號或密碼錯誤")
     return render_template("admin_login.html")
+
 
 @app.route("/admin0363/dashboard")
 def admin_dashboard():
@@ -199,11 +199,10 @@ def admin_dashboard():
         product_query = product_query.or_(','.join(filters))
     products = product_query.execute().data or []
 
-    # ✅ 會員
+    # ✅ 會員（全部載入，用於會員管理頁）
     members = supabase.table("members").select(
         "id, account, username, name, phone, email, address, note, created_at"
     ).execute().data or []
-
     for m in members:
         try:
             if m.get("created_at"):
@@ -211,12 +210,31 @@ def admin_dashboard():
                 m["created_at"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
         except:
             m["created_at"] = m.get("created_at", "—")
-
     member_dict = {m["id"]: m for m in members}
 
-    # ✅ 訂單
-    orders_raw = supabase.table("orders").select("*").order("created_at", desc=True).execute().data or []
-    order_items = supabase.table("order_items").select("*").execute().data or []
+    # ✅ 訂單：後端分頁
+    order_page = int(request.args.get("order_page", 1))
+    order_page_size = int(request.args.get("order_page_size", 20))
+    order_start = (order_page - 1) * order_page_size
+    order_end = order_start + order_page_size - 1
+
+    # 訂單總數（給前端擴充用）
+    order_total_res = supabase.table("orders").select("id", count="exact").execute()
+    order_total_count = order_total_res.count or 0
+
+    # 當頁訂單
+    orders_raw = supabase.table("orders") \
+        .select("*") \
+        .order("created_at", desc=True) \
+        .range(order_start, order_end) \
+        .execute().data or []
+
+    order_ids = [o["id"] for o in orders_raw]
+    member_ids = list({o["member_id"] for o in orders_raw if o.get("member_id")})
+
+    order_items = supabase.table("order_items").select("*").in_("order_id", order_ids).execute().data or []
+    members_res = supabase.table("members").select("id, account, name, phone, address").in_("id", member_ids).execute().data or []
+    member_dict = {m["id"]: m for m in members_res}
 
     item_group = {}
     for item in order_items:
@@ -224,7 +242,7 @@ def admin_dashboard():
             "product_name": item.get("product_name"),
             "qty": item.get("qty"),
             "price": item.get("price"),
-            'option': item.get('option', '')
+            "option": item.get("option", "")
         })
 
     orders = []
@@ -237,23 +255,185 @@ def admin_dashboard():
             "phone": member.get("phone") if member else "—",
             "address": member.get("address") if member else "—"
         }
+        o["is_new"] = bool(o.get("status") != "shipped" and not session.get("seen_orders"))
         try:
             utc_dt = parser.parse(o["created_at"])
             o["created_local"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
         except:
             o["created_local"] = o["created_at"]
-
         orders.append(o)
 
+    # ✅ 留言搜尋 + 分頁
+    reply_status = request.args.get("reply_status", "all")
+    msg_type = request.args.get("type", "")
+    keyword = request.args.get("keyword", "").lower()
+
+    msg_page = int(request.args.get("msg_page", 1))
+    msg_page_size = int(request.args.get("msg_page_size", 10))
+    msg_start = (msg_page - 1) * msg_page_size
+    msg_end = msg_start + msg_page_size - 1
+
+    # 留言總數
+    total_count_res = supabase.table("messages").select("id", count="exact").execute()
+    msg_total_count = total_count_res.count or 0
+    msg_total_pages = max(1, (msg_total_count + msg_page_size - 1) // msg_page_size)
+
+    # 當頁留言
+    messages_res = supabase.table("messages") \
+        .select("*") \
+        .order("created_at", desc=True) \
+        .range(msg_start, msg_end) \
+        .execute()
+
+    member_ids = list({m['member_id'] for m in messages_res.data})
+    name_map = {}
+    if member_ids:
+        members_res = supabase.table("members").select("id, name").in_("id", member_ids).execute()
+        name_map = {m['id']: m['name'] for m in members_res.data}
+
+    filtered_messages = []
+    for m in messages_res.data:
+        m["member_name"] = name_map.get(m["member_id"], "未知")
+        m["is_new"] = bool(not m.get("is_replied") and not session.get("seen_messages"))
+
+        try:
+            utc_dt = parser.parse(m["created_at"])
+            m["local_created_at"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M")
+        except:
+            m["local_created_at"] = m["created_at"]
+
+        match_status = (
+            reply_status == "all" or
+            (reply_status == "replied" and m.get("is_replied")) or
+            (reply_status == "unreplied" and not m.get("is_replied"))
+        )
+        match_type = not msg_type or m.get("type") == msg_type
+        match_name = not keyword or keyword in m.get("member_name", "").lower()
+
+        if match_status and match_type and match_name:
+            filtered_messages.append(m)
+
+    paged_messages = filtered_messages
+
+    # ✅ 記錄是否已查看留言/訂單（tab 切換）
+    if tab == "orders":
+        session["seen_orders"] = True
+    if tab == "messages":
+        session["seen_messages"] = True
+
+    # ✅ 判斷是否需要顯示提示
+    new_order_alert = any(o.get("status") != "shipped" for o in orders)
+    new_message_alert = any(not m.get("is_replied") for m in messages_res.data)
+    show_order_alert = new_order_alert and not session.get("seen_orders")
+    show_message_alert = new_message_alert and not session.get("seen_messages")
+
     return render_template("admin.html",
-                           products=products,
-                           members=members,
-                           orders=orders,
-                           tab=tab,
-                           selected_categories=selected_categories)
+        tab=tab,
+        selected_categories=selected_categories,
+        products=products,
+        members=members,
+        orders=orders,
+        messages=paged_messages,
+        new_order_alert=show_order_alert,
+        new_message_alert=show_message_alert,
+        msg_page=msg_page,
+        msg_total_pages=msg_total_pages,
+        order_page=order_page,
+        order_total_count=order_total_count
+    )
+
+
+@app.route('/admin0363/tab/<tab_name>')
+def load_tab_content(tab_name):
+    if not session.get("admin_logged_in"):
+        return "未登入", 403
+
+    from pytz import timezone
+    from dateutil import parser
+    tz = timezone("Asia/Taipei")
+
+    if tab_name == "members":
+        members = supabase.table("members").select("*").order("created_at", desc=True).execute().data or []
+        for m in members:
+            try:
+                if m.get("created_at"):
+                    utc_dt = parser.parse(m["created_at"])
+                    m["created_at"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
+            except:
+                pass
+        return render_template("partials/members.html", members=members)
+
+    elif tab_name == "orders":
+        # 載入訂單（不分頁，全部前端處理）
+        orders_raw = supabase.table("orders").select("*").order("created_at", desc=True).execute().data or []
+
+        order_ids = [o["id"] for o in orders_raw]
+        member_ids = list({o.get("member_id") for o in orders_raw if o.get("member_id")})
+
+        order_items = supabase.table("order_items").select("*").in_("order_id", order_ids).execute().data or []
+        member_res = supabase.table("members").select("id, account, name, phone, address").in_("id", member_ids).execute().data or []
+        member_dict = {m['id']: m for m in member_res}
+
+        item_group = {}
+        for item in order_items:
+            item_group.setdefault(item["order_id"], []).append({
+                "product_name": item.get("product_name"),
+                "qty": item.get("qty"),
+                "price": item.get("price"),
+                "option": item.get("option", "")
+            })
+
+        orders = []
+        for o in orders_raw:
+            o["items"] = item_group.get(o["id"], [])
+            m = member_dict.get(o["member_id"])
+            o["member"] = {
+                "account": m["account"] if m else "guest",
+                "name": m.get("name") if m else "訪客",
+                "phone": m.get("phone") if m else "—",
+                "address": m.get("address") if m else "—"
+            }
+            o["is_new"] = bool(o.get("status") != "shipped" and not session.get("seen_orders"))
+            try:
+                o["created_local"] = parser.parse(o["created_at"]).astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
+            except:
+                o["created_local"] = o["created_at"]
+            orders.append(o)
+
+        return render_template("partials/orders.html", orders=orders)
+
+    elif tab_name == "messages":
+        messages = supabase.table("messages").select("*").order("created_at", desc=True).execute().data or []
+        member_ids = list({m['member_id'] for m in messages})
+        name_map = {}
+        if member_ids:
+            members_res = supabase.table("members").select("id, name").in_("id", member_ids).execute()
+            name_map = {m['id']: m['name'] for m in members_res.data}
+
+        for m in messages:
+            m["member_name"] = name_map.get(m["member_id"], "未知")
+            m["is_new"] = bool(not m.get("is_replied") and not session.get("seen_messages"))
+            try:
+                utc_dt = parser.parse(m["created_at"])
+                m["local_created_at"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M")
+            except:
+                m["local_created_at"] = m["created_at"]
+
+        return render_template("partials/messages.html", messages=messages)
+    
+    elif tab_name == "products":
+        products = supabase.table("products").select("*").execute().data or []
+        return render_template("partials/products.html", products=products)
+
+    return "未知頁籤", 400
 
 
 
+
+@app.route("/admin0363/mark_seen_orders", methods=["POST"])
+def mark_seen_orders():
+    session["seen_orders"] = True
+    return '', 204
 
 #admin登出功能
 @app.route("/admin0363/logout")
@@ -715,6 +895,7 @@ def product_detail(product_id):
 
     res = supabase.table("products").select("*").eq("id", product_id).single().execute()
     product = res.data
+    print("👉 商品內容：", product)
     if not product:
         return "找不到商品", 404
     cart = session.get('cart', [])
@@ -906,7 +1087,7 @@ def add_product():
         options = request.form.getlist('options[]')
 
         # ✅ 上傳首頁主圖（單張）
-        cover_image_file = request.files.get("cover_image_file")
+        cover_image_file = request.files.get("cover_image")
         cover_url = ""
         if cover_image_file and cover_image_file.filename:
             filename = secure_filename(cover_image_file.filename)
@@ -965,6 +1146,8 @@ def add_product():
         return redirect('/admin0363/dashboard?tab=products')
 
     except Exception as e:
+        print("🔥 商品新增錯誤：", e)
+        traceback.print_exc()
         return f"新增商品時發生錯誤：{str(e)}", 500
 
 
@@ -1328,6 +1511,186 @@ def change_password():
 
     return render_template('change_password.html')
 
+# 聊聊訊息路由
+
+@app.route('/message')
+def message_form():
+    if 'member_id' not in session:
+        return redirect('/login')
+    return render_template('message_form.html')
+
+
+@app.route('/submit_message', methods=['POST'])
+def submit_message():
+    if 'member_id' not in session:
+        return redirect('/login')
+
+    type = request.form['type']
+    subject = request.form['subject']
+    content = request.form['content']
+    order_number = request.form.get('order_number') or None
+
+    file = request.files.get('attachment')
+    file_path = None
+
+    if file and file.filename:
+        filename = secure_filename(file.filename)
+        save_dir = 'static/uploads/messages'
+        os.makedirs(save_dir, exist_ok=True)
+        filepath = os.path.join(save_dir, f"{uuid4().hex}_{filename}")
+        try:
+            file.save(filepath)
+            file_path = filepath
+        except Exception:
+            flash("檔案上傳失敗，請確認格式與大小", "danger")
+            return redirect('/message')
+
+    supabase.table("messages").insert({
+        "id": str(uuid4()),
+        "member_id": session['member_id'],
+        "type": type,
+        "subject": subject,
+        "content": content,
+        "order_number": order_number,
+        "attachment_path": file_path,
+        "created_at": datetime.utcnow().isoformat()
+    }).execute()
+
+    flash("留言送出成功，我們將盡快與您聯繫", "success")
+    return render_template("message_success.html")
+
+
+#回覆留言（設為已回覆）
+from datetime import datetime
+
+@app.route("/admin0363/messages/reply/<msg_id>", methods=["POST"])
+def reply_message(msg_id):
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
+
+    print("📦 表單內容：", request.form)
+
+    reply_text = request.form.get("reply", "").strip()
+    print("🔍 回覆內容：", repr(reply_text))
+    print("🔑 留言ID：", msg_id)
+
+    if not reply_text:
+        flash("回覆內容不能為空", "danger")
+        return redirect("/admin0363/dashboard?tab=messages")
+
+    # 查詢是否有這筆留言
+    result_check = supabase.table("messages").select("id").eq("id", msg_id).execute()
+    print("🔎 查詢結果：", result_check)
+
+    if not result_check.data:
+        flash("找不到這筆留言資料", "danger")
+        return redirect("/admin0363/dashboard?tab=messages")
+
+    # 更新留言（強制觸發 updated_at）
+    now = datetime.utcnow().isoformat()
+    result = supabase.table("messages").update({
+        "is_replied": True,
+        "is_read": False,
+        "reply_text": reply_text,
+        "updated_at": now
+    }).eq("id", msg_id).execute()
+    print("✅ 更新結果：", result)
+
+    # 驗證是否真的寫入成功
+    verify = supabase.table("messages").select("reply_text", "is_replied", "updated_at").eq("id", msg_id).execute()
+    print("📌 更新後確認：", verify.data)
+
+    flash("已回覆留言", "success")
+    return redirect("/admin0363/dashboard?tab=messages")
+
+
+
+
+
+#每次頁面刷新時都會自動檢查是否有新回覆
+@app.before_request
+def check_member_messages():
+    if "member_id" in session:
+        member_id = session["member_id"]
+        res = supabase.table("messages") \
+            .select("id") \
+            .eq("member_id", member_id) \
+            .eq("is_replied", True) \
+            .eq("is_read", False) \
+            .execute()
+        session["has_new_reply"] = bool(res.data)
+    else:
+        session.pop("has_new_reply", None)
+
+# 當會員查看訊息時，將已回覆但尚未讀取的留言標記為已讀
+@app.route("/member/messages")
+def member_messages():
+    if "member_id" not in session:
+        return redirect("/login")
+
+    tz = timezone("Asia/Taipei")
+    member_id = session["member_id"]
+    page = int(request.args.get("page", 1))
+    per_page = 5
+
+    # 全部留言（新 → 舊）
+    all_messages = supabase.table("messages") \
+        .select("*") \
+        .eq("member_id", member_id) \
+        .order("created_at", desc=True) \
+        .execute().data or []
+
+    # 顯示台灣時間 & 是否為新回覆
+    for m in all_messages:
+        try:
+            m["local_created_at"] = parser.parse(m["created_at"]).astimezone(tz).strftime("%Y-%m-%d %H:%M")
+        except:
+            m["local_created_at"] = m["created_at"]
+        m["is_new"] = m.get("is_replied") and not m.get("is_read")
+
+    # 分頁
+    total = len(all_messages)
+    start = (page - 1) * per_page
+    end = start + per_page
+    messages = all_messages[start:end]
+    has_prev = page > 1
+    has_next = end < total
+
+    # 設為已讀
+    if messages:
+        supabase.table("messages") \
+            .update({"is_read": True}) \
+            .eq("member_id", member_id) \
+            .eq("is_replied", True) \
+            .eq("is_read", False) \
+            .execute()
+
+    session["has_new_reply"] = False
+
+    return render_template("member_messages.html",
+                           messages=messages,
+                           page=page,
+                           has_prev=has_prev,
+                           has_next=has_next)
+
+
+
+
+
+#全站共用留言has_new_reply
+@app.context_processor
+def inject_has_new_reply():
+    has_reply = False
+    if 'member_id' in session:
+        res = supabase.table("messages") \
+            .select("id") \
+            .eq("member_id", session['member_id']) \
+            .eq("is_replied", True) \
+            .eq("is_read", False) \
+            .execute()
+        has_reply = len(res.data) > 0
+
+    return dict(has_new_reply=has_reply)
 
 
 
