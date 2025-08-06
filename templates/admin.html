@@ -58,13 +58,6 @@
 </div>
 <div id="members" class="tab-content" data-loaded="false"></div>
 <div id="orders" class="tab-content" data-loaded="false"></div>
-{% if tab == 'orders' %}
-<script>
-  let allOrders = {{ orders | tojson | safe }};
-  let currentPage = 1;
-  let filteredOrders = allOrders;
-</script>
-{% endif %}
 <div id="messages" class="tab-content" data-loaded="false"></div>
 
   <script>
@@ -95,43 +88,23 @@ function switchTab(tabId) {
       tabContent.dataset.loaded = "true";
 
       if (tabId === "orders") {
-  fetch(`/admin0363/tab/orders`)
-    .then(res => res.json())
-    .then(data => {
-      allOrders = data.orders;
-      currentPage = 1;
-      filteredOrders = allOrders;
-
-      // 載入訂單表單區塊（原本 HTML）
-      fetch('/static/orders_ui.html')  // 🔁 這是你放訂單搜尋列＋列表框架的 HTML
-        .then(res => res.text())
-        .then(html => {
-          tabContent.innerHTML = html;
-          renderOrderPage(parseInt(document.getElementById("pageSizeSelect").value));
-          tabContent.dataset.loaded = "true";
+        // ✅ 頁籤為訂單時初始化篩選器與資料
+        try {
+          allOrders = JSON.parse(document.getElementById("all-orders-json").textContent);
+          currentPage = 1;
+          filteredOrders = allOrders;
+          filterOrders();
           fetch("/admin0363/mark_seen_orders", { method: "POST" });
-        });
-    })
-    .catch(err => {
-      tabContent.innerHTML = "<p style='color:red;'>載入失敗</p>";
-    });
-} else {
-  // 其他 tab 用原本邏輯
-  fetch(`/admin0363/tab/${tabId}`)
-    .then(res => res.text())
-    .then(html => {
-      tabContent.innerHTML = html;
-      tabContent.dataset.loaded = "true";
+        } catch (e) {
+          console.error("訂單資料初始化錯誤", e);
+        }
+      }
     })
     .catch(err => {
       tabContent.innerHTML = "<p style='color:red;'>載入失敗</p>";
     });
 }
 
-    .catch(err => {
-      tabContent.innerHTML = "<p style='color:red;'>載入失敗</p>";
-    });
-}
 
 
 function filterOrders() {
