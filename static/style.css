@@ -803,11 +803,11 @@ body {
   z-index: 2;
 }
 
-.tab-content {
+body.admin-page .tab-content {
   margin-top: -1px; /* ✅ 把上下交界蓋住 */
   border-radius: 0 0 8px 8px;
 }
-  .tab-btn.active {
+body.admin-page .tab-btn.active {
     background: #e91e63;
     color: white;
   }
