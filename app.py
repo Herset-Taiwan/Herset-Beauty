@@ -1084,7 +1084,7 @@ def add_product():
         options = request.form.getlist('options[]')
 
         # ✅ 上傳首頁主圖（單張）
-        cover_image_file = request.files.get("cover_image_file")
+        cover_image_file = request.files.get("cover_image")
         cover_url = ""
         if cover_image_file and cover_image_file.filename:
             filename = secure_filename(cover_image_file.filename)
