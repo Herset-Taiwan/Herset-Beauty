@@ -52,7 +52,15 @@
   color: white;
   z-index: 1;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px; /* 保留文字與 badge 間距 */
+  padding: 10px 24px;
+  min-width: 140px;
+  height: 48px;
 }
+
 
   .tab-content {
     display: none;
@@ -249,9 +257,6 @@
   position: relative;
 }
 .badge-icon {
-  position: absolute;
-  top: -6px;
-  right: -6px;
   background: linear-gradient(135deg, #ff7c8a, #e91e63);
   color: white;
   font-size: 12px;
@@ -259,6 +264,7 @@
   border-radius: 20px;
   font-weight: bold;
   animation: fadeBlink 1.6s infinite;
+  line-height: 1;
 }
 
 @keyframes fadeBlink {
