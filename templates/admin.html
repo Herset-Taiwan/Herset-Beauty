@@ -478,26 +478,28 @@
     <div id="members" class="tab-content">
       <h2>會員系統管理</h2>
       <form class="search-form" method="GET" action="/admin/members">
-        <input type="text" name="keyword" placeholder="輸入帳號、姓名、電話或Email...">
+        <input type="text" id="member-search" placeholder="輸入帳號、姓名、電話或Email" style="padding: 6px; width: 250px; border-radius: 6px; border: 1px solid #ccc;">
+
         <input type="hidden" name="tab" value="members">
         <button type="submit">搜尋</button>
       </form>
 
       <div id="member-list">
-        {% for m in members %}
-        <div class="member-row">
-          <div class="info">
-            <strong>帳號：</strong>{{ m['account'] }}<br>
-            <strong>信箱：</strong>{{ m['email'] or '—' }}<br><br>
-            <strong>姓名：</strong>{{ m['name'] or m['username'] or '—' }}<br>
-            <strong>電話：</strong>{{ m['phone'] or '—' }}<br>
-            <strong>地址：</strong>{{ m['address'] or '—' }}<br>
-            <strong>訂單備註：</strong>{{ m['note'] or '—' }}<br>
-            <strong>註冊時間：</strong>{{ m['created_at'] or '—' }}
-          </div>
-        </div>
-        {% endfor %}
-      </div>
+  {% for m in members %}
+  <div class="member-row" data-info="{{ m['account'] }} {{ m['name'] or m['username'] }} {{ m['phone'] }} {{ m['email'] }}">
+    <div class="info">
+      <strong>帳號：</strong>{{ m['account'] }}<br>
+      <strong>信箱：</strong>{{ m['email'] or '—' }}<br><br>
+      <strong>姓名：</strong>{{ m['name'] or m['username'] or '—' }}<br>
+      <strong>電話：</strong>{{ m['phone'] or '—' }}<br>
+      <strong>地址：</strong>{{ m['address'] or '—' }}<br>
+      <strong>訂單備註：</strong>{{ m['note'] or '—' }}<br>
+      <strong>註冊時間：</strong>{{ m['created_at'] or '—' }}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
     </div>
 
     <div id="orders" class="tab-content">
@@ -1124,6 +1126,21 @@ function confirmReply(id) {
 
   document.getElementById("reply-form-" + id).submit();
 }
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const input = document.getElementById("member-search");
+  const cards = document.querySelectorAll(".member-card");
+
+  input.addEventListener("input", function () {
+    const keyword = input.value.toLowerCase();
+    cards.forEach(card => {
+      const info = card.dataset.info.toLowerCase();
+      card.style.display = info.includes(keyword) ? "block" : "none";
+    });
+  });
+});
 </script>
 
 
