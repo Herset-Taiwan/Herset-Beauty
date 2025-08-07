@@ -1,15 +1,3 @@
-<!-- 🔍 分類搜尋 -->
-<div style="margin-bottom: 15px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
-  <label>分類篩選：</label>
-  <select id="categoryFilter" multiple style="min-width: 220px;">
-    {% set all_categories = ['身體保養', '私密保養', '寵物友善', '品牌嚴選'] %}
-    {% for cat in all_categories %}
-      <option value="{{ cat }}">{{ cat }}</option>
-    {% endfor %}
-  </select>
-</div>
-
-
 <div class="tab-inner"></div>
 <a href="/admin/new" class="add-btn">＋ 新增商品</a>
 {% if products %}
