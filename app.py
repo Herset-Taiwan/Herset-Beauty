@@ -917,7 +917,7 @@ def handle_ecpay_result():
 def block_admin_shortcut():
     return "404 Not Found    The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.", 403
 
-
+#搜尋會員
 @app.route('/admin/members')
 def search_members():
     keyword = request.args.get("keyword", "").strip()
@@ -926,52 +926,36 @@ def search_members():
         query = query.or_(
             f"account.ilike.%{keyword}%,username.ilike.%{keyword}%,phone.ilike.%{keyword}%,email.ilike.%{keyword}%"
         )
-    members = query.execute().data
+    members = query.execute().data or []
 
-    # 🟢 加入註冊時間格式處理
     from pytz import timezone
     from dateutil import parser
     tz = timezone("Asia/Taipei")
+
     for m in members:
         try:
             utc_dt = parser.parse(m['created_at'])
-            m['created_local'] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
+            m['created_at'] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
         except:
-            m['created_local'] = m.get('created_at', '—')
+            m['created_at'] = m.get('created_at', '—')
 
-    # 補上其他頁籤資料
-    products = supabase.table("products").select("*").execute().data or []
-
-    res = supabase.table("orders").select("*").order("created_at", desc=True).execute()
-    orders_raw = res.data or []
-    res = supabase.table("order_items").select("*").execute()
-    items = res.data or []
-    item_group = {}
-    for item in items:
-        item_group.setdefault(item['order_id'], []).append(item)
-
-    res = supabase.table("members").select("*").execute()
-    member_dict = {m['id']: m for m in res.data or []}
-
-    orders = []
-    for o in orders_raw:
-        o['items'] = item_group.get(o['id'], [])
-        member = member_dict.get(o['member_id'])
-        o['member'] = {
-            'account': member['account'] if member else 'guest',
-            'name': member.get('name') if member else '訪客',
-            'phone': member.get('phone') if member else '—',
-            'address': member.get('address') if member else '—'
-        }
-        try:
-            utc_dt = parser.parse(o['created_at'])
-            o['created_local'] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
-        except:
-            o['created_local'] = o['created_at']
-
-        orders.append(o)
-
-    return render_template("admin.html", products=products, members=members, orders=orders, tab="members")
+    # 🔧 避免 template 出錯，加上預設變數
+    return render_template("admin.html",
+        tab="members",
+        products=[],
+        orders=[],
+        members=members,
+        messages=[],
+        product_page=1,
+        product_total_pages=1,
+        product_page_size=10,
+        msg_page=1,
+        msg_total_pages=1,
+        order_page=1,
+        order_total_count=0,
+        new_order_alert=False,
+        new_message_alert=False
+    )
 
 
 #刪除訂單
