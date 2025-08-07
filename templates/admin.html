@@ -356,20 +356,27 @@
     會員系統管理
   </button>
 
+  {% if new_order_alert is defined and new_order_alert %}
+  <button class="tab-btn {% if tab == 'orders' %}active{% endif %}" onclick="switchTab('orders')">
+    訂單管理系統 <span class="badge-icon">🛎 新訂單</span>
+  </button>
+  {% else %}
   <button class="tab-btn {% if tab == 'orders' %}active{% endif %}" onclick="switchTab('orders')">
     訂單管理系統
-    {% if new_order_alert %}
-      <span class="badge-icon">🛎 新訂單</span>
-    {% endif %}
   </button>
+  {% endif %}
 
+  {% if new_message_alert is defined and new_message_alert %}
+  <button class="tab-btn {% if tab == 'messages' %}active{% endif %}" onclick="switchTab('messages')">
+    留言管理 <span class="badge-icon">📩 新留言</span>
+  </button>
+  {% else %}
   <button class="tab-btn {% if tab == 'messages' %}active{% endif %}" onclick="switchTab('messages')">
     留言管理
-    {% if new_message_alert %}
-      <span class="badge-icon">📩 新留言</span>
-    {% endif %}
   </button>
+  {% endif %}
 </div>
+
 
 
 
