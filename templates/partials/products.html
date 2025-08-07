@@ -14,7 +14,7 @@
 <a href="/admin/new" class="add-btn">＋ 新增商品</a>
 {% if products %}
   {% for p in products %}
-    <div class="product-row" data-categories="{{ ','.join(p['categories']) if p.get('categories') else '' }}">
+    <div class="product-row" data-categories="{{ ','.join(p.get('categories') or []) }}">
       <img src="{{ p['image'] or '' }}" alt="{{ p['name'] }}">
       <div class="info">
         <strong>{{ p['name'] or '無名稱' }}</strong><br>
