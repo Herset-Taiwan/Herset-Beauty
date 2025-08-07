@@ -178,7 +178,7 @@ def admin_login():
             return render_template("admin_login.html", error="帳號或密碼錯誤")
     return render_template("admin_login.html")
 
-#admin 後台
+# admin 後台
 @app.route("/admin0363/dashboard")
 def admin_dashboard():
     if not session.get("admin_logged_in"):
@@ -189,6 +189,7 @@ def admin_dashboard():
     import json
 
     tz = timezone("Asia/Taipei")
+    tab = request.args.get("tab", "products")  # ✅ 提前定義 tab
     selected_categories = request.args.getlist("category")
 
     # ✅ 商品：搜尋 + 分頁
@@ -318,22 +319,20 @@ def admin_dashboard():
         match_type = not msg_type or m.get("type") == msg_type
         match_name = not msg_keyword or msg_keyword in m.get("member_name", "").lower()
 
-
         if match_status and match_type and match_name:
             filtered_messages.append(m)
 
     paged_messages = filtered_messages
 
-    # ✅ 標記已讀
-    session["seen_orders"] = True
-    session["seen_messages"] = True
-
+    # ✅ 提示狀態（在標記已讀前判斷）
     new_order_alert = any(o.get("status") != "shipped" for o in orders)
     new_message_alert = any(not m.get("is_replied") for m in messages_res.data)
     show_order_alert = new_order_alert and not session.get("seen_orders")
     show_message_alert = new_message_alert and not session.get("seen_messages")
 
-    return render_template("admin.html",
+    # ✅ 回傳前再標記為已讀，避免影響判斷
+    response = render_template("admin.html",
+        tab=tab,
         selected_categories=selected_categories,
         products=products,
         product_page=product_page,
@@ -349,6 +348,10 @@ def admin_dashboard():
         order_page=order_page,
         order_total_count=order_total_count
     )
+
+    session["seen_orders"] = True
+    session["seen_messages"] = True
+    return response
 
 
 
