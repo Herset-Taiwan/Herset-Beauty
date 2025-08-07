@@ -592,11 +592,13 @@ const tabObserver = new MutationObserver(() => {
   }
 });
 tabObserver.observe(document.body, { childList: true, subtree: true });
-
-
-
 </script>
 
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  initProductFilter(); 
+});
+</script>
 
 
 </body>
