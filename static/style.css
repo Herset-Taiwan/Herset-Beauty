@@ -1059,4 +1059,13 @@ body:not(.product-page) .info {
   display: none !important;
 }
 
+.selectize-control .item {
+  color: #333; /* ✅ 選取的項目文字色 */
+}
+
+.selectize-input {
+  color: #333; /* ✅ 輸入框的文字色 */
+  background: white;
+}
+
 /* ====== 後台 admin 樣式結束 ====== */
