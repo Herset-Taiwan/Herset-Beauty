@@ -348,34 +348,27 @@
 
 <!-- 正中間的頁籤按鈕 -->
 <div class="tabs">
-  <button class="tab-btn {% if tab == 'products' %}active{% endif %}" onclick="switchTab('products')">
-    商品管理
-  </button>
+  {% set valid_tabs = ['products', 'members', 'orders', 'messages'] %}
+  
+  <button class="tab-btn {% if tab == 'products' %}active{% endif %}" onclick="switchTab('products')">商品管理</button>
+  <button class="tab-btn {% if tab == 'members' %}active{% endif %}" onclick="switchTab('members')">會員系統管理</button>
 
-  <button class="tab-btn {% if tab == 'members' %}active{% endif %}" onclick="switchTab('members')">
-    會員系統管理
-  </button>
-
-  {% if new_order_alert is defined and new_order_alert %}
-  <button class="tab-btn {% if tab == 'orders' %}active{% endif %}" onclick="switchTab('orders')">
-    訂單管理系統 <span class="badge-icon">🛎 新訂單</span>
-  </button>
-  {% else %}
   <button class="tab-btn {% if tab == 'orders' %}active{% endif %}" onclick="switchTab('orders')">
     訂單管理系統
+    {% if new_order_alert %}<span class="badge-icon">🛎 新訂單</span>{% endif %}
   </button>
-  {% endif %}
 
-  {% if new_message_alert is defined and new_message_alert %}
-  <button class="tab-btn {% if tab == 'messages' %}active{% endif %}" onclick="switchTab('messages')">
-    留言管理 <span class="badge-icon">📩 新留言</span>
-  </button>
-  {% else %}
   <button class="tab-btn {% if tab == 'messages' %}active{% endif %}" onclick="switchTab('messages')">
     留言管理
+    {% if new_message_alert %}<span class="badge-icon">📩 新留言</span>{% endif %}
   </button>
+
+  {# ✅ 防呆：如果 tab 是未知值，渲染這個 debug 按鈕讓你知道 #}
+  {% if tab not in valid_tabs %}
+    <button class="tab-btn active" style="color: red;" disabled>⚠️ 無效 tab: {{ tab }}</button>
   {% endif %}
 </div>
+
 
 
 
