@@ -458,16 +458,17 @@
     </div>
 
 <div class="pagination">
-  {% if page > 1 %}
-    <a class="page-btn" href="?tab=products&page={{ page - 1 }}&page_size={{ page_size }}&keyword={{ request.args.get('keyword', '') }}{% for c in selected_categories %}&category={{ c }}{% endfor %}">← 上一頁</a>
+  {% if product_page > 1 %}
+    <a class="page-btn" href="?page={{ product_page - 1 }}&page_size={{ product_page_size }}&keyword={{ request.args.get('keyword', '') }}{% for c in selected_categories %}&category={{ c }}{% endfor %}">← 上一頁</a>
   {% endif %}
 
-  <span style="margin: 0 10px;">第 {{ page }} 頁 / 共 {{ total_pages }} 頁</span>
+  <span style="margin: 0 10px;">第 {{ product_page }} 頁 / 共 {{ product_total_pages }} 頁</span>
 
-  {% if page < total_pages %}
-    <a class="page-btn" href="?tab=products&page={{ page + 1 }}&page_size={{ page_size }}&keyword={{ request.args.get('keyword', '') }}{% for c in selected_categories %}&category={{ c }}{% endfor %}">下一頁 →</a>
+  {% if product_page < product_total_pages %}
+    <a class="page-btn" href="?page={{ product_page + 1 }}&page_size={{ product_page_size }}&keyword={{ request.args.get('keyword', '') }}{% for c in selected_categories %}&category={{ c }}{% endfor %}">下一頁 →</a>
   {% endif %}
 </div>
+
 
 
 
