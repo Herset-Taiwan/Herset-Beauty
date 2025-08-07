@@ -178,7 +178,7 @@ def admin_login():
             return render_template("admin_login.html", error="帳號或密碼錯誤")
     return render_template("admin_login.html")
 
-
+#admin 後台
 @app.route("/admin0363/dashboard")
 def admin_dashboard():
     if not session.get("admin_logged_in"):
@@ -189,17 +189,30 @@ def admin_dashboard():
     import json
 
     tz = timezone("Asia/Taipei")
-    tab = request.args.get("tab", "products")
     selected_categories = request.args.getlist("category")
 
-    # ✅ 商品
+    # ✅ 商品：搜尋 + 分頁
+    product_keyword = request.args.get("keyword", "").lower()
+    product_page = int(request.args.get("page", 1))
+    product_page_size = int(request.args.get("page_size", 10))
+    product_start = (product_page - 1) * product_page_size
+    product_end = product_start + product_page_size
+
     product_query = supabase.table("products").select("*")
     if selected_categories:
         filters = [f"categories.cs.{json.dumps([cat])}" for cat in selected_categories]
         product_query = product_query.or_(','.join(filters))
-    products = product_query.execute().data or []
 
-    # ✅ 會員（全部載入，用於會員管理頁）
+    all_products = product_query.execute().data or []
+
+    if product_keyword:
+        all_products = [p for p in all_products if product_keyword in p.get("name", "").lower()]
+
+    product_total_count = len(all_products)
+    product_total_pages = max(1, (product_total_count + product_page_size - 1) // product_page_size)
+    products = all_products[product_start:product_end]
+
+    # ✅ 會員
     members = supabase.table("members").select(
         "id, account, username, name, phone, email, address, note, created_at"
     ).execute().data or []
@@ -212,17 +225,15 @@ def admin_dashboard():
             m["created_at"] = m.get("created_at", "—")
     member_dict = {m["id"]: m for m in members}
 
-    # ✅ 訂單：後端分頁
+    # ✅ 訂單
     order_page = int(request.args.get("order_page", 1))
     order_page_size = int(request.args.get("order_page_size", 20))
     order_start = (order_page - 1) * order_page_size
     order_end = order_start + order_page_size - 1
 
-    # 訂單總數（給前端擴充用）
     order_total_res = supabase.table("orders").select("id", count="exact").execute()
     order_total_count = order_total_res.count or 0
 
-    # 當頁訂單
     orders_raw = supabase.table("orders") \
         .select("*") \
         .order("created_at", desc=True) \
@@ -263,22 +274,19 @@ def admin_dashboard():
             o["created_local"] = o["created_at"]
         orders.append(o)
 
-    # ✅ 留言搜尋 + 分頁
+    # ✅ 留言 + 分頁
     reply_status = request.args.get("reply_status", "all")
     msg_type = request.args.get("type", "")
-    keyword = request.args.get("keyword", "").lower()
-
+    msg_keyword = request.args.get("keyword", "").lower()
     msg_page = int(request.args.get("msg_page", 1))
     msg_page_size = int(request.args.get("msg_page_size", 10))
     msg_start = (msg_page - 1) * msg_page_size
     msg_end = msg_start + msg_page_size - 1
 
-    # 留言總數
     total_count_res = supabase.table("messages").select("id", count="exact").execute()
     msg_total_count = total_count_res.count or 0
     msg_total_pages = max(1, (msg_total_count + msg_page_size - 1) // msg_page_size)
 
-    # 當頁留言
     messages_res = supabase.table("messages") \
         .select("*") \
         .order("created_at", desc=True) \
@@ -308,29 +316,29 @@ def admin_dashboard():
             (reply_status == "unreplied" and not m.get("is_replied"))
         )
         match_type = not msg_type or m.get("type") == msg_type
-        match_name = not keyword or keyword in m.get("member_name", "").lower()
+        match_name = not msg_keyword or msg_keyword in m.get("member_name", "").lower()
+
 
         if match_status and match_type and match_name:
             filtered_messages.append(m)
 
     paged_messages = filtered_messages
 
-    # ✅ 記錄是否已查看留言/訂單（tab 切換）
-    if tab == "orders":
-        session["seen_orders"] = True
-    if tab == "messages":
-        session["seen_messages"] = True
+    # ✅ 標記已讀
+    session["seen_orders"] = True
+    session["seen_messages"] = True
 
-    # ✅ 判斷是否需要顯示提示
     new_order_alert = any(o.get("status") != "shipped" for o in orders)
     new_message_alert = any(not m.get("is_replied") for m in messages_res.data)
     show_order_alert = new_order_alert and not session.get("seen_orders")
     show_message_alert = new_message_alert and not session.get("seen_messages")
 
     return render_template("admin.html",
-        tab=tab,
         selected_categories=selected_categories,
         products=products,
+        product_page=product_page,
+        product_total_pages=product_total_pages,
+        product_page_size=product_page_size,
         members=members,
         orders=orders,
         messages=paged_messages,
@@ -341,92 +349,6 @@ def admin_dashboard():
         order_page=order_page,
         order_total_count=order_total_count
     )
-
-
-@app.route('/admin0363/tab/<tab_name>')
-def load_tab_content(tab_name):
-    if not session.get("admin_logged_in"):
-        return "未登入", 403
-
-    from pytz import timezone
-    from dateutil import parser
-    tz = timezone("Asia/Taipei")
-
-    if tab_name == "members":
-        members = supabase.table("members").select("*").order("created_at", desc=True).execute().data or []
-        for m in members:
-            try:
-                if m.get("created_at"):
-                    utc_dt = parser.parse(m["created_at"])
-                    m["created_at"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
-            except:
-                pass
-        return render_template("partials/members.html", members=members)
-
-    elif tab_name == "orders":
-        # 載入訂單（不分頁，全部前端處理）
-        orders_raw = supabase.table("orders").select("*").order("created_at", desc=True).execute().data or []
-
-        order_ids = [o["id"] for o in orders_raw]
-        member_ids = list({o.get("member_id") for o in orders_raw if o.get("member_id")})
-
-        order_items = supabase.table("order_items").select("*").in_("order_id", order_ids).execute().data or []
-        member_res = supabase.table("members").select("id, account, name, phone, address").in_("id", member_ids).execute().data or []
-        member_dict = {m['id']: m for m in member_res}
-
-        item_group = {}
-        for item in order_items:
-            item_group.setdefault(item["order_id"], []).append({
-                "product_name": item.get("product_name"),
-                "qty": item.get("qty"),
-                "price": item.get("price"),
-                "option": item.get("option", "")
-            })
-
-        orders = []
-        for o in orders_raw:
-            o["items"] = item_group.get(o["id"], [])
-            m = member_dict.get(o["member_id"])
-            o["member"] = {
-                "account": m["account"] if m else "guest",
-                "name": m.get("name") if m else "訪客",
-                "phone": m.get("phone") if m else "—",
-                "address": m.get("address") if m else "—"
-            }
-            o["is_new"] = bool(o.get("status") != "shipped" and not session.get("seen_orders"))
-            try:
-                o["created_local"] = parser.parse(o["created_at"]).astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
-            except:
-                o["created_local"] = o["created_at"]
-            orders.append(o)
-
-        return render_template("partials/orders.html", orders=orders)
-
-    elif tab_name == "messages":
-        messages = supabase.table("messages").select("*").order("created_at", desc=True).execute().data or []
-        member_ids = list({m['member_id'] for m in messages})
-        name_map = {}
-        if member_ids:
-            members_res = supabase.table("members").select("id, name").in_("id", member_ids).execute()
-            name_map = {m['id']: m['name'] for m in members_res.data}
-
-        for m in messages:
-            m["member_name"] = name_map.get(m["member_id"], "未知")
-            m["is_new"] = bool(not m.get("is_replied") and not session.get("seen_messages"))
-            try:
-                utc_dt = parser.parse(m["created_at"])
-                m["local_created_at"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M")
-            except:
-                m["local_created_at"] = m["created_at"]
-
-        return render_template("partials/messages.html", messages=messages)
-    
-    elif tab_name == "products":
-        products = supabase.table("products").select("*").execute().data or []
-        return render_template("partials/products.html", products=products)
-
-    return "未知頁籤", 400
-
 
 
 

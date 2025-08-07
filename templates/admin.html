@@ -378,6 +378,7 @@
       <h2>商品管理</h2>
 <form method="GET" action="/admin0363/dashboard" style="margin-bottom: 20px;">
   <input type="hidden" name="tab" value="products">
+
   <label>分類篩選：</label>
   <select id="category-filter" name="category" multiple>
     {% set all_categories = ['身體保養', '私密保養', '寵物友善', '品牌嚴選'] %}
@@ -385,8 +386,22 @@
       <option value="{{ cat }}" {% if cat in selected_categories %}selected{% endif %}>{{ cat }}</option>
     {% endfor %}
   </select>
-  <button type="submit">搜尋</button>
+
+  <label style="margin-left: 20px;">商品名稱：</label>
+  <input type="text" name="keyword" value="{{ request.args.get('keyword', '') }}" placeholder="輸入關鍵字">
+
+  <label style="margin-left: 20px;">每頁顯示：</label>
+  <select name="page_size" onchange="this.form.submit()">
+    {% set page_size = request.args.get('page_size', '10') %}
+    <option value="5" {% if page_size == '5' %}selected{% endif %}>5</option>
+    <option value="10" {% if page_size == '10' %}selected{% endif %}>10</option>
+    <option value="20" {% if page_size == '20' %}selected{% endif %}>20</option>
+    <option value="50" {% if page_size == '50' %}selected{% endif %}>50</option>
+  </select>
+
+  <button type="submit" style="margin-left: 10px;">搜尋</button>
 </form>
+
 
 
 <!-- 引入 jQuery + Selectize -->
@@ -441,6 +456,20 @@
   <p style="color: gray;">目前沒有任何商品</p>
 {% endif %}
     </div>
+
+<div class="pagination">
+  {% if page > 1 %}
+    <a class="page-btn" href="?tab=products&page={{ page - 1 }}&page_size={{ page_size }}&keyword={{ request.args.get('keyword', '') }}{% for c in selected_categories %}&category={{ c }}{% endfor %}">← 上一頁</a>
+  {% endif %}
+
+  <span style="margin: 0 10px;">第 {{ page }} 頁 / 共 {{ total_pages }} 頁</span>
+
+  {% if page < total_pages %}
+    <a class="page-btn" href="?tab=products&page={{ page + 1 }}&page_size={{ page_size }}&keyword={{ request.args.get('keyword', '') }}{% for c in selected_categories %}&category={{ c }}{% endfor %}">下一頁 →</a>
+  {% endif %}
+</div>
+
+
 
     <div id="members" class="tab-content">
       <h2>會員系統管理</h2>
