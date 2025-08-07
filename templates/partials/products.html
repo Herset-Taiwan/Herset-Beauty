@@ -47,5 +47,16 @@
 <link href="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/css/selectize.default.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
 
-
-
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const selectEl = document.getElementById('categoryFilter');
+  if (selectEl && !$(selectEl)[0].selectize) {
+    $('#categoryFilter').selectize({
+      plugins: ['remove_button'],
+      delimiter: ',',
+      persist: false,
+      onChange: filterProducts
+    });
+  }
+});
+</script>
