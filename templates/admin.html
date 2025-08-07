@@ -1144,6 +1144,22 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 
+<script>
+  // 會員搜尋功能
+  const memberInput = document.getElementById("member-search-input");
+  const memberRows = document.querySelectorAll("#member-list .member-row");
+
+  if (memberInput) {
+    memberInput.addEventListener("input", function () {
+      const keyword = this.value.trim().toLowerCase();
+      memberRows.forEach(row => {
+        const info = row.getAttribute("data-info") || "";
+        row.style.display = info.includes(keyword) ? "" : "none";
+      });
+    });
+  }
+</script>
+
 
 
 </body>
