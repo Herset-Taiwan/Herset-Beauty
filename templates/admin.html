@@ -372,6 +372,25 @@
 </div>
 
 
+<div id="tab-container">
+  <div id="products" class="tab-content {% if tab == 'products' %}active{% endif %}">
+    {% include 'admin/products.html' %}
+  </div>
+
+  <div id="members" class="tab-content {% if tab == 'members' %}active{% endif %}">
+    {% include 'admin/members.html' %}
+  </div>
+
+  <div id="orders" class="tab-content {% if tab == 'orders' %}active{% endif %}">
+    {% include 'admin/orders.html' %}
+  </div>
+
+  <div id="messages" class="tab-content {% if tab == 'messages' %}active{% endif %}">
+    {% include 'admin/messages.html' %}
+  </div>
+</div>
+
+
     <div id="products" class="tab-content active">
       <h2>商品管理</h2>
 <form method="GET" action="/admin0363/dashboard" style="margin-bottom: 20px;">
