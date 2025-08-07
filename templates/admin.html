@@ -40,10 +40,12 @@
     background: #bbb;
   }
 
-  .tab-btn.active {
-    background: #e91e63;
-    color: white;
-  }
+ .tab-btn.active {
+  background: #e91e63;
+  color: white;
+  z-index: 1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
 
   .tab-content {
     display: none;
@@ -355,9 +357,6 @@
     {% endif %}
   </button>
 </div>
-
-
-
 
 
     <div id="products" class="tab-content active">
