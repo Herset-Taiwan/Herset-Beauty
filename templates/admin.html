@@ -25,22 +25,29 @@
     margin-bottom: 30px;
   }
 
-  .tab-btn {
-    padding: 10px 24px;
-    border: none;
-    background: #ddd;
-    cursor: pointer;
-    font-weight: bold;
-    border-radius: 8px 8px 0 0;
-    margin-right: 5px;
-    transition: all 0.2s ease;
-  }
+ .tab-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 140px;
+  height: 48px;
+  font-weight: bold;
+  font-size: 15px;
+  border: none;
+  border-radius: 8px 8px 0 0;
+  padding: 10px 24px;
+  background: #ddd;
+  color: black;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
 
   .tab-btn:hover {
     background: #bbb;
   }
 
- .tab-btn.active {
+.tab-btn.active {
   background: #e91e63;
   color: white;
   z-index: 1;
@@ -242,16 +249,16 @@
   position: relative;
 }
 .badge-icon {
-  display: inline-block;
+  position: absolute;
+  top: -6px;
+  right: -6px;
   background: linear-gradient(135deg, #ff7c8a, #e91e63);
   color: white;
   font-size: 12px;
   padding: 2px 8px;
   border-radius: 20px;
-  margin-left: 8px;
   font-weight: bold;
   animation: fadeBlink 1.6s infinite;
-  vertical-align: middle;
 }
 
 @keyframes fadeBlink {
