@@ -554,11 +554,11 @@
 
   
 
+<form method="get" action="/admin0363/dashboard">
+  <input type="hidden" name="tab" value="members">
   <label style="margin-left: 10px;">會員名稱：</label>
-<input type="text" name="member_keyword" value="{{ request.args.get('member_keyword', '') }}" placeholder="輸入會員名稱" style="padding: 4px 8px;">
-
-<button type="submit" style="margin-left: 10px;">🔍 搜尋</button>
-
+  <input type="text" name="member_keyword" value="{{ request.args.get('member_keyword', '') }}" placeholder="輸入會員名稱" style="padding: 4px 8px;">
+  <button type="submit" style="margin-left: 10px;">🔍 搜尋</button>
 </form>
 
   {% for msg in messages %}

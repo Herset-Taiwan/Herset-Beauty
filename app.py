@@ -233,9 +233,14 @@ def admin_dashboard():
 
     if member_keyword:
         members = [
-            m for m in members
-            if member_keyword in (m.get("name", "").lower() + m.get("account", "").lower() + m.get("phone", "").lower())
+        m for m in members
+         if member_keyword in (
+            m.get("name", "").lower()
+            + m.get("account", "").lower()
+            + m.get("phone", "").lower()
+        )
     ]
+
 
 
     # ✅ 訂單
