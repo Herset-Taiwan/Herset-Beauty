@@ -457,7 +457,7 @@
 {% endif %}
     </div>
 
-{% if tab == "products" %}
+{% if tab == "products" and product_total_pages > 1 %}
   <div class="pagination">
     {% if product_page > 1 %}
       <a class="page-btn" href="?tab=products&page={{ product_page - 1 }}&page_size={{ product_page_size }}&keyword={{ request.args.get('keyword', '') }}{% for c in selected_categories %}&category={{ c }}{% endfor %}">← 上一頁</a>
@@ -470,6 +470,7 @@
     {% endif %}
   </div>
 {% endif %}
+
 
 
 

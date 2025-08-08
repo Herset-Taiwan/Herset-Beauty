@@ -946,7 +946,7 @@ def search_members():
         orders=[],
         members=members,
         messages=[],
-        product_page=1,
+        product_page=0,
         product_total_pages=1,
         product_page_size=10,
         msg_page=1,
