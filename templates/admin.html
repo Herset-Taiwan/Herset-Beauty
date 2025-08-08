@@ -381,11 +381,10 @@
 
   <label>分類篩選：</label>
   <select id="category-filter" name="category[]" multiple>
-    {% set all_categories = ['身體保養', '私密保養', '寵物友善', '品牌嚴選'] %}
-    {% for cat in all_categories %}
-      <option value="{{ cat }}" {% if cat in selected_categories %}selected{% endif %}>{{ cat }}</option>
-    {% endfor %}
-  </select>
+  {% for cat in ['身體保養', '私密保養', '寵物友善', '品牌嚴選'] %}
+    <option value="{{ cat }}" {% if cat in selected_categories %}selected{% endif %}>{{ cat }}</option>
+  {% endfor %}
+</select>
 
   <label style="margin-left: 20px;">商品名稱：</label>
   <input type="text" name="keyword" id="product-keyword" value="{{ request.args.get('keyword', '') }}" placeholder="輸入關鍵字" style="padding: 6px;">
@@ -407,17 +406,6 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-<script>
-  $(function () {
-    $('#category-filter').selectize({
-      plugins: ['remove_button'],
-      delimiter: ',',
-      persist: false,
-      create: true
-    });
-  });
-</script>
 
 
       <a href="/admin/new" class="add-btn">＋ 新增商品</a>
@@ -1168,13 +1156,12 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 <!-- 商品分類搜尋 -->
 <script>
-  $(function () {
-    // ✅ 綁定 Selectize 並在 onChange 時觸發 form submit
+    $(function () {
     $('#category-filter').selectize({
       plugins: ['remove_button'],
       delimiter: ',',
       persist: false,
-      onChange: function() {
+      onChange: function () {
         document.getElementById("product-search-form").submit();
       }
     });
