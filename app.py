@@ -229,7 +229,7 @@ def admin_dashboard():
             m["created_at"] = m.get("created_at", "—")
     member_dict = {m["id"]: m for m in members}
 
-    member_keyword = request.args.get("member_keyword", "").lower()
+    member_keyword = request.args.get("keyword", "").lower()
 
     if member_keyword:
         members = [
@@ -937,13 +937,7 @@ def block_admin_shortcut():
 #搜尋會員
 @app.route('/admin/members')
 def search_members():
-    keyword = request.args.get("keyword", "").strip()
-    query = supabase.table("members").select("id, username, account, phone, email, address, note, created_at")
-    if keyword:
-        query = query.or_(
-            f"account.ilike.%{keyword}%,username.ilike.%{keyword}%,phone.ilike.%{keyword}%,email.ilike.%{keyword}%"
-        )
-    members = query.execute().data or []
+    
 
     from pytz import timezone
     from dateutil import parser
