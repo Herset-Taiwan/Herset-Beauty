@@ -462,12 +462,13 @@
 
     <div id="members" class="tab-content">
       <h2>會員系統管理</h2>
-      <form class="search-form" method="GET" action="/admin/members">
-        <input type="text" id="member-search" placeholder="輸入帳號、姓名、電話或Email" style="padding: 6px; width: 250px; border-radius: 6px; border: 1px solid #ccc;">
+      <form id="member-search-form" method="GET" action="/admin0363/dashboard">
+  <input type="text" id="member-search" name="keyword" value="{{ request.args.get('keyword', '') }}"
+         placeholder="輸入帳號、姓名、電話或Email" style="padding: 6px; width: 250px; border-radius: 6px; border: 1px solid #ccc;">
 
-        <input type="hidden" name="tab" value="members">
-        <button type="submit">搜尋</button>
-      </form>
+  <input type="hidden" name="tab" value="members">
+</form>
+
 
       <div id="member-list">
   {% for m in members %}
@@ -1154,7 +1155,7 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
 </script>
-<!-- 商品分類搜尋 -->
+<!-- 搜尋 -->
 <script>
     $(function () {
     $('#category-filter').selectize({
@@ -1174,6 +1175,14 @@ document.addEventListener("DOMContentLoaded", function () {
       }, 500);
     });
   });
+
+  // 會員搜尋：輸入自動送出
+document.getElementById("member-search").addEventListener("input", function () {
+  clearTimeout(window.memberSearchTimer);
+  window.memberSearchTimer = setTimeout(() => {
+    document.getElementById("member-search-form").submit();
+  }, 500);
+});
 </script>
 
 
