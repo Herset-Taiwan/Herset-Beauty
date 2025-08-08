@@ -357,7 +357,7 @@ def admin_dashboard():
         msg_page=msg_page,
         msg_total_pages=msg_total_pages,
         order_page=order_page,
-        order_total_count=order_total_count
+        order_total_count=order_total_count,
         question_types=question_types
     )
 
