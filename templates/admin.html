@@ -376,7 +376,7 @@
 
     <div id="products" class="tab-content active">
       <h2>商品管理</h2>
-<form method="GET" action="/admin0363/dashboard" style="margin-bottom: 20px;">
+<form id="product-search-form" method="GET" action="/admin0363/dashboard" style="margin-bottom: 20px;">
   <input type="hidden" name="tab" value="products">
 
   <label>分類篩選：</label>
@@ -388,18 +388,16 @@
   </select>
 
   <label style="margin-left: 20px;">商品名稱：</label>
-  <input type="text" name="keyword" value="{{ request.args.get('keyword', '') }}" placeholder="輸入關鍵字">
+  <input type="text" name="keyword" id="product-keyword" value="{{ request.args.get('keyword', '') }}" placeholder="輸入關鍵字" style="padding: 6px;">
 
   <label style="margin-left: 20px;">每頁顯示：</label>
-  <select name="page_size" onchange="this.form.submit()">
+  <select name="page_size" onchange="document.getElementById('product-search-form').submit()">
     {% set page_size = request.args.get('page_size', '10') %}
     <option value="5" {% if page_size == '5' %}selected{% endif %}>5</option>
     <option value="10" {% if page_size == '10' %}selected{% endif %}>10</option>
     <option value="20" {% if page_size == '20' %}selected{% endif %}>20</option>
     <option value="50" {% if page_size == '50' %}selected{% endif %}>50</option>
   </select>
-
-  <button type="submit" style="margin-left: 10px;">搜尋</button>
 </form>
 
 
@@ -1158,7 +1156,21 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 </script>
+<!-- 商品搜尋 -->
+ <script>
+  document.getElementById("product-keyword").addEventListener("input", function () {
+    clearTimeout(window.keywordSearchTimer);
+    window.keywordSearchTimer = setTimeout(() => {
+      document.getElementById("product-search-form").submit();
+    }, 500); // 延遲 0.5 秒避免輸入過快導致太多請求
+  });
 
+  document.getElementById("category-filter").addEventListener("change", function () {
+    document.getElementById("product-search-form").submit();
+  });
+</script>
+
+ 
 
 
 </body>
