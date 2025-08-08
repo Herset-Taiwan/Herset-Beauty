@@ -200,9 +200,10 @@ def admin_dashboard():
     product_end = product_start + product_page_size
 
     product_query = supabase.table("products").select("*")
+
     if selected_categories:
-        for cat in selected_categories:
-            query = query.or_(f"categories.cs.{json.dumps([cat])}")
+        filters = [f"categories.cs.{json.dumps([cat])}" for cat in selected_categories]
+        product_query = product_query.or_(','.join(filters))
 
 
     all_products = product_query.execute().data or []
