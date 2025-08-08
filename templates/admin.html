@@ -545,13 +545,13 @@
   </select>
 
   <label style="margin-left: 10px;">問題類型：</label>
-  <select name="type" onchange="this.form.submit()">
-    <option value="">全部</option>
-    {% set all_types = messages | map(attribute='type') | unique %}
-    {% for t in all_types %}
-      <option value="{{ t }}" {% if request.args.get('type') == t %}selected{% endif %}>{{ t }}</option>
-    {% endfor %}
-  </select>
+<select name="type" onchange="this.form.submit()">
+  <option value="">全部</option>
+  {% for t in question_types %}
+    <option value="{{ t }}" {% if request.args.get('type') == t %}selected{% endif %}>{{ t }}</option>
+  {% endfor %}
+</select>
+
 </form>
 
 
