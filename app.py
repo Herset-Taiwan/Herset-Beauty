@@ -190,7 +190,8 @@ def admin_dashboard():
 
     tz = timezone("Asia/Taipei")
     tab = request.args.get("tab", "products")  # ✅ 提前定義 tab
-    selected_categories = request.args.getlist("category")
+    selected_categories = request.args.getlist("category[]")
+
 
     # ✅ 商品：搜尋 + 分頁
     product_keyword = request.args.get("keyword", "").lower()
