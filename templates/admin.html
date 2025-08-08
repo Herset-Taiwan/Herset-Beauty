@@ -1165,12 +1165,31 @@ document.addEventListener("DOMContentLoaded", function () {
     }, 500); // 延遲 0.5 秒避免輸入過快導致太多請求
   });
 
-  document.getElementById("category-filter").addEventListener("change", function () {
-    document.getElementById("product-search-form").submit();
+</script>
+<!-- 商品分類搜尋 -->
+ <script>
+  $(function () {
+    const selectize = $('#category-filter').selectize({
+      plugins: ['remove_button'],
+      delimiter: ',',
+      persist: false,
+      create: true,
+      onChange: function() {
+        // ✅ 每次分類變動就送出表單
+        document.getElementById("product-search-form").submit();
+      }
+    });
+
+    // 文字搜尋延遲送出
+    document.getElementById("product-keyword").addEventListener("input", function () {
+      clearTimeout(window.keywordSearchTimer);
+      window.keywordSearchTimer = setTimeout(() => {
+        document.getElementById("product-search-form").submit();
+      }, 500);
+    });
   });
 </script>
 
- 
 
 
 </body>
