@@ -229,6 +229,15 @@ def admin_dashboard():
             m["created_at"] = m.get("created_at", "—")
     member_dict = {m["id"]: m for m in members}
 
+    member_keyword = request.args.get("member_keyword", "").lower()
+
+    if member_keyword:
+        members = [
+            m for m in members
+            if member_keyword in (m.get("name", "").lower() + m.get("account", "").lower() + m.get("phone", "").lower())
+    ]
+
+
     # ✅ 訂單
     order_page = int(request.args.get("order_page", 1))
     order_page_size = int(request.args.get("order_page_size", 20))

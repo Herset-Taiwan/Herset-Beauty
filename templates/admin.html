@@ -381,7 +381,7 @@
 
   <label>分類篩選：</label>
   <select id="category-filter" name="category[]" multiple>
-  {% for cat in ['身體保養', '私密保養', '寵物友善', '品牌嚴選'] %}
+  {% for cat in ['身體保養', '生活香氛', '寵物友善', '品牌嚴選'] %}
     <option value="{{ cat }}" {% if cat in selected_categories %}selected{% endif %}>{{ cat }}</option>
   {% endfor %}
 </select>
@@ -555,9 +555,10 @@
   
 
   <label style="margin-left: 10px;">會員名稱：</label>
-  <input type="text" name="keyword" value="{{ request.args.get('keyword', '') }}" placeholder="輸入會員名稱" style="padding: 4px 8px;">
+<input type="text" name="member_keyword" value="{{ request.args.get('member_keyword', '') }}" placeholder="輸入會員名稱" style="padding: 4px 8px;">
 
-  <button type="submit" style="margin-left: 10px;">🔍 搜尋</button>
+<button type="submit" style="margin-left: 10px;">🔍 搜尋</button>
+
 </form>
 
   {% for msg in messages %}
