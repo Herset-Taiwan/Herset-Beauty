@@ -358,6 +358,7 @@ def admin_dashboard():
         msg_total_pages=msg_total_pages,
         order_page=order_page,
         order_total_count=order_total_count
+        question_types=question_types
     )
 
     session["seen_orders"] = True
