@@ -341,7 +341,7 @@ def admin_dashboard():
     show_message_alert = new_message_alert and not session.get("seen_messages")
 
     # ✅ 回傳前再標記為已讀
-    question_types = ["商品問題", "訂單問題", "其他問題"]
+    question_types = ["商品問題", "訂單問題", "其他"]
     response = render_template("admin.html",
         tab=tab,
         selected_categories=selected_categories,
