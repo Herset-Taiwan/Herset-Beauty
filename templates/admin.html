@@ -524,33 +524,36 @@
 <div id="messages" class="tab-content">
   <h2>留言管理</h2>
   <!-- 留言搜尋功能 -->
-    <form method="GET" action="/admin0363/dashboard" style="margin-bottom: 20px;">
+<form method="GET" action="/admin0363/dashboard" style="margin-bottom: 20px;">
   <input type="hidden" name="tab" value="messages">
+
   <label style="margin-left: 10px;">每頁顯示：</label>
-<select name="msg_page_size" onchange="this.form.submit()">
-  {% set selected_size = request.args.get('msg_page_size', '10') %}
-  <option value="5" {% if selected_size == '5' %}selected{% endif %}>5</option>
-  <option value="10" {% if selected_size == '10' %}selected{% endif %}>10</option>
-  <option value="20" {% if selected_size == '20' %}selected{% endif %}>20</option>
-  <option value="50" {% if selected_size == '50' %}selected{% endif %}>50</option>
-</select>
-筆
-  <label>回覆狀態：</label>
-  <select name="reply_status">
+  <select name="msg_page_size" onchange="this.form.submit()">
+    {% set selected_size = request.args.get('msg_page_size', '10') %}
+    <option value="5" {% if selected_size == '5' %}selected{% endif %}>5</option>
+    <option value="10" {% if selected_size == '10' %}selected{% endif %}>10</option>
+    <option value="20" {% if selected_size == '20' %}selected{% endif %}>20</option>
+    <option value="50" {% if selected_size == '50' %}selected{% endif %}>50</option>
+  </select>
+  筆
+
+  <label style="margin-left: 10px;">回覆狀態：</label>
+  <select name="reply_status" onchange="this.form.submit()">
     <option value="all">全部</option>
     <option value="replied" {% if request.args.get('reply_status') == 'replied' %}selected{% endif %}>已回覆</option>
     <option value="unreplied" {% if request.args.get('reply_status') == 'unreplied' %}selected{% endif %}>未回覆</option>
   </select>
 
   <label style="margin-left: 10px;">問題類型：</label>
-  <select name="type">
+  <select name="type" onchange="this.form.submit()">
     <option value="">全部</option>
     {% set all_types = messages | map(attribute='type') | unique %}
     {% for t in all_types %}
       <option value="{{ t }}" {% if request.args.get('type') == t %}selected{% endif %}>{{ t }}</option>
     {% endfor %}
-
   </select>
+</form>
+
 
   
 

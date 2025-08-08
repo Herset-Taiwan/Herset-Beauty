@@ -292,83 +292,86 @@ def admin_dashboard():
             o["created_local"] = o["created_at"]
         orders.append(o)
 
-    # ✅ 留言 + 分頁
-    reply_status = request.args.get("reply_status", "all")
-    msg_type = request.args.get("type", "")
-    msg_keyword = request.args.get("keyword", "").lower()
-    msg_page = int(request.args.get("msg_page", 1))
-    msg_page_size = int(request.args.get("msg_page_size", 10))
-    msg_start = (msg_page - 1) * msg_page_size
-    msg_end = msg_start + msg_page_size - 1
+# ✅ 留言 + 分頁（先全部抓，篩選後再分頁）
+reply_status = request.args.get("reply_status", "all")
+msg_type = request.args.get("type", "")
+msg_keyword = request.args.get("keyword", "").lower()
+msg_page = int(request.args.get("msg_page", 1))
+msg_page_size = int(request.args.get("msg_page_size", 10))
 
-    total_count_res = supabase.table("messages").select("id", count="exact").execute()
-    msg_total_count = total_count_res.count or 0
-    msg_total_pages = max(1, (msg_total_count + msg_page_size - 1) // msg_page_size)
+# 抓所有留言
+all_messages = supabase.table("messages") \
+    .select("*") \
+    .order("created_at", desc=True) \
+    .execute().data or []
 
-    messages_res = supabase.table("messages") \
-        .select("*") \
-        .order("created_at", desc=True) \
-        .range(msg_start, msg_end) \
-        .execute()
+# 預先補上 member_name
+member_ids = list({m['member_id'] for m in all_messages})
+name_map = {}
+if member_ids:
+    members_res = supabase.table("members").select("id, name").in_("id", member_ids).execute().data or []
+    name_map = {m['id']: m['name'] for m in members_res}
+for m in all_messages:
+    m["member_name"] = name_map.get(m.get("member_id"), "未知")
+    m["is_new"] = bool(not m.get("is_replied") and not session.get("seen_messages"))
+    try:
+        utc_dt = parser.parse(m["created_at"])
+        m["local_created_at"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M")
+    except:
+        m["local_created_at"] = m["created_at"]
 
-    member_ids = list({m['member_id'] for m in messages_res.data})
-    name_map = {}
-    if member_ids:
-        members_res = supabase.table("members").select("id, name").in_("id", member_ids).execute()
-        name_map = {m['id']: m['name'] for m in members_res.data}
-
-    filtered_messages = []
-    for m in messages_res.data:
-        m["member_name"] = name_map.get(m["member_id"], "未知")
-        m["is_new"] = bool(not m.get("is_replied") and not session.get("seen_messages"))
-
-        try:
-            utc_dt = parser.parse(m["created_at"])
-            m["local_created_at"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M")
-        except:
-            m["local_created_at"] = m["created_at"]
-
-        match_status = (
-            reply_status == "all" or
-            (reply_status == "replied" and m.get("is_replied")) or
-            (reply_status == "unreplied" and not m.get("is_replied"))
-        )
-        match_type = not msg_type or m.get("type") == msg_type
-        match_name = not msg_keyword or msg_keyword in m.get("member_name", "").lower()
-
-        if match_status and match_type and match_name:
-            filtered_messages.append(m)
-
-    paged_messages = filtered_messages
-
-    # ✅ 提示狀態（在標記已讀前判斷）
-    new_order_alert = any(o.get("status") != "shipped" for o in orders)
-    new_message_alert = any(not m.get("is_replied") for m in messages_res.data)
-    show_order_alert = new_order_alert and not session.get("seen_orders")
-    show_message_alert = new_message_alert and not session.get("seen_messages")
-
-    # ✅ 回傳前再標記為已讀，避免影響判斷
-    response = render_template("admin.html",
-        tab=tab,
-        selected_categories=selected_categories,
-        products=products,
-        product_page=product_page,
-        product_total_pages=product_total_pages,
-        product_page_size=product_page_size,
-        members=members,
-        orders=orders,
-        messages=paged_messages,
-        new_order_alert=show_order_alert,
-        new_message_alert=show_message_alert,
-        msg_page=msg_page,
-        msg_total_pages=msg_total_pages,
-        order_page=order_page,
-        order_total_count=order_total_count
+# 篩選符合條件的留言
+filtered_messages = []
+for m in all_messages:
+    match_status = (
+        reply_status == "all" or
+        (reply_status == "replied" and m.get("is_replied")) or
+        (reply_status == "unreplied" and not m.get("is_replied"))
     )
+    match_type = not msg_type or m.get("type") == msg_type
+    match_name = not msg_keyword or msg_keyword in (m.get("member_name") or "").lower()
 
-    session["seen_orders"] = True
-    session["seen_messages"] = True
-    return response
+    if match_status and match_type and match_name:
+        filtered_messages.append(m)
+
+# 分頁處理
+msg_total_count = len(filtered_messages)
+msg_total_pages = max(1, (msg_total_count + msg_page_size - 1) // msg_page_size)
+msg_start = (msg_page - 1) * msg_page_size
+msg_end = msg_start + msg_page_size
+paged_messages = filtered_messages[msg_start:msg_end]
+
+# ✅ 提示狀態（在標記已讀前判斷）
+new_order_alert = any(o.get("status") != "shipped" for o in orders)
+new_message_alert = any(not m.get("is_replied") for m in all_messages)
+show_order_alert = new_order_alert and not session.get("seen_orders")
+show_message_alert = new_message_alert and not session.get("seen_messages")
+
+# ✅ 回傳前再標記為已讀，避免影響判斷
+response = render_template("admin.html",
+    tab=tab,
+    selected_categories=selected_categories,
+    products=products,
+    product_page=product_page,
+    product_total_pages=product_total_pages,
+    product_page_size=product_page_size,
+    members=members,
+    orders=orders,
+    messages=paged_messages,
+    new_order_alert=show_order_alert,
+    new_message_alert=show_message_alert,
+    msg_page=msg_page,
+    msg_total_pages=msg_total_pages,
+    order_page=order_page,
+    order_total_count=order_total_count
+)
+
+session["seen_orders"] = True
+session["seen_messages"] = True
+return response
+
+
+
 
 
 
