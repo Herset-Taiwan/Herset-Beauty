@@ -229,17 +229,17 @@ def admin_dashboard():
             m["created_at"] = m.get("created_at", "—")
     member_dict = {m["id"]: m for m in members}
 
-    member_keyword = request.args.get("keyword", "").lower()
+    member_keyword = request.args.get("member_keyword", "").lower()
 
     if member_keyword:
         members = [
-        m for m in members
-         if member_keyword in (
-            m.get("name", "").lower()
-            + m.get("account", "").lower()
-            + m.get("phone", "").lower()
-        )
-    ]
+            m for m in members
+            if member_keyword in (m.get("account") or "").lower()
+            or member_keyword in (m.get("name") or "").lower()
+            or member_keyword in (m.get("username") or "").lower()
+            or member_keyword in (m.get("phone") or "").lower()
+            or member_keyword in (m.get("email") or "").lower()
+        ]
 
 
 
