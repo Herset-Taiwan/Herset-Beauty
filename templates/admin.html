@@ -380,7 +380,7 @@
   <input type="hidden" name="tab" value="products">
 
   <label>分類篩選：</label>
-  <select id="category-filter" name="category" multiple>
+  <select id="category-filter" name="category[]" multiple>
     {% set all_categories = ['身體保養', '私密保養', '寵物友善', '品牌嚴選'] %}
     {% for cat in all_categories %}
       <option value="{{ cat }}" {% if cat in selected_categories %}selected{% endif %}>{{ cat }}</option>
@@ -1167,20 +1167,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
 </script>
 <!-- 商品分類搜尋 -->
- <script>
+<script>
   $(function () {
-    const selectize = $('#category-filter').selectize({
+    // ✅ 綁定 Selectize 並在 onChange 時觸發 form submit
+    $('#category-filter').selectize({
       plugins: ['remove_button'],
       delimiter: ',',
       persist: false,
-      create: true,
       onChange: function() {
-        // ✅ 每次分類變動就送出表單
         document.getElementById("product-search-form").submit();
       }
     });
 
-    // 文字搜尋延遲送出
+    // ✅ 關鍵字輸入延遲觸發 submit
     document.getElementById("product-keyword").addEventListener("input", function () {
       clearTimeout(window.keywordSearchTimer);
       window.keywordSearchTimer = setTimeout(() => {
@@ -1189,6 +1188,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 </script>
+
 
 
 
