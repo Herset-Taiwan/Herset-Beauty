@@ -8,6 +8,9 @@ from dateutil import parser
 from pytz import timezone
 from dotenv import load_dotenv
 from uuid import uuid4
+from datetime import datetime
+from pytz import timezone
+from werkzeug.security import generate_password_hash
 import os
 import tempfile
 import urllib.parse
@@ -490,44 +493,60 @@ def get_profile():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if request.method == 'POST':
-        account = request.form['account']
-        email = request.form['email']
-        password = request.form['password']
-        username = account
+    if request.method == 'GET':
+        return render_template("register.html")
 
-        # 檢查帳號是否已存在
-        exist = supabase.table("members").select("account").eq("account", account).execute()
-        if exist.data:
-            return render_template("register.html", error="此帳號已被使用")
+    # --- POST: 註冊 ---
+    account  = (request.form.get('account')  or '').strip()
+    email    = (request.form.get('email')    or '').strip()
+    password = (request.form.get('password') or '').strip()
+    username = account
 
-        try:
-            # 不給 id，讓 Supabase 自動產生
-            response = supabase.table("members").insert({
-                "account": account,
-                "email": email,
-                "password": password,
-                "username": username,
-                "created_at": datetime.now(tz).isoformat()
-            }).execute()
+    # 基本檢查
+    if not account or not email or not password:
+        return render_template("register.html", error="請完整填寫帳號、Email 與密碼")
 
-            # 🔍 印出結果確認
-            print("✅ 註冊成功：", response)
+    # 定義時區（修正 tz 未定義）
+    tz = timezone("Asia/Taipei")
+    # 建議寫入 UTC（資料庫排序/比較較穩定）
+    created_at = datetime.utcnow().isoformat() + "Z"
 
-            # 直接登入（可選）
-            session['user'] = {
-                'account': account,
-                'email': email
-            }
-            session['member_id'] = response.data[0]['id']  # 🟢 儲存真正由 Supabase 產生的 ID
+    # 帳號或 Email 是否已存在
+    dup = (
+        supabase.table("members")
+        .select("id")
+        .or_(f"account.eq.{account},email.eq.{email}")
+        .limit(1)
+        .execute()
+        .data or []
+    )
+    if dup:
+        return render_template("register.html", error="此帳號或 Email 已被使用")
 
-            return render_template("register_success.html")
+    try:
+        # 密碼雜湊（不要存明碼）
+        pwd_hash = generate_password_hash(password)
 
-        except Exception as e:
-            print("🚨 註冊錯誤：", e)
-            return render_template("register.html", error="註冊失敗，請稍後再試")
+        # 寫入資料庫
+        res = supabase.table("members").insert({
+            "account": account,
+            "email": email,
+            "password": pwd_hash,     # 若你資料表欄位叫 password_hash，這行改成 "password_hash": pwd_hash
+            "username": username,
+            "created_at": created_at, # 若 DB 有自動時間，可拿掉這行
+        }).execute()
 
-    return render_template("register.html")
+        # 直接登入（可選）
+        row = res.data[0]
+        session['user'] = {'account': row['account'], 'email': row['email']}
+        session['member_id'] = row['id']
+
+        return render_template("register_success.html")
+
+    except Exception as e:
+        app.logger.error(f"🚨 註冊錯誤：{e}")
+        return render_template("register.html", error="註冊失敗，請稍後再試")
+
 
 
 
