@@ -18,6 +18,7 @@ import hashlib
 import random
 import time
 import uuid
+from flask import redirect
 
 from utils import generate_check_mac_value, generate_ecpay_form
 
@@ -481,13 +482,16 @@ def get_profile():
     if 'member_id' not in session:
         return jsonify({})  # 未登入就回空物件
 
-    member_id = str(UUID(session['member_id']))
-    res = supabase.table("members").select("name, phone, address, note").eq("id", member_id).execute()
+    member_id = session['member_id']  # 直接拿字串，不要轉 UUID
+    res = (
+        supabase.table("members")
+        .select("name, phone, address, note")
+        .eq("id", member_id)
+        .execute()
+    )
 
-    if res.data:
-        return jsonify(res.data[0])
-    else:
-        return jsonify({})
+    return jsonify(res.data[0] if res.data else {})
+
 
 
 
@@ -1389,7 +1393,7 @@ def return_policy():
 def contact():
     return render_template("contact.html")
 
-from flask import redirect
+
 
 # 把舊網址導向正確網址
 @app.route('/elementor-28/')

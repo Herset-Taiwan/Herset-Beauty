@@ -68,7 +68,7 @@
           <a href="#">👤 會員中心</a>
           <ul class="dropdown-menu">
             <li><a href="/order-history">歷史訂單</a></li>
-            <li><a href="#" onclick="openProfileModal()">會員資料</a></li>
+            <li><a href="#" id="open-profile-link">會員資料</a></li>
             <li><a href="/member/messages">📨 我的留言</a></li>
             <li><a href="/change-password">🔒 修改密碼</a></li>
             <li><a href="/logout">登出</a></li>
@@ -178,7 +178,8 @@
 </footer>
 
 <!-- 會員資料 Modal -->
-<div id="profile-modal" class="modal">
+<div id="profile-modal" class="modal" style="display:none;">
+
   <div class="modal-content profile-form">
     <span class="close-btn" onclick="closeProfileModal()">&times;</span>
     <h2>會員資料</h2>
@@ -220,27 +221,56 @@
 
 
 <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const link = document.getElementById('open-profile-link');
+    if (link) {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();     // 阻止 # 捲到頁頂或收合衝突
+        openProfileModal();     // 開啟會員資料
+      });
+    }
+  });
+</script>
+
 <script>
 let initialProfileData = {};
 let pendingClose = false;
 
-function openProfileModal() {
-  fetch('/get_profile')
-    .then(res => res.json())
-    .then(data => {
-      document.getElementById("name").value = data.name || '';
-      document.getElementById("phone").value = data.phone || '';
-      document.getElementById("address").value = data.address || '';
-      document.getElementById("note").value = data.note || '';
+async function openProfileModal() {
+  const modal = document.getElementById("profile-modal");
+  if (!modal) return;
 
-      initialProfileData = {
-        name: data.name || '',
-        phone: data.phone || '',
-        address: data.address || ''
-      };
+  // 先打開，讓使用者有感（即使資料抓不到也會再關掉並導向）
+  modal.style.display = "block";
 
-      document.getElementById("profile-modal").style.display = "block";
-    });
+  try {
+    const res = await fetch('/get_profile', { credentials: 'same-origin' });
+
+    // 非 2xx 或被 302 導到 HTML（非 JSON）
+    if (!res.ok) throw new Error('not-ok');
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) throw new Error('not-json');
+
+    const data = await res.json();
+
+    document.getElementById("name").value    = data.name    || '';
+    document.getElementById("phone").value   = data.phone   || '';
+    document.getElementById("address").value = data.address || '';
+    document.getElementById("note").value    = data.note    || '';
+
+    // 紀錄初始值供關閉時比對
+    window.initialProfileData = {
+      name:    (data.name    || '').trim(),
+      phone:   (data.phone   || '').trim(),
+      address: (data.address || '').trim()
+    };
+  } catch (e) {
+    // 關掉 modal → 導向登入（帶 next）
+    modal.style.display = "none";
+    window.location.href = '/login?next=profile';
+  }
 }
 
 function closeProfileModal() {
