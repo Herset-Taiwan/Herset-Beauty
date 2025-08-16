@@ -91,6 +91,15 @@
   </nav>
 </header>
 
+{% if session.get('incomplete_profile') %}
+<div id="incomplete-banner" style="background:#fff3f3;border:1px solid #f6c1c7;color:#a7334a;padding:10px 14px;margin:10px auto;max-width:1100px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;gap:12px;">
+  <div>🔔 您的會員資料尚未完整（姓名、電話、地址）。請盡快補填以便順利配送。</div>
+  <div style="display:flex;gap:8px;">
+    <button onclick="openProfileModal()" style="padding:8px 14px;border:none;border-radius:8px;background:#C6456C;color:#fff;font-weight:bold;cursor:pointer;">立即補填</button>
+    <button onclick="document.getElementById('incomplete-banner').style.display='none'" style="padding:8px 12px;border:1px solid #d8b3b9;border-radius:8px;background:#fff;cursor:pointer;">稍後</button>
+  </div>
+</div>
+{% endif %}
 
 
 
@@ -186,15 +195,15 @@
     <form action="/profile" method="POST">
       <div class="form-group">
         <label for="name">姓名：</label>
-        <input type="text" id="name" name="name" required>
+        <input type="text" id="name" name="name" autocomplete="name" required>
       </div>
       <div class="form-group">
         <label for="phone">電話：</label>
-        <input type="text" id="phone" name="phone" required>
+        <input type="text" id="phone" name="phone" autocomplete="tel" required>
       </div>
       <div class="form-group">
         <label for="address">地址：</label>
-        <input type="text" id="address" name="address" required>
+        <input type="text" id="address" name="address" autocomplete="street-address" required>
       </div>
       <div class="form-group">
         <label for="note">訂單備註：</label>
@@ -228,11 +237,27 @@
     if (link) {
       link.addEventListener('click', (e) => {
         e.preventDefault();     // 阻止 # 捲到頁頂或收合衝突
+        e.stopPropagation();
         openProfileModal();     // 開啟會員資料
       });
     }
   });
 </script>
+
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const needFill = {{ 'true' if session.get('incomplete_profile') else 'false' }};
+    if (needFill) {
+      setTimeout(() => {
+        const modal = document.getElementById('profile-modal');
+        if (modal && modal.style.display !== 'block') {
+          try { openProfileModal(); } catch(_) {}
+        }
+      }, 400);
+    }
+  });
+</script>
+
 
 <script>
 let initialProfileData = {};
@@ -259,6 +284,11 @@ async function openProfileModal() {
     document.getElementById("phone").value   = data.phone   || '';
     document.getElementById("address").value = data.address || '';
     document.getElementById("note").value    = data.note    || '';
+
+    // ✅【新增】打開後自動聚焦到第一個空欄位
+  const order = ["name","phone","address"];
+  const target = order.find(id => !(document.getElementById(id).value || '').trim()) || "name";
+  document.getElementById(target).focus();
 
     // 紀錄初始值供關閉時比對
     window.initialProfileData = {
@@ -314,6 +344,96 @@ function cancelCloseProfile() {
   pendingClose = false;
 }
 </script>
+
+
+<script>
+  // ✅ 點擊遮罩區關閉（會走 closeProfileModal 的驗證流程）
+  document.addEventListener('click', (e) => {
+    const modal = document.getElementById('profile-modal');
+    if (!modal || modal.style.display !== 'block') return;
+    const content = modal.querySelector('.modal-content');
+    if (e.target === modal && !content.contains(e.target)) {
+      closeProfileModal();
+    }
+  });
+
+  // ✅ 按 ESC 關閉
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeProfileModal();
+  });
+</script>
+
+<!-- 攔截「會員資料」表單提交，改用 fetch 送出 -->
+ <script>
+// 會員資料表單 AJAX 提交
+window.addEventListener('DOMContentLoaded', () => {
+  const form = document.querySelector('#profile-modal form');
+  if (!form) return;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    // 簡單前端驗證
+    if (!form.reportValidity()) return;
+
+    const fd = new FormData(form);
+    const body = new URLSearchParams();
+    for (const [k, v] of fd.entries()) body.append(k, v);
+
+    try {
+      const res = await fetch('/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body
+      });
+
+      // 允許後端回 200 JSON 或 302 redirect；若非 2xx 視為失敗
+      if (!res.ok) throw new Error('bad-status');
+
+      // 嘗試解析 JSON（若後端改成 redirect 也不會壞）
+      let json = {};
+      try { json = await res.json(); } catch (_) {}
+
+      if (json.success === false) throw new Error(json.message || 'update-failed');
+
+      // ✅ 成功：關閉 Modal、移除引導條、顯示成功提示
+      document.getElementById('profile-modal').style.display = 'none';
+
+      const banner = document.getElementById('incomplete-banner');
+      if (banner) banner.style.display = 'none';
+
+      const toast = document.getElementById('toast-message') || document.getElementById('save-success');
+      if (toast) {
+        // 若是 toast-message：走你既有的樣式
+        if (toast.id === 'toast-message') {
+          toast.textContent = '會員資料已更新完成';
+          toast.style.display = 'block';
+          toast.style.backgroundColor = '#c08474';
+          setTimeout(() => {
+            toast.style.opacity = 0;
+            setTimeout(() => { toast.style.display = 'none'; toast.style.opacity = 1; }, 1000);
+          }, 3000);
+        } else {
+          // 頁首固定的 save-success 提示方塊
+          toast.style.display = 'block';
+          setTimeout(() => { toast.style.display = 'none'; }, 1800);
+        }
+      }
+
+      // 更新初始值，避免立刻關閉時被當成「未儲存變更」
+      window.initialProfileData = {
+        name: (document.getElementById('name').value || '').trim(),
+        phone: (document.getElementById('phone').value || '').trim(),
+        address: (document.getElementById('address').value || '').trim()
+      };
+
+    } catch (err) {
+      alert('儲存失敗，請稍後再試');
+    }
+  });
+});
+</script>
+
 
 <script>
 function loadCategory(categoryName) {

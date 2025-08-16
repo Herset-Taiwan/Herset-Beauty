@@ -480,17 +480,20 @@ def login():
 @app.route('/get_profile')
 def get_profile():
     if 'member_id' not in session:
-        return jsonify({})  # 未登入就回空物件
+        # ✅ 未登入 → 回 401，讓前端知道要跳去登入
+        return jsonify({"error": "unauthorized"}), 401
 
-    member_id = session['member_id']  # 直接拿字串，不要轉 UUID
+    member_id = session['member_id']  # 直接拿字串即可
     res = (
         supabase.table("members")
         .select("name, phone, address, note")
         .eq("id", member_id)
+        .limit(1)
         .execute()
     )
 
     return jsonify(res.data[0] if res.data else {})
+
 
 
 
@@ -1264,6 +1267,34 @@ def profile_data():
         return jsonify(success=False, message="No data found")
 
     return jsonify(success=True, data=res.data[0])
+
+# 儲存會員資料
+@app.route('/profile', methods=['POST'])
+def save_profile():
+    if 'member_id' not in session:
+        return jsonify(success=False, message="Not logged in")
+
+    member_id = session['member_id']
+    name = (request.form.get('name') or '').strip()
+    phone = (request.form.get('phone') or '').strip()
+    address = (request.form.get('address') or '').strip()
+    note = (request.form.get('note') or '').strip()
+
+    try:
+        supabase.table("members").update({
+            "name": name,
+            "phone": phone,
+            "address": address,
+            "note": note
+        }).eq("id", member_id).execute()
+
+        # ✅ 儲存成功後清掉 incomplete_profile 旗標
+        session.pop('incomplete_profile', None)
+
+        return jsonify(success=True, message="Profile updated successfully")
+    except Exception as e:
+        return jsonify(success=False, message=str(e))
+
 
 # 會員歷史訂單路由
 @app.route('/order/<int:order_id>')

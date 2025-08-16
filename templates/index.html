@@ -83,24 +83,7 @@
   <p id="banner-desc">專為敏感肌設計的私密保養系列</p>
 </section>
 
-<!-- 補填會員資料提示 -->
-{% if session.get('incomplete_profile') %}
-<div id="incomplete-popup" class="modal" style="top: 30%; left: 50%; transform: translate(-50%, -50%);">
-  <div class="modal-content" style="text-align:center;">
-    <h3>請補充會員資料</h3>
-    <p>請輸入您的姓名、電話與地址，以便順利配送商品。</p>
-    <button onclick="document.getElementById('incomplete-popup').style.display='none'; openProfileModal()" style="
-      padding: 10px 20px;
-      background-color: #C6456C;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;">立即補填資料</button>
-  </div>
-</div>
 
-{% endif %}
 
 
 {% endblock %}
