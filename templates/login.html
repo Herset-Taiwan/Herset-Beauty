@@ -103,14 +103,18 @@
     <h2>登入帳號</h2>
     {% if error %}<div class="error-message">{{ error }}</div>{% endif %}
     <form method="POST">
+      <!-- ✅ 保留 next 參數 -->
+      <input type="hidden" name="next" value="{{ next or '' }}">
+
       <input type="text" name="account" placeholder="帳號" required>
       <input type="password" name="password" placeholder="密碼" required>
       <button type="submit">登入</button>
     </form>
-<div class="link">
-  <p>尚未註冊？<a href="/register">註冊新帳號</a></p>
-  <p>忘記密碼？<a href="/forgot">找回密碼</a></p>
-</div>
+
+    <div class="link">
+      <p>尚未註冊？<a href="/register">註冊新帳號</a></p>
+      <p>忘記密碼？<a href="/forgot">找回密碼</a></p>
+    </div>
     <div class="back-home">
       <a href="/">返回主頁</a>
     </div>
