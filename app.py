@@ -11,7 +11,6 @@ from uuid import uuid4
 from datetime import datetime
 from pytz import timezone
 from werkzeug.security import generate_password_hash
-from werkzeug.security import check_password_hash, generate_password_hash
 import os
 import tempfile
 import urllib.parse
@@ -26,9 +25,7 @@ from utils import generate_check_mac_value, generate_ecpay_form
 load_dotenv()
 
 
-def _looks_hashed(pwd: str) -> bool:
-    return isinstance(pwd, str) and (pwd.startswith("pbkdf2:") or pwd.startswith("scrypt:"))   
- 
+    
 def generate_check_mac_value(params, hash_key, hash_iv):
     # 1. 將參數依照字母順序排列
     sorted_params = sorted(params.items())
@@ -447,73 +444,36 @@ def reset_password():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    # 取得 next 參數（GET 或 POST 都接）
-    next_page = request.values.get('next')  # 例如 ?next=cart
+    next_page = request.args.get('next')  # 例如 ?next=cart
 
-    if request.method == 'GET':
-        # 把 next 傳回頁面，讓表單可用 hidden 帶回來
-        return render_template("login.html", next=next_page)
+    if request.method == 'POST':
+        account = request.form.get('account')
+        password = request.form.get('password')
 
-    # --- POST: 驗證登入 ---
-    account  = (request.form.get('account')  or '').strip()
-    password = (request.form.get('password') or '').strip()
+        if not account or not password:
+            return render_template("login.html", error="請輸入帳號與密碼")
 
-    if not account or not password:
-        return render_template("login.html", error="請輸入帳號與密碼", next=next_page)
+        res = supabase.table("members") \
+            .select("id, account, password, name, phone, address") \
+            .eq("account", account).execute()
 
-    # 只示範依帳號查（若要支援 email，可改成 or_ 條件）
-    res = (
-        supabase.table("members")
-        .select("id, account, password, email, name, phone, address")
-        .eq("account", account)
-        .limit(1)
-        .execute()
-    )
-    rows = res.data or []
-    if not rows:
-        return render_template("login.html", error="帳號或密碼錯誤", next=next_page)
+        if res.data and res.data[0]['password'] == password:
+            user = res.data[0]
+            session['user'] = user
+            session['member_id'] = user['id']
 
-    user = rows[0]
-    stored = user.get('password') or ''
+            # ✅ 判斷是否有缺資料
+            if not user.get('name') or not user.get('phone') or not user.get('address'):
+                session['incomplete_profile'] = True
+            else:
+                session.pop('incomplete_profile', None)
 
-    # ① DB 存的是雜湊 → 用 check_password_hash
-    ok = False
-    if _looks_hashed(stored):
-        ok = check_password_hash(stored, password)
-    else:
-        # ② DB 存的是明碼 → 先明碼比對，成功後升級為雜湊
-        if stored == password:
-            ok = True
-            try:
-                new_hash = generate_password_hash(password)
-                supabase.table("members").update({"password": new_hash}).eq("id", user["id"]).execute()
-                user["password"] = new_hash  # 同步記憶體（可有可無）
-            except Exception as e:
-                app.logger.error(f"升級密碼為雜湊失敗：{e}")  # 升級失敗不阻斷這次登入
+            return redirect('/cart' if next_page == 'cart' else '/')
 
-    if not ok:
-        return render_template("login.html", error="帳號或密碼錯誤", next=next_page)
+        else:
+            return render_template("login.html", error="帳號或密碼錯誤")
 
-    # 登入成功：寫 session
-    session['user'] = {
-        "id": user["id"],
-        "account": user.get("account", ""),
-        "email": user.get("email", ""),
-        "name": user.get("name", ""),
-        "phone": user.get("phone", ""),
-        "address": user.get("address", "")
-    }
-    session['member_id'] = user['id']
-
-    # ✅ 檢查個資是否完整
-    if not user.get('name') or not user.get('phone') or not user.get('address'):
-        session['incomplete_profile'] = True
-    else:
-        session.pop('incomplete_profile', None)
-
-    # 依 next 導向
-    return redirect('/cart' if next_page == 'cart' else '/')
-
+    return render_template("login.html")
 
 
 @app.route('/get_profile')
@@ -533,60 +493,44 @@ def get_profile():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if request.method == 'GET':
-        return render_template("register.html")
+    if request.method == 'POST':
+        account = request.form['account']
+        email = request.form['email']
+        password = request.form['password']
+        username = account
 
-    # --- POST: 註冊 ---
-    account  = (request.form.get('account')  or '').strip()
-    email    = (request.form.get('email')    or '').strip()
-    password = (request.form.get('password') or '').strip()
-    username = account
+        # 檢查帳號是否已存在
+        exist = supabase.table("members").select("account").eq("account", account).execute()
+        if exist.data:
+            return render_template("register.html", error="此帳號已被使用")
 
-    # 基本檢查
-    if not account or not email or not password:
-        return render_template("register.html", error="請完整填寫帳號、Email 與密碼")
+        try:
+            # 不給 id，讓 Supabase 自動產生
+            response = supabase.table("members").insert({
+                "account": account,
+                "email": email,
+                "password": password,
+                "username": username,
+                "created_at": datetime.now(tz).isoformat()
+            }).execute()
 
-    # 定義時區（修正 tz 未定義）
-    tz = timezone("Asia/Taipei")
-    # 建議寫入 UTC（資料庫排序/比較較穩定）
-    created_at = datetime.utcnow().isoformat() + "Z"
+            # 🔍 印出結果確認
+            print("✅ 註冊成功：", response)
 
-    # 帳號或 Email 是否已存在
-    dup = (
-        supabase.table("members")
-        .select("id")
-        .or_(f"account.eq.{account},email.eq.{email}")
-        .limit(1)
-        .execute()
-        .data or []
-    )
-    if dup:
-        return render_template("register.html", error="此帳號或 Email 已被使用")
+            # 直接登入（可選）
+            session['user'] = {
+                'account': account,
+                'email': email
+            }
+            session['member_id'] = response.data[0]['id']  # 🟢 儲存真正由 Supabase 產生的 ID
 
-    try:
-        # 密碼雜湊（不要存明碼）
-        pwd_hash = generate_password_hash(password)
+            return render_template("register_success.html")
 
-        # 寫入資料庫
-        res = supabase.table("members").insert({
-            "account": account,
-            "email": email,
-            "password": pwd_hash,     # 若你資料表欄位叫 password_hash，這行改成 "password_hash": pwd_hash
-            "username": username,
-            "created_at": created_at, # 若 DB 有自動時間，可拿掉這行
-        }).execute()
+        except Exception as e:
+            print("🚨 註冊錯誤：", e)
+            return render_template("register.html", error="註冊失敗，請稍後再試")
 
-        # 直接登入（可選）
-        row = res.data[0]
-        session['user'] = {'account': row['account'], 'email': row['email']}
-        session['member_id'] = row['id']
-
-        return render_template("register_success.html")
-
-    except Exception as e:
-        app.logger.error(f"🚨 註冊錯誤：{e}")
-        return render_template("register.html", error="註冊失敗，請稍後再試")
-
+    return render_template("register.html")
 
 
 
