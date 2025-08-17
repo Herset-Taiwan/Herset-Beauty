@@ -18,6 +18,7 @@ import hashlib
 import random
 import time
 import uuid
+from uuid import UUID
 from flask import redirect
 
 from utils import generate_check_mac_value, generate_ecpay_form
