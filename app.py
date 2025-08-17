@@ -1282,32 +1282,48 @@ def profile_data():
 
     return jsonify(success=True, data=res.data[0])
 
+
 # 儲存會員資料
 @app.route('/profile', methods=['POST'])
 def save_profile():
     if 'member_id' not in session:
-        return jsonify(success=False, message="Not logged in")
-
-    member_id = session['member_id']
-    name = (request.form.get('name') or '').strip()
-    phone = (request.form.get('phone') or '').strip()
-    address = (request.form.get('address') or '').strip()
-    note = (request.form.get('note') or '').strip()
+        return jsonify(success=False, message="Not logged in"), 401
 
     try:
-        supabase.table("members").update({
-            "name": name,
-            "phone": phone,
-            "address": address,
-            "note": note
-        }).eq("id", member_id).execute()
+        # 轉型，確保是正確的 uuid
+        member_id = str(UUID(session['member_id']))
+    except Exception:
+        return jsonify(success=False, message="Invalid member_id in session"), 400
 
-        # ✅ 儲存成功後清掉 incomplete_profile 旗標
+    name    = (request.form.get('name') or '').strip()
+    phone   = (request.form.get('phone') or '').strip()
+    address = (request.form.get('address') or '').strip()
+    note    = (request.form.get('note') or '').strip()
+
+    try:
+        res = (
+            supabase.table("members")
+            .update({
+                "name": name,
+                "phone": phone,
+                "address": address,
+                "note": note
+            })
+            .eq("id", member_id)   # 這裡傳進去就是合法 uuid 字串
+            .select("*")
+            .execute()
+        )
+
+        if not res.data:
+            return jsonify(success=False, message="Member not found"), 404
+
         session.pop('incomplete_profile', None)
 
-        return jsonify(success=True, message="Profile updated successfully")
+        return jsonify(success=True, message="Profile updated successfully"), 200
+
     except Exception as e:
-        return jsonify(success=False, message=str(e))
+        return jsonify(success=False, message=str(e)), 500
+
 
 
 # 會員歷史訂單路由
