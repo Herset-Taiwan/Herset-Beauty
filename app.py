@@ -500,44 +500,58 @@ def get_profile():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if request.method == 'POST':
-        account = request.form['account']
-        email = request.form['email']
-        password = request.form['password']
-        username = account
+    if request.method == 'GET':
+        return render_template("register.html")
 
-        # 檢查帳號是否已存在
-        exist = supabase.table("members").select("account").eq("account", account).execute()
-        if exist.data:
-            return render_template("register.html", error="此帳號已被使用")
+    # --- POST: 註冊 ---
+    account  = (request.form.get('account')  or '').strip()
+    email    = (request.form.get('email')    or '').strip()
+    password = (request.form.get('password') or '').strip()
+    username = account
 
-        try:
-            # 不給 id，讓 Supabase 自動產生
-            response = supabase.table("members").insert({
-                "account": account,
-                "email": email,
-                "password": password,
-                "username": username,
-                "created_at": datetime.now(tz).isoformat()
-            }).execute()
+    if not account or not email or not password:
+        return render_template("register.html", error="請完整填寫帳號、Email 與密碼")
 
-            # 🔍 印出結果確認
-            print("✅ 註冊成功：", response)
+    # 帳號是否已存在
+    exist = supabase.table("members").select("id").eq("account", account).limit(1).execute()
+    if exist.data:
+        return render_template("register.html", error="此帳號已被使用")
 
-            # 直接登入（可選）
-            session['user'] = {
-                'account': account,
-                'email': email
-            }
-            session['member_id'] = response.data[0]['id']  # 🟢 儲存真正由 Supabase 產生的 ID
+    try:
+        # 建議寫入 UTC（避免 tz 未定義、排序也穩定）
+        created_at = datetime.utcnow().isoformat() + "Z"
 
-            return render_template("register_success.html")
+        # 不給 id 由 Supabase 產生
+        resp = supabase.table("members").insert({
+            "account": account,
+            "email": email,
+            "password": password,   # 你目前存明碼；若要改成雜湊再說
+            "username": username,
+            "created_at": created_at,
+        }).execute()
 
-        except Exception as e:
-            print("🚨 註冊錯誤：", e)
-            return render_template("register.html", error="註冊失敗，請稍後再試")
+        # 取得新會員 id（保險：若 resp 無資料再查一次）
+        new_id = None
+        if resp.data and len(resp.data) > 0 and 'id' in resp.data[0]:
+            new_id = resp.data[0]['id']
+        else:
+            q = supabase.table("members").select("id").eq("account", account).limit(1).execute()
+            if q.data:
+                new_id = q.data[0]['id']
 
-    return render_template("register.html")
+        # 直接登入
+        session['user'] = {'account': account, 'email': email}
+        if new_id:
+            session['member_id'] = new_id
+
+        # 首次登入引導補資料
+        session['incomplete_profile'] = True
+
+        return render_template("register_success.html")
+
+    except Exception as e:
+        app.logger.error(f"🚨 註冊錯誤：{e}")
+        return render_template("register.html", error="註冊失敗，請稍後再試")
 
 
 
