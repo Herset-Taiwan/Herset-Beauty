@@ -247,28 +247,23 @@
 <script>
   // 只有「第一次登入後、第一次載入頁面」自動彈出一次
   window.addEventListener('DOMContentLoaded', () => {
-    const needFill = {{ 'true' if session.get('incomplete_profile') else 'false' }};
-    const shown = sessionStorage.getItem('profileModalShown') === '1';
+  const needFill = {{ 'true' if session.get('incomplete_profile') else 'false' }};
+  const shown = sessionStorage.getItem('profileModalShown') === '1';
+  if (needFill && !shown) {
+    setTimeout(() => {
+      const modal = document.getElementById('profile-modal');
+      if (modal && modal.style.display !== 'block') {
+        try {
+          openProfileModal();
+          sessionStorage.setItem('profileModalShown', '1'); // ← 只標記一次
+        } catch (_) {}
+      }
+    }, 400);
+  }
+});
 
-    if (needFill && !shown) {
-      setTimeout(() => {
-        const modal = document.getElementById('profile-modal');
-        if (modal && modal.style.display !== 'block') {
-          try { 
-            openProfileModal();
-            // 標記本次瀏覽已經顯示過，自動彈窗不再觸發
-            sessionStorage.setItem('profileModalShown', '1');
-          } catch(_) {}
-        }
-      }, 400);
-    }
-  });
 </script>
 
-<script>
-  // 登出後重置，下次登入才會再彈一次
-  try { sessionStorage.removeItem('profileModalShown'); } catch (_) {}
-</script>
 
 
 <script>
@@ -444,6 +439,18 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+</script>
+
+<script>
+  // 點登出才清除，只在下一次登入時再彈出
+  window.addEventListener('DOMContentLoaded', () => {
+    const logoutLink = document.querySelector('a[href="/logout"]');
+    if (logoutLink) {
+      logoutLink.addEventListener('click', () => {
+        try { sessionStorage.removeItem('profileModalShown'); } catch (_) {}
+      });
+    }
+  });
 </script>
 
 
