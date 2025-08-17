@@ -60,22 +60,6 @@
 <body>
   <div class="container">
     <h2>請選擇付款方式</h2>
-
-      <!-- ✅ 暫時版付款說明，正式金流恢復時可刪掉這段 -->
-  <p>目前網站試營運中，付款方式僅限 <strong>ATM 匯款或轉帳</strong>。</p>
-  <p>轉帳資訊：兆豐銀行 (017)<br>
-  帳號：24110300764</p>
-  <p>匯款完成後，請利用網頁上方的「<strong>商品詢問</strong>」留言功能告知已匯款完成，並提供匯款資訊，謝謝。</p>
-
-  <h3>留言範例：</h3>
-  <pre>
-留言類型：訂單問題
-主題：已匯款
-留言內容：
-已匯款完成，帳號後5碼為: XXXXX
-訂單單號為: #編號
-  </pre>
-     <!-- 🔒 原始付款表單（暫時註解保留，需要時解除註解即可）
     <form method="post" action="/process_payment">
       <div class="radio-group">
         <div class="radio-option">
@@ -91,7 +75,6 @@
       <input type="hidden" name="order_id" value="{{ order.id }}">
       <button type="submit">前往付款</button>
     </form>
-    -->
   </div>
 </body>
 </html>
