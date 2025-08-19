@@ -308,6 +308,8 @@ def admin_dashboard():
         except:
             o["created_local"] = o["created_at"]
         orders.append(o)
+        # 未出貨訂單數
+    unshipped_count = sum(1 for o in orders if (o.get("status") != "shipped"))
 
     # ✅ 留言 + 分頁
     reply_status = request.args.get("reply_status", "all")
@@ -384,7 +386,8 @@ def admin_dashboard():
         # 🔥 新增傳入模板的變數（動態顯示用）
     product_total_count=product_total_count,
     selected_category_counts=selected_category_counts,
-    category_counts=category_counts
+    category_counts=category_counts,
+    unshipped_count=unshipped_count
     )
 
     session["seen_orders"] = True
