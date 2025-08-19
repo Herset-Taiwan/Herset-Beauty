@@ -224,6 +224,7 @@ def admin_dashboard():
     members = supabase.table("members").select(
         "id, account, username, name, phone, email, address, note, created_at"
     ).execute().data or []
+    member_total_count = len(members)   # 新增：會員總數
     for m in members:
         try:
             if m.get("created_at"):
@@ -355,6 +356,7 @@ def admin_dashboard():
         product_total_pages=product_total_pages,
         product_page_size=product_page_size,
         members=members,
+        member_total_count=member_total_count,
         orders=orders,
         messages=paged_messages,
         new_order_alert=show_order_alert,

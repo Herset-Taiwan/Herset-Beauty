@@ -464,6 +464,7 @@
 
     <div id="members" class="tab-content">
       <h2>會員系統管理</h2>
+      目前會員人數：{{ member_total_count }} 人
       <form id="member-search-form" method="GET" action="/admin0363/dashboard">
   <input type="text" id="member-search" name="member_keyword" value="{{ request.args.get('member_keyword', '') }}"
          placeholder="輸入帳號、姓名、電話或Email" style="padding: 6px; width: 250px; border-radius: 6px; border: 1px solid #ccc;">
