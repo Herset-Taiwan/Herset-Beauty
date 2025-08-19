@@ -241,8 +241,19 @@
   color: white;
 }
 
-/* 新訂單(新留言)提示樣式*/
+/* 會員人數徽章 */
+.count-badge{
+  display:inline-block;
+  margin-left:12px;
+  padding:4px 10px;
+  border-radius:999px;
+  background:#ffe4ed;
+  color:#5a4b45;
+  font-weight:bold;
+  font-size:14px;
+}
 
+/* 新訂單(新留言)提示樣式*/
 
 .tab-btn {
   position: relative;
@@ -463,8 +474,10 @@
 
 
     <div id="members" class="tab-content">
-      <h2>會員系統管理</h2>
-      目前會員人數：{{ member_total_count }} 人
+      <h2>會會員系統管理
+  <span class="count-badge">目前會員人數：{{ member_total_count }} 人</span>
+</h2>
+    
       <form id="member-search-form" method="GET" action="/admin0363/dashboard">
   <input type="text" id="member-search" name="member_keyword" value="{{ request.args.get('member_keyword', '') }}"
          placeholder="輸入帳號、姓名、電話或Email" style="padding: 6px; width: 250px; border-radius: 6px; border: 1px solid #ccc;">
