@@ -260,6 +260,17 @@ def admin_dashboard():
             or member_keyword in (m.get("phone") or "").lower()
             or member_keyword in (m.get("email") or "").lower()
         ]
+        # 🔥 會員分頁（預設每頁 5 筆）
+    member_page = int(request.args.get("member_page", 1))
+    member_page_size = int(request.args.get("member_page_size", 5))
+
+    member_total_count_filtered = len(members)  # 目前篩選後的總筆數
+    member_total_pages = max(1, (member_total_count_filtered + member_page_size - 1) // member_page_size)
+
+    member_start = (member_page - 1) * member_page_size
+    member_end = member_start + member_page_size
+    members = members[member_start:member_end]
+
 
     # ✅ 訂單
     order_page = int(request.args.get("order_page", 1))
@@ -391,7 +402,11 @@ def admin_dashboard():
     selected_category_counts=selected_category_counts,
     category_counts=category_counts,
     unshipped_count=unshipped_count,
-    unreplied_count=unreplied_count
+    unreplied_count=unreplied_count,
+     # 會員分頁用
+    member_page=member_page,
+    member_total_pages=member_total_pages,
+    member_page_size=member_page_size,
     )
 
     session["seen_orders"] = True

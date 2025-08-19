@@ -490,11 +490,26 @@
   <span class="count-badge">目前會員人數：{{ member_total_count }} 人</span>
 </h2>
     
-      <form id="member-search-form" method="GET" action="/admin0363/dashboard">
-  <input type="text" id="member-search" name="member_keyword" value="{{ request.args.get('member_keyword', '') }}"
-         placeholder="輸入帳號、姓名、電話或Email" style="padding: 6px; width: 250px; border-radius: 6px; border: 1px solid #ccc;">
+      <form id="member-search-form" method="GET" action="/admin0363/dashboard" class="filter-bar" style="gap:14px;">
   <input type="hidden" name="tab" value="members">
+
+  <label>會員名稱：</label>
+  <input type="text" id="member-search" name="member_keyword"
+         value="{{ request.args.get('member_keyword', '') }}"
+         placeholder="輸入帳號、姓名、電話或Email"
+         style="padding: 6px; width: 250px; border-radius: 6px; border: 1px solid #ccc;">
+
+  <label style="margin-left:10px;">每頁顯示：</label>
+  <select name="member_page_size" onchange="document.getElementById('member-search-form').submit()">
+    {% set mps = request.args.get('member_page_size', '5') %}
+    <option value="5"  {% if mps == '5' %}selected{% endif %}>5</option>
+    <option value="10" {% if mps == '10' %}selected{% endif %}>10</option>
+    <option value="20" {% if mps == '20' %}selected{% endif %}>20</option>
+    <option value="50" {% if mps == '50' %}selected{% endif %}>50</option>
+  </select>
+  <span>筆</span>
 </form>
+
 
 
 
@@ -514,12 +529,29 @@
   {% endfor %}
 </div>
 
+<!-- 會員的上一頁下一頁 -->
+{% if tab == "members" and member_total_pages > 1 %}
+  <div class="pagination">
+    {% if member_page > 1 %}
+      <a class="page-btn"
+         href="?tab=members&member_page={{ member_page - 1 }}&member_page_size={{ member_page_size }}&member_keyword={{ request.args.get('member_keyword','') }}">← 上一頁</a>
+    {% endif %}
+
+    <span style="margin: 0 10px;">第 {{ member_page }} 頁 / 共 {{ member_total_pages }} 頁</span>
+
+    {% if member_page < member_total_pages %}
+      <a class="page-btn"
+         href="?tab=members&member_page={{ member_page + 1 }}&member_page_size={{ member_page_size }}&member_keyword={{ request.args.get('member_keyword','') }}">下一頁 →</a>
+    {% endif %}
+  </div>
+{% endif %}
+
     </div>
 
     <div id="orders" class="tab-content">
   <h2>
   訂單管理系統
-  <span class="count-badge" id="unshipped-badge">未出貨：{{ unshipped_count }} 筆</span>
+  <span class="count-badge" id="unshipped-badge">未出貨訂單：{{ unshipped_count }} 筆</span>
 </h2>
 
 
@@ -553,7 +585,7 @@
 <div id="messages" class="tab-content">
   <h2>
   留言管理
-  <span class="count-badge">未回覆：{{ unreplied_count }} 筆</span>
+  <span class="count-badge">未回覆留言：{{ unreplied_count }} 筆</span>
 </h2>
   <!-- 留言搜尋功能 -->
 <form method="GET" action="/admin0363/dashboard" style="margin-bottom: 20px;">
