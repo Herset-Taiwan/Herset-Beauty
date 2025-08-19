@@ -198,7 +198,7 @@ def admin_dashboard():
     selected_categories = request.args.getlist("category[]")
 
     # ✅ 商品：搜尋 + 分頁
-    product_keyword = request.args.get("keyword", "").lower()
+    product_keyword = request.args.get("product_keyword", "").lower()
     product_page = int(request.args.get("page", 1))
     product_page_size = int(request.args.get("page_size", 10))
     product_start = (product_page - 1) * product_page_size

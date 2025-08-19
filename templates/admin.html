@@ -412,7 +412,9 @@
 </select>
 
   <label style="margin-left: 20px;">商品名稱：</label>
-  <input type="text" name="keyword" id="product-keyword" value="{{ request.args.get('keyword', '') }}" placeholder="輸入關鍵字" style="padding: 6px;">
+  <input type="text" name="product_keyword"
+       value="{{ request.args.get('product_keyword', '') }}"
+       placeholder="輸入關鍵字">
 
   <label style="margin-left: 20px;">每頁顯示：</label>
   <select name="page_size" onchange="document.getElementById('product-search-form').submit()">
@@ -740,20 +742,20 @@
 
   <script>
 function switchTab(tabId) {
-  const tabs = document.querySelectorAll('.tab-content');
-  const buttons = document.querySelectorAll('.tab-btn');
-  tabs.forEach(t => t.classList.remove('active'));
-  buttons.forEach(b => b.classList.remove('active'));
+  // 重新組網址：清空所有 query，再只設定 tab
+  const url = new URL(window.location.href);
+  url.search = "";
+  url.searchParams.set("tab", tabId);
 
-  document.getElementById(tabId).classList.add('active');
-  document.querySelector('.tab-btn[onclick*="' + tabId + '"]').classList.add('active');
-
+  // 若切到訂單，先告知後端已讀，再跳轉
   if (tabId === "orders") {
-    filterOrders();  // ✅ 主動顯示訂單
-      // 🔥 第一次切 orders 頁面時通知後端更新 session
-  fetch("/admin0363/mark_seen_orders", { method: "POST" });
+    fetch("/admin0363/mark_seen_orders", { method: "POST" })
+      .finally(() => { window.location.href = url.toString(); });
+  } else {
+    window.location.href = url.toString();
   }
 }
+</script>
 
 
 
