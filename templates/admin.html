@@ -621,12 +621,23 @@
 
   
 
-<form method="get" action="/admin0363/dashboard">
-  <input type="hidden" name="tab" value="members">
+<form method="get" action="/admin0363/dashboard" style="display:inline-block;">
+  <!-- 固定留在留言分頁 -->
+  <input type="hidden" name="tab" value="messages">
+  <!-- 讓搜尋時保留目前篩選與每頁數量，並回到第 1 頁 -->
+  <input type="hidden" name="reply_status" value="{{ request.args.get('reply_status', 'all') }}">
+  <input type="hidden" name="type" value="{{ request.args.get('type', '') }}">
+  <input type="hidden" name="msg_page_size" value="{{ request.args.get('msg_page_size', 10) }}">
+  <input type="hidden" name="msg_page" value="1">
+
   <label style="margin-left: 10px;">會員搜尋：</label>
-  <input type="text" name="member_keyword" value="{{ request.args.get('member_keyword', '') }}" placeholder="輸入會員名稱" style="padding: 4px 8px;">
+  <input type="text" name="keyword"
+         value="{{ request.args.get('keyword', '') }}"
+         placeholder="輸入會員名稱"
+         style="padding: 4px 8px;">
   <button type="submit" style="margin-left: 10px;">🔍 搜尋</button>
 </form>
+
 
   {% for msg in messages %}
 <div class="order-row" style="position: relative; margin-bottom: 40px;">
