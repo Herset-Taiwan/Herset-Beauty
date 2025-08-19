@@ -380,7 +380,7 @@ def admin_dashboard():
         msg_total_pages=msg_total_pages,
         order_page=order_page,
         order_total_count=order_total_count,
-        question_types=question_types
+        question_types=question_types,
         # 🔥 新增傳入模板的變數（動態顯示用）
     product_total_count=product_total_count,
     selected_category_counts=selected_category_counts,
