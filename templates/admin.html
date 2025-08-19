@@ -742,22 +742,20 @@
 
   <script>
 function switchTab(tabId) {
-  // 重新組網址：清空所有 query，再只設定 tab
-  const url = new URL(window.location.href);
-  url.search = "";
-  url.searchParams.set("tab", tabId);
+  const tabs = document.querySelectorAll('.tab-content');
+  const buttons = document.querySelectorAll('.tab-btn');
+  tabs.forEach(t => t.classList.remove('active'));
+  buttons.forEach(b => b.classList.remove('active'));
 
-  // 若切到訂單，先告知後端已讀，再跳轉
+  document.getElementById(tabId).classList.add('active');
+  document.querySelector('.tab-btn[onclick*="' + tabId + '"]').classList.add('active');
+
   if (tabId === "orders") {
-    fetch("/admin0363/mark_seen_orders", { method: "POST" })
-      .finally(() => { window.location.href = url.toString(); });
-  } else {
-    window.location.href = url.toString();
+    filterOrders();  // ✅ 主動顯示訂單
+      // 🔥 第一次切 orders 頁面時通知後端更新 session
+  fetch("/admin0363/mark_seen_orders", { method: "POST" });
   }
 }
-</script>
-
-
 
 
 
