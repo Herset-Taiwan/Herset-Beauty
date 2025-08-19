@@ -388,7 +388,19 @@
 
 
     <div id="products" class="tab-content active">
-      <h2>商品管理</h2>
+      <h2>
+  商品管理
+  {% if selected_categories and selected_categories|length > 0 %}
+    {# 逐一顯示每個選到的分類數量 #}
+    {% for c in selected_categories %}
+      <span class="count-badge">{{ c }}：{{ selected_category_counts.get(c, 0) }} 件</span>
+    {% endfor %}
+    <span class="count-badge" style="background:#e8f5e9;">合計：{{ product_total_count }} 件</span>
+  {% else %}
+    <span class="count-badge">全部商品：{{ product_total_count }} 件</span>
+  {% endif %}
+</h2>
+
 <form id="product-search-form" method="GET" action="/admin0363/dashboard" style="margin-bottom: 20px;">
   <input type="hidden" name="tab" value="products">
 

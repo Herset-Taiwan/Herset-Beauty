@@ -215,10 +215,25 @@ def admin_dashboard():
             p for p in all_products
             if product_keyword in p.get("name", "").lower()
         ]
+    # 🔥 新增：計算「目前篩選後」的分類數量與合計
+    category_counts = {}
+    for p in all_products:
+        cats = p.get("categories") or []
+        for c in cats:
+            category_counts[c] = category_counts.get(c, 0) + 1
 
-    product_total_count = len(all_products)
+    if selected_categories:
+        # 逐一列出使用者有選的分類數量
+        selected_category_counts = {c: category_counts.get(c, 0) for c in selected_categories}
+        # 合計 = 目前篩選後的商品數（不會重複計）
+        product_total_count = len(all_products)
+    else:
+        selected_category_counts = {}
+        product_total_count = len(all_products)
+        product_total_count = len(all_products)
     product_total_pages = max(1, (product_total_count + product_page_size - 1) // product_page_size)
     products = all_products[product_start:product_end]
+
 
     # ✅ 會員
     members = supabase.table("members").select(
@@ -366,6 +381,10 @@ def admin_dashboard():
         order_page=order_page,
         order_total_count=order_total_count,
         question_types=question_types
+        # 🔥 新增傳入模板的變數（動態顯示用）
+    product_total_count=product_total_count,
+    selected_category_counts=selected_category_counts,
+    category_counts=category_counts
     )
 
     session["seen_orders"] = True
