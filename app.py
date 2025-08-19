@@ -230,7 +230,6 @@ def admin_dashboard():
     else:
         selected_category_counts = {}
         product_total_count = len(all_products)
-        product_total_count = len(all_products)
     product_total_pages = max(1, (product_total_count + product_page_size - 1) // product_page_size)
     products = all_products[product_start:product_end]
 
@@ -248,6 +247,8 @@ def admin_dashboard():
         except:
             m["created_at"] = m.get("created_at", "—")
     member_dict = {m["id"]: m for m in members}
+    # 未回覆留言數（is_replied = False）
+
 
     member_keyword = request.args.get("member_keyword", "").lower()
     if member_keyword:
@@ -337,6 +338,8 @@ def admin_dashboard():
             m["local_created_at"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M")
         except:
             m["local_created_at"] = m["created_at"]
+            #  未回覆留言數（依全部留言計算）
+    unreplied_count = sum(1 for m in all_messages if not m.get("is_replied"))
 
     filtered_messages = []
     for m in all_messages:
@@ -387,7 +390,8 @@ def admin_dashboard():
     product_total_count=product_total_count,
     selected_category_counts=selected_category_counts,
     category_counts=category_counts,
-    unshipped_count=unshipped_count
+    unshipped_count=unshipped_count,
+    unreplied_count=unreplied_count
     )
 
     session["seen_orders"] = True

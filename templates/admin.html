@@ -371,10 +371,12 @@
     {% if new_order_alert %}<span class="badge-icon">🛎 新訂單</span>{% endif %}
   </button>
 
-  <button class="tab-btn {% if tab == 'messages' %}active{% endif %}" onclick="switchTab('messages')">
+ <button class="tab-btn {% if tab == 'messages' %}active{% endif %}" onclick="switchTab('messages')">
     留言管理
-    {% if new_message_alert %}<span class="badge-icon">📩 新留言</span>{% endif %}
-  </button>
+    {% if unreplied_count > 0 %}
+      <span class="badge-icon">📩 未回覆 {{ unreplied_count }}</span>
+    {% endif %}
+</button>
 
   {# ✅ 防呆：如果 tab 是未知值，渲染這個 debug 按鈕讓你知道 #}
   {% if tab not in valid_tabs %}
