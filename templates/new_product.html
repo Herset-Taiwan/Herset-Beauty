@@ -199,7 +199,7 @@ $(document).ready(function () {
   </script>
 
 <!-- TinyMCE CDN -->
-<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+<script src="https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js"></script>
 <script>
 tinymce.init({
   selector: 'textarea.rich',
@@ -207,6 +207,7 @@ tinymce.init({
   height: 320,
   menubar: false,
   branding: false,
+  promotion: false,
   plugins: 'lists link table code advlist autolink charmap preview anchor searchreplace visualblocks fullscreen insertdatetime media wordcount',
   toolbar: 'undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | fontsizeselect | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table | removeformat | code',
   fontsize_formats: '12px 14px 16px 18px 20px 24px 28px 32px 36px',
@@ -214,6 +215,14 @@ tinymce.init({
 });
 </script>
 
+<script>
+  const form = document.querySelector('form');
+  if (form) {
+    form.addEventListener('submit', function () {
+      if (window.tinymce) tinymce.triggerSave();
+    });
+  }
+</script>
 
 </body>
 </html>
