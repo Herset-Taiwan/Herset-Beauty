@@ -131,10 +131,10 @@
 <input type="file" name="image_files" accept="image/*" multiple>
 
 <label>商品介紹</label>
-<textarea name="intro" rows="3"></textarea>
+<textarea name="intro" class="rich" rows="12"></textarea>
 
 <label>商品特色</label>
-<textarea name="feature" rows="3"></textarea>
+<textarea name="feature" class="rich" rows="12"></textarea>
 
 <label>商品規格（可新增多個）</label>
 <div id="options-wrapper">
@@ -147,10 +147,10 @@
 <button type="button" onclick="addOption()">＋新增一個規格</button>
 
 <label>商品規格描述</label>
-<textarea name="spec" rows="3"></textarea>
+<textarea name="spec" class="rich" rows="12"></textarea>
 
 <label>商品成分</label>
-<textarea name="ingredient" rows="3"></textarea>
+<textarea name="ingredient" class="rich" rows="12"></textarea>
 
 <button type="submit" class="submit-btn">新增商品</button>
 
@@ -197,6 +197,23 @@ $(document).ready(function () {
 
 
   </script>
+
+<!-- TinyMCE CDN -->
+<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+<script>
+tinymce.init({
+  selector: 'textarea.rich',
+  language: 'zh_TW',
+  height: 320,
+  menubar: false,
+  branding: false,
+  plugins: 'lists link table code advlist autolink charmap preview anchor searchreplace visualblocks fullscreen insertdatetime media wordcount',
+  toolbar: 'undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | fontsizeselect | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table | removeformat | code',
+  fontsize_formats: '12px 14px 16px 18px 20px 24px 28px 32px 36px',
+  content_style: 'body{font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Noto Sans TC, Microsoft JhengHei, Arial, sans-serif; line-height:1.8;}'
+});
+</script>
+
 
 </body>
 </html>

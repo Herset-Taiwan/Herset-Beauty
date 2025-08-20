@@ -257,6 +257,19 @@ body.product-page .tab-btn.active {
   box-shadow: 0 2px 10px rgba(0,0,0,0.04);
 }
 
+/* 讓編輯器內容更好讀 */
+.product-tab-content p { margin: 0 0 .9em; line-height: 1.9; }
+.product-tab-content ul, 
+.product-tab-content ol { margin: .6em 0 .9em 1.4em; }
+.product-tab-content h1,
+.product-tab-content h2,
+.product-tab-content h3 { margin: 1em 0 .5em; line-height: 1.35; }
+.product-tab-content img { max-width: 100%; height: auto; border-radius: 6px; }
+.product-tab-content table { width: 100%; border-collapse: collapse; margin: .8em 0; }
+.product-tab-content table th,
+.product-tab-content table td { border: 1px solid #e6e0dc; padding: .6em .8em; }
+
+
 .product-tab-content > div {
   display: none;
 }
@@ -550,10 +563,10 @@ body.product-page .tab-btn.active {
 </div>
 
 <div class="product-tab-content">
-  <div id="intro" class="active">{{ product['intro'] | nl2br }}</div>
-  <div id="feature">{{ product['feature'] | nl2br }}</div>
-  <div id="spec">{{ product['spec'] | nl2br }}</div>
-  <div id="ingredient">{{ product['ingredient'] | nl2br }}</div>
+  <div id="intro" class="active">{{ (product['intro'] or '') | safe }}</div>
+  <div id="feature">{{ (product['feature'] or '') | safe }}</div>
+  <div id="spec">{{ (product['spec'] or '') | safe }}</div>
+  <div id="ingredient">{{ (product['ingredient'] or '') | safe }}</div>
 </div>
 
 <script>
