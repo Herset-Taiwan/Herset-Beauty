@@ -208,14 +208,75 @@ tinymce.init({
   menubar: false,
   branding: false,
   promotion: false,
-  plugins: 'lists link table code advlist autolink charmap preview anchor searchreplace visualblocks fullscreen insertdatetime media wordcount',
-  toolbar: 'undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | fontsizeselect | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table | removeformat | code',
+
+  /* ✅ 新增 image、paste 等外掛 */
+  plugins: 'lists link table code advlist autolink charmap preview anchor searchreplace visualblocks fullscreen insertdatetime media wordcount image paste',
+
+  /* ✅ 工具列加入圖片按鈕 */
+  toolbar: 'undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | fontsizeselect | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table image | removeformat | code',
+
   fontsize_formats: '12px 14px 16px 18px 20px 24px 28px 32px 36px',
-  content_style: 'body{font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Noto Sans TC, Microsoft JhengHei, Arial, sans-serif; line-height:1.8;}'
+  content_style: 'body{font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Noto Sans TC, Microsoft JhengHei, Arial, sans-serif; line-height:1.8;}',
+
+  /* ✅ 允許直接貼上圖片（小圖可用） */
+  paste_data_images: true,
+
+  /* ✅ 走後端上傳：改成你的上傳路由 */
+  images_upload_url: '/admin0363/tinymce/upload',
+
+  /* ✅ 自訂上傳處理（可帶 Token/額外欄位時好用） */
+  images_upload_handler: function (blobInfo, progress) {
+    return new Promise(function (resolve, reject) {
+      var xhr = new XMLHttpRequest();
+      xhr.withCredentials = false;
+      xhr.open('POST', '/admin0363/tinymce/upload');
+      xhr.upload.onprogress = function (e) {
+        progress(e.loaded / e.total * 100);
+      };
+      xhr.onload = function () {
+        if (xhr.status < 200 || xhr.status >= 300) {
+          reject('HTTP Error: ' + xhr.status);
+          return;
+        }
+        var json = {};
+        try { json = JSON.parse(xhr.responseText); } catch(e) {}
+        if (!json || typeof json.location !== 'string') {
+          reject('Invalid JSON: ' + xhr.responseText);
+          return;
+        }
+        resolve(json.location);
+      };
+      xhr.onerror = function () { reject('Image upload failed.'); };
+
+      var formData = new FormData();
+      formData.append('file', blobInfo.blob(), blobInfo.filename());
+      xhr.send(formData);
+    });
+  },
+
+  /* ✅ 檔案挑選對話框（只允許圖片） */
+  file_picker_types: 'image',
+  file_picker_callback: function (cb, value, meta) {
+    if (meta.filetype !== 'image') return;
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = function () {
+      var file = this.files[0];
+      var reader = new FileReader();
+      reader.onload = function () {
+        // 先以 base64 插入，隨後也會走 images_upload_handler 上傳取得正式網址
+        cb(reader.result, { title: file.name });
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
+  }
 });
 </script>
 
 <script>
+  // 保持你原本提交前同步編輯器內容
   const form = document.querySelector('form');
   if (form) {
     form.addEventListener('submit', function () {
@@ -223,6 +284,7 @@ tinymce.init({
     });
   }
 </script>
+
 
 </body>
 </html>
