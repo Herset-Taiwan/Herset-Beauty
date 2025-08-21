@@ -474,21 +474,54 @@ tinymce.init({
   menubar: false,
   branding: false,
   promotion: false,
-  plugins: 'lists link table code advlist autolink charmap preview anchor searchreplace visualblocks fullscreen insertdatetime media wordcount',
-  toolbar: 'undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | fontsizeselect | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table | removeformat | code',
+
+  /* ✅ 新增圖片與貼上外掛 */
+  plugins: 'lists link table code advlist autolink charmap preview anchor searchreplace visualblocks fullscreen insertdatetime media wordcount image paste',
+
+  /* ✅ 工具列加入圖片按鈕 */
+  toolbar: 'undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | fontsizeselect | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table image | removeformat | code',
+
   fontsize_formats: '12px 14px 16px 18px 20px 24px 28px 32px 36px',
-  content_style: 'body{font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Noto Sans TC, Microsoft JhengHei, Arial, sans-serif; line-height:1.8;}'
+  content_style: 'body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Noto Sans TC,Microsoft JhengHei,Arial,sans-serif;line-height:1.8;} img{max-width:100%;height:auto;}',
+
+  /* ✅ 允許貼上與拖拉圖片，並自動上傳 */
+  automatic_uploads: true,
+  paste_data_images: true,
+
+  /* ✅ 上傳端點（需搭配 app.py 的 /admin0363/tinymce/upload） */
+  images_upload_url: '/admin0363/tinymce/upload',
+
+  /* ✅ 檔案挑選：只允許圖片 */
+  file_picker_types: 'image',
+  file_picker_callback: function (cb, value, meta) {
+    if (meta.filetype !== 'image') return;
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = function () {
+      const file = this.files[0];
+      const reader = new FileReader();
+      reader.onload = function () {
+        // 先以 base64 插入，之後自動上傳並替換為正式網址
+        cb(reader.result, { title: file.name });
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
+  }
 });
 </script>
 
 <script>
-  const form = document.querySelector('form');
-  if (form) {
-    form.addEventListener('submit', function () {
+  // 送出表單前同步編輯器內容（避免重複宣告變數）
+  (function(){
+    const f = document.querySelector('form');
+    if (f) f.addEventListener('submit', function () {
       if (window.tinymce) tinymce.triggerSave();
     });
-  }
+  })();
 </script>
+
 
 </body>
 </html>
