@@ -488,7 +488,7 @@
 
 
     <div id="members" class="tab-content">
-      <h2>會會員系統管理
+      <h2>會員系統管理
   <span class="count-badge">目前會員人數：{{ member_total_count }} 人</span>
 </h2>
     
@@ -532,7 +532,7 @@
 </div>
 
 <!-- 會員的上一頁下一頁 -->
-{% if tab == "members" and member_total_pages > 1 %}
+{% if tab == "members" %}
   <div class="pagination">
     {% if member_page > 1 %}
       <a class="page-btn"
@@ -547,6 +547,7 @@
     {% endif %}
   </div>
 {% endif %}
+
 
     </div>
 
