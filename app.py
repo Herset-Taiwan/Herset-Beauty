@@ -1031,7 +1031,7 @@ def cart():
     if request.method == 'POST':
         action = request.form.get('action')
         product_id = request.form.get('product_id')
-        option = request.form.get('option') or ''
+        option = (request.form.get('option') or '')
         cart = session.get('cart', [])
 
         for item in cart:
@@ -1047,43 +1047,65 @@ def cart():
         session['cart'] = cart
         return redirect(url_for('cart'))
 
-    # GET 顯示購物車內容
+    # ---- GET：顯示購物車 ----
     cart_items = session.get('cart', [])
     products = []
-    total = 0
+    total = 0.0
 
     for item in cart_items:
         pid = item.get('product_id')
         if not pid:
             continue
 
-        res = supabase.table("products").select("*").eq("id", pid).single().execute()
-        if res.data:
-            product = res.data
-            # ✅ 以購物車中當下加入的 price 為準
-            item_price = item.get('price', product.get('discount_price') or product.get('price'))
-            qty = item.get('qty', 1)
+        # 先讀購物車裡儲存的數值（加入購物車時已處理過單品/套組價格）
+        unit_price = float(item.get('price') or 0)                 # 單價（計價用）
+        unit_compare = float(item.get('original_price') or 0)      # 原價（顯示刪除線）
+        unit_discount = float(item.get('discount_price') or 0)     # 折扣價（若有且 < 原價）
+        qty = int(item.get('qty') or 1)
 
-            product['price'] = item_price
-            product['qty'] = qty
-            product['option'] = item.get('option', '')
-            product['subtotal'] = item_price * qty
-            product['original_price'] = item.get('original_price') or float(product.get('price') or 0)
-            product['discount_price'] = item.get('discount_price') or float(product.get('discount_price') or 0)
+        # 從 DB 補商品基本資訊（名稱/圖），不覆蓋價格
+        db = supabase.table("products").select("name,image,images,product_type") \
+                     .eq("id", pid).single().execute()
+        dbp = db.data or {}
 
-            products.append(product)
-            total += product['subtotal']
+        # 圖片：先用購物車存的，其次 DB
+        images = item.get('images') or dbp.get('images') or []
+        image = item.get('image') or dbp.get('image') \
+                or (images[0] if images else None)
+
+        product_out = {
+            'id': pid,
+            'name': dbp.get('name') or item.get('name'),
+            'product_type': item.get('product_type') or dbp.get('product_type'),
+
+            # 前端顯示/計算會用到的欄位
+            'price': unit_price,
+            'original_price': unit_compare if unit_compare > 0 else unit_price,
+            'discount_price': unit_discount if (unit_discount and unit_compare and unit_discount < unit_compare) else 0.0,
+            'qty': qty,
+            'subtotal': unit_price * qty,
+
+            'option': item.get('option', ''),
+            'image': image,
+            'images': images,
+        }
+
+        products.append(product_out)
+        total += product_out['subtotal']
 
     shipping_fee = 0 if total >= 2000 else 80
     final_total = total + shipping_fee
-    free_shipping_diff = 0 if total >= 2000 else 2000 - total
+    free_shipping_diff = 0 if total >= 2000 else (2000 - total)
 
-    return render_template("cart.html",
-                           products=products,
-                           total=total,
-                           shipping_fee=shipping_fee,
-                           final_total=final_total,
-                           free_shipping_diff=free_shipping_diff)
+    return render_template(
+        "cart.html",
+        products=products,
+        total=total,
+        shipping_fee=shipping_fee,
+        final_total=final_total,
+        free_shipping_diff=free_shipping_diff
+    )
+
 
 
 
@@ -1695,59 +1717,72 @@ def delete_product(product_id):
 def add_to_cart():
     product_id = request.form.get('product_id')
     qty = int(request.form.get('qty', 1))
-    option = request.form.get('option', '')
+    option = (request.form.get('option', '') or '').strip()
     action = request.form.get('action')
 
     # 取得商品資料
     res = supabase.table('products').select('*').eq('id', product_id).execute()
     if not res.data:
         return jsonify(success=False, message="找不到商品"), 404
-
     product = res.data[0]
 
-    # ✅ 強制轉 float，解決 Decimal 問題（避免 JSON 序列化出錯）
-    original_price = float(product.get('price') or 0)
-    discount_price = float(product.get('discount_price') or 0)
-    final_price = discount_price if discount_price and discount_price < original_price else original_price
+    is_bundle = (product.get('product_type') == 'bundle')
 
-    # ✅ 初始化購物車 session（第一次加入）
-    if 'cart' not in session:
-        session['cart'] = []
+    # === 單品/預設價格 ===
+    original_price = float(product.get('price') or 0)            # 原價 (單品用)
+    discount_price = float(product.get('discount_price') or 0)   # 折扣價 (單品用)
 
-    cart = session['cart']
+    # === 套組：用 bundles 表的 price / compare_at 覆蓋 ===
+    if is_bundle:
+        bres = supabase.table('bundles').select('price, compare_at') \
+               .eq('product_id', product_id).execute()
+        if bres.data:
+            b = bres.data[0]
+            original_price = float(b.get('compare_at') or product.get('price') or 0)
+            discount_price = float(b.get('price') or 0)
 
-    # ✅ 檢查購物車中是否已有相同商品與規格（option）
-    found = False
+    # 單價：若有折扣且低於原價，採折扣價；否則採原價
+    final_price = discount_price if (discount_price and original_price and discount_price < original_price) else original_price
+
+    # 初始化購物車
+    cart = session.get('cart', [])
+
+    # 相同商品 + 相同 option → 直接加數量
     for item in cart:
-        if item.get('product_id') == product_id and item.get('option') == option:
+        if item.get('product_id') == product_id and (item.get('option') or '') == option:
             item['qty'] += qty
-            found = True
-            break
+            session['cart'] = cart
+            if action == 'checkout':
+                return redirect('/cart')
+            total_qty = sum(i['qty'] for i in cart)
+            return jsonify(success=True, count=total_qty)
 
-    # ✅ 若無則新增項目
-    if not found:
-        cart.append({
-            'id': product_id,
-            'product_id': product_id,
-            'name': product['name'],
-            'price': final_price,
-            'original_price': original_price,
-            'discount_price': discount_price,
-            'images': product.get('images', []),
-            'qty': qty,
-            'option': option
-        })
+    # 新增項目
+    cart.append({
+        'id': product_id,
+        'product_id': product_id,
+        'name': product.get('name'),
+        'product_type': product.get('product_type'),
+        'image': product.get('image'),
+        'images': product.get('images') or [],
+        'qty': qty,
+        'option': option,
 
-    # ✅ 寫回 session
+        # 價格欄位：購物車頁會用到這三個
+        'price': float(final_price),                              # 售價（單價，用來計算 × qty）
+        'original_price': float(original_price),                  # 原價（顯示刪除線 & debug 行）
+        'discount_price': float(discount_price) if (discount_price and original_price and discount_price < original_price) else 0.0
+    })
+
     session['cart'] = cart
 
-    # ✅ 若為立即結帳，轉導至購物車頁面
+    # 立即結帳 → 導到購物車
     if action == 'checkout':
         return redirect('/cart')
 
-    # ✅ 成功回傳 JSON，包含目前購物車總數量
     total_qty = sum(item['qty'] for item in cart)
     return jsonify(success=True, count=total_qty)
+
 
 
 
