@@ -466,6 +466,18 @@ body.product-page .tab-btn.active {
   background:#5E3C2C; color:#fff; border-color:#5E3C2C;
 }
 
+/* 逐步挑選模式 */
+#bundle-steps .step{
+  border:1px solid #e7dcd7; border-radius:12px; padding:14px 16px; background:#fff8f5; margin-top:16px;
+}
+#bundle-steps .step .slot-title{ font-weight:700; color:#5E3C2C; }
+#bundle-steps .step select{ width:100%; padding:8px; border-radius:8px; border:1px solid #d9c9c2; margin-top:8px; }
+#bundle-steps .step .step-options{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+#bundle-steps .step .step-options button{
+  border:1px solid #d9c9c2; background:#fff; border-radius:18px; padding:6px 12px; cursor:pointer;
+}
+#bundle-steps .step .step-options button.selected{ background:#5E3C2C; color:#fff; border-color:#5E3C2C; }
+
 
   </style>
 </head>
@@ -568,43 +580,54 @@ body.product-page .tab-btn.active {
   </div>
 {% else %}
   <!-- 套組規格：多欄位選購 -->
-  <div id="bundle-area">
-    {% for s in slots %}
-  {% set allowed_ids = (slot_allowed.get(s['id']) if slot_allowed else []) %}
-  <div class="bundle-slot"
-       data-slot-index="{{ loop.index0 }}"
-       data-required="{{ s['required_count'] or 1 }}"
-       data-allowed="{{ allowed_ids|join(',') }}">
-    <div class="slot-head">
-      <div class="slot-title">選擇{{ loop.index }}</div>
-      <div class="slot-note">需選擇 {{ s['required_count'] or 1 }} 個</div>
-    </div>
+  {% if total_mode %}
+  <!-- ✅ 逐步挑選模式 -->
+  <div id="bundle-steps" data-total="{{ required_total }}">
+    <!-- 先渲染第 1 步，剩下的由 JS 依完成度動態加上 -->
+    <div class="step" data-step="1">
+      <div class="slot-head">
+        <div class="slot-title">選擇 1 / {{ required_total }}</div>
+      </div>
 
-    <!-- 商品下拉（若只有 1 個允許商品會在 JS 端自動隱藏） -->
-    <select class="slot-product">
-      <option value="">— 請選擇商品 —</option>
-      {% for p in pool_products %}
-        {% if not allowed_ids or (p['id'] in allowed_ids) %}
+      <select class="step-product">
+        <option value="">— 請選擇商品 —</option>
+        {% for p in pool_products %}
           <option value="{{ p['id'] }}">{{ p['name'] }}</option>
-        {% endif %}
-      {% endfor %}
-    </select>
+        {% endfor %}
+      </select>
 
-    <!-- 精簡「已選」列（單行省略、無多餘文字） -->
-    <div class="locked-product" style="display:none;">
-      <span class="sel-badge">已選</span>
-      <span class="product-title"></span>
+      <div class="step-options"></div>
     </div>
-
-    <!-- 口味/規格按鈕區 -->
-    <div class="slot-options"></div>
   </div>
-{% endfor %}
-
-
-
-  </div>
+{% else %}
+  <!-- 原本的 Slots 介面（保留你現有設計即可） -->
+  {% for s in slots %}
+    {% set allowed_ids = (slot_allowed.get(s['id']) if slot_allowed else []) %}
+    <div class="bundle-slot"
+         data-slot-index="{{ loop.index0 }}"
+         data-required="{{ s['required_count'] or 1 }}"
+         data-allowed="{{ allowed_ids|join(',') }}">
+      <div class="slot-head">
+        <div class="slot-title">選擇{{ loop.index }}</div>
+        <div class="slot-note">需選擇 {{ s['required_count'] or 1 }} 個</div>
+      </div>
+      <select class="slot-product">
+        <option value="">— 請選擇商品 —</option>
+        {% for p in pool_products %}
+          {% if not allowed_ids or (p['id'] in allowed_ids) %}
+            <option value="{{ p['id'] }}">{{ p['name'] }}</option>
+          {% endif %}
+        {% endfor %}
+      </select>
+      <div class="locked-product" style="display:none;">
+        <span class="sel-badge">已選</span>
+        <span class="product-title"></span>
+      </div>
+      <div class="slot-options"></div>
+    </div>
+  {% endfor %}
 {% endif %}
+
 
 
     <div class="qty">
@@ -963,6 +986,142 @@ function beforeCheckout(productId){
 }
 
 
+</script>
+<script>
+// 提供給逐步挑選使用
+window.poolProducts = window.poolProducts || {{ (pool_products or []) | tojson }};
+
+function renderOptionsFor(el, productId){
+  const area = el.querySelector('.step-options');
+  area.innerHTML = '';
+  if(!productId) return;
+
+  const p = window.poolProducts.find(x => String(x.id) === String(productId));
+  const opts = (p && p.options) || [];
+
+  if (opts.length === 0) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = '— 無規格 —';
+    btn.className = 'selected';
+    btn.dataset.value = '';
+    area.appendChild(btn);
+    return;
+  }
+
+  opts.forEach(o => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = o;
+    btn.dataset.value = o;
+    btn.addEventListener('click', () => {
+      area.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      updateCheckoutHidden && updateCheckoutHidden();
+      tryAddNextStep();  // 選好口味後自動出現下一步
+    });
+    area.appendChild(btn);
+  });
+
+  if (opts.length === 1) {
+    const first = area.querySelector('button');
+    if (first) first.classList.add('selected');
+  }
+}
+
+function stepCompleted(stepEl){
+  const sel = stepEl.querySelector('.step-product');
+  if(!sel.value) return false;
+  const area = stepEl.querySelector('.step-options');
+  const hasOptBtns = area.querySelectorAll('button').length > 0;
+  if(!hasOptBtns) return true; // 無規格
+  return !!area.querySelector('button.selected');
+}
+
+function createStep(index){
+  const total = parseInt(document.getElementById('bundle-steps').dataset.total, 10);
+  if(index > total) return null;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'step';
+  wrap.dataset.step = String(index);
+  wrap.innerHTML = `
+    <div class="slot-head">
+      <div class="slot-title">選擇 ${index} / ${total}</div>
+    </div>
+    <select class="step-product">
+      <option value="">— 請選擇商品 —</option>
+      {% for p in pool_products %}
+        <option value="{{ p['id'] }}">{{ p['name'] }}</option>
+      {% endfor %}
+    </select>
+    <div class="step-options"></div>
+  `;
+
+  const sel = wrap.querySelector('.step-product');
+  sel.addEventListener('change', () => {
+    renderOptionsFor(wrap, sel.value);
+    updateCheckoutHidden && updateCheckoutHidden();
+    tryAddNextStep();
+  });
+
+  return wrap;
+}
+
+function tryAddNextStep(){
+  const box = document.getElementById('bundle-steps');
+  const total = parseInt(box.dataset.total, 10);
+  const steps = Array.from(box.querySelectorAll('.step'));
+
+  // 若最後一個 step 完成，且步數未達 total，新增下一步
+  const last = steps[steps.length - 1];
+  if (stepCompleted(last) && steps.length < total){
+    const next = createStep(steps.length + 1);
+    if(next) box.appendChild(next);
+  }
+}
+
+function collectSequentialSelection(){
+  const box = document.getElementById('bundle-steps');
+  if(!box) return { ok:false, message:'找不到步驟容器' };
+  const total = parseInt(box.dataset.total, 10);
+  const steps = Array.from(box.querySelectorAll('.step'));
+
+  if(steps.length < total) return { ok:false, message:`尚未選滿 ${total} 樣` };
+
+  const parts = [];
+  for(const step of steps){
+    if(!stepCompleted(step)) return { ok:false, message:`尚未完成第 ${step.dataset.step} 樣` };
+    const sel = step.querySelector('.step-product');
+    const name = sel.options[sel.selectedIndex].text.trim();
+    const optBtn = step.querySelector('.step-options button.selected');
+    const optText = optBtn ? optBtn.dataset.value || '' : '';
+    parts.push(`${name}${optText ? '／' + optText : ''}`);
+  }
+  return { ok:true, text: parts.map((t,i)=>`#${i+1} ${t}`).join(' ｜ ') };
+}
+
+// 把原本的 collectBundleOptionString() 擴充支援逐步挑選
+(function patchCollector(){
+  const isTotalMode = {{ 'true' if total_mode else 'false' }};
+  if(!isTotalMode) return;
+
+  window.collectBundleOptionString = function(){
+    return collectSequentialSelection();
+  };
+
+  // 初始化：如果第一步尚未完成則不顯示下一步
+  document.addEventListener('DOMContentLoaded', () => {
+    const box = document.getElementById('bundle-steps');
+    const first = box.querySelector('.step');
+    const sel = first.querySelector('.step-product');
+    sel.addEventListener('change', ()=> {
+      renderOptionsFor(first, sel.value);
+      updateCheckoutHidden && updateCheckoutHidden();
+      tryAddNextStep();
+    });
+  });
+})();
 </script>
 
 
