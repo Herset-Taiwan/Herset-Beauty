@@ -9,17 +9,17 @@
     form { max-width: 820px; margin: 36px auto; background:#fff; border:1px solid #eee; border-radius:12px; padding:24px 28px; }
     h2 { margin-top:0 }
     label { display:block; margin-top:12px; font-weight:700; }
-    input[type="text"], input[type="number"], textarea, select { width:100%; padding:8px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box; margin-top:6px; }
+    input[type="text"], input[type="number"], textarea, select {
+      width:100%; padding:8px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box; margin-top:6px;
+    }
     .row { display:flex; gap:16px; }
     .row > div { flex:1 }
-    .slot { border:1px dashed #ccc; border-radius:10px; padding:12px; margin-top:10px; background:#fff9fb; }
-    .slot-title { font-weight:700; margin-bottom:8px; }
-    .btn { background:#e91e63; color:#fff; border:none; border-radius:8px; padding:10px 16px; cursor:pointer; }
-    .btn.secondary{ background:#7b1fa2 }
-    .btn.link { background:none; color:#e91e63; border:none; padding:0; margin-top:10px; cursor:pointer }
     .note{color:#777; font-size:13px}
+    .help{color:#9a877e; font-size:12px; margin-top:6px}
+    .btn { background:#5E3C2C; color:#fff; border:none; border-radius:8px; padding:12px 16px; cursor:pointer; }
+    .btn:disabled{ opacity:.6; cursor:not-allowed; }
+    hr{ border:none; border-top:1px solid #eee; margin:20px 0; }
   </style>
-  <script>window.allProducts = {{ products|tojson }};</script>
 </head>
 <body>
 
@@ -43,14 +43,16 @@
       <input type="number" name="stock" min="0" step="1" value="{{ bundle['stock'] or 0 }}" required>
     </div>
   </div>
-  
-  <!--應選商品數量 -->
-<div class="row">
-  <div>
-    <label>應選商品數量（0=不用逐步挑選）</label>
-    <input type="number" name="required_total" min="0" step="1" value="{{ bundle['required_total'] or 0 }}">
+
+  <div class="row">
+    <div>
+      <label>應選商品數量（0＝不用逐步挑選）</label>
+      <input type="number" name="required_total" min="0" step="1" value="{{ bundle['required_total'] or 0 }}">
+      <div class="help">
+        例：設為 3，前台會引導消費者依序挑滿 3 樣；若上方「可選商品池」只有 1 樣商品，會顯示該商品並帶入其附加選項（如口味）讓消費者選。
+      </div>
+    </div>
   </div>
-</div>
 
   <label>封面圖（若不更換可略過）</label>
   <input type="file" name="cover_image" accept="image/*">
@@ -61,51 +63,21 @@
   <label>後台備註／描述（選填）</label>
   <textarea name="description" rows="3">{{ bundle['description'] or '' }}</textarea>
 
-  <hr style="margin:18px 0">
+  <hr>
 
   <label>可選商品池（可多選，僅顯示單品）</label>
   <select id="pool" name="pool_ids[]" multiple>
     {% for p in products %}
-      <option value="{{ p['id'] }}" {% if p['id'] in pool_ids %}selected{% endif %}>#{{ p['id'] }}｜{{ p['name'] }}（$ {{ p['price'] }}）</option>
-    {% endfor %}
-  </select>
-  <div class="note">消費者在各選擇欄位中，會從這個池子挑商品。</div>
-
-  <hr style="margin:18px 0">
-
-  <div style="display:flex; align-items:center; justify-content:space-between;">
-    <h3 style="margin:0;">選擇欄位設定（Slots）</h3>
-    <button type="button" class="btn secondary" onclick="addSlot()">＋ 新增一個選擇欄位</button>
-  </div>
-
-  <div id="slots">
-    {% for s in slots %}
-      <div class="slot" data-idx="{{ loop.index0 }}">
-  <div class="slot-title">選擇欄位 #{{ loop.index }}</div>
-
-  <label>欄位標題</label>
-  <input type="text" name="slot_label[]" value="{{ s['slot_label'] }}">
-
-  <label style="margin-top:10px;">此欄位必選數量</label>
-  <input type="number" name="slot_required[]" min="1" step="1" value="{{ s['required_count'] or 1 }}">
-
-  <label style="margin-top:10px;">此欄位限定可選商品（可多選；若留空＝沿用上方可選池）</label>
-  <select name="slot_pool_{{ loop.index0 }}[]" multiple class="slot-pool-select">
-    {% for p in products %}
-      <option value="{{ p['id'] }}"
-        {% if slot_pool_map.get(s['id']) and (p['id'] in slot_pool_map.get(s['id'])) %}selected{% endif %}>
+      <option value="{{ p['id'] }}" {% if p['id'] in pool_ids %}selected{% endif %}>
         #{{ p['id'] }}｜{{ p['name'] }}（$ {{ p['price'] }}）
       </option>
     {% endfor %}
   </select>
-
-  <button type="button" class="btn link" onclick="removeSlot(this)">刪除此欄位</button>
-</div>
-
-    {% endfor %}
+  <div class="note">
+    前台會從這個池子顯示商品供消費者挑選；若池子僅 1 樣商品，會直接顯示該商品並帶出附加選項（如口味）讓消費者選擇。
   </div>
 
-  <div style="margin-top:22px;">
+  <div style="margin-top:24px;">
     <button class="btn" type="submit" style="width:100%;">儲存變更</button>
   </div>
 </form>
@@ -114,40 +86,6 @@
 <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
 <script>
   $('#pool').selectize({ plugins:['remove_button'], persist:false, delimiter:',', create:false });
-
-  const slotsEl = document.getElementById('slots');
-
-  function slotTpl(i){
-    return `
-      <div class="slot" data-idx="${i}">
-        <div class="slot-title">選擇欄位 #${i+1}</div>
-        <label>欄位標題</label>
-        <input type="text" name="slot_label[]" value="女性私密清潔選擇${i+1}">
-        <label style="margin-top:10px;">此欄位必選數量</label>
-        <input type="number" name="slot_required[]" min="1" step="1" value="1">
-        <button type="button" class="btn link" onclick="removeSlot(this)">刪除此欄位</button>
-      </div>
-    `;
-  }
-
-  function addSlot(){
-    const i = slotsEl.children.length;
-    const div = document.createElement('div');
-    div.innerHTML = slotTpl(i);
-    slotsEl.appendChild(div.firstElementChild);
-    renumber();
-  }
-
-  function removeSlot(btn){
-    btn.closest('.slot').remove();
-    renumber();
-  }
-
-  function renumber(){
-    Array.from(slotsEl.children).forEach((el, i)=>{
-      el.querySelector('.slot-title').textContent = `選擇欄位 #${i+1}`;
-    });
-  }
 </script>
 </body>
 </html>
