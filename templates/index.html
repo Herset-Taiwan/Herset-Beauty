@@ -84,21 +84,21 @@
 
     </div>
     
-    {% set is_bundle = (p.get('product_type') == 'bundle') %}
+   {% set is_bundle = (p.get('product_type') == 'bundle') %}
 <div class="btn-group">
   {% if is_bundle %}
-    <!-- 套組：直接進商品頁挑選 -->
-    <button onclick="location.href='/product/{{ p['id'] }}'">挑選組合</button>
-    <a href="/product/{{ p['id'] }}" class="view-btn">查看組合</a>
+    <!-- 套組：只留一顆按鈕，直接進商品頁 -->
+    <button type="button" onclick="location.href='/product/{{ p['id'] }}'">挑選組合</button>
   {% else %}
-    <!-- 非套組：維持原本直接加入購物車 -->
-    <button onclick="addToCart(
-      event,
-      {{ p['id'] }},
-      {{ p['options'] | length }},
-      {{ p['stock'] or 0 }},
-      false
-    )">加入購物車</button>
+    <!-- 非套組：維持原本行為 -->
+    <button type="button"
+            onclick="addToCart(event,
+                               {{ p['id'] }},
+                               {{ p['options'] | length }},
+                               {{ p['stock'] or 0 }},
+                               false)">
+      加入購物車
+    </button>
     <a href="/product/{{ p['id'] }}" class="view-btn">查看商品</a>
   {% endif %}
 </div>
