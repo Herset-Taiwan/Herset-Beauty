@@ -27,7 +27,12 @@
 <div id="product-container" class="show">
   <section class="product-list">
     {% for p in products %}
-    <div class="product-card" data-category="{{ p['categories'] | join(',') if p['categories'] else '全部' }}">
+    <div
+  class="product-card"
+  data-type="{{ p.get('product_type') or 'single' }}"
+  data-category="{{ p['categories'] | join(',') if p['categories'] else '全部' }}"
+>
+
   <a href="/product/{{ p['id'] }}" style="position: relative; display: block;">
   <div class="label-group">
     {% for tag in p['tags'] %}
