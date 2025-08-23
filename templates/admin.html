@@ -406,7 +406,7 @@
 
   <label>分類篩選：</label>
   <select id="category-filter" name="category[]" multiple>
-  {% for cat in ['身體保養', '生活香氛', '寵物友善', '品牌嚴選'] %}
+  {% for cat in ['身體保養', '生活香氛', '寵物友善', '品牌嚴選', '套組優惠'] %}
     <option value="{{ cat }}" {% if cat in selected_categories %}selected{% endif %}>{{ cat }}</option>
   {% endfor %}
 </select>

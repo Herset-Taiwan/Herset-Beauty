@@ -40,21 +40,38 @@
   <input type="text" name="name" placeholder="例：寵物除臭噴霧 任選3入 超值組" required>
 
   <!-- 套組名稱下方插入 -->
-<label>分類（可多選）</label>
-<select id="categories" name="categories[]" multiple placeholder="輸入後 Enter 可新增">
-  {% for c in categories_all %}
-    <option value="{{ c }}">{{ c }}</option>
+<!-- ✅ 分類（可多選 + 可新增） -->
+<label>分類（可多選 + 可新增）</label>
+<select id="categories" name="categories[]" multiple>
+  {# 你也可以把這個清單改成從後端帶進來的 categories_options #}
+  {% set base_cats = ['身體保養','生活香氛','寵物友善','品牌嚴選','套組優惠'] %}
+  {% set cur = bundle.get('categories') or [] %}
+  {% for c in base_cats %}
+    <option value="{{ c }}" {% if c in cur %}selected{% endif %}>{{ c }}</option>
+  {% endfor %}
+  {# 把資料裡有、但不在預設清單的自訂分類也補出來 #}
+  {% for c in cur %}
+    {% if c not in base_cats %}
+      <option value="{{ c }}" selected>{{ c }}</option>
+    {% endif %}
   {% endfor %}
 </select>
-<div class="help">例：身體保養、生活香氛、寵物友善、品牌嚴選、套組優惠…</div>
 
-<label style="margin-top:12px;">標籤（可多選）</label>
-<select id="tags" name="tags[]" multiple placeholder="輸入後 Enter 可新增">
-  {% for t in tags_all %}
-    <option value="{{ t }}">{{ t }}</option>
+<!-- ✅ 標籤（可多選 + 可新增） -->
+<label>標籤（可多選 + 可新增）</label>
+<select id="tags" name="tags[]" multiple>
+  {% set base_tags = ['新品優惠','熱銷推薦','限量販售','天然成分','主打商品'] %}
+  {% set cur_tags = bundle.get('tags') or [] %}
+  {% for t in base_tags %}
+    <option value="{{ t }}" {% if t in cur_tags %}selected{% endif %}>{{ t }}</option>
+  {% endfor %}
+  {% for t in cur_tags %}
+    {% if t not in base_tags %}
+      <option value="{{ t }}" selected>{{ t }}</option>
+    {% endif %}
   {% endfor %}
 </select>
-<div class="help">例：新品優惠、主打商品、熱銷推薦、限量販售、天然成分…</div>
+
 
 
   <div class="row">
