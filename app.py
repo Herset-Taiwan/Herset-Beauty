@@ -1307,55 +1307,43 @@ def product_detail(product_id):
     cart = session.get('cart', [])
     cart_count = sum(item['qty'] for item in cart)
 
-    # 預設（單品）
+    # 預設值（避免未定義）
     bundle = None
-    slots = []
+    slots = []              # 已停用 slots，但保留給模板相容
     pool_products = []
-    slot_allowed = {}   # {slot_id: [product_id, ...]}
+    slot_allowed = {}       # 已停用 slots，但保留給模板相容
+    total_mode = False
+    required_total = 0
 
-    # 若是套組殼商品 → 撈套組主檔 / 欄位 / 可選池 / 每欄位限定可選商品
+    # 套組殼商品：採用 required_total + pool 模式
     if product.get('product_type') == 'bundle':
-        bres = supabase.table("bundles").select("*").eq("shell_product_id", product["id"]).single().execute()
+        bres = (
+            supabase.table("bundles")
+            .select("*")
+            .eq("shell_product_id", product["id"])
+            .single()
+            .execute()
+        )
         bundle = bres.data or None
 
         if bundle:
-            # 欄位
-            sres = (
-                supabase.table("bundle_slots")
-                .select("*")
-                .eq("bundle_id", bundle["id"])
-                .order("slot_index")
-                .execute()
-            )
-            slots = sres.data or []
+            required_total = int(bundle.get("required_total") or 0)
+            total_mode = required_total > 0
 
             # 共用可選池
-            pres = supabase.table("bundle_pool").select("product_id").eq("bundle_id", bundle["id"]).execute()
-            pool_ids = [r["product_id"] for r in (pres.data or [])]
-
-            # 每欄位限定可選商品
-            sp_rows = (
-                supabase.table("bundle_slot_pool")
-                .select("slot_id, product_id")
+            pres = (
+                supabase.table("bundle_pool")
+                .select("product_id")
                 .eq("bundle_id", bundle["id"])
                 .execute()
-                .data
-                or []
             )
-            for r in sp_rows:
-                slot_allowed.setdefault(r["slot_id"], []).append(r["product_id"])
+            pool_ids = [r["product_id"] for r in (pres.data or [])]
 
-            # 要實際撈的商品 = 共用池 ∪ 各欄位限定商品
-            union_ids = set(pool_ids)
-            for ids in slot_allowed.values():
-                union_ids.update(ids)
-            union_ids = list(union_ids)
-
-            if union_ids:
+            if pool_ids:
                 pool_products = (
                     supabase.table("products")
                     .select("id,name,price,options,image,images")
-                    .in_("id", union_ids)
+                    .in_("id", pool_ids)
                     .order("name")
                     .execute()
                     .data
@@ -1369,9 +1357,9 @@ def product_detail(product_id):
         bundle=bundle,
         slots=slots,
         pool_products=pool_products,
-        slot_allowed=slot_allowed,  # ✅ 前台依此限制每個欄位可選商品
-        total_mode=total_mode,           # ✅ 新增
-        required_total=required_total
+        slot_allowed=slot_allowed,
+        total_mode=total_mode,         # ✅ 已定義
+        required_total=required_total  # ✅ 已定義
     )
 
 
