@@ -438,20 +438,32 @@ body.product-page .tab-btn.active {
 
 /* === 套組商品用樣式 === */
 .bundle-slot{
-  border:1px dashed #d9c9c2; border-radius:10px;
-  padding:12px; margin-top:12px; background:#fff9f6;
+  border:1px solid #e7dcd7; border-radius:12px; padding:14px 16px; background:#fff8f5; margin-top:16px;
 }
+.slot-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.slot-title{ font-weight:700; color:#5E3C2C; }
+.slot-note{ font-size:12px; color:#9a877e; }
+.slot-product{ width:100%; padding:8px; border-radius:8px; border:1px solid #d9c9c2; margin-bottom:8px; }
+.locked-product{
+  display:flex; align-items:center; gap:8px; margin:6px 0 4px;
+}
+.locked-product .sel-badge{
+  background:#5E3C2C; color:#fff; font-size:12px; border-radius:12px; padding:2px 8px;
+}
+.locked-product .product-title{
+  max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#5E3C2C; font-weight:700;
+}
+
 .bundle-slot h4{ margin:0 0 8px; }
 .bundle-slot select{
   width:100%; padding:8px; border-radius:8px; border:1px solid #ccc; margin-bottom:8px;
 }
-.slot-options{ margin-top:6px; }
+.slot-options{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
 .slot-options button{
-  background:#f5f5f5; border:1px solid #ccc; border-radius:20px;
-  padding:6px 14px; margin:6px 4px; cursor:pointer;
+  border:1px solid #d9c9c2; background:#fff; border-radius:18px; padding:6px 12px; cursor:pointer;
 }
 .slot-options button.selected{
-  background-color:#5E3C2C; color:#fff; border-color:#5E3C2C;
+  background:#5E3C2C; color:#fff; border-color:#5E3C2C;
 }
 
 
@@ -506,17 +518,39 @@ body.product-page .tab-btn.active {
 
 <!-- 商品價格區塊 -->
     <div class="price-box">
-  {% if product.get('discount_price') %}
-    <div class="price-original">NT${{ "%.0f"|format(product['price']) }}</div>
-    <div class="price-discount">
-  <span class="currency">NT$</span><span class="amount">{{ "%.0f"|format(product['discount_price']) }}</span>
-</div>
-    {% set discount_rate = (product['discount_price'] / product['price'] * 10)|round(1, 'floor') %}
-    <div class="discount-tag">{{ discount_rate }}折</div>
+  {% if product.get('product_type') == 'bundle' %}
+    {# 套組價格：現價用 bundle.price（與殼商品同步），原價用 bundle.compare_at #}
+    {% set cur = bundle and bundle.get('price') is not none and bundle['price'] or product['price'] %}
+    {% if bundle and bundle.get('compare_at') %}
+      <div class="price-original">NT${{ "%.0f"|format(bundle['compare_at']) }}</div>
+      <div class="price-discount">
+        <span class="currency">NT$</span>
+        <span class="amount">{{ "%.0f"|format(cur) }}</span>
+      </div>
+      {% if bundle['compare_at']|float > 0 %}
+        {% set discount_rate = (cur / bundle['compare_at'] * 10)|round(1, 'floor') %}
+        <div class="discount-tag">{{ discount_rate }}折</div>
+      {% endif %}
+    {% else %}
+      <div class="price-regular">NT${{ "%.0f"|format(cur) }}</div>
+    {% endif %}
+
   {% else %}
-    <div class="price-regular">NT${{ "%.0f"|format(product['price']) }}</div>
+    {# 單品價格（維持原本規則） #}
+    {% if product.get('discount_price') %}
+      <div class="price-original">NT${{ "%.0f"|format(product['price']) }}</div>
+      <div class="price-discount">
+        <span class="currency">NT$</span>
+        <span class="amount">{{ "%.0f"|format(product['discount_price']) }}</span>
+      </div>
+      {% set discount_rate = (product['discount_price'] / product['price'] * 10)|round(1, 'floor') %}
+      <div class="discount-tag">{{ discount_rate }}折</div>
+    {% else %}
+      <div class="price-regular">NT${{ "%.0f"|format(product['price']) }}</div>
+    {% endif %}
   {% endif %}
 </div>
+
 
     {% if product['stock'] == 0 %}
       <div style="background-color: #ffe6e6; color: #b30000; font-weight: bold; padding: 10px; border-radius: 6px; margin-top: 10px;">
@@ -541,9 +575,12 @@ body.product-page .tab-btn.active {
        data-slot-index="{{ loop.index0 }}"
        data-required="{{ s['required_count'] or 1 }}"
        data-allowed="{{ allowed_ids|join(',') }}">
-    <h4>{{ s['slot_label'] or ('選擇' ~ loop.index) }}</h4>
+    <div class="slot-head">
+      <div class="slot-title">選擇{{ loop.index }}</div>
+      <div class="slot-note">需選擇 {{ s['required_count'] or 1 }} 個</div>
+    </div>
 
-    <!-- 商品選擇（若只有 1 個允許商品會在 JS 端自動隱藏） -->
+    <!-- 商品下拉（若只有 1 個允許商品會在 JS 端自動隱藏） -->
     <select class="slot-product">
       <option value="">— 請選擇商品 —</option>
       {% for p in pool_products %}
@@ -553,17 +590,17 @@ body.product-page .tab-btn.active {
       {% endfor %}
     </select>
 
-    <!-- 固定商品顯示（自動鎖定時才會顯示） -->
-    <div class="locked-product" style="display:none;color:#5E3C2C; font-weight:700; margin:6px 0;"></div>
-
-    <!-- 該商品的 options（口味/規格）會動態渲染到這裡 -->
-    <div class="slot-options"></div>
-
-    <div class="slot-note" style="font-size:12px;color:#777;">
-      需選擇 {{ s['required_count'] or 1 }} 個
+    <!-- 精簡「已選」列（單行省略、無多餘文字） -->
+    <div class="locked-product" style="display:none;">
+      <span class="sel-badge">已選</span>
+      <span class="product-title"></span>
     </div>
+
+    <!-- 口味/規格按鈕區 -->
+    <div class="slot-options"></div>
   </div>
 {% endfor %}
+
 
 
   </div>
@@ -764,6 +801,14 @@ function bindSingleOptions(){
 }
 bindSingleOptions();
 
+/* 新增：簡短文字工具（單行省略的來源文字） */
+function shortText(s, max){
+  if(!s) return '';
+  const t = String(s).replace(/\s+/g,' ').trim();
+  return (t.length > (max||22)) ? (t.slice(0, (max||22)) + '…') : t;
+}
+
+/* 取代：渲染該欄位目前商品的 options（口味/規格） */
 function renderSlotOptions(slotEl, productId){
   const area = slotEl.querySelector('.slot-options');
   area.innerHTML = '';
@@ -795,7 +840,7 @@ function renderSlotOptions(slotEl, productId){
     area.appendChild(btn);
   });
 
-  // ✅ 只有一個規格時，預設選取
+  // 只有一個規格時自動選取，減少一步點擊
   if (opts.length === 1) {
     const first = area.querySelector('button');
     if (first) first.classList.add('selected');
@@ -804,28 +849,41 @@ function renderSlotOptions(slotEl, productId){
 
 
 // ✅ 依「允許商品數量」自動切換 UI
+/* 取代：初始化 — 單一商品自動鎖定、隱藏下拉，標題精簡顯示；N=1 隱藏提示 */
 function initBundleSlots(){
   document.querySelectorAll('.bundle-slot').forEach(slotEl => {
     const sel = slotEl.querySelector('.slot-product');
-    const allowedStr = (slotEl.dataset.allowed || '').trim();
-    const allowedIds = allowedStr ? allowedStr.split(',').filter(Boolean) : [];
+    const note = slotEl.querySelector('.slot-note');
+    const locked = slotEl.querySelector('.locked-product');
 
-    // 下拉選單實際可選的項目（排除 placeholder）
+    // 必選 1 個時隱藏提示，避免畫面雜訊
+    const req = parseInt(slotEl.dataset.required || '1', 10);
+    if (req === 1) note.style.display = 'none';
+
+    // 此欄位實際可選的項目（排除 placeholder）
     const validOptions = Array.from(sel.options).filter(o => o.value);
 
-    // 若此欄位只有 1 個可選商品 → 自動鎖定該商品、隱藏下拉、直接顯示 options
+    // 若只有 1 個可選商品 → 自動鎖定、隱藏下拉、精簡顯示
     if (validOptions.length === 1) {
       sel.value = validOptions[0].value;
       sel.style.display = 'none';
-      const locked = slotEl.querySelector('.locked-product');
-      locked.style.display = 'block';
-      locked.textContent = `已選商品：${validOptions[0].text}`;
+      locked.style.display = 'flex';
+      locked.querySelector('.product-title').textContent = shortText(validOptions[0].text, 28);
+      locked.title = validOptions[0].text; // hover 可看全名
       renderSlotOptions(slotEl, sel.value);
-       updateCheckoutHidden && updateCheckoutHidden();
+      updateCheckoutHidden && updateCheckoutHidden();
     }
 
-    // 切換商品時，重渲染 options
+    // 切換商品時，更新精簡顯示 + 口味
     sel.addEventListener('change', () => {
+      if (sel.value) {
+        locked.style.display = 'flex';
+        locked.querySelector('.product-title').textContent = shortText(sel.options[sel.selectedIndex].text, 28);
+        locked.title = sel.options[sel.selectedIndex].text;
+      } else {
+        locked.style.display = 'none';
+        locked.querySelector('.product-title').textContent = '';
+      }
       renderSlotOptions(slotEl, sel.value);
       updateCheckoutHidden && updateCheckoutHidden();
     });
