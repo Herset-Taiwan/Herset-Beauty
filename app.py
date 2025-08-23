@@ -234,14 +234,15 @@ def admin_dashboard():
     product_total_pages = max(1, (product_total_count + product_page_size - 1) // product_page_size)
     products = all_products[product_start:product_end]
 
-    # 取得所有 bundles，建立 (shell_product_id -> bundle_id) 對照
-bundle_map_rows = supabase.table("bundles").select("id, shell_product_id").execute().data or []
-shell_to_bundle = {b["shell_product_id"]: b["id"] for b in bundle_map_rows if b.get("shell_product_id")}
+        # 取得所有 bundles，建立 (shell_product_id -> bundle_id) 對照
+    bundle_map_rows = supabase.table("bundles").select("id, shell_product_id").execute().data or []
+    shell_to_bundle = {b["shell_product_id"]: b["id"] for b in bundle_map_rows if b.get("shell_product_id")}
 
-# 把對照寫回 products（讓模板能拿到 p['bundle_id']）
-for p in products:
-    if p.get("product_type") == "bundle":
-        p["bundle_id"] = shell_to_bundle.get(p.get("id"))
+    # 把對照寫回 products（讓模板能拿到 p['bundle_id']）
+    for p in products:
+        if p.get("product_type") == "bundle":
+            p["bundle_id"] = shell_to_bundle.get(p.get("id"))
+
 
 
 
