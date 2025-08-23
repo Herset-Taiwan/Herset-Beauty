@@ -1733,29 +1733,29 @@ def add_to_cart():
     disc = float(product.get('discount_price') or 0)
     cur = float(disc if (disc and disc < orig) else orig)
 
-    # 若是套組，嘗試讀 bundles 表
-    if is_bundle:
-        bundle_row = None
-        try:
-            r = supabase.table('bundles').select('*').eq('product_id', product_id).limit(1).execute()
-            if r.data:
-                bundle_row = r.data[0]
-        except APIError as e:
-            # 欄位不存在（42703）或其它錯誤 → 改用 id 嘗試
-            try:
-                r = supabase.table('bundles').select('*').eq('id', product_id).limit(1).execute()
-                if r.data:
-                    bundle_row = r.data[0]
-            except Exception:
-                bundle_row = None
+    # 若是套組，改用 shell_product_id 找到對應的 bundles 價格
+if is_bundle:
+    b = None
+    try:
+        b = (
+            supabase.table('bundles')
+            .select('price, compare_at, shell_product_id')
+            .eq('shell_product_id', product_id)   # ✅ 正確欄位
+            .single()
+            .execute()
+            .data
+        )
+    except Exception:
+        b = None
 
-        if bundle_row:
-            # 以 bundles 的價格為準
-            b_price = float(bundle_row.get('price') or cur)
-            b_compare = float(bundle_row.get('compare_at') or bundle_row.get('compare') or orig or 0)
-            cur = b_price
-            if b_compare > 0:
-                orig = b_compare
+    if b:
+        b_price   = float(b.get('price') or 0)
+        b_compare = float(b.get('compare_at') or 0)
+        if b_price > 0:
+            cur = b_price          # 現價（計價用）
+        if b_compare > 0:
+            orig = b_compare       # 原價（顯示刪除線）
+
 
     final_price = float(cur)
 
