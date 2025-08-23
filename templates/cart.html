@@ -166,44 +166,44 @@
           <div class="cart-info">
             <strong>{{ p['name'] }}</strong><br>
 
-            {% if p.get('option') %}
-  {% set opt = p['option'] %}
-  {% if '｜' in opt %}
-    {% set parts = opt.split('｜') %}
-  {% elif '|' in opt %}
-    {% set parts = opt.split('|') %}
-  {% else %}
-    {% set parts = [opt] %}
-  {% endif %}
+            {# ---- 價格計算（同時支援套組與單品）---- #}
+{% set is_bundle = (p.get('product_type') == 'bundle') %}
 
-  <div class="opt-lines">
-    <div class="opt-label">選項：</div>
-    {% for line in parts %}
-      {% set txt = line.strip() %}
-      {% if txt %}
-        <div class="opt-line">{{ txt }}</div>
-      {% endif %}
-    {% endfor %}
-  </div>
-{% endif %}
+{# 單價：套組優先用 bundle_price，其次單品的 discount_price，最後回落到 price #}
+{% set unit_price = (p.get('bundle_price') or p.get('discount_price') or p['price']) | float %}
 
+{# 原價：套組優先用 bundle_compare，其次常見 compare_at / original_price，最後回落到 price #}
+{% set unit_compare = (
+     p.get('bundle_compare')
+  or p.get('compare_at')
+  or p.get('original_price')
+  or p['price']
+) | float %}
 
-            {% set price = p['price'] | float %}
-{% set original = p.get('original_price', price) | float %}
-{% set discount = p.get('discount_price', 0) | float %}
+{% set qty = (p.get('qty') or 1) | int %}
 
-{% if discount and discount < original %}
-  <span style="color:#999; text-decoration: line-through;">${{ '%.0f' % original }}</span>
-  <span style="color: #e91e63; font-weight: bold;">${{ '%.0f' % discount }}</span>
-  × {{ p['qty'] }} =
-  <span style="color: #e91e63; font-weight: bold;">${{ '%.0f' % (discount * p['qty']) }}</span>
+{# ---- 顯示區 ---- #}
+{% if unit_price < unit_compare and unit_compare > 0 %}
+  <span style="color:#999; text-decoration: line-through;">
+    ${{ '%.0f' % unit_compare }}
+  </span>
+  <span style="color:#e91e63; font-weight:bold;">
+    ${{ '%.0f' % unit_price }}
+  </span>
+  × {{ qty }} =
+  <span style="color:#e91e63; font-weight:bold;">
+    ${{ '%.0f' % (unit_price * qty) }}
+  </span>
 {% else %}
-  ${{ '%.0f' % price }} × {{ p['qty'] }} = ${{ '%.0f' % (price * p['qty']) }}
+  ${{ '%.0f' % unit_price }} × {{ qty }} =
+  ${{ '%.0f' % (unit_price * qty) }}
 {% endif %}
 
 <div style="font-size:12px; color:#aaa;">
-  原始售價: {{ original }} / 折扣價: {{ discount }}
+  原始售價: {{ '%.0f' % unit_compare }} /
+  折扣價: {{ '%.0f' % (unit_price if unit_price < unit_compare else 0) }}
 </div>
+
 
           </div>
 
