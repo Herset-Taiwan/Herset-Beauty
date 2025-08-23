@@ -436,35 +436,6 @@ body.product-page .tab-btn.active {
   100% { transform: scale(1); opacity: 1; }
 }
 
-/* === 套組商品用樣式 === */
-.bundle-slot{
-  border:1px solid #e7dcd7; border-radius:12px; padding:14px 16px; background:#fff8f5; margin-top:16px;
-}
-.slot-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
-.slot-title{ font-weight:700; color:#5E3C2C; }
-.slot-note{ font-size:12px; color:#9a877e; }
-.slot-product{ width:100%; padding:8px; border-radius:8px; border:1px solid #d9c9c2; margin-bottom:8px; }
-.locked-product{
-  display:flex; align-items:center; gap:8px; margin:6px 0 4px;
-}
-.locked-product .sel-badge{
-  background:#5E3C2C; color:#fff; font-size:12px; border-radius:12px; padding:2px 8px;
-}
-.locked-product .product-title{
-  max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#5E3C2C; font-weight:700;
-}
-
-.bundle-slot h4{ margin:0 0 8px; }
-.bundle-slot select{
-  width:100%; padding:8px; border-radius:8px; border:1px solid #ccc; margin-bottom:8px;
-}
-.slot-options{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
-.slot-options button{
-  border:1px solid #d9c9c2; background:#fff; border-radius:18px; padding:6px 12px; cursor:pointer;
-}
-.slot-options button.selected{
-  background:#5E3C2C; color:#fff; border-color:#5E3C2C;
-}
 
 /* 逐步挑選模式 */
 #bundle-steps .step{
@@ -579,9 +550,7 @@ body.product-page .tab-btn.active {
     {% endfor %}
   </div>
 {% else %}
-  <!-- 套組規格：多欄位選購 -->
   {# === 套組（逐步挑選） === #}
-{% if product.get('product_type') == 'bundle' %}
   <div id="bundle-steps" data-total="{{ required_total or 1 }}">
     <!-- 第 1 步，JS 會在選完口味後自動加上第 2 / 3 步… -->
     <div class="step" data-step="1">
@@ -600,7 +569,6 @@ body.product-page .tab-btn.active {
     </div>
   </div>
 {% endif %}
-
 
 
 
@@ -648,11 +616,6 @@ body.product-page .tab-btn.active {
   <div id="ingredient">{{ (product['ingredient'] or '') | safe }}</div>
 </div>
 
-
-<script>
-  // 供前端渲染各商品的 options 用
-  window.poolProducts = {{ (pool_products or []) | tojson }};
-</script>
 <script>
   
   let selectedOption = "";
@@ -805,121 +768,14 @@ function shortText(s, max){
   return (t.length > (max||22)) ? (t.slice(0, (max||22)) + '…') : t;
 }
 
-/* 取代：渲染該欄位目前商品的 options（口味/規格） */
-function renderSlotOptions(slotEl, productId){
-  const area = slotEl.querySelector('.slot-options');
-  area.innerHTML = '';
-  if(!productId) return;
-
-  const p = window.poolProducts.find(x => String(x.id) === String(productId));
-  const opts = (p && p.options) || [];
-
-  if (opts.length === 0) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.textContent = '— 無規格 —';
-    btn.className = 'selected';
-    btn.dataset.value = '';
-    area.appendChild(btn);
-    return;
-  }
-
-  opts.forEach(o => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.textContent = o;
-    btn.dataset.value = o;
-    btn.addEventListener('click', () => {
-      area.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      updateCheckoutHidden && updateCheckoutHidden();
-    });
-    area.appendChild(btn);
-  });
-
-  // 只有一個規格時自動選取，減少一步點擊
-  if (opts.length === 1) {
-    const first = area.querySelector('button');
-    if (first) first.classList.add('selected');
-  }
-}
-
-
-// ✅ 依「允許商品數量」自動切換 UI
-/* 取代：初始化 — 單一商品自動鎖定、隱藏下拉，標題精簡顯示；N=1 隱藏提示 */
-function initBundleSlots(){
-  document.querySelectorAll('.bundle-slot').forEach(slotEl => {
-    const sel = slotEl.querySelector('.slot-product');
-    const note = slotEl.querySelector('.slot-note');
-    const locked = slotEl.querySelector('.locked-product');
-
-    // 必選 1 個時隱藏提示，避免畫面雜訊
-    const req = parseInt(slotEl.dataset.required || '1', 10);
-    if (req === 1) note.style.display = 'none';
-
-    // 此欄位實際可選的項目（排除 placeholder）
-    const validOptions = Array.from(sel.options).filter(o => o.value);
-
-    // 若只有 1 個可選商品 → 自動鎖定、隱藏下拉、精簡顯示
-    if (validOptions.length === 1) {
-      sel.value = validOptions[0].value;
-      sel.style.display = 'none';
-      locked.style.display = 'flex';
-      locked.querySelector('.product-title').textContent = shortText(validOptions[0].text, 28);
-      locked.title = validOptions[0].text; // hover 可看全名
-      renderSlotOptions(slotEl, sel.value);
-      updateCheckoutHidden && updateCheckoutHidden();
-    }
-
-    // 切換商品時，更新精簡顯示 + 口味
-    sel.addEventListener('change', () => {
-      if (sel.value) {
-        locked.style.display = 'flex';
-        locked.querySelector('.product-title').textContent = shortText(sel.options[sel.selectedIndex].text, 28);
-        locked.title = sel.options[sel.selectedIndex].text;
-      } else {
-        locked.style.display = 'none';
-        locked.querySelector('.product-title').textContent = '';
-      }
-      renderSlotOptions(slotEl, sel.value);
-      updateCheckoutHidden && updateCheckoutHidden();
-    });
-  });
-}
-document.addEventListener('DOMContentLoaded', initBundleSlots);
-
 
 function collectBundleOptionString(){
-  const slots = document.querySelectorAll('.bundle-slot');
-  const parts = [];
-  for(const slot of slots){
-    const idx = slot.dataset.slotIndex;
-    const required = parseInt(slot.dataset.required || '1', 10);
-    const label = slot.querySelector('h4')?.textContent?.trim() || `選擇${Number(idx)+1}`;
+  // 逐步挑選模式：改用 collectSequentialSelection()
+  const box = document.getElementById('bundle-steps');
+  if (box) return collectSequentialSelection();
 
-    const sel = slot.querySelector('.slot-product');
-    const pid = sel.value;
-    const name = sel.options[sel.selectedIndex]?.text?.trim();
-
-    if(!pid){
-      return { ok:false, message:`請完成「${label}」的商品選擇` };
-    }
-
-    // 找這個 slot 被點選的規格按鈕
-    const selectedOptBtn = slot.querySelector('.slot-options button.selected');
-    const optText = selectedOptBtn ? selectedOptBtn.dataset.value || '' : '';
-
-    // 目前是每欄位必選 1 個商品，如需一次選多個可再擴充
-    if(required > 1){
-      // 先以 1 個計，未來你要多選可在此處擴充陣列
-      // 這裡先提示：目前欄位一次只能選 1 個
-    }
-
-    // 組裝顯示字串：例如【洗髮精】A 品 / 清新薄荷
-    const show = `【${label}】${name}${optText ? '／' + optText : ''}`;
-    parts.push(show);
-  }
-  return { ok:true, text: parts.join(' ｜ ') };
+  // 安全預設（非套組時這個函式不會被用到）
+  return { ok: true, text: '' };
 }
 
 function updateCheckoutHidden(){
@@ -1077,7 +933,7 @@ function collectSequentialSelection(){
 
 // 把原本的 collectBundleOptionString() 擴充支援逐步挑選
 (function patchCollector(){
-  const isTotalMode = {{ 'true' if total_mode else 'false' }};
+  const isTotalMode = {{ 'true' if product.get('product_type') == 'bundle' else 'false' }};
   if(!isTotalMode) return;
 
   window.collectBundleOptionString = function(){
