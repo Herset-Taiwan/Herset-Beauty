@@ -1079,6 +1079,10 @@ def cart():
             'name': dbp.get('name') or item.get('name'),
             'product_type': item.get('product_type') or dbp.get('product_type'),
 
+            # ✅ 把 bundle 欄位帶到模板
+            'bundle_price':   item.get('bundle_price'),
+            'bundle_compare': item.get('bundle_compare'),
+
             # 前端顯示/計算會用到的欄位
             'price': unit_price,
             'original_price': unit_compare if unit_compare > 0 else unit_price,
@@ -1717,88 +1721,90 @@ def delete_product(product_id):
 @app.route('/add_to_cart', methods=['POST'])
 def add_to_cart():
     product_id = request.form.get('product_id')
-    qty = int(request.form.get('qty', 1))
-    option = request.form.get('option') or ''
-    action = request.form.get('action')
+    qty       = int(request.form.get('qty', 1))
+    option    = (request.form.get('option') or '')
+    action    = request.form.get('action')
 
-    # 取商品
+    # 1) 取商品
     res = supabase.table('products').select('*').eq('id', product_id).single().execute()
     if not res.data:
         return jsonify(success=False, message="找不到商品"), 404
     product = res.data
+
     is_bundle = (product.get('product_type') == 'bundle')
 
-    # 先用單品邏輯算一組基準價
-    orig = float(product.get('price') or 0)
-    disc = float(product.get('discount_price') or 0)
-    cur = float(disc if (disc and disc < orig) else orig)
+    # 2) 基本價（單品）
+    orig = float(product.get('price') or 0)                # 原價
+    disc = float(product.get('discount_price') or 0)       # 單品折扣價（沒有就 0）
+    cur  = disc if (disc and disc < orig) else orig        # 結帳用單價（先用單品邏輯）
 
-    # 若是套組，改用 shell_product_id 找到對應的 bundles 價格
-if is_bundle:
-    b = None
-    try:
-        b = (
-            supabase.table('bundles')
-            .select('price, compare_at, shell_product_id')
-            .eq('shell_product_id', product_id)   # ✅ 正確欄位
-            .single()
-            .execute()
-            .data
-        )
-    except Exception:
-        b = None
+    # 3) 套組價（覆蓋）
+    bundle_price = None
+    bundle_compare = None
+    if is_bundle:
+        try:
+            b = (
+                supabase.table('bundles')
+                .select('price, compare_at, shell_product_id')
+                .eq('shell_product_id', product_id)   # ✅ 正確欄位
+                .single()
+                .execute()
+                .data
+            )
+            if b:
+                bp = float(b.get('price') or 0)
+                bc = float(b.get('compare_at') or 0)
+                if bp > 0:
+                    cur = bp               # 套組現價 → 計價用
+                    bundle_price = bp
+                if bc > 0:
+                    orig = bc              # 套組原價 → 顯示用
+                    bundle_compare = bc
+        except Exception:
+            pass
 
-    if b:
-        b_price   = float(b.get('price') or 0)
-        b_compare = float(b.get('compare_at') or 0)
-        if b_price > 0:
-            cur = b_price          # 現價（計價用）
-        if b_compare > 0:
-            orig = b_compare       # 原價（顯示刪除線）
+    # 4) 初始化購物車
+    session.setdefault('cart', [])
+    cart = session['cart']
 
-
-    final_price = float(cur)
-
-    # 初始化購物車
-    cart = session.get('cart', [])
-
-    # 相同商品 + 相同選項合併數量
-    merged = False
+    # 5) 若已有相同商品+規格，直接加量
     for item in cart:
         if item.get('product_id') == product_id and (item.get('option') or '') == option:
-            item['qty'] = int(item.get('qty', 1)) + qty
-            merged = True
-            break
+            item['qty'] += qty
+            session.modified = True
+            if action == 'checkout':
+                return redirect('/cart')
+            total_qty = sum(x.get('qty', 0) for x in cart)
+            return jsonify(success=True, count=total_qty)
 
-    if not merged:
-        # 只有真的比原價低才視為折扣價，否則給 0
-        discount_field = final_price if (orig and final_price < orig) else 0.0
+    # 6) 新增項目
+    entry = {
+        'id': product_id,
+        'product_id': product_id,
+        'name': product.get('name'),
+        'price': cur,                          # 小計用
+        'original_price': orig,                # 給頁面顯示
+        'discount_price': (disc if (disc and disc < orig) else 0),  # 單品才會有意義
+        'images': product.get('images', []),
+        'qty': qty,
+        'option': option
+    }
+    if bundle_price is not None:
+        entry['bundle_price'] = bundle_price
+    if bundle_compare is not None:
+        entry['bundle_compare'] = bundle_compare
 
-        cart.append({
-            'id': product_id,
-            'product_id': product_id,
-            'name': product.get('name'),
-            'product_type': product.get('product_type'),
-            'image': product.get('image'),
-            'images': product.get('images', []),
-
-            # 🔑 之後 /cart 與 cart.html 都只看這三個欄位
-            'price': final_price,                         # 計價用
-            'original_price': float(orig or final_price), # 原價（顯示刪除線）
-            'discount_price': float(discount_field),      # 折扣價（否則 0）
-
-            'qty': qty,
-            'option': option
-        })
-
+    cart.append(entry)
     session['cart'] = cart
+    session.modified = True
 
+    # 7) 立即結帳
     if action == 'checkout':
         return redirect('/cart')
 
-    total_qty = sum(int(i.get('qty', 1)) for i in session['cart'])
+    # 8) 一般加入購物車回傳數量
+    total_qty = sum(x.get('qty', 0) for x in cart)
     return jsonify(success=True, count=total_qty)
-
 
 
 
