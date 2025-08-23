@@ -19,6 +19,7 @@
     .btn.link { background:none; color:#e91e63; border:none; padding:0; margin-top:10px; cursor:pointer }
     .note{color:#777; font-size:13px}
   </style>
+  <script>window.allProducts = {{ products|tojson }};</script>
 </head>
 <body>
 
@@ -72,13 +73,27 @@
   <div id="slots">
     {% for s in slots %}
       <div class="slot" data-idx="{{ loop.index0 }}">
-        <div class="slot-title">選擇欄位 #{{ loop.index }}</div>
-        <label>欄位標題</label>
-        <input type="text" name="slot_label[]" value="{{ s['slot_label'] }}">
-        <label style="margin-top:10px;">此欄位必選數量</label>
-        <input type="number" name="slot_required[]" min="1" step="1" value="{{ s['required_count'] or 1 }}">
-        <button type="button" class="btn link" onclick="removeSlot(this)">刪除此欄位</button>
-      </div>
+  <div class="slot-title">選擇欄位 #{{ loop.index }}</div>
+
+  <label>欄位標題</label>
+  <input type="text" name="slot_label[]" value="{{ s['slot_label'] }}">
+
+  <label style="margin-top:10px;">此欄位必選數量</label>
+  <input type="number" name="slot_required[]" min="1" step="1" value="{{ s['required_count'] or 1 }}">
+
+  <label style="margin-top:10px;">此欄位限定可選商品（可多選；若留空＝沿用上方可選池）</label>
+  <select name="slot_pool_{{ loop.index0 }}[]" multiple class="slot-pool-select">
+    {% for p in products %}
+      <option value="{{ p['id'] }}"
+        {% if slot_pool_map.get(s['id']) and (p['id'] in slot_pool_map.get(s['id'])) %}selected{% endif %}>
+        #{{ p['id'] }}｜{{ p['name'] }}（$ {{ p['price'] }}）
+      </option>
+    {% endfor %}
+  </select>
+
+  <button type="button" class="btn link" onclick="removeSlot(this)">刪除此欄位</button>
+</div>
+
     {% endfor %}
   </div>
 

@@ -545,18 +545,24 @@ body.product-page .tab-btn.active {
   <!-- 套組規格：多欄位選購 -->
   <div id="bundle-area">
     {% for s in slots %}
-      <div class="bundle-slot" data-slot-index="{{ loop.index0 }}" data-required="{{ s['required_count'] or 1 }}">
-        <h4>{{ s['slot_label'] or ('選擇' ~ loop.index) }}</h4>
-        <select class="slot-product">
-          <option value="">— 請選擇商品 —</option>
-          {% for p in pool_products %}
-            <option value="{{ p['id'] }}">{{ p['name'] }}</option>
-          {% endfor %}
-        </select>
-        <div class="slot-options"></div>
-        <div class="slot-note" style="font-size:12px;color:#777;">需選擇 {{ s['required_count'] or 1 }} 個</div>
-      </div>
-    {% endfor %}
+  {% set allowed_ids = (slot_allowed.get(s['id']) if slot_allowed else []) %}
+  <div class="bundle-slot" data-slot-index="{{ loop.index0 }}" data-required="{{ s['required_count'] or 1 }}">
+    <h4>{{ s['slot_label'] or ('選擇' ~ loop.index) }}</h4>
+
+    <select class="slot-product">
+      <option value="">— 請選擇商品 —</option>
+      {% for p in pool_products %}
+        {% if not allowed_ids or (p['id'] in allowed_ids) %}
+          <option value="{{ p['id'] }}">{{ p['name'] }}</option>
+        {% endif %}
+      {% endfor %}
+    </select>
+
+    <div class="slot-options"></div>
+    <div class="slot-note" style="font-size:12px;color:#777;">需選擇 {{ s['required_count'] or 1 }} 個</div>
+  </div>
+{% endfor %}
+
   </div>
 {% endif %}
 

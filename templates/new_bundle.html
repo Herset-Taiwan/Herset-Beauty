@@ -33,6 +33,11 @@
     .btn.link { background:none; color:#e91e63; border:none; padding:0; margin-top:10px; cursor:pointer }
     .note{color:#777; font-size:13px}
   </style>
+
+  <script>
+  window.allProductsOptionsHtml = `{% for p in products %}<option value="{{ p['id'] }}">#{{ p['id'] }}｜{{ p['name'] }}（$ {{ p['price'] }}）</option>{% endfor %}`;
+</script>
+
 </head>
 <body>
 
@@ -98,17 +103,25 @@
   const slotsEl = document.getElementById('slots');
 
   function slotTpl(i){
-    return `
-      <div class="slot" data-idx="${i}">
-        <div class="slot-title">選擇欄位 #${i+1}</div>
-        <label>欄位標題</label>
-        <input type="text" name="slot_label[]" placeholder="例：女性私密清潔選擇${i+1}" value="女性私密清潔選擇${i+1}">
-        <label style="margin-top:10px;">此欄位必選數量</label>
-        <input type="number" name="slot_required[]" min="1" step="1" value="1">
-        <button type="button" class="btn link" onclick="removeSlot(this)">刪除此欄位</button>
-      </div>
-    `;
-  }
+  return `
+    <div class="slot" data-idx="${i}">
+      <div class="slot-title">選擇欄位 #${i+1}</div>
+
+      <label>欄位標題</label>
+      <input type="text" name="slot_label[]" placeholder="例：選擇${i+1}" value="選擇${i+1}">
+
+      <label style="margin-top:10px;">此欄位必選數量</label>
+      <input type="number" name="slot_required[]" min="1" step="1" value="1">
+
+      <label style="margin-top:10px;">此欄位限定可選商品（可多選；若留空＝沿用上方可選池）</label>
+      <select name="slot_pool_${i}[]" multiple class="slot-pool-select">
+        ${window.allProductsOptionsHtml}
+      </select>
+
+      <button type="button" class="btn link" onclick="removeSlot(this)">刪除此欄位</button>
+    </div>
+  `;
+}
 
   function addSlot(){
     const i = slotsEl.children.length;
