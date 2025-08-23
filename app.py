@@ -76,20 +76,35 @@ def nl2br_filter(s):
 
 @app.route('/')
 def index():
-    category = request.args.get('category')  # 抓網址的 category 參數
-    res = supabase.table("products").select("*").execute()
-    products = res.data
+    category = request.args.get('category')
 
-    # ✅ 篩選分類（如果有傳入且不是「全部」）
+    # 先抓全部商品
+    res = supabase.table("products").select("*").execute()
+    products = res.data or []
+
+    # 撈出所有套組，做 (shell_product_id -> bundle資料) 對照
+    bres = supabase.table("bundles") \
+        .select("id, price, compare_at, shell_product_id") \
+        .execute()
+    bundles = bres.data or []
+    shell_to_bundle = {b["shell_product_id"]: b for b in bundles if b.get("shell_product_id")}
+
+    # 把套組價資訊加到對應殼商品上，給前端好判斷
+    for p in products:
+        if p.get("product_type") == "bundle":
+            b = shell_to_bundle.get(p.get("id"))
+            if b:
+                p["bundle_price"] = b.get("price")          # 現價
+                p["bundle_compare"] = b.get("compare_at")   # 原價(用來算折數)
+
+    # 分類篩選（若有帶 category）
     if category and category != '全部':
-        products = [
-            p for p in products
-            if category in (p.get('categories') or [])  # ← categories 是 jsonb list
-        ]
+        products = [p for p in products if category in (p.get('categories') or [])]
 
     cart = session.get('cart', [])
-    cart_count = sum(item['qty'] for item in cart)
+    cart_count = sum(item.get('qty', 0) for item in cart)
     return render_template("index.html", products=products, cart_count=cart_count)
+
 
 
 # ✅ SEO相關

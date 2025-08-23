@@ -48,8 +48,22 @@
     <div class="product-info">
       <h2>{{ p['name'] }}</h2>
 
-      <div class="price-box {% if not p.get('discount_price') %}only-regular{% endif %}">
-  {% if p.get('discount_price') %}
+      {# 判斷是否為「套組且有 compare_at」#}
+{% set show_bundle_discount = (p.get('product_type') == 'bundle' and p.get('bundle_compare')) %}
+
+<div class="price-box {% if not p.get('discount_price') and not show_bundle_discount %}only-regular{% endif %}">
+  {# ✅ 套組：用 bundles.compare_at 當原價、bundles.price 當現價 #}
+  {% if show_bundle_discount %}
+    <div class="price-original">NT${{ "%.0f"|format(p['bundle_compare']) }}</div>
+    <div class="price-discount">
+      <span class="currency">NT$</span>
+      <span class="amount">{{ "%.0f"|format(p['bundle_price'] or p['price']) }}</span>
+    </div>
+    {% set discount_rate = ((p['bundle_price'] or p['price']) / p['bundle_compare'] * 10)|round(1, 'floor') %}
+    <div class="discount-tag small">{{ discount_rate }}折</div>
+
+  {# ✅ 單品：仍用 discount_price 規則 #}
+  {% elif p.get('discount_price') %}
     <div class="price-original">NT${{ "%.0f"|format(p['price']) }}</div>
     <div class="price-discount">
       <span class="currency">NT$</span>
@@ -57,6 +71,8 @@
     </div>
     {% set discount_rate = (p['discount_price'] / p['price'] * 10)|round(1, 'floor') %}
     <div class="discount-tag small">{{ discount_rate }}折</div>
+
+  {# 其他：只顯示單一價格 #}
   {% else %}
     <div class="price-regular">
       <span class="currency">NT$</span>
@@ -64,6 +80,7 @@
     </div>
   {% endif %}
 </div>
+
 
     </div>
     
