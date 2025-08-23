@@ -414,6 +414,130 @@ def admin_dashboard():
     session["seen_messages"] = True
     return response
 
+# ================================
+#  後台：新增套組（顯示頁）
+#  URL: GET /admin0363/bundles/new
+# ================================
+@app.route("/admin0363/bundles/new", methods=["GET"])
+def admin_new_bundle():
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
+
+    # 只抓單品當可選池
+    products = (
+        supabase.table("products")
+        .select("id,name,price,product_type")
+        .eq("product_type", "single")
+        .order("name")
+        .execute()
+        .data
+        or []
+    )
+    return render_template("new_bundle.html", products=products)
+
+
+# ================================
+#  後台：新增套組（儲存）
+#  URL: POST /admin0363/bundles/new
+# ================================
+@app.route("/admin0363/bundles/new", methods=["POST"])
+def admin_create_bundle():
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
+
+    form = request.form
+    name        = (form.get("name") or "").strip()
+    price_str   = (form.get("price") or "0").strip()
+    price       = float(price_str) if price_str else 0.0
+    compare_str = (form.get("compare_at") or "").strip()
+    compare_at  = float(compare_str) if compare_str else None
+    stock       = int(form.get("stock") or 0)
+    description = (form.get("description") or "").strip()
+
+    # 多選可選池
+    pool_ids    = request.form.getlist("pool_ids[]")  # e.g. ["31","40","46"]
+    # 動態 slots
+    slot_labels = request.form.getlist("slot_label[]")
+    slot_counts = request.form.getlist("slot_required[]")
+
+    # 封面圖：上傳到 Supabase Storage（與你 add_product 一致）
+    cover_image_url = None
+    cover_image_file = request.files.get("cover_image")
+    if cover_image_file and cover_image_file.filename:
+        filename = secure_filename(cover_image_file.filename)
+        unique_filename = f"{uuid.uuid4()}_{filename}"
+        storage_path = f"bundle_images/{unique_filename}"
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            cover_image_file.save(tmp.name)
+            try:
+                supabase.storage.from_("images").upload(storage_path, tmp.name)
+                cover_image_url = supabase.storage.from_("images").get_public_url(storage_path)
+            except Exception as e:
+                print("❗️套組封面上傳錯誤：", e)
+
+    # 1) 建立 bundles 主檔
+    inserted = (
+        supabase.table("bundles")
+        .insert({
+            "name": name,
+            "price": price,
+            "compare_at": compare_at,
+            "stock": stock,
+            "cover_image": cover_image_url,
+            "description": description,
+            "active": True
+        })
+        .execute()
+        .data
+    )
+    bundle_id = inserted[0]["id"]
+
+    # 2) 建立 slots
+    for idx, label in enumerate(slot_labels):
+        cnt = int(slot_counts[idx] or 1) if idx < len(slot_counts) else 1
+        supabase.table("bundle_slots").insert({
+            "bundle_id": bundle_id,
+            "slot_index": idx,
+            "slot_label": (label or f"選擇{idx+1}").strip(),
+            "required_count": cnt
+        }).execute()
+
+    # 3) 建立可選商品池
+    for pid in pool_ids:
+        try:
+            supabase.table("bundle_pool").insert({
+                "bundle_id": bundle_id,
+                "product_id": int(pid)
+            }).execute()
+        except Exception as e:
+            print("❗️寫入 bundle_pool 失敗：", pid, e)
+
+    # 4) 建立 products 殼品項（讓後台列表可見；前台細節頁之後再做）
+    try:
+        supabase.table("products").insert({
+            "name": f"[套組] {name}",
+            "price": price,
+            "discount_price": None,
+            "stock": stock,
+            "image": cover_image_url,
+            "images": [],               # 需要多圖再補
+            "intro": description,
+            "feature": "",
+            "spec": "",
+            "ingredient": "",
+            "options": [],
+            "categories": ["套組"],     # 可調整你的分類
+            "tags": [],
+            "product_type": "bundle"
+        }).execute()
+    except Exception as e:
+        print("❗️建立套組殼品項失敗：", e)
+
+    flash("已建立新的套組", "success")
+    return redirect("/admin0363/dashboard?tab=products")
+
+
+
 # ✅ TinyMCE 圖片上傳端點
 @app.route('/admin0363/tinymce/upload', methods=['POST'])
 def tinymce_upload():
