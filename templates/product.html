@@ -33,15 +33,6 @@ body.product-page .tabs {
   background: white;
 }
 
-body.product-page .tabs {
-  display: flex;
-  margin: 40px auto 0;
-  max-width: 900px;
-  border: 1px solid #ccc;
-  border-bottom: none;
-  border-radius: 8px 8px 0 0;
-  background: white;
-}
 
 body.product-page .tab-btn.active {
   background: white;
@@ -538,7 +529,7 @@ body.product-page .tab-btn.active {
   <div class="options">
     <label>選項：</label><br>
     {% for opt in product['options'] %}
-      <button class="single-opt">{{ opt }}</button>
+      <button type="button" class="single-opt">{{ opt }}</button>
     {% endfor %}
   </div>
 {% else %}
@@ -546,9 +537,13 @@ body.product-page .tab-btn.active {
   <div id="bundle-area">
     {% for s in slots %}
   {% set allowed_ids = (slot_allowed.get(s['id']) if slot_allowed else []) %}
-  <div class="bundle-slot" data-slot-index="{{ loop.index0 }}" data-required="{{ s['required_count'] or 1 }}">
+  <div class="bundle-slot"
+       data-slot-index="{{ loop.index0 }}"
+       data-required="{{ s['required_count'] or 1 }}"
+       data-allowed="{{ allowed_ids|join(',') }}">
     <h4>{{ s['slot_label'] or ('選擇' ~ loop.index) }}</h4>
 
+    <!-- 商品選擇（若只有 1 個允許商品會在 JS 端自動隱藏） -->
     <select class="slot-product">
       <option value="">— 請選擇商品 —</option>
       {% for p in pool_products %}
@@ -558,10 +553,18 @@ body.product-page .tab-btn.active {
       {% endfor %}
     </select>
 
+    <!-- 固定商品顯示（自動鎖定時才會顯示） -->
+    <div class="locked-product" style="display:none;color:#5E3C2C; font-weight:700; margin:6px 0;"></div>
+
+    <!-- 該商品的 options（口味/規格）會動態渲染到這裡 -->
     <div class="slot-options"></div>
-    <div class="slot-note" style="font-size:12px;color:#777;">需選擇 {{ s['required_count'] or 1 }} 個</div>
+
+    <div class="slot-note" style="font-size:12px;color:#777;">
+      需選擇 {{ s['required_count'] or 1 }} 個
+    </div>
   </div>
 {% endfor %}
+
 
   </div>
 {% endif %}
@@ -611,9 +614,13 @@ body.product-page .tab-btn.active {
   <div id="ingredient">{{ (product['ingredient'] or '') | safe }}</div>
 </div>
 
+
+<script>
+  // 供前端渲染各商品的 options 用
+  window.poolProducts = {{ (pool_products or []) | tojson }};
+</script>
 <script>
   
-window.poolProducts = {{ (pool_products or []) | tojson }};
   let selectedOption = "";
 
   function adjustQty(delta) {
@@ -685,29 +692,6 @@ window.poolProducts = {{ (pool_products or []) | tojson }};
 
 
 
-    fetch('/add_to_cart', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `product_id=${productId}&qty=${qty}&option=${encodeURIComponent(option)}`
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        const countEl = document.getElementById('cart-count');
-        if (countEl) {
-          countEl.innerText = data.count;
-          countEl.style.display = 'inline-block';
-        }
-        showTip('✅ 已加入購物車！');
-      } else {
-        alert("加入購物車失敗");
-      }
-    })
-    .catch(err => {
-      alert("加入購物車失敗: " + err);
-    });
-  }
-
   document.getElementById('qty').addEventListener('input', function () {
     document.getElementById('qty-input-checkout').value = this.value;
   });
@@ -739,7 +723,7 @@ window.poolProducts = {{ (pool_products or []) | tojson }};
 });
 
   window.addEventListener('DOMContentLoaded', () => {
-  const optionButtons = document.querySelectorAll('.options button');
+  const optionButtons = document.querySelectorAll('.single-opt');
   if (optionButtons.length === 1) {
     optionButtons[0].classList.add('selected');
     selectedOption = optionButtons[0].innerText;
@@ -783,13 +767,14 @@ bindSingleOptions();
 function renderSlotOptions(slotEl, productId){
   const area = slotEl.querySelector('.slot-options');
   area.innerHTML = '';
-  if(!productId){ return; }
+  if(!productId) return;
 
   const p = window.poolProducts.find(x => String(x.id) === String(productId));
   const opts = (p && p.options) || [];
-  if(opts.length === 0){
-    // 無規格，放置一個「無規格」的虛擬按鈕，直接選中
+
+  if (opts.length === 0) {
     const btn = document.createElement('button');
+    btn.type = 'button';
     btn.textContent = '— 無規格 —';
     btn.className = 'selected';
     btn.dataset.value = '';
@@ -799,27 +784,55 @@ function renderSlotOptions(slotEl, productId){
 
   opts.forEach(o => {
     const btn = document.createElement('button');
+    btn.type = 'button';
     btn.textContent = o;
     btn.dataset.value = o;
     btn.addEventListener('click', () => {
       area.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
-      updateCheckoutHidden(); // 勾到規格時同步更新隱藏欄位
+      updateCheckoutHidden && updateCheckoutHidden();
     });
     area.appendChild(btn);
   });
+
+  // ✅ 只有一個規格時，預設選取
+  if (opts.length === 1) {
+    const first = area.querySelector('button');
+    if (first) first.classList.add('selected');
+  }
 }
 
-function bindBundleSlots(){
+
+// ✅ 依「允許商品數量」自動切換 UI
+function initBundleSlots(){
   document.querySelectorAll('.bundle-slot').forEach(slotEl => {
     const sel = slotEl.querySelector('.slot-product');
+    const allowedStr = (slotEl.dataset.allowed || '').trim();
+    const allowedIds = allowedStr ? allowedStr.split(',').filter(Boolean) : [];
+
+    // 下拉選單實際可選的項目（排除 placeholder）
+    const validOptions = Array.from(sel.options).filter(o => o.value);
+
+    // 若此欄位只有 1 個可選商品 → 自動鎖定該商品、隱藏下拉、直接顯示 options
+    if (validOptions.length === 1) {
+      sel.value = validOptions[0].value;
+      sel.style.display = 'none';
+      const locked = slotEl.querySelector('.locked-product');
+      locked.style.display = 'block';
+      locked.textContent = `已選商品：${validOptions[0].text}`;
+      renderSlotOptions(slotEl, sel.value);
+       updateCheckoutHidden && updateCheckoutHidden();
+    }
+
+    // 切換商品時，重渲染 options
     sel.addEventListener('change', () => {
       renderSlotOptions(slotEl, sel.value);
-      updateCheckoutHidden();
+      updateCheckoutHidden && updateCheckoutHidden();
     });
   });
 }
-bindBundleSlots();
+document.addEventListener('DOMContentLoaded', initBundleSlots);
+
 
 function collectBundleOptionString(){
   const slots = document.querySelectorAll('.bundle-slot');
