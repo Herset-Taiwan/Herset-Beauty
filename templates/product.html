@@ -580,13 +580,13 @@ body.product-page .tab-btn.active {
   </div>
 {% else %}
   <!-- 套組規格：多欄位選購 -->
-  {% if total_mode %}
-  <!-- ✅ 逐步挑選模式 -->
-  <div id="bundle-steps" data-total="{{ required_total }}">
-    <!-- 先渲染第 1 步，剩下的由 JS 依完成度動態加上 -->
+  {# === 套組（逐步挑選） === #}
+{% if product.get('product_type') == 'bundle' %}
+  <div id="bundle-steps" data-total="{{ required_total or 1 }}">
+    <!-- 第 1 步，JS 會在選完口味後自動加上第 2 / 3 步… -->
     <div class="step" data-step="1">
       <div class="slot-head">
-        <div class="slot-title">選擇 1 / {{ required_total }}</div>
+        <div class="slot-title">選擇 1 / {{ required_total or 1 }}</div>
       </div>
 
       <select class="step-product">
@@ -599,34 +599,8 @@ body.product-page .tab-btn.active {
       <div class="step-options"></div>
     </div>
   </div>
-{% else %}
-  <!-- 原本的 Slots 介面（保留你現有設計即可） -->
-  {% for s in slots %}
-    {% set allowed_ids = (slot_allowed.get(s['id']) if slot_allowed else []) %}
-    <div class="bundle-slot"
-         data-slot-index="{{ loop.index0 }}"
-         data-required="{{ s['required_count'] or 1 }}"
-         data-allowed="{{ allowed_ids|join(',') }}">
-      <div class="slot-head">
-        <div class="slot-title">選擇{{ loop.index }}</div>
-        <div class="slot-note">需選擇 {{ s['required_count'] or 1 }} 個</div>
-      </div>
-      <select class="slot-product">
-        <option value="">— 請選擇商品 —</option>
-        {% for p in pool_products %}
-          {% if not allowed_ids or (p['id'] in allowed_ids) %}
-            <option value="{{ p['id'] }}">{{ p['name'] }}</option>
-          {% endif %}
-        {% endfor %}
-      </select>
-      <div class="locked-product" style="display:none;">
-        <span class="sel-badge">已選</span>
-        <span class="product-title"></span>
-      </div>
-      <div class="slot-options"></div>
-    </div>
-  {% endfor %}
 {% endif %}
+
 
 
 
