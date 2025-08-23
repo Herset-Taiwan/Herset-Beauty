@@ -120,6 +120,11 @@
       margin: 10px 0;
       border-radius: 5px;
     }
+
+    .opt-lines { color:#666; font-size:14px; line-height:1.6; margin:4px 0 2px; }
+.opt-label { color:#888; font-size:13px; margin-bottom:2px; }
+.opt-line { display:block; }
+
   </style>
 </head>
 <body>
@@ -150,13 +155,38 @@
     {% if products %}
       {% for p in products %}
         <div class="cart-item">
-          <img src="{{ p['images'][0] }}" alt="{{ p['name'] }}">
+          {% set cover = p.get('image') %}
+{% if not cover and p.get('images') and p['images']|length > 0 %}
+  {% set cover = p['images'][0] %}
+{% endif %}
+<img src="{{ cover or url_for('static', filename='placeholder.png') }}"
+     alt="{{ p['name'] }}"
+     onerror="this.src='{{ url_for('static', filename='placeholder.png') }}'">
+
           <div class="cart-info">
             <strong>{{ p['name'] }}</strong><br>
 
             {% if p.get('option') %}
-              <span style="color: #888; font-size: 0.9em;">選項：{{ p['option'] }}</span><br>
-            {% endif %}
+  {% set opt = p['option'] %}
+  {% if '｜' in opt %}
+    {% set parts = opt.split('｜') %}
+  {% elif '|' in opt %}
+    {% set parts = opt.split('|') %}
+  {% else %}
+    {% set parts = [opt] %}
+  {% endif %}
+
+  <div class="opt-lines">
+    <div class="opt-label">選項：</div>
+    {% for line in parts %}
+      {% set txt = line.strip() %}
+      {% if txt %}
+        <div class="opt-line">{{ txt }}</div>
+      {% endif %}
+    {% endfor %}
+  </div>
+{% endif %}
+
 
             {% set price = p['price'] | float %}
 {% set original = p.get('original_price', price) | float %}
