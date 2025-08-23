@@ -233,7 +233,7 @@ def admin_dashboard():
         product_total_count = len(all_products)
     product_total_pages = max(1, (product_total_count + product_page_size - 1) // product_page_size)
     products = all_products[product_start:product_end]
-    
+
     # 取得所有 bundles，建立 (shell_product_id -> bundle_id) 對照
 bundle_map_rows = supabase.table("bundles").select("id, shell_product_id").execute().data or []
 shell_to_bundle = {b["shell_product_id"]: b["id"] for b in bundle_map_rows if b.get("shell_product_id")}
@@ -1186,14 +1186,46 @@ def update_order_status(order_id):
 
 @app.route('/product/<product_id>')
 def product_detail(product_id):
-
+    # 先抓商品
     res = supabase.table("products").select("*").eq("id", product_id).single().execute()
     product = res.data
     if not product:
         return "找不到商品", 404
+
     cart = session.get('cart', [])
     cart_count = sum(item['qty'] for item in cart)
-    return render_template("product.html", product=product, cart_count=cart_count)
+
+    bundle = None
+    slots = []
+    pool_products = []
+
+    if product.get('product_type') == 'bundle':
+        bres = supabase.table("bundles").select("*").eq("shell_product_id", product["id"]).single().execute()
+        bundle = bres.data or None
+        if bundle:
+            sres = supabase.table("bundle_slots").select("*").eq("bundle_id", bundle["id"]).order("slot_index").execute()
+            slots = sres.data or []
+
+            pres = supabase.table("bundle_pool").select("product_id").eq("bundle_id", bundle["id"]).execute()
+            pool_ids = [r["product_id"] for r in (pres.data or [])]
+            if pool_ids:
+                pool_products = (
+                    supabase.table("products")
+                    .select("id,name,price,options,image")
+                    .in_("id", pool_ids)
+                    .order("name")
+                    .execute()
+                    .data or []
+                )
+
+    return render_template(
+        "product.html",
+        product=product,
+        cart_count=cart_count,
+        bundle=bundle,
+        slots=slots,
+        pool_products=pool_products
+    )
 
 
 #綠界付款成功回傳處理
