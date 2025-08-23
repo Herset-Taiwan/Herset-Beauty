@@ -233,6 +233,16 @@ def admin_dashboard():
         product_total_count = len(all_products)
     product_total_pages = max(1, (product_total_count + product_page_size - 1) // product_page_size)
     products = all_products[product_start:product_end]
+    
+    # 取得所有 bundles，建立 (shell_product_id -> bundle_id) 對照
+bundle_map_rows = supabase.table("bundles").select("id, shell_product_id").execute().data or []
+shell_to_bundle = {b["shell_product_id"]: b["id"] for b in bundle_map_rows if b.get("shell_product_id")}
+
+# 把對照寫回 products（讓模板能拿到 p['bundle_id']）
+for p in products:
+    if p.get("product_type") == "bundle":
+        p["bundle_id"] = shell_to_bundle.get(p.get("id"))
+
 
 
     # ✅ 會員
@@ -514,28 +524,153 @@ def admin_create_bundle():
 
     # 4) 建立 products 殼品項（讓後台列表可見；前台細節頁之後再做）
     try:
-        supabase.table("products").insert({
+        shell_insert = supabase.table("products").insert({
             "name": f"[套組] {name}",
-            "price": price,
-            "discount_price": None,
-            "stock": stock,
-            "image": cover_image_url,
-            "images": [],               # 需要多圖再補
-            "intro": description,
-            "feature": "",
-            "spec": "",
-            "ingredient": "",
-            "options": [],
-            "categories": ["套組"],     # 可調整你的分類
-            "tags": [],
-            "product_type": "bundle"
+        "price": price,
+        "discount_price": None,
+        "stock": stock,
+        "image": cover_image_url,
+        "images": [],
+        "intro": description,
+        "feature": "",
+        "spec": "",
+        "ingredient": "",
+        "options": [],
+        "categories": ["套組"],
+        "tags": [],
+        "product_type": "bundle"
         }).execute()
+        shell_product_id = shell_insert.data[0]["id"]
+ # 回寫到 bundles.shell_product_id
+        supabase.table("bundles").update({
+            "shell_product_id": shell_product_id
+        }).eq("id", bundle_id).execute()
+
     except Exception as e:
-        print("❗️建立套組殼品項失敗：", e)
+        print("❗️建立套組殼品項或回寫失敗：", e)
 
     flash("已建立新的套組", "success")
     return redirect("/admin0363/dashboard?tab=products")
 
+# ================================
+#  後台：編輯套組（顯示頁）
+#  URL: GET /admin0363/bundles/<int:bundle_id>/edit
+# ================================
+@app.route("/admin0363/bundles/<int:bundle_id>/edit", methods=["GET"])
+def admin_edit_bundle(bundle_id):
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
+
+    # 套組主檔
+    b = supabase.table("bundles").select("*").eq("id", bundle_id).single().execute().data
+    if not b:
+        return "找不到套組", 404
+
+    # slots
+    slots = supabase.table("bundle_slots").select("*").eq("bundle_id", bundle_id).order("slot_index").execute().data or []
+
+    # 可選池（先撈當前池，再撈全部單品）
+    pool_rows = supabase.table("bundle_pool").select("product_id").eq("bundle_id", bundle_id).execute().data or []
+    pool_ids = [r["product_id"] for r in pool_rows]
+
+    all_single_products = (
+        supabase.table("products")
+        .select("id,name,price,product_type")
+        .eq("product_type", "single")
+        .order("name")
+        .execute().data or []
+    )
+
+    return render_template("edit_bundle.html",
+                           bundle=b,
+                           slots=slots,
+                           pool_ids=pool_ids,
+                           products=all_single_products)
+
+
+# ================================
+#  後台：編輯套組（儲存）
+#  URL: POST /admin0363/bundles/<int:bundle_id>/edit
+# ================================
+@app.route("/admin0363/bundles/<int:bundle_id>/edit", methods=["POST"])
+def admin_update_bundle(bundle_id):
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
+
+    form = request.form
+    name        = (form.get("name") or "").strip()
+    price       = float(form.get("price") or 0)
+    compare_at  = float(form.get("compare_at")) if form.get("compare_at") else None
+    stock       = int(form.get("stock") or 0)
+    description = (form.get("description") or "").strip()
+
+    pool_ids    = request.form.getlist("pool_ids[]")
+    slot_labels = request.form.getlist("slot_label[]")
+    slot_counts = request.form.getlist("slot_required[]")
+
+    # 封面圖（可更新）
+    cover_image_url = None
+    cover_image_file = request.files.get("cover_image")
+    if cover_image_file and cover_image_file.filename:
+        filename = secure_filename(cover_image_file.filename)
+        unique_filename = f"{uuid.uuid4()}_{filename}"
+        storage_path = f"bundle_images/{unique_filename}"
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            cover_image_file.save(tmp.name)
+            try:
+                supabase.storage.from_("images").upload(storage_path, tmp.name)
+                cover_image_url = supabase.storage.from_("images").get_public_url(storage_path)
+            except Exception as e:
+                print("❗️套組封面更新錯誤：", e)
+
+    # 1) 更新 bundles 主檔
+    update_data = {
+        "name": name,
+        "price": price,
+        "compare_at": compare_at,
+        "stock": stock,
+        "description": description,
+    }
+    if cover_image_url:
+        update_data["cover_image"] = cover_image_url
+
+    supabase.table("bundles").update(update_data).eq("id", bundle_id).execute()
+
+    # 2) 重新寫入 slots（簡化做法：先刪再寫）
+    supabase.table("bundle_slots").delete().eq("bundle_id", bundle_id).execute()
+    for idx, label in enumerate(slot_labels):
+        cnt = int(slot_counts[idx] or 1) if idx < len(slot_counts) else 1
+        supabase.table("bundle_slots").insert({
+            "bundle_id": bundle_id,
+            "slot_index": idx,
+            "slot_label": (label or f"選擇{idx+1}").strip(),
+            "required_count": cnt
+        }).execute()
+
+    # 3) 重新寫入可選池
+    supabase.table("bundle_pool").delete().eq("bundle_id", bundle_id).execute()
+    for pid in pool_ids:
+        supabase.table("bundle_pool").insert({
+            "bundle_id": bundle_id,
+            "product_id": int(pid)
+        }).execute()
+
+    # 4) 同步更新殼商品（名稱/價格/庫存/首圖）
+    b = supabase.table("bundles").select("shell_product_id").eq("id", bundle_id).single().execute().data
+    shell_id = b.get("shell_product_id") if b else None
+    if shell_id:
+        shell_update = {
+            "name": f"[套組] {name}",
+            "price": price,
+            "stock": stock,
+            "intro": description
+        }
+        if cover_image_url:
+            shell_update["image"] = cover_image_url
+        supabase.table("products").update(shell_update).eq("id", shell_id).execute()
+
+    flash("套組已更新", "success")
+    return redirect("/admin0363/dashboard?tab=products")
 
 
 # ✅ TinyMCE 圖片上傳端點
