@@ -555,7 +555,7 @@ def admin_create_bundle():
         shell_insert = (
             supabase.table("products")
             .insert({
-                "name": f"[套組] {name}",
+                "name": f"[套組優惠] {name}",
                 "price": price,
                 "discount_price": None,
                 "stock": stock,
@@ -769,7 +769,7 @@ def admin_update_bundle(bundle_id):
     shell_id = b.get("shell_product_id") if b else None
     if shell_id:
         shell_update = {
-            "name": f"[套組] {name}",
+            "name": f"[套組優惠] {name}",
             "price": price,
             "stock": stock,
             "intro": description
