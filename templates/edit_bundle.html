@@ -29,6 +29,24 @@
   <label>套組名稱</label>
   <input type="text" name="name" value="{{ bundle['name'] }}" required>
 
+  <!-- 套組名稱下方插入 -->
+<label>分類（可多選）</label>
+<select id="categories" name="categories[]" multiple placeholder="輸入後 Enter 可新增">
+  {% for c in categories_all %}
+    <option value="{{ c }}" {% if bundle.categories and c in bundle.categories %}selected{% endif %}>{{ c }}</option>
+  {% endfor %}
+</select>
+<div class="help">例：身體保養、生活香氛、寵物友善、品牌嚴選、套組優惠…</div>
+
+<label style="margin-top:12px;">標籤（可多選）</label>
+<select id="tags" name="tags[]" multiple placeholder="輸入後 Enter 可新增">
+  {% for t in tags_all %}
+    <option value="{{ t }}">{{ t }}</option>
+  {% endfor %}
+</select>
+<div class="help">例：新品優惠、主打商品、熱銷推薦、限量販售、天然成分…</div>
+
+
   <div class="row">
     <div>
       <label>套組售價（必填）</label>
@@ -87,5 +105,14 @@
 <script>
   $('#pool').selectize({ plugins:['remove_button'], persist:false, delimiter:',', create:false });
 </script>
+
+<script>
+  $('#pool').selectize({ plugins:['remove_button'], persist:false, delimiter:',', create:false });
+
+  // 新增：分類、標籤多選＋可新增
+  $('#categories').selectize({ plugins:['remove_button'], persist:false, create:true });
+  $('#tags').selectize({ plugins:['remove_button'], persist:false, create:true });
+</script>
+
 </body>
 </html>

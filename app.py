@@ -462,7 +462,22 @@ def admin_new_bundle():
         .data
         or []
     )
-    return render_template("new_bundle.html", products=products)
+     # 🔽 彙整全站分類/標籤供下拉選
+    vocab_rows = supabase.table("products").select("categories,tags").execute().data or []
+    cat_set, tag_set = set(), set()
+    for r in vocab_rows:
+        for c in (r.get("categories") or []):
+            if c: cat_set.add(c)
+        for t in (r.get("tags") or []):
+            if t: tag_set.add(t)
+
+    all_categories = sorted(cat_set | {"套組優惠"})  # 預設帶入你要的新分類
+    all_tags = sorted(tag_set)
+
+    return render_template("new_bundle.html",
+                           products=products,
+                           all_categories=all_categories,
+                           all_tags=all_tags)
 
 
 # ================================
@@ -483,14 +498,24 @@ def admin_create_bundle():
     compare_at   = float(compare_str) if compare_str else None
     stock        = int(form.get("stock") or 0)
     description  = (form.get("description") or "").strip()
-    # ✅ 應選商品數量（0 代表不用逐步挑選模式）
-    required_total = int(form.get("required_total") or 0)
+    required_total = int(form.get("required_total") or 0)  # 0 代表不用逐步挑選
 
     # 共用可選池（多選）
     pool_ids     = request.form.getlist("pool_ids[]")  # e.g. ["31","40","46"]
     # 動態 slots
-    slot_labels  = request.form.getlist("slot_label[]")
-    slot_counts  = request.form.getlist("slot_required[]")
+    slot_labels  = request.form.getlist("slot_label[]")     # 每欄位標題
+    slot_counts  = request.form.getlist("slot_required[]")  # 每欄位必選數量
+
+    # ---- 分類 / 標籤（多選 + 可新增）----
+    # ex: <select name="categories[]" multiple>…</select> + <input name="new_categories">
+    sel_cats = form.getlist("categories[]")
+    new_cats = [s.strip() for s in (form.get("new_categories") or "").split(",") if s.strip()]
+    # 自動納入「套組優惠」
+    final_categories = list(dict.fromkeys(["套組優惠"] + sel_cats + new_cats))
+
+    sel_tags = form.getlist("tags[]")
+    new_tags = [s.strip() for s in (form.get("new_tags") or "").split(",") if s.strip()]
+    final_tags = list(dict.fromkeys(sel_tags + new_tags))
 
     # ---- 封面圖上傳（Supabase Storage: images/bundle_images/…）----
     cover_image_url = None
@@ -518,7 +543,7 @@ def admin_create_bundle():
             "cover_image": cover_image_url,
             "description": description,
             "active": True,
-            "required_total": required_total,  # ✅ 新增欄位
+            "required_total": required_total,
         })
         .execute()
         .data
@@ -547,6 +572,8 @@ def admin_create_bundle():
         # 讀取此欄位的限定可選商品，多選；若留空＝沿用共用池（不必寫入 bundle_slot_pool）
         slot_pool_ids = request.form.getlist(f"slot_pool_{idx}[]")
         for pid in slot_pool_ids:
+            if not pid:
+                continue
             try:
                 supabase.table("bundle_slot_pool").insert({
                     "bundle_id": bundle_id,
@@ -558,6 +585,8 @@ def admin_create_bundle():
 
     # ---- 3) 建立共用可選池（bundle_pool）----
     for pid in pool_ids:
+        if not pid:
+            continue
         try:
             supabase.table("bundle_pool").insert({
                 "bundle_id": bundle_id,
@@ -582,8 +611,9 @@ def admin_create_bundle():
                 "spec": "",
                 "ingredient": "",
                 "options": [],
-                "categories": ["套組"],
-                "tags": [],
+                # ✅ 分類/標籤寫入殼商品（前台用這個做篩選/顯示）
+                "categories": final_categories,
+                "tags": final_tags,
                 "product_type": "bundle"
             })
             .execute()
@@ -600,6 +630,7 @@ def admin_create_bundle():
 
     flash("已建立新的套組", "success")
     return redirect("/admin0363/dashboard?tab=products")
+
 
 
 
@@ -691,19 +722,46 @@ def admin_update_bundle(bundle_id):
         return redirect("/admin0363")
 
     form = request.form
-    name        = (form.get("name") or "").strip()
-    price       = float(form.get("price") or 0)
-    compare_at  = float(form.get("compare_at")) if form.get("compare_at") else None
-    stock       = int(form.get("stock") or 0)
-    description = (form.get("description") or "").strip()
-    # ✅ 應選商品數量（0=不用逐步挑選模式）
-    required_total = int(form.get("required_total") or 0)
+
+    # ---- 基本欄位（含容錯）----
+    def _to_float(v, default=None):
+        try:
+            s = (v or "").strip().replace(",", "")
+            if s == "":
+                return default
+            return float(s)
+        except Exception:
+            return default
+
+    def _to_int(v, default=0):
+        try:
+            return int((v or "0").strip())
+        except Exception:
+            return default
+
+    name           = (form.get("name") or "").strip()
+    price          = _to_float(form.get("price"), 0.0)
+    compare_at     = _to_float(form.get("compare_at"), None)
+    stock          = _to_int(form.get("stock"), 0)
+    description    = (form.get("description") or "").strip()
+    required_total = _to_int(form.get("required_total"), 0)   # 0=不用逐步挑選
 
     # 共用可選池
-    pool_ids    = request.form.getlist("pool_ids[]")
+    pool_ids    = [pid for pid in request.form.getlist("pool_ids[]") if pid]
+
     # 動態 slots
     slot_labels = request.form.getlist("slot_label[]")
     slot_counts = request.form.getlist("slot_required[]")
+
+    # ---- 分類 / 標籤（多選 + 可新增）----
+    sel_cats = form.getlist("categories[]")
+    new_cats = [s.strip() for s in (form.get("new_categories") or "").split(",") if s.strip()]
+    # 一律加上「套組優惠」分類
+    final_categories = list(dict.fromkeys(["套組優惠"] + sel_cats + new_cats))
+
+    sel_tags = form.getlist("tags[]")
+    new_tags = [s.strip() for s in (form.get("new_tags") or "").split(",") if s.strip()]
+    final_tags = list(dict.fromkeys(sel_tags + new_tags))
 
     # ---- 封面圖（可更新）----
     cover_image_url = None
@@ -720,26 +778,26 @@ def admin_update_bundle(bundle_id):
             except Exception as e:
                 print("❗️套組封面更新錯誤：", e)
 
-    # ---- 1) 更新 bundles 主檔（含 required_total）----
+    # ---- 1) 更新 bundles 主檔（含 required_total / compare_at）----
     update_data = {
         "name": name,
         "price": price,
         "compare_at": compare_at,
         "stock": stock,
         "description": description,
-        "required_total": required_total,   # ✅ 新增
+        "required_total": required_total,
     }
     if cover_image_url:
         update_data["cover_image"] = cover_image_url
+
     supabase.table("bundles").update(update_data).eq("id", bundle_id).execute()
 
     # ---- 2) 重建 slots 與每 slot 的限定商品（bundle_slot_pool）----
-    # 先清空舊資料
     supabase.table("bundle_slots").delete().eq("bundle_id", bundle_id).execute()
     supabase.table("bundle_slot_pool").delete().eq("bundle_id", bundle_id).execute()
 
     for idx, label in enumerate(slot_labels):
-        cnt = int(slot_counts[idx] or 1) if idx < len(slot_counts) else 1
+        cnt = _to_int(slot_counts[idx] if idx < len(slot_counts) else 1, 1)
         ins = (
             supabase.table("bundle_slots")
             .insert({
@@ -754,7 +812,7 @@ def admin_update_bundle(bundle_id):
         slot_id = ins[0]["id"]
 
         # 這個欄位的「限定可選商品」（留空＝沿用共用池，不需寫）
-        slot_pool_ids = request.form.getlist(f"slot_pool_{idx}[]")
+        slot_pool_ids = [pid for pid in request.form.getlist(f"slot_pool_{idx}[]") if pid]
         for pid in slot_pool_ids:
             try:
                 supabase.table("bundle_slot_pool").insert({
@@ -768,34 +826,77 @@ def admin_update_bundle(bundle_id):
     # ---- 3) 重建共用可選池（bundle_pool）----
     supabase.table("bundle_pool").delete().eq("bundle_id", bundle_id).execute()
     for pid in pool_ids:
-        supabase.table("bundle_pool").insert({
-            "bundle_id": bundle_id,
-            "product_id": int(pid)
-        }).execute()
+        try:
+            supabase.table("bundle_pool").insert({
+                "bundle_id": bundle_id,
+                "product_id": int(pid)
+            }).execute()
+        except Exception as e:
+            print("❗️寫入 bundle_pool 失敗：", pid, e)
 
-    # ---- 4) 同步更新殼商品（名稱/價格/庫存/首圖）----
-    b = (
+    # ---- 4) 同步殼商品（不存在就補建；存在就更新）----
+    bundle_row = (
         supabase.table("bundles")
-        .select("shell_product_id")
+        .select("shell_product_id, cover_image")
         .eq("id", bundle_id)
         .single()
         .execute()
         .data
-    )
-    shell_id = b.get("shell_product_id") if b else None
-    if shell_id:
+    ) or {}
+
+    shell_id = bundle_row.get("shell_product_id")
+    current_cover = cover_image_url or bundle_row.get("cover_image")
+
+    if not shell_id:
+        # 補建殼商品
+        try:
+            shell_insert = (
+                supabase.table("products")
+                .insert({
+                    "name": f"[套組優惠] {name}",
+                    "price": price,
+                    "discount_price": None,
+                    "stock": stock,
+                    "image": current_cover,
+                    "images": [],
+                    "intro": description,
+                    "feature": "",
+                    "spec": "",
+                    "ingredient": "",
+                    "options": [],
+                    "categories": final_categories,
+                    "tags": final_tags,
+                    "product_type": "bundle"
+                })
+                .execute()
+            )
+            shell_id = shell_insert.data[0]["id"]
+            supabase.table("bundles").update({
+                "shell_product_id": shell_id
+            }).eq("id", bundle_id).execute()
+        except Exception as e:
+            print("❗️建立套組殼品項失敗：", e)
+    else:
+        # 更新殼商品（名稱/價格/庫存/首圖/分類/標籤/描述）
         shell_update = {
             "name": f"[套組優惠] {name}",
             "price": price,
             "stock": stock,
-            "intro": description
+            "intro": description,
+            "categories": final_categories,
+            "tags": final_tags,
         }
-        if cover_image_url:
-            shell_update["image"] = cover_image_url
-        supabase.table("products").update(shell_update).eq("id", shell_id).execute()
+        if current_cover:
+            shell_update["image"] = current_cover
+
+        try:
+            supabase.table("products").update(shell_update).eq("id", shell_id).execute()
+        except Exception as e:
+            print("❗️更新套組殼品項失敗：", e)
 
     flash("套組已更新", "success")
     return redirect("/admin0363/dashboard?tab=products")
+
 
 
 
