@@ -462,22 +462,41 @@ def admin_new_bundle():
         .data
         or []
     )
-     # 🔽 彙整全站分類/標籤供下拉選
+
+    # 🔽 彙整全站分類/標籤供下拉選
     vocab_rows = supabase.table("products").select("categories,tags").execute().data or []
     cat_set, tag_set = set(), set()
     for r in vocab_rows:
         for c in (r.get("categories") or []):
-            if c: cat_set.add(c)
+            if c:
+                cat_set.add(c)
         for t in (r.get("tags") or []):
-            if t: tag_set.add(t)
+            if t:
+                tag_set.add(t)
 
-    all_categories = sorted(cat_set | {"套組優惠"})  # 預設帶入你要的新分類
+    all_categories = sorted({*cat_set, "套組優惠"})  # 預設帶入你要的新分類
     all_tags = sorted(tag_set)
 
-    return render_template("new_bundle.html",
-                           products=products,
-                           all_categories=all_categories,
-                           all_tags=all_tags)
+    # ✅ 提供空的 bundle（模板 new_bundle.html 會用到 bundle.get(...)）
+    empty_bundle = {
+        "name": "",
+        "price": None,
+        "compare_at": None,
+        "stock": 0,
+        "description": "",
+        "categories": ["套組優惠"],  # 預設勾選
+        "tags": [],
+        "required_total": 0,
+        "cover_image": None,
+    }
+
+    return render_template(
+        "new_bundle.html",
+        products=products,
+        all_categories=all_categories,
+        all_tags=all_tags,
+        bundle=empty_bundle,  # ← 關鍵
+    )
 
 
 # ================================
