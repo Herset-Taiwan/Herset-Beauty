@@ -1050,6 +1050,57 @@ def admin_discounts_delete(did):
     flash("折扣碼已刪除", "success")
     return redirect("/admin0363/features")
 
+# === 折扣碼編輯（表單頁） ===
+@app.route("/admin0363/discounts/edit/<int:did>", methods=["GET"])
+def admin_discounts_edit(did):
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
+    # 讀取單筆折扣碼
+    try:
+        res = supabase.table("discounts").select("*").eq("id", did).single().execute()
+        d = res.data
+        if not d:
+            flash("找不到折扣碼", "error")
+            return redirect("/admin0363/features")
+    except Exception:
+        flash("讀取折扣碼失敗", "error")
+        return redirect("/admin0363/features")
+    return render_template("discount_edit.html", d=d)
+
+# === 折扣碼編輯（提交） ===
+@app.route("/admin0363/discounts/edit/<int:did>", methods=["POST"])
+def admin_discounts_update(did):
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
+
+    form = request.form
+    # 基本防呆
+    _type = form.get("type") or "amount"
+    _value = float(form.get("value") or 0)
+    if _type == "percent":
+        # 百分比限制 0~100
+        _value = max(0.0, min(100.0, _value))
+
+    payload = {
+        "code": (form.get("code") or "").strip().upper(),
+        "type": _type,
+        "value": _value,
+        "min_order_amt": float(form.get("min_order_amt") or 0),
+        "start_at": form.get("start_at") or None,
+        "expires_at": form.get("expires_at") or None,
+        "usage_limit": int(form.get("usage_limit")) if form.get("usage_limit") else None,
+        "per_user_limit": int(form.get("per_user_limit")) if form.get("per_user_limit") else None,
+        "is_active": form.get("is_active") == "on",
+        "note": form.get("note") or None,
+    }
+    try:
+        supabase.table("discounts").update(payload).eq("id", did).execute()
+        flash("折扣碼已更新", "success")
+    except Exception:
+        flash("更新失敗，請稍後再試", "error")
+    return redirect("/admin0363/features")
+
+
 
 @app.route("/admin0363/mark_seen_orders", methods=["POST"])
 def mark_seen_orders():

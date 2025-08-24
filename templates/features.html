@@ -126,10 +126,23 @@
             <span class="tag">每人：{{ d.per_user_limit or '不限' }}</span>
           </div>
 
-          <div class="meta" style="margin-top:6px;">
-            <div><strong>有效期間：</strong>{{ d.start_at or '—' }} ~ {{ d.expires_at or '—' }}</div>
-            {% if d.note %}<div><strong>備註：</strong>{{ d.note }}</div>{% endif %}
-          </div>
+          {% set tz = namespace(start="", end="") %}
+{% if d.start_at %}
+  {% set tz.start = (d.start_at | replace("+00:00","") | replace("T"," ") )[:16] %}
+{% endif %}
+{% if d.expires_at %}
+  {% set tz.end = (d.expires_at | replace("+00:00","") | replace("T"," ") )[:16] %}
+{% endif %}
+
+<div class="meta" style="margin-top:6px;">
+  <div><strong>有效期間：</strong>
+    {{ tz.start or '—' }} ~ {{ tz.end or '—' }}
+  </div>
+  {% if d.note %}
+    <div><strong>備註：</strong>{{ d.note }}</div>
+  {% endif %}
+</div>
+
 
           <div class="actions">
             <a href="/admin0363/discounts/edit/{{ d.id }}" class="btn btn-ghost">✏️ 編輯</a>

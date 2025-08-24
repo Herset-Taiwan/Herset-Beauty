@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>編輯折扣碼 - HERSET BEAUTY</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <style>
+    :root{
+      --pink:#e91e63; --pink-100:#ffe4ed; --ink:#111827; --muted:#6b7280;
+      --card:#fff; --bg:#f6f7f9; --border:#e5e7eb; --shadow:0 8px 20px rgba(0,0,0,.06);
+      --radius:16px;
+    }
+    html,body{background:var(--bg); color:var(--ink); font-family:"Segoe UI","Noto Sans TC",system-ui,sans-serif; margin:0}
+    .wrap{max-width:900px; margin:34px auto 80px; padding:0 20px}
+    .header{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px}
+    .title{font-size:28px; font-weight:800; display:flex; align-items:center; gap:10px}
+    .subtitle{color:var(--muted); margin-top:6px}
+    .back{display:inline-flex; align-items:center; gap:8px; text-decoration:none; color:#fff; background:#9ca3af; padding:9px 14px; border-radius:10px; box-shadow:var(--shadow)}
+    .card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:22px; position:relative; overflow:hidden}
+    .card:before{content:""; position:absolute; inset:auto -30px -30px auto; width:180px; height:180px; background:conic-gradient(from 180deg at 50% 50%, #fff0, var(--pink-100)); border-radius:50%; transform:rotate(-12deg)}
+    .grid{display:grid; grid-template-columns:1fr; gap:16px}
+    @media(min-width:720px){ .grid{grid-template-columns:1fr 1fr} }
+    .row{display:grid; grid-template-columns:1fr; gap:16px}
+    @media(min-width:720px){ .row{grid-template-columns:1fr 1fr 1fr} }
+    .field{display:flex; flex-direction:column; gap:8px}
+    .field label{font-weight:700}
+    .tip{font-size:12px; color:var(--muted)}
+    input[type="text"], input[type="number"], input[type="datetime-local"], select, textarea{
+      width:100%; padding:12px; border:1px solid var(--border); border-radius:10px; background:#fff; color:var(--ink); font-size:15px; outline:none
+    }
+    textarea{min-height:90px; resize:vertical}
+    .toolbar{display:flex; gap:10px; margin-top:18px; flex-wrap:wrap}
+    .btn{display:inline-flex; align-items:center; gap:8px; border:none; cursor:pointer; font-weight:800; padding:11px 18px; border-radius:12px; text-decoration:none}
+    .btn-primary{background:var(--pink); color:#fff; box-shadow:var(--shadow)}
+    .btn-gray{background:#eef2f7; color:#111827}
+    .req{color:var(--pink); font-weight:900}
+    .code-badge{display:inline-block; padding:6px 10px; border-radius:999px; background:var(--pink-100); color:var(--pink); font-weight:900; letter-spacing:1px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div>
+        <div class="title">✏️ 編輯折扣碼 <span class="code-badge">{{ d.code }}</span></div>
+        <div class="subtitle">更新折扣碼的內容與限制條件。</div>
+      </div>
+      <a class="back" href="/admin0363/features">← 返回功能管理</a>
+    </div>
+
+    <form method="post" action="/admin0363/discounts/edit/{{ d.id }}" class="card">
+      <h3 style="margin:0 0 14px;">折扣碼基本資料</h3>
+
+      <div class="grid">
+        <div class="field">
+          <label>折扣碼 <span class="req">*</span></label>
+          <input name="code" value="{{ d.code }}" required />
+          <div class="tip">系統會存成大寫。</div>
+        </div>
+
+        <div class="field">
+          <label>折扣類型 <span class="req">*</span></label>
+          <select name="type">
+            <option value="amount" {% if d.type=='amount' %}selected{% endif %}>金額（$）</option>
+            <option value="percent" {% if d.type=='percent' %}selected{% endif %}>百分比（%）</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>折扣數值 <span class="req">*</span></label>
+          <input name="value" type="number" step="0.01" min="0" value="{{ d.value }}" required />
+          <div class="tip">百分比時請填 0–100；金額為折抵元數。</div>
+        </div>
+
+        <div class="field">
+          <label>最低金額</label>
+          <input name="min_order_amt" type="number" step="0.01" min="0" value="{{ d.min_order_amt or '' }}" placeholder="未填表示不限制" />
+        </div>
+      </div>
+
+      <div class="grid" style="margin-top:10px;">
+        <div class="field">
+          <label>開始時間</label>
+          <input name="start_at" type="datetime-local" value="{{ d.start_at and d.start_at[:16] or '' }}" />
+        </div>
+        <div class="field">
+          <label>到期時間</label>
+          <input name="expires_at" type="datetime-local" value="{{ d.expires_at and d.expires_at[:16] or '' }}" />
+        </div>
+        <div class="field" style="display:flex; align-items:center; gap:10px; padding-top:28px;">
+          <label><input type="checkbox" name="is_active" {% if d.is_active %}checked{% endif %}> 啟用</label>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:4px;">
+        <div class="field">
+          <label>總使用上限</label>
+          <input name="usage_limit" type="number" min="1" value="{{ d.usage_limit or '' }}" placeholder="空白 = 不限" />
+        </div>
+        <div class="field">
+          <label>每會員上限</label>
+          <input name="per_user_limit" type="number" min="1" value="{{ d.per_user_limit or '' }}" placeholder="空白 = 不限" />
+        </div>
+        <div class="field">
+          <label>備註</label>
+          <input name="note" value="{{ d.note or '' }}" placeholder="例如：新客券、活動…" />
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <button type="submit" class="btn btn-primary">💾 儲存變更</button>
+        <a href="/admin0363/features" class="btn btn-gray">取消</a>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // 折扣碼自動轉大寫
+    document.addEventListener("DOMContentLoaded", function(){
+      const code = document.querySelector('input[name="code"]');
+      if (!code) return;
+      code.addEventListener('input', () => { code.value = code.value.toUpperCase(); });
+    });
+  </script>
+</body>
+</html>
