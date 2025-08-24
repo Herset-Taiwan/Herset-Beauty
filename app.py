@@ -1,32 +1,22 @@
+# --- stdlib
+import os, re, json, uuid, hashlib, random, time, tempfile, urllib.parse, traceback
+from uuid import uuid4, UUID
+from datetime import datetime, timezone as dt_timezone
+
+# --- third party
 from flask import Flask, render_template, request, redirect, session, url_for, jsonify, flash, send_from_directory, Response, Markup
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 from supabase import create_client, Client
+from postgrest.exceptions import APIError
 from flask_mail import Mail, Message
 from dateutil import parser
 from dotenv import load_dotenv
-from uuid import uuid4
-from werkzeug.security import generate_password_hash
-from postgrest.exceptions import APIError
-from datetime import datetime, timezone
-from pytz import timezone as tz
 from pytz import timezone as pytz_timezone
-from datetime import datetime, timezone as dt_timezone   # 需要用到 datetime 的 UTC 時可用 dt_timezone
-from pytz import timezone as pytz_timezone   
-import os
-import tempfile
-import urllib.parse
-import hashlib
-import random
-import time
-import uuid
-import json
-import uuid, tempfile
-import re
-from uuid import UUID
-from flask import redirect
+from utils import generate_ecpay_form 
+# （刪掉重複的 import traceback；上面第一行已經有了）
+TW = pytz_timezone("Asia/Taipei")
 
-from utils import generate_check_mac_value, generate_ecpay_form
-TW = tz("Asia/Taipei")
 
 load_dotenv()
 
@@ -47,26 +37,11 @@ def to_utc_iso_from_tw(local_str: str):
         return None
     dt = datetime.strptime(local_str, "%Y-%m-%dT%H:%M")
     dt_tw = TW.localize(dt)
-    return dt_tw.astimezone(timezone.utc).isoformat()
+    return dt_tw.astimezone(dt_timezone.utc).isoformat()
 
-
-    
-def generate_check_mac_value(params, hash_key, hash_iv):
-    # 1. 將參數依照字母順序排列
-    sorted_params = sorted(params.items())
-
-    # 2. 組合字串
-    raw = f'HashKey={hash_key}&' + '&'.join([f'{k}={v}' for k, v in sorted_params]) + f'&HashIV={hash_iv}'
-
-    # 3. URL Encode（小寫）並取代特殊字元
-    encoded = urllib.parse.quote_plus(raw).lower()
-
-    # 4. SHA256 加密，轉成大寫十六進位
-    check_mac = hashlib.sha256(encoded.encode('utf-8')).hexdigest().upper()
-    return check_mac
 
 def generate_merchant_trade_no():
-    now = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    now = datetime.now().strftime("%Y%m%d%H%M%S")
     rand = random.randint(1000, 9999)
     return f"HS{now}{rand}"
 
@@ -231,7 +206,8 @@ def admin_dashboard():
     from dateutil import parser
     import json
 
-    tz = timezone("Asia/Taipei")
+    tw = timezone("Asia/Taipei")
+    tz = tw
     tab = request.args.get("tab", "products")
     selected_categories = request.args.getlist("category[]")
 
@@ -1632,9 +1608,11 @@ def checkout():
     from uuid import uuid4
     from pytz import timezone
     from datetime import datetime
-    tz = timezone("Asia/Taipei")
+    tw = timezone("Asia/Taipei")
+    tz = tw
     merchant_trade_no = "HS" + uuid4().hex[:12]
-    created_at = datetime.now(tz).isoformat()
+    created_at = datetime.now(tw).isoformat()
+
 
     order_data = {
         'member_id': member_id,
@@ -1925,7 +1903,7 @@ def handle_ecpay_result():
         order_result = supabase.table("orders").select("*").eq("id", order_id).execute()
     else:
         # 沒 retry 過，直接用原始 TradeNo 查
-        order_result = supabase.table("orders").select("*").eq("merchant_trade_no", merchant_trade_no).execute()
+        order_result = supabase.table("orders").select("*").eq("MerchantTradeNo", merchant_trade_no).execute()
 
     if not order_result.data:
         return "Order not found", 404
@@ -1983,27 +1961,27 @@ def block_admin_shortcut():
 #搜尋會員
 @app.route('/admin/members')
 def search_members():
-    
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
 
-    from pytz import timezone
-    from dateutil import parser
-    tz = timezone("Asia/Taipei")
+    members = (supabase.table("members")
+               .select("id, account, username, name, phone, email, address, note, created_at")
+               .order("created_at", desc=True)
+               .execute().data) or []
 
     for m in members:
         try:
-            utc_dt = parser.parse(m['created_at'])
-            m['created_at'] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
-        except:
-            m['created_at'] = m.get('created_at', '—')
+            m['created_at'] = parser.parse(m['created_at']).astimezone(TW).strftime("%Y-%m-%d %H:%M:%S")
+        except Exception:
+            pass
 
-    # 🔧 避免 template 出錯，加上預設變數
     return render_template("admin.html",
         tab="members",
         products=[],
         orders=[],
         members=members,
         messages=[],
-        product_page=0,
+        product_page=1,
         product_total_pages=1,
         product_page_size=10,
         msg_page=1,
@@ -2013,6 +1991,7 @@ def search_members():
         new_order_alert=False,
         new_message_alert=False
     )
+
 
 
 #刪除訂單
@@ -2342,13 +2321,12 @@ def profile_data():
 
 
 # 儲存會員資料
-@app.route('/profile', methods=['POST'])
+@app.route('/profile.json', methods=['POST'])
 def save_profile():
     if 'member_id' not in session:
         return jsonify(success=False, message="Not logged in"), 401
 
     try:
-        # 轉型，確保是正確的 uuid
         member_id = str(UUID(session['member_id']))
     except Exception:
         return jsonify(success=False, message="Invalid member_id in session"), 400
@@ -2359,28 +2337,22 @@ def save_profile():
     note    = (request.form.get('note') or '').strip()
 
     try:
-        res = (
-            supabase.table("members")
-            .update({
-                "name": name,
-                "phone": phone,
-                "address": address,
-                "note": note
-            })
-            .eq("id", member_id)   # 這裡傳進去就是合法 uuid 字串
-            .select("*")
-            .execute()
-        )
-
+        res = (supabase.table("members")
+               .update({"name": name, "phone": phone, "address": address, "note": note})
+               .eq("id", member_id)
+               .select("*")
+               .execute())
         if not res.data:
             return jsonify(success=False, message="Member not found"), 404
 
-        session.pop('incomplete_profile', None)
+        # 補 profile 完整旗標
+        if name and phone and address:
+            session.pop('incomplete_profile', None)
 
-        return jsonify(success=True, message="Profile updated successfully"), 200
-
+        return jsonify(success=True, message="Profile updated successfully")
     except Exception as e:
         return jsonify(success=False, message=str(e)), 500
+
 
 
 
@@ -2389,7 +2361,8 @@ def save_profile():
 def order_detail(order_id):
     from pytz import timezone
     from dateutil import parser
-    tz = timezone("Asia/Taipei")
+    tw = timezone("Asia/Taipei")
+    tz = tw
 
     # 查詢訂單
     res = supabase.table("orders").select("*").eq("id", order_id).single().execute()
@@ -2423,7 +2396,7 @@ def order_history():
         return redirect('/login?next=order-history')
 
     member_id = session['member_id']
-    tz = timezone("Asia/Taipei")
+    tz = TW  # 直接使用全域 TW
 
     # 查詢會員的所有訂單
     res = supabase.table("orders") \
@@ -2600,7 +2573,7 @@ def submit_message():
 
 
 #回覆留言（設為已回覆）
-from datetime import datetime
+
 
 @app.route("/admin0363/messages/reply/<msg_id>", methods=["POST"])
 def reply_message(msg_id):
@@ -2667,7 +2640,8 @@ def member_messages():
     if "member_id" not in session:
         return redirect("/login")
 
-    tz = timezone("Asia/Taipei")
+    tw = timezone("Asia/Taipei")
+    tz = tw
     member_id = session["member_id"]
     page = int(request.args.get("page", 1))
     per_page = 5
