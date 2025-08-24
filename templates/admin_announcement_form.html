@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ '新增公告' if mode=='new' else '編輯公告' }} - HERSET 後台{% endblock %}
+{% block banner %}{% endblock %}
+
+{% block content %}
+<div style="max-width:720px;margin:30px auto;background:#fff;border:1px solid #eadad3;border-radius:12px;padding:20px;box-shadow:0 6px 14px rgba(0,0,0,.05)">
+  <h2 style="margin:0 0 16px;color:#5a4b45;">{{ '新增公告' if mode=='new' else '編輯公告' }}</h2>
+
+  <form method="post" action="{{ '/admin0363/announcements' if mode=='new' else '/admin0363/announcements/%d/update' % ann.id }}">
+    <div style="margin-bottom:12px;">
+      <label style="display:block;font-weight:700;margin-bottom:6px;">標題（可空白）</label>
+      <input type="text" name="title" value="{{ ann.title if ann }}" style="width:100%;padding:10px;border:1px solid #eadad3;border-radius:8px;">
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <label style="display:block;font-weight:700;margin-bottom:6px;">內容</label>
+      <textarea name="content" rows="5" style="width:100%;padding:10px;border:1px solid #eadad3;border-radius:8px;">{{ ann.content if ann }}</textarea>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div>
+        <label style="display:block;font-weight:700;margin-bottom:6px;">開始時間（可留空）</label>
+        <input type="datetime-local" name="start_at"
+               value="{{ ann.start_at.replace(' ', 'T')[:16] if ann and ann.start_at }}"
+               style="width:100%;padding:10px;border:1px solid #eadad3;border-radius:8px;">
+      </div>
+      <div>
+        <label style="display:block;font-weight:700;margin-bottom:6px;">結束時間（可留空）</label>
+        <input type="datetime-local" name="end_at"
+               value="{{ ann.end_at.replace(' ', 'T')[:16] if ann and ann.end_at }}"
+               style="width:100%;padding:10px;border:1px solid #eadad3;border-radius:8px;">
+      </div>
+    </div>
+
+    <div style="margin:8px 0 18px;">
+      <label style="display:inline-flex;gap:8px;align-items:center;">
+        <input type="checkbox" name="is_active" {% if not ann or ann.is_active %}checked{% endif %}>
+        啟用（勾選才會顯示）
+      </label>
+    </div>
+
+    <div style="display:flex;gap:10px;">
+      <button type="submit" style="background:#c6456c;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-weight:800;cursor:pointer">
+        {{ '新增' if mode=='new' else '儲存' }}
+      </button>
+      <a href="/admin0363/features/announcements" style="border:1px solid #eadad3;border-radius:10px;padding:10px 16px;text-decoration:none;color:#5a4b45;">取消</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

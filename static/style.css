@@ -69,6 +69,31 @@ footer {
   color: #CDAFA1;
 }
 
+/* 公告條 */
+.announce-bar{
+  display:none; align-items:center; justify-content:space-between; gap:10px;
+  max-width:1100px; margin:10px auto 0; padding:10px 12px;
+  background:#f7e9e5; border:1px solid #ead3cd; border-radius:10px;
+  box-shadow:0 4px 10px rgba(0,0,0,.03);
+}
+.announce-inner{ display:flex; align-items:center; gap:10px; min-width:0; }
+.pill{
+  background:#fff; border:1px solid #e3cfc9; color:#c08474;
+  font-weight:800; font-size:12px; padding:2px 8px; border-radius:999px;
+}
+.announce-text{
+  color:#5a4b45; font-weight:600; white-space:nowrap; overflow:hidden;
+  text-overflow:ellipsis; display:block; max-width:65vw;
+}
+.announce-controls{ display:flex; align-items:center; gap:6px; }
+.announce-btn{
+  background:#fff; border:1px solid #e3cfc9; border-radius:8px;
+  padding:2px 8px; cursor:pointer; font-weight:700; color:#5a4b45;
+}
+.announce-pos{ font-size:12px; color:#7a6c66; min-width:48px; text-align:center; }
+@media (max-width:600px){ .announce-text{ max-width:52vw; } }
+
+
 /* ===== 商品分類 ===== */
 .sub-categories {
   background-color: #F3E5E1;

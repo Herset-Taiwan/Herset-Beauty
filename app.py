@@ -966,9 +966,6 @@ def admin_update_bundle(bundle_id):
 
 
 
-
-
-
 # ✅ TinyMCE 圖片上傳端點
 @app.route('/admin0363/tinymce/upload', methods=['POST'])
 def tinymce_upload():
@@ -1006,6 +1003,7 @@ def admin_features_hub():
         return redirect("/admin0363")
     # 中樞頁不需要 discounts 參數
     return render_template("features_hub.html")
+
 
 
 
@@ -1114,6 +1112,98 @@ def admin_features_announcements():
     if not session.get("admin_logged_in"): return redirect("/admin0363")
     # 先不查資料，之後補資料表/CRUD
     return render_template("announcements.html", items=[])
+
+#首頁公告區
+@app.get("/announcements.json")
+def announcements_json():
+    rows = (supabase.table("announcements")
+            .select("id, title, content, start_at, end_at, is_active, created_at")
+            .eq("is_active", True)
+            .order("created_at", desc=True)
+            .limit(20)
+            .execute().data or [])
+    return jsonify(rows)
+
+# === admin首頁公告區: New / Create / Edit (optional) ===
+
+def _admin_required():
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
+
+def _none_if_blank(v):
+    v = (v or "").strip()
+    return v or None
+
+@app.get("/admin0363/announcements/new")
+def admin_announcement_new():
+    auth = _admin_required()
+    if auth: return auth
+    # 空白表單
+    return render_template("admin_announcement_form.html", mode="new", ann=None)
+
+@app.post("/admin0363/announcements")
+def admin_announcement_create():
+    auth = _admin_required()
+    if auth: return auth
+
+    title   = request.form.get("title", "").strip()
+    content = request.form.get("content", "").strip()
+    start_at = _none_if_blank(request.form.get("start_at"))  # datetime-local 值，可為空
+    end_at   = _none_if_blank(request.form.get("end_at"))
+    is_active = bool(request.form.get("is_active"))  # checkbox: on/None
+
+    if not title and not content:
+        flash(("error", "請至少輸入標題或內容"))
+        return redirect("/admin0363/announcements/new")
+
+    data = {
+        "title": title,
+        "content": content,
+        "start_at": start_at,   # 直接給 ISO 字串，Postgres 會吃
+        "end_at": end_at,
+        "is_active": is_active
+    }
+    supabase.table("announcements").insert(data).execute()
+
+    flash(("success", "公告已新增"))
+    return redirect("/admin0363/features/announcements")
+
+
+# （選用）編輯頁 & 更新；若暫時不需要，可先不加
+@app.get("/admin0363/announcements/<int:ann_id>/edit")
+def admin_announcement_edit(ann_id):
+    auth = _admin_required()
+    if auth: return auth
+
+    row = (supabase.table("announcements")
+           .select("*").eq("id", ann_id).single().execute().data)
+    if not row:
+        flash(("error", "找不到公告"))
+        return redirect("/admin0363/features/announcements")
+    return render_template("admin_announcement_form.html", mode="edit", ann=row)
+
+@app.post("/admin0363/announcements/<int:ann_id>/update")
+def admin_announcement_update(ann_id):
+    auth = _admin_required()
+    if auth: return auth
+
+    title   = request.form.get("title", "").strip()
+    content = request.form.get("content", "").strip()
+    start_at = _none_if_blank(request.form.get("start_at"))
+    end_at   = _none_if_blank(request.form.get("end_at"))
+    is_active = bool(request.form.get("is_active"))
+
+    supabase.table("announcements").update({
+        "title": title,
+        "content": content,
+        "start_at": start_at,
+        "end_at": end_at,
+        "is_active": is_active
+    }).eq("id", ann_id).execute()
+
+    flash(("success", "公告已更新"))
+    return redirect("/admin0363/features/announcements")
+
 
 
 @app.route("/admin0363/mark_seen_orders", methods=["POST"])
