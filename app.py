@@ -1439,7 +1439,7 @@ def cart():
             # 可能的欄位 3：文字（用逗號/換行/頓號分隔）
             elif item.get('option'):
                 text = str(item['option']).strip()
-                parts = [p.strip() for p in re.split(r'[,\n、]+', text) if p.strip()]
+                parts = [_clean_bundle_label(p) for p in re.split(r'[,\n、|｜]+', text) if p.strip()]
                 bundle_lines.extend(parts)
 
         product_out = {
