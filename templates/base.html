@@ -33,13 +33,14 @@
 </head>
 
 {% if request.path == '/' %}
-<!-- 站內公告（自動輪播） -->
-<div id="annbar" class="annbar" aria-live="polite" aria-atomic="true">
-  <span class="ann-tag">公告</span>
-  <div class="ann-viewport">
-    <div id="annSlides" class="ann-slides"></div>
+  <!-- 站內公告（自動輪播） -->
+  <div id="annbar" class="annbar" aria-live="polite" aria-atomic="true">
+    <span class="ann-tag">公告</span>
+    <div class="ann-viewport">
+      <div id="annSlides" class="ann-slides"></div>
+    </div>
   </div>
-</div>
+{% endif %}
 
 <body>
 <div class="add-success" id="add-success">已加入購物車！</div>
@@ -275,65 +276,7 @@
 </script>
 
 <!-- 公告條 -->
-<script>
-(function () {
-  // 後端若有傳進模板（建議）：announcements = [{title, content, start_at, end_at, is_active}, ...]
-  const FROM_SERVER = {{ (announcements|default([], true)) | tojson | safe }};
-  const SOURCE_URL  = '/announcements.json'; // 若沒帶進模板，會嘗試從這裡抓
 
-  const bar  = document.getElementById('announceBar');
-  if (!bar) return;
-
-  const txt  = document.getElementById('announceText');
-  const pos  = document.getElementById('announcePosition');
-  const prev = document.getElementById('announcePrev');
-  const next = document.getElementById('announceNext');
-
-  const normalize = (list) => (list || []).map(x => ({
-    title:    x.title    || '',
-    content:  x.content  || '',
-    start_at: x.start_at || null,
-    end_at:   x.end_at   || null,
-    is_active: x.is_active !== false
-  }));
-
-  const inWindow = (it, nowMs) => {
-    const s = it.start_at ? Date.parse(it.start_at) : -Infinity;
-    const e = it.end_at   ? Date.parse(it.end_at)   :  Infinity;
-    return it.is_active && nowMs >= s && nowMs <= e;
-  };
-
-  const show = (arr) => {
-    const items = normalize(arr).filter(a => inWindow(a, Date.now()));
-    if (!items.length) { bar.style.display = 'none'; return; }
-
-    let i = 0, timer;
-    const render = () => {
-      const it   = items[i];
-      const text = (it.title ? (it.title + (it.content ? '｜' : '')) : '') + (it.content || '');
-      txt.textContent = text.trim();
-      txt.title       = text.trim();             // 滑鼠 hover 可看完整訊息
-      pos.textContent = `${i+1}/${items.length}`;
-    };
-    const autoplay = () => { clearInterval(timer); timer = setInterval(() => { i = (i+1) % items.length; render(); }, 6000); };
-
-    prev.onclick = () => { i = (i-1+items.length) % items.length; render(); autoplay(); };
-    next.onclick = () => { i = (i+1) % items.length; render(); autoplay(); };
-
-    bar.style.display = 'flex';
-    render(); autoplay();
-  };
-
-  if (Array.isArray(FROM_SERVER) && FROM_SERVER.length) {
-    show(FROM_SERVER);
-  } else {
-    fetch(SOURCE_URL, { credentials: 'same-origin' })
-      .then(r => r.ok ? r.json() : [])
-      .then(json => show(json.items || json || []))
-      .catch(() => {});
-  }
-})();
-</script>
 
 
 <script>
