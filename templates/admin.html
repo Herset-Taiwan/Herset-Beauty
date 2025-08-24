@@ -938,14 +938,14 @@ function printOrder(orderId) {
   const order = allOrders.find(o => o.id === orderId);
   if (!order) return alert("找不到訂單");
 
-  // 解析選項為多行：支援 , 、 、 | ｜ 與換行
+  // 把 option 斷成多段（只給套組用）
   const splitOpts = (text) =>
     String(text || "")
       .split(/[,|｜、\n]+/)
       .map(s => s.trim())
       .filter(Boolean);
 
-  // 從商品名判斷「幾入」
+  // 從商品名推論「幾入」
   const packFromName = (name) => {
     const s = String(name || "");
     let m = s.match(/(\d+)\s*入/);
@@ -955,27 +955,52 @@ function printOrder(orderId) {
       const map = { 一:1, 二:2, 兩:2, 三:3, 四:4, 五:5, 六:6, 七:7, 八:8, 九:9, 十:10 };
       return map[m[1]] || 1;
     }
-    return 1;
+    return 0;
   };
 
-  // 逐列組出貨資料
+  // 是否為套組：優先看 product_type，其次看 option 有沒有 #1/#2…，或品名含「幾入」
+  const isBundle = (it) => {
+    if (String(it.product_type || '') === 'bundle') return true;
+    if (/#\s*\d/.test(String(it.option || ''))) return true;
+    if (/([一二兩三四五六七八九十]|\d+)\s*入/.test(String(it.product_name || ''))) return true;
+    return false;
+  };
+
+  // 列資料
   const rowsHtml = order.items.map((item, index) => {
     const qty = parseInt(item.qty, 10) || 1;
-    const lines = splitOpts(item.option);
-    const piecesPerUnit = lines.length > 0 ? lines.length : packFromName(item.product_name);
+    const bundle = isBundle(item);
+
+    // 套組內件數（僅對套組計算；一般商品固定 1）
+    let piecesPerUnit = 1;
+    if (bundle) {
+      const parts = splitOpts(item.option);
+      const hasNumberedSeg = /#\s*\d/.test(String(item.option || ''));
+      const byOption = hasNumberedSeg ? parts.length : 0;
+      const byName = packFromName(item.product_name) || 0;
+      piecesPerUnit = (byOption || byName || 1);
+    }
+
     const shipQty = qty * piecesPerUnit;
 
-    const optionHtml = lines.length
-      ? `<div class="option-text">
-           選項：
-           <ul class="opt-ul">${lines.map(l => `<li>${l}</li>`).join('')}</ul>
-         </div>`
-      : (item.option ? `<div class="option-text">選項：${item.option}</div>` : '');
+    // Option 顯示：套組逐行；非套組原樣（不拆「｜」）
+    let optionHtml = '';
+    if (bundle) {
+      const lines = splitOpts(item.option);
+      optionHtml = lines.length
+        ? `<div class="option-text">
+             選項：
+             <ul class="opt-ul">${lines.map(l => `<li>${l}</li>`).join('')}</ul>
+           </div>`
+        : (item.option ? `<div class="option-text">選項：${item.option}</div>` : '');
+    } else {
+      optionHtml = item.option ? `<div class="option-text">選項：${item.option}</div>` : '';
+    }
 
     return `
       <tr>
         <td>${index + 1}</td>
-        <td>${item.product_name}${optionHtml}</td>
+        <td>${item.product_name || ''}${optionHtml}</td>
         <td>—</td>
         <td>${shipQty}</td>
         <td></td>
@@ -984,12 +1009,17 @@ function printOrder(orderId) {
     `;
   }).join('');
 
-  // 總出貨件數
+  // 總出貨件數（同樣只對套組加乘）
   const totalShipQty = order.items.reduce((sum, item) => {
     const qty = parseInt(item.qty, 10) || 1;
-    const lines = splitOpts(item.option);
-    const ppu = lines.length > 0 ? lines.length : packFromName(item.product_name);
-    return sum + qty * ppu;
+    if (!isBundle(item)) return sum + qty;
+
+    const parts = splitOpts(item.option);
+    const hasNumberedSeg = /#\s*\d/.test(String(item.option || ''));
+    const byOption = hasNumberedSeg ? parts.length : 0;
+    const byName = packFromName(item.product_name) || 0;
+    const piecesPerUnit = (byOption || byName || 1);
+    return sum + qty * piecesPerUnit;
   }, 0);
 
   // 單頁 HTML
@@ -999,13 +1029,13 @@ function printOrder(orderId) {
       <meta charset="UTF-8">
       <title>出貨單 - #${order.id}</title>
       <style>
-        body { font-family: "Segoe UI","Noto Sans TC",sans-serif; padding:40px; background:#fff; color:#333; }
+        body { font-family:"Segoe UI","Noto Sans TC",sans-serif; padding:40px; color:#333; }
         h1 { text-align:center; color:#e91e63; margin-bottom:30px; }
         .info p { margin:5px 0; font-size:15px; }
         table { width:100%; border-collapse:collapse; margin-top:30px; }
         th, td { border:1px solid #ccc; padding:12px; text-align:center; font-size:15px; }
         th { background:#f9f9f9; }
-        .option-text { color:#777; font-size:13px; margin-top:6px; text-align:left; }
+        .option-text { color:#666; font-size:13px; margin-top:6px; text-align:left; }
         .opt-ul { margin:6px 0 0 18px; padding:0; }
         .opt-ul li { line-height:1.6; }
         .btn-print { margin-top:30px; padding:8px 18px; background:#e91e63; color:#fff; border:none; border-radius:6px; font-weight:700; cursor:pointer; }
@@ -1017,7 +1047,7 @@ function printOrder(orderId) {
 
       <div class="info">
         <p><strong>賣場名稱：</strong>Herset</p>
-        <p><strong>訂單編號：</strong>ON${order.id.toString().padStart(10,'0')}</p>
+        <p><strong>訂單編號：</strong>ON${String(order.id).padStart(10,'0')}</p>
         <p><strong>訂單日期：</strong>${(order.created_local || '').split(' ')[0]}</p>
         <p><strong>物流廠商：</strong>宅配</p>
         <p><strong>收件人姓名：</strong>${order.member?.name || ''}</p>
@@ -1044,7 +1074,7 @@ function printOrder(orderId) {
         </tbody>
       </table>
 
-      <div class="note" style="font-size:13px; margin-top:30px;">
+      <div style="font-size:13px; margin-top:30px;">
         感謝您購買本商品，若有缺件、瑕疵、破損等問題請於3天內與我們聯繫。聯絡電話：0972-XXX-XXX<br>
         若需換貨請務必保留原包裝並附回本單據。
       </div>
