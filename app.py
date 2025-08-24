@@ -1395,28 +1395,61 @@ def cart():
                      .eq("id", pid).single().execute()
         dbp = db.data or {}
 
-        images = item.get('images') or dbp.get('images') or []
-        image = item.get('image') or dbp.get('image') or (images[0] if images else None)
+                images = item.get('images') or dbp.get('images') or []
+        image = item.get('image') or dbp.get('image') \
+                or (images[0] if images else None)
+
+        # 🔹 新增：把套組選擇的內容整理成可顯示的行列
+        bundle_lines = []
+        if (item.get('product_type') or dbp.get('product_type')) == 'bundle':
+            # 可能的欄位 1：list[dict]，例如 [{'name':'A', 'qty':2}, ...]
+            if isinstance(item.get('bundle_items'), list) and item['bundle_items']:
+                for c in item['bundle_items']:
+                    nm = c.get('name') or c.get('title') or c.get('product_name') or c.get('label')
+                    q = int(c.get('qty') or c.get('count') or 1)
+                    if nm:
+                        bundle_lines.append(f"{nm} × {q}" if q > 1 else nm)
+            # 可能的欄位 2：list[...]，例如 ['A','B'] 或 [{'label':'A'}]
+            elif isinstance(item.get('bundle_selected'), list):
+                for s in item['bundle_selected']:
+                    if isinstance(s, dict):
+                        nm = s.get('name') or s.get('title') or s.get('label') or str(s.get('value') or '')
+                        q = int(s.get('qty') or s.get('count') or 1)
+                        if nm:
+                            bundle_lines.append(f"{nm} × {q}" if q > 1 else nm)
+                    else:
+                        if s:
+                            bundle_lines.append(str(s))
+            # 可能的欄位 3：文字（用逗號/換行/頓號分隔）
+            elif item.get('option'):
+                text = str(item['option']).strip()
+                parts = [p.strip() for p in re.split(r'[,\n、]+', text) if p.strip()]
+                bundle_lines.extend(parts)
 
         product_out = {
             'id': pid,
             'name': dbp.get('name') or item.get('name'),
             'product_type': item.get('product_type') or dbp.get('product_type'),
 
-            # 套組欄位保留給模板使用（不影響計算）
+            # ✅ 仍保留套組價格欄位
             'bundle_price':   item.get('bundle_price'),
             'bundle_compare': item.get('bundle_compare'),
 
+            # 前端顯示/計算會用到的欄位
             'price': unit_price,
             'original_price': unit_compare if unit_compare > 0 else unit_price,
             'discount_price': unit_discount if (unit_discount and unit_compare and unit_discount < unit_compare) else 0.0,
             'qty': qty,
             'subtotal': unit_price * qty,
 
+            # 🔹 新增：給模板顯示的套組行
+            'bundle_lines': bundle_lines,
+
             'option': item.get('option', ''),
             'image': image,
             'images': images,
         }
+
 
         products.append(product_out)
         total += product_out['subtotal']
