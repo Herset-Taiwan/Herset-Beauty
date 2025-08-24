@@ -32,7 +32,10 @@
 
 </head>
 
-{% if request.path == '/' %}
+
+<body>
+
+  {% if request.path == '/' %}
   <!-- 站內公告（自動輪播） -->
   <div id="annbar" class="annbar" aria-live="polite" aria-atomic="true">
     <span class="ann-tag">公告</span>
@@ -42,7 +45,6 @@
   </div>
 {% endif %}
 
-<body>
 <div class="add-success" id="add-success">已加入購物車！</div>
 <div class="save-success" id="save-success">資料已更新完成！</div>
 
