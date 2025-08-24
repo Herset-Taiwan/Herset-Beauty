@@ -23,6 +23,7 @@ import time
 import uuid
 import json
 import uuid, tempfile
+import re
 from uuid import UUID
 from flask import redirect
 
