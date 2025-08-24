@@ -12,6 +12,7 @@ from datetime import datetime
 from pytz import timezone
 from werkzeug.security import generate_password_hash
 from postgrest.exceptions import APIError
+from datetime import datetime, timezone
 import os
 import tempfile
 import urllib.parse
@@ -1318,27 +1319,55 @@ def about():
 
 @app.route('/cart', methods=['GET', 'POST'])
 def cart():
+    # 先把購物車從 session 拿出來
+    cart_items = session.get('cart', [])
+
+    # --- 如果是 POST：可能是調整商品數量、移除、或套用/取消折扣碼 ---
     if request.method == 'POST':
-        action = request.form.get('action')
-        product_id = request.form.get('product_id')
-        option = (request.form.get('option') or '')
-        cart = session.get('cart', [])
+        action = (request.form.get('action') or '').strip()
+        # 1) 商品異動（increase / decrease / remove）
+        if action in ('increase', 'decrease', 'remove'):
+            product_id = request.form.get('product_id')
+            option = (request.form.get('option') or '')
+            for item in cart_items:
+                if item.get('product_id') == product_id and (item.get('option') or '') == option:
+                    if action == 'increase':
+                        item['qty'] = int(item.get('qty') or 1) + 1
+                    elif action == 'decrease':
+                        q = int(item.get('qty') or 1)
+                        item['qty'] = q - 1 if q > 1 else 1
+                    elif action == 'remove':
+                        cart_items.remove(item)
+                    break
+            session['cart'] = cart_items
+            return redirect(url_for('cart'))
 
-        for item in cart:
-            if item.get('product_id') == product_id and (item.get('option') or '') == option:
-                if action == 'increase':
-                    item['qty'] += 1
-                elif action == 'decrease' and item['qty'] > 1:
-                    item['qty'] -= 1
-                elif action == 'remove':
-                    cart.remove(item)
-                break
+        # 2) 套用折扣碼
+        if action == 'apply_discount':
+            # 以目前購物車小計（不含運費）驗證
+            subtotal = 0.0
+            for it in cart_items:
+                price = float(it.get('price') or 0)
+                qty = int(it.get('qty') or 1)
+                subtotal += price * qty
+            ok, msg, info = validate_discount_for_cart(request.form.get('discount_code', ''), subtotal)
+            if ok:
+                session['cart_discount'] = info  # 只存必要資訊；實際折抵在 GET 會再重算
+            else:
+                session.pop('cart_discount', None)
+            flash(msg)
+            return redirect(url_for('cart'))
 
-        session['cart'] = cart
+        # 3) 取消折扣碼
+        if action == 'remove_discount':
+            session.pop('cart_discount', None)
+            flash("已取消折扣碼")
+            return redirect(url_for('cart'))
+
+        # 其他未知 action：直接回購物車
         return redirect(url_for('cart'))
 
     # ---- GET：顯示購物車 ----
-    cart_items = session.get('cart', [])
     products = []
     total = 0.0
 
@@ -1347,32 +1376,29 @@ def cart():
         if not pid:
             continue
 
-        # 先讀購物車裡儲存的數值（加入購物車時已處理過單品/套組價格）
+        # 加入購物車時已決定的計價欄位
         unit_price = float(item.get('price') or 0)                 # 單價（計價用）
         unit_compare = float(item.get('original_price') or 0)      # 原價（顯示刪除線）
         unit_discount = float(item.get('discount_price') or 0)     # 折扣價（若有且 < 原價）
         qty = int(item.get('qty') or 1)
 
-        # 從 DB 補商品基本資訊（名稱/圖），不覆蓋價格
+        # 從 DB 取補充資訊（不覆寫價格）
         db = supabase.table("products").select("name,image,images,product_type") \
                      .eq("id", pid).single().execute()
         dbp = db.data or {}
 
-        # 圖片：先用購物車存的，其次 DB
         images = item.get('images') or dbp.get('images') or []
-        image = item.get('image') or dbp.get('image') \
-                or (images[0] if images else None)
+        image = item.get('image') or dbp.get('image') or (images[0] if images else None)
 
         product_out = {
             'id': pid,
             'name': dbp.get('name') or item.get('name'),
             'product_type': item.get('product_type') or dbp.get('product_type'),
 
-            # ✅ 把 bundle 欄位帶到模板
+            # 套組欄位保留給模板使用（不影響計算）
             'bundle_price':   item.get('bundle_price'),
             'bundle_compare': item.get('bundle_compare'),
 
-            # 前端顯示/計算會用到的欄位
             'price': unit_price,
             'original_price': unit_compare if unit_compare > 0 else unit_price,
             'discount_price': unit_discount if (unit_discount and unit_compare and unit_discount < unit_compare) else 0.0,
@@ -1387,9 +1413,25 @@ def cart():
         products.append(product_out)
         total += product_out['subtotal']
 
+    # 運費計算（維持你原規則）
     shipping_fee = 0 if total >= 2000 else 80
-    final_total = total + shipping_fee
     free_shipping_diff = 0 if total >= 2000 else (2000 - total)
+
+    # ---- 折扣碼（若 session 有暫存，依目前 subtotal 再次檢核並計算折抵）----
+    discount = session.get('cart_discount')
+    discount_deduct = 0.0
+    if discount:
+        ok, msg, info = validate_discount_for_cart(discount.get('code'), total)
+        if ok:
+            discount = info                      # 更新顯示資訊（可能有新小計）
+            discount_deduct = float(info['amount'])
+        else:
+            flash(msg)                           # 例如不達門檻/逾期
+            session.pop('cart_discount', None)
+            discount = None
+
+    # 應付金額（不得為負）
+    final_total = max(total + shipping_fee - discount_deduct, 0)
 
     return render_template(
         "cart.html",
@@ -1397,14 +1439,70 @@ def cart():
         total=total,
         shipping_fee=shipping_fee,
         final_total=final_total,
-        free_shipping_diff=free_shipping_diff
+        free_shipping_diff=free_shipping_diff,
+        discount=discount,
+        discount_deduct=discount_deduct,
     )
 
+#驗證 折扣碼
+def _parse_iso(ts: str):
+    # 允許 None；允許 '2025-08-24T08:00:00+00:00'
+    if not ts: return None
+    try:
+        return datetime.fromisoformat(ts.replace("Z", "+00:00"))
+    except Exception:
+        return None
+
+def validate_discount_for_cart(code: str, subtotal: float):
+    """
+    驗證折扣碼是否可在購物車使用；只檢查基本條件，不動用次數。
+    回傳 (ok:bool, msg:str, info:dict|None)
+    info = {code,type,value,min_order_amt,amount}
+    """
+    if not code:
+        return False, "請輸入折扣碼", None
+
+    code = code.strip().upper()
+    try:
+        res = supabase.table("discounts").select("*").eq("code", code).eq("is_active", True).single().execute()
+        d = res.data
+    except Exception:
+        d = None
+
+    if not d:
+        return False, "折扣碼不存在或未啟用", None
+
+    now = datetime.now(timezone.utc)
+    start_at = _parse_iso(d.get("start_at"))
+    expires_at = _parse_iso(d.get("expires_at"))
+    if start_at and now < start_at:
+        return False, "折扣碼尚未開始", None
+    if expires_at and now > expires_at:
+        return False, "折扣碼已逾期", None
+
+    min_amt = float(d.get("min_order_amt") or 0)
+    if subtotal < min_amt:
+        return False, f"未達此折扣碼最低消費 ${int(min_amt)}", None
+
+    dtype = d.get("type")
+    val = float(d.get("value") or 0)
+    if dtype == "percent":
+        val = max(0.0, min(100.0, val))
+        amount = round(subtotal * (val/100.0))
+    else:  # amount
+        amount = min(round(val), round(subtotal))
+
+    info = {
+        "code": code,
+        "type": dtype,
+        "value": val,
+        "min_order_amt": min_amt,
+        "amount": float(amount),
+    }
+    return True, "折扣碼已套用", info
 
 
-
-
-#結帳
+# 結帳
 @app.route('/checkout', methods=['POST'])
 def checkout():
     if 'member_id' not in session:
@@ -1417,33 +1515,57 @@ def checkout():
         return redirect('/cart')
 
     member_id = session['member_id']
-    total = 0
+
+    # 1) 組商品明細 + 算小計（以加入購物車時記錄的價格為主）
+    total = 0.0
     items = []
-
     for item in cart_items:
-        # 撈出當前商品資訊（但只拿必要資訊）
-        res = supabase.table("products").select("id,name,price,discount_price").eq("id", item['product_id']).single().execute()
-        product = res.data
-        if product:
-            # ✅ 優先使用購物車中記錄的價格
-            item_price = item.get('price') or product.get('discount_price') or product['price']
-            qty = item.get('qty', 1)
-            subtotal = item_price * qty
-            total += subtotal
+        pid = item.get('product_id')
+        if not pid:
+            continue
+        # 撈必要欄位（名稱），價格仍以購物車為準
+        res = supabase.table("products").select("id,name").eq("id", pid).single().execute()
+        product = res.data or {}
 
-            items.append({
-                'product_id': str(product['id']),
-                'product_name': product['name'],
-                'qty': qty,
-                'price': item_price,
-                'subtotal': subtotal,
-                'option': item.get('option', '')
-            })
+        # 單價：購物車記錄的 price 優先；若沒有再回退 DB price/discount_price
+        item_price = float(item.get('price')
+                           or item.get('discount_price')
+                           or product.get('discount_price')
+                           or product.get('price')
+                           or 0)
+        qty = int(item.get('qty', 1))
+        subtotal = item_price * qty
+        total += subtotal
 
-    # ✅ 運費判斷
+        items.append({
+            'product_id': str(pid),
+            'product_name': product.get('name') or item.get('name', ''),
+            'qty': qty,
+            'price': item_price,
+            'subtotal': subtotal,
+            'option': item.get('option', '')
+        })
+
+    # 2) 運費（依小計判斷免運；不受折扣影響）
     shipping_fee = 0 if total >= 2000 else 80
-    final_total = total + shipping_fee
 
+    # 3) 折扣碼（再次驗證後套用，不讓無效碼寫入訂單）
+    discount = session.get('cart_discount')
+    discount_code = None
+    discount_amount = 0.0
+    if discount:
+        ok, msg, info = validate_discount_for_cart(discount.get('code'), total)
+        if ok:
+            discount_code = info['code']
+            discount_amount = float(info['amount'])
+        else:
+            flash(msg)
+            session.pop('cart_discount', None)  # 無效就清掉
+
+    # 4) 應付金額（不得為負）
+    final_total = max(total + shipping_fee - discount_amount, 0)
+
+    # 5) 建立訂單
     from uuid import uuid4
     from pytz import timezone
     from datetime import datetime
@@ -1451,11 +1573,12 @@ def checkout():
     merchant_trade_no = "HS" + uuid4().hex[:12]
     created_at = datetime.now(tz).isoformat()
 
-    # ✅ 建立訂單資料
     order_data = {
         'member_id': member_id,
-        'total_amount': final_total,
+        'total_amount': final_total,      # 實際應付金額（含運、扣完折扣）
         'shipping_fee': shipping_fee,
+        'discount_code': discount_code,   # 需要先加欄位（見下方 SQL）
+        'discount_amount': discount_amount,
         'status': 'pending',
         'created_at': created_at,
         'MerchantTradeNo': merchant_trade_no
@@ -1463,21 +1586,30 @@ def checkout():
     result = supabase.table('orders').insert(order_data).execute()
     order_id = result.data[0]['id']
 
-    # ✅ 寫入每筆商品明細
-    for item in items:
-        item['id'] = str(uuid4())
-        item['order_id'] = order_id
-        item['option'] = item.get('option', '')
-
+    # 6) 寫入每筆商品明細
+    for it in items:
+        it['id'] = str(uuid4())
+        it['order_id'] = order_id
+        it['option'] = it.get('option', '')
     supabase.table('order_items').insert(items).execute()
 
-    # ✅ 清空購物車
-    session['cart'] = []
+    # 7) 成功後才累計折扣使用次數（簡單版；想更嚴謹可用 RPC，見下）
+    if discount_code:
+        try:
+            d = supabase.table('discounts').select('used_count').eq('code', discount_code).single().execute().data or {}
+            used = int(d.get('used_count') or 0) + 1
+            supabase.table('discounts').update({'used_count': used}).eq('code', discount_code).execute()
+        except Exception:
+            # 若失敗就略過，不影響下單
+            pass
 
-    # ✅ 暫存交易編號（後續綠界付款用）
+    # 8) 清空購物車與折扣碼暫存、保存交易編號
+    session['cart'] = []
+    session.pop('cart_discount', None)
     session['current_trade_no'] = merchant_trade_no
 
     return redirect("/choose-payment")
+
 
 
 

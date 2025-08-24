@@ -5,126 +5,75 @@
   <title>購物車 - HERSET BEAUTY</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    body {
-      background-color: #f9f5f5;
-    }
+    body { background-color: #f9f5f5; }
     .cart-container {
-      max-width: 900px;
-      margin: 40px auto;
-      background: #fff;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      max-width: 900px; margin: 40px auto; background: #fff; padding: 30px;
+      border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.08);
     }
     .member-info {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      font-size: 16px;
-      color: #5A4B45;
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px; font-size: 16px; color: #5A4B45;
     }
-    .member-info .account {
-      font-weight: bold;
-      color: #CDAFA1;
-      margin-left: 4px;
-    }
-    .member-info .right {
-      margin-left: auto;
-    }
+    .member-info .account { font-weight: bold; color: #CDAFA1; margin-left: 4px; }
+    .member-info .right { margin-left: auto; }
     .login-btn {
-      background: #CDAFA1;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      padding: 6px 14px;
-      font-weight: bold;
-      text-decoration: none;
+      background: #CDAFA1; color: white; border: none; border-radius: 6px;
+      padding: 6px 14px; font-weight: bold; text-decoration: none;
     }
-    h2 {
-      color: #3C3C3C;
-      margin-bottom: 20px;
-    }
+    h2 { color: #3C3C3C; margin-bottom: 20px; }
     .cart-item {
-      display: flex;
-      align-items: center;
-      border-bottom: 1px solid #eee;
-      padding: 15px 0;
+      display: flex; align-items: center; border-bottom: 1px solid #eee; padding: 15px 0;
     }
     .cart-item img {
-      width: 80px;
-      height: 80px;
-      object-fit: cover;
-      margin-right: 20px;
-      border-radius: 6px;
-      border: 1px solid #ddd;
+      width: 80px; height: 80px; object-fit: cover; margin-right: 20px;
+      border-radius: 6px; border: 1px solid #ddd;
     }
-    .cart-info {
-      flex: 1;
-    }
-    .cart-actions {
-      display: flex;
-      gap: 6px;
-      align-items: center;
-    }
-    .cart-actions form {
-      display: inline;
-    }
+    .cart-info { flex: 1; }
+    .cart-actions { display: flex; gap: 6px; align-items: center; }
+    .cart-actions form { display: inline; }
     .cart-actions button {
-      padding: 5px 10px;
-      font-size: 15px;
-      border: 1px solid #ccc;
-      background-color: white;
-      border-radius: 5px;
-      cursor: pointer;
+      padding: 5px 10px; font-size: 15px; border: 1px solid #ccc;
+      background-color: white; border-radius: 5px; cursor: pointer;
     }
-    .cart-actions button:hover {
-      background-color: #eee;
+    .cart-actions button:hover { background-color: #eee; }
+
+    /* 折扣碼輸入區 */
+    .coupon-box{
+      margin-top:20px; padding:16px; border:1px dashed #e5e7eb; border-radius:10px; background:#fafafa;
+      display:flex; gap:12px; align-items:center; flex-wrap:wrap;
     }
+    .coupon-box input[type="text"]{
+      padding:10px 12px; border:1px solid #ddd; border-radius:8px; outline:none;
+      font-size:15px; width:240px; max-width:100%;
+    }
+    .btn{ display:inline-flex; align-items:center; gap:6px; padding:10px 14px; border-radius:8px; border:none; cursor:pointer; font-weight:800; }
+    .btn-primary{ background:#e91e63; color:#fff; }
+    .btn-gray{ background:#f3f4f6; color:#111827; border:1px solid #e5e7eb; }
+    .badge{
+      display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px;
+      background:#ffe4ed; color:#e91e63; font-weight:900; letter-spacing:1px;
+    }
+    .coupon-hint{ color:#6b7280; font-size:13px; }
+
     .total {
-      text-align: right;
-      font-size: 1.3rem;
-      font-weight: bold;
-      margin-top: 30px;
-      color: #3C3C3C;
+      text-align: right; font-size: 1.1rem; margin-top: 20px; color: #3C3C3C;
+      line-height:1.9;
     }
+    .total strong{ font-size:1.4rem; }
     .checkout-btn {
-      margin-top: 20px;
-      background-color: #e91e63;
-      color: white;
-      padding: 12px 24px;
-      border: none;
-      border-radius: 6px;
-      font-size: 16px;
-      font-weight: bold;
-      float: right;
-      cursor: pointer;
+      margin-top: 20px; background-color: #e91e63; color: white; padding: 12px 24px;
+      border: none; border-radius: 6px; font-size: 16px; font-weight: bold; float: right; cursor: pointer;
     }
-    .checkout-btn:hover {
-      background-color: #d81b60;
-    }
-    .back-btn {
-      display: inline-block;
-      margin-top: 40px;
-      color: #5A4B45;
-      text-decoration: none;
-      font-weight: bold;
-    }
-    .back-btn:hover {
-      text-decoration: underline;
-    }
+    .checkout-btn:hover { background-color: #d81b60; }
+    .back-btn { display: inline-block; margin-top: 40px; color: #5A4B45; text-decoration: none; font-weight: bold; }
+    .back-btn:hover { text-decoration: underline; }
     .flash-message {
-      background-color: #ffe6e6;
-      color: #c00;
-      padding: 10px;
-      margin: 10px 0;
-      border-radius: 5px;
+      background-color: #ffe6e6; color: #c00; padding: 10px; margin: 10px 0; border-radius: 5px;
     }
 
     .opt-lines { color:#666; font-size:14px; line-height:1.6; margin:4px 0 2px; }
-.opt-label { color:#888; font-size:13px; margin-bottom:2px; }
-.opt-line { display:block; }
-
+    .opt-label { color:#888; font-size:13px; margin-bottom:2px; }
+    .opt-line { display:block; }
   </style>
 </head>
 <body>
@@ -156,55 +105,35 @@
       {% for p in products %}
         <div class="cart-item">
           {% set cover = p.get('image') %}
-{% if not cover and p.get('images') and p['images']|length > 0 %}
-  {% set cover = p['images'][0] %}
-{% endif %}
-<img src="{{ cover or url_for('static', filename='placeholder.png') }}"
-     alt="{{ p['name'] }}"
-     onerror="this.src='{{ url_for('static', filename='placeholder.png') }}'">
+          {% if not cover and p.get('images') and p['images']|length > 0 %}
+            {% set cover = p['images'][0] %}
+          {% endif %}
+          <img src="{{ cover or url_for('static', filename='placeholder.png') }}"
+               alt="{{ p['name'] }}"
+               onerror="this.src='{{ url_for('static', filename='placeholder.png') }}'">
 
           <div class="cart-info">
             <strong>{{ p['name'] }}</strong><br>
 
             {# ---- 價格計算（同時支援套組與單品）---- #}
-{% set is_bundle = (p.get('product_type') == 'bundle') %}
+            {% set is_bundle = (p.get('product_type') == 'bundle') %}
+            {% set unit_price = (p.get('bundle_price') or p.get('discount_price') or p['price']) | float %}
+            {% set unit_compare = (p.get('bundle_compare') or p.get('compare_at') or p.get('original_price') or p['price']) | float %}
+            {% set qty = (p.get('qty') or 1) | int %}
 
-{# 單價：套組優先用 bundle_price，其次單品的 discount_price，最後回落到 price #}
-{% set unit_price = (p.get('bundle_price') or p.get('discount_price') or p['price']) | float %}
+            {% if unit_price < unit_compare and unit_compare > 0 %}
+              <span style="color:#999; text-decoration: line-through;">${{ '%.0f' % unit_compare }}</span>
+              <span style="color:#e91e63; font-weight:bold;">${{ '%.0f' % unit_price }}</span>
+              × {{ qty }} =
+              <span style="color:#e91e63; font-weight:bold;">${{ '%.0f' % (unit_price * qty) }}</span>
+            {% else %}
+              ${{ '%.0f' % unit_price }} × {{ qty }} = ${{ '%.0f' % (unit_price * qty) }}
+            {% endif %}
 
-{# 原價：套組優先用 bundle_compare，其次常見 compare_at / original_price，最後回落到 price #}
-{% set unit_compare = (
-     p.get('bundle_compare')
-  or p.get('compare_at')
-  or p.get('original_price')
-  or p['price']
-) | float %}
-
-{% set qty = (p.get('qty') or 1) | int %}
-
-{# ---- 顯示區 ---- #}
-{% if unit_price < unit_compare and unit_compare > 0 %}
-  <span style="color:#999; text-decoration: line-through;">
-    ${{ '%.0f' % unit_compare }}
-  </span>
-  <span style="color:#e91e63; font-weight:bold;">
-    ${{ '%.0f' % unit_price }}
-  </span>
-  × {{ qty }} =
-  <span style="color:#e91e63; font-weight:bold;">
-    ${{ '%.0f' % (unit_price * qty) }}
-  </span>
-{% else %}
-  ${{ '%.0f' % unit_price }} × {{ qty }} =
-  ${{ '%.0f' % (unit_price * qty) }}
-{% endif %}
-
-<div style="font-size:12px; color:#aaa;">
-  原始售價: {{ '%.0f' % unit_compare }} /
-  折扣價: {{ '%.0f' % (unit_price if unit_price < unit_compare else 0) }}
-</div>
-
-
+            <div style="font-size:12px; color:#aaa;">
+              原始售價: {{ '%.0f' % unit_compare }} /
+              折扣價: {{ '%.0f' % (unit_price if unit_price < unit_compare else 0) }}
+            </div>
           </div>
 
           <div class="cart-actions">
@@ -230,14 +159,36 @@
         </div>
       {% endfor %}
 
+      <!-- 折扣碼輸入區 -->
+      <form method="POST" class="coupon-box">
+        <strong>折扣碼</strong>
+        <input type="text" name="discount_code" placeholder="輸入折扣碼" value="{{ (discount.code if discount) or '' }}" />
+        <input type="hidden" name="action" value="{{ 'remove_discount' if discount else 'apply_discount' }}">
+        {% if discount %}
+          <span class="badge">{{ discount.code }}</span>
+          <button type="submit" class="btn btn-gray">取消</button>
+        {% else %}
+          <button type="submit" class="btn btn-primary">套用</button>
+          <span class="coupon-hint">可於此輸入活動折扣碼；若未達門檻或逾期，系統會提示原因。</span>
+        {% endif %}
+      </form>
+
       <div class="total">
         商品總金額：${{ '%.0f' % total }}<br>
+
+        {# 折扣列（若有） #}
+        {% if discount_deduct and discount_deduct > 0 %}
+          折扣碼 <span class="badge">{{ discount.code }}</span> 折抵：
+          <span style="color:#e91e63;">－ ${{ '%.0f' % discount_deduct }}</span><br>
+        {% endif %}
+
         運費：
         {% if shipping_fee == 0 %}
           免運費（已達 $2000 免運門檻）
         {% else %}
           ${{ '%.0f' % shipping_fee }}（還差 ${{ '%.0f' % free_shipping_diff }} 可享免運）
         {% endif %}<br>
+
         <strong>應付總金額：${{ '%.0f' % final_total }}</strong>
       </div>
 
