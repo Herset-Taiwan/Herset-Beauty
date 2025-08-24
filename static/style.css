@@ -69,27 +69,33 @@ footer {
   color: #CDAFA1;
 }
 
-/* 公告條 */
-.annbar{
-  display:flex; align-items:center; gap:12px;
-  padding:8px 16px;
-  background:#f9f3f1; border-bottom:1px solid #eadad3; color:#5a4b45;
-  font-size:14px; line-height:1.4;
+/* ---- Header 中置中的公告跑馬燈 ---- */
+.ann-ticker{
+  flex: 1 1 auto;               /* 佔中間空間 */
+  padding: 0 12px;
+  text-align: center;
+  min-width: 120px;
+  overflow: hidden;
 }
-.ann-tag{
-  background:#c08474; color:#fff; font-weight:700;
-  padding:2px 10px; border-radius:999px; letter-spacing:.05em;
+.ann-text{
+  display: inline-block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 700;
+  color: #5a4b45;
+  opacity: 0;
+  transition: opacity .3s ease;
 }
-.ann-viewport{ position:relative; flex:1; height:22px; overflow:hidden; }
-.ann-slides{ position:relative; height:100%; }
-.ann-item{
-  position:absolute; inset:0; display:flex; align-items:center;
-  opacity:0; transition:opacity .45s ease;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+.ann-text.show{ opacity: 1; }
+
+/* 小螢幕時隱藏公告，避免擠壓功能選單 */
+@media (max-width: 768px){
+  .ann-ticker{ display: none; }
 }
-.ann-item.show{ opacity:1; }
-/* RWD：在小螢幕稍微縮字 */
-@media (max-width: 520px){ .annbar{ font-size:13px; } .ann-viewport{ height:20px; } }
+
+
 
 .toast {
   position: fixed;

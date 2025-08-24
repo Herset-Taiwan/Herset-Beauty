@@ -35,16 +35,6 @@
 
 <body>
 
-  {% if request.path == '/' %}
-  <!-- 站內公告（自動輪播） -->
-  <div id="annbar" class="annbar" aria-live="polite" aria-atomic="true">
-    <span class="ann-tag">公告</span>
-    <div class="ann-viewport">
-      <div id="annSlides" class="ann-slides"></div>
-    </div>
-  </div>
-{% endif %}
-
 <div class="add-success" id="add-success">已加入購物車！</div>
 <div class="save-success" id="save-success">資料已更新完成！</div>
 
@@ -55,12 +45,22 @@
 </div>
 {% endif %}
 
+<!-- 公告列 -->
+
 <!-- 導覽列 -->
 <header class="main-header">
   <a href="/" class="logo-area" style="text-decoration: none; color: inherit;">
     <img src="{{ url_for('static', filename='uploads/logo_0.png') }}" alt="logo">
     <span>HERSET</span>
   </a>
+
+   {# 只在首頁顯示；若想所有頁面都顯示，把這個 if 整段拿掉即可 #}
+  {% if request.path == '/' %}
+    <div class="ann-ticker">
+      <span id="annText" class="ann-text"></span>
+    </div>
+  {% endif %}
+
   <nav class="main-nav">
     <ul>
       {% if has_new_reply %}
@@ -635,6 +635,51 @@ window.addEventListener('DOMContentLoaded', () => {
 })();
 </script>
 
+<!-- 公告輪播腳本 -->
+<script>
+(function(){
+  const el = document.getElementById('annText');
+  if(!el) return;
+
+  const API = '/announcements/active';
+  const INTERVAL = 3000;
+
+  const pickText = (a) => {
+    const t = (a.title||'').trim();
+    const c = (a.content||'').trim();
+    return (t && c) ? `${t}｜${c}` : (t || c);
+  };
+
+  fetch(API, { credentials: 'same-origin' })
+    .then(r => r.ok ? r.json() : [])
+    .then(list => {
+      if(!Array.isArray(list)) list = [];
+      const items = list.map(pickText).filter(Boolean);
+      if(items.length === 0){
+        // 沒有效公告就留白（或 el.parentElement.style.display='none' 也可）
+        el.textContent = '';
+        return;
+      }
+
+      let i = 0;
+      function show(){
+        el.classList.remove('show');
+        // 小延遲讓淡出生效
+        setTimeout(() => {
+          el.textContent = items[i];
+          el.classList.add('show');
+          i = (i + 1) % items.length;
+        }, 120);
+      }
+
+      show();
+      if(items.length > 1){
+        setInterval(show, INTERVAL);
+      }
+    })
+    .catch(() => { /* 失敗就靜默 */ });
+})();
+</script>
 
 
 
