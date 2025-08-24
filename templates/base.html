@@ -360,17 +360,42 @@ function cancelCloseProfile() {
   const modal = document.getElementById('profile-modal');
   if (!modal) return;
 
-  modal.addEventListener('click', (e) => {
-    const content = modal.querySelector('.modal-content');
-    if (!content.contains(e.target)) {
+  const content = modal.querySelector('.modal-content');
+
+  // 只在「mousedown 發生在背景」，且「mouseup 也在背景」，而且「幾乎沒移動」時才關閉
+  let backdropDown = false;
+  let downX = 0, downY = 0;
+
+  modal.addEventListener('mousedown', (e) => {
+    // 只有真的點到遮罩才記旗標
+    if (e.target === modal) {
+      backdropDown = true;
+      downX = e.clientX;
+      downY = e.clientY;
+    } else {
+      backdropDown = false;
+    }
+  });
+
+  modal.addEventListener('mouseup', (e) => {
+    if (!backdropDown) return;          // mousedown 不是在背景 → 不關
+    backdropDown = false;
+
+    // 滑鼠移動太多(大於 5px) 視為拖曳，不關
+    const moved = Math.abs(e.clientX - downX) + Math.abs(e.clientY - downY) > 5;
+
+    if (e.target === modal && !moved) {
       closeProfileModal();
     }
   });
 
-  // 點內容區一律阻止冒泡，避免誤判成點到背景
-  const content = modal.querySelector('.modal-content');
-  if (content) content.addEventListener('click', (e) => e.stopPropagation());
+  // 內容區阻止冒泡，避免誤判
+  if (content) {
+    content.addEventListener('mousedown', (e) => e.stopPropagation());
+    content.addEventListener('mouseup', (e) => e.stopPropagation());
+  }
 })();
+
 
   // ✅ 按 ESC 關閉
   document.addEventListener('keydown', (e) => {
