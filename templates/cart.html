@@ -114,7 +114,7 @@
 
           <div class="cart-info">
             <strong>{{ p['name'] }}</strong><br>
-            {# 🔹 顯示套組內容 #}
+            {# 🔹 顯示套組/選項內容（同時支援套組與單品） #}
 {% if p['product_type'] == 'bundle' %}
   <div class="opt-label">套組內容：</div>
   <div class="opt-lines">
@@ -127,6 +127,14 @@
     {% endif %}
   </div>
 {% endif %}
+
+{% if p.get('option') and p['product_type'] != 'bundle' %}
+  <div class="opt-label">選項：</div>
+  <div class="opt-lines">
+    <span class="opt-line">・{{ p['option'] }}</span>
+  </div>
+{% endif %}
+
 
             {# ---- 價格計算（同時支援套組與單品）---- #}
             {% set is_bundle = (p.get('product_type') == 'bundle') %}
