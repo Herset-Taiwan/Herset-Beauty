@@ -289,7 +289,7 @@
   if (!A || !B) return;                       // 不是首頁就不跑
 
   const API = '/announcements.json';          // 目前站上可用的端點
-  const INTERVAL = 3000;                      // 3 秒一則（呼吸感）
+  const INTERVAL = 5000;                      // 3 秒一則（呼吸感）公告速度
 
   const pickText = (a) => {
     const t = (a?.title || '').trim();

@@ -87,6 +87,8 @@ footer {
   font-weight: 600;
   color: #5a4b45;
   letter-spacing: .2px;
+  margin: 0 auto;
+  text-align: center;
 }
 .ann-layer{
   position: absolute;
@@ -97,6 +99,12 @@ footer {
   opacity: 0;
   transition: opacity 1200ms ease-in-out;     /* 呼吸式漸變，如果想讓淡入更慢、更柔和，改成 1500ms 或 1800ms */
   will-change: opacity;
+   /* 新增：把內容置中 */
+  display: flex;
+  align-items: center;
+  justify-content: center;  /* 文字水平置中 */
+  text-align: center;       /* 保險：內文也是置中 */
+  padding: 0 8px;           /* 兩側留點空間避免貼邊 */
 }
 .ann-layer.on{
   opacity: 1;
