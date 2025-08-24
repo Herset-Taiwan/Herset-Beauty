@@ -37,10 +37,31 @@
     @media (max-width:840px){.grid{grid-template-columns:1fr}}
     /* items */
     .items{list-style:none;margin:0;padding:0}
-    .item{display:grid;grid-template-columns:auto max-content max-content;gap:10px;align-items:center;padding:8px 0;border-bottom:1px dashed var(--line)}
-    .item:last-child{border-bottom:0}
-    .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .opt{color:var(--muted);font-size:13px;margin-left:4px}
+    /* 原有 .item 改成三欄：名稱 | 數量 | 單價 */
+.item{
+  display:grid;
+  grid-template-columns: 1fr auto auto;
+  gap:10px;
+  align-items:center;
+  padding:8px 0;
+  border-bottom:1px dashed var(--line);
+}
+.item:last-child{ border-bottom:0; }
+
+.name{ white-space: normal; overflow: visible; text-overflow: clip; }
+
+
+/* 新增：第二行呈現選項/套組內容，跨整列、可換行 */
+.opt{
+  grid-column: 1 / -1;         /* 跨全行 */
+  margin-top:4px;
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.7;
+  white-space: normal;          /* 允許換行 */
+  word-break: break-word;       /* 長字可斷行 */
+}
+
     .qty{background:#f3e7e2;border:1px solid var(--line);padding:2px 8px;border-radius:999px;font-weight:700}
     .price{font-weight:700}
     /* summary */
@@ -108,13 +129,15 @@
 
     slice.forEach(o=>{
       const items = (o.items||[]).map(i=>{
-        const opt = i.option ? `<span class="opt">／${esc(i.option)}</span>` : '';
-        return `<li class="item">
-                  <div class="name">${esc(i.product_name||'')}${opt}</div>
-                  <div class="qty">× ${i.qty||1}</div>
-                  <div class="price">$${i.price||0}</div>
-                </li>`;
-      }).join('');
+  const opt = i.option ? `<div class="opt">${esc(i.option)}</div>` : '';
+  return `<li class="item">
+            <div class="name">${esc(i.product_name || '')}</div>
+            <div class="qty">× ${i.qty || 1}</div>
+            <div class="price">$${i.price || 0}</div>
+            ${opt}     <!-- 第二行：完整的套組內容/選項 -->
+          </li>`;
+}).join('');
+
 
       const paid = (o.payment_status||'') === 'paid';
       const ship = o.status === 'shipped';
