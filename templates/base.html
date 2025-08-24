@@ -57,8 +57,12 @@
    {# 只在首頁顯示；若想所有頁面都顯示，把這個 if 整段拿掉即可 #}
   {% if request.path == '/' %}
     <div class="ann-ticker">
-      <span id="annText" class="ann-text"></span>
-    </div>
+  <div class="ann-track">
+    <span id="annA" class="ann-layer on"></span>
+    <span id="annB" class="ann-layer"></span>
+  </div>
+</div>
+
   {% endif %}
 
   <nav class="main-nav">
@@ -641,7 +645,7 @@ window.addEventListener('DOMContentLoaded', () => {
   if(!el) return;
 
   const API = '/announcements/active';
-  const INTERVAL = 3000;
+  const INTERVAL = 5000;
 
   const pickText = (a) => {
     const t = (a.title||'').trim();

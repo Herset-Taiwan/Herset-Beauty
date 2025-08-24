@@ -71,12 +71,42 @@ footer {
 
 /* ---- Header 中置中的公告跑馬燈 ---- */
 .ann-ticker{
-  flex: 1 1 auto;               /* 佔中間空間 */
-  padding: 0 12px;
-  text-align: center;
-  min-width: 120px;
-  overflow: hidden;
+  flex: 1;                 /* 佔滿 logo 和選單中間的空間 */
+  margin: 0 16px;
+  display: flex;
+  align-items: center;
+  min-width: 240px;
 }
+.ann-track{
+  position: relative;
+  width: 100%;
+  max-width: 760px;        /* 可依版面調整 */
+  height: 28px;            /* 固定高度避免跳動 */
+  overflow: hidden;
+  line-height: 28px;
+  font-weight: 600;
+  color: #5a4b45;
+  letter-spacing: .2px;
+}
+.ann-layer{
+  position: absolute;
+  inset: 0;                /* top/right/bottom/left 全 0 */
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 1200ms ease-in-out;     /* 呼吸式漸變，如果想讓淡入更慢、更柔和，改成 1500ms 或 1800ms */
+  will-change: opacity;
+}
+.ann-layer.on{
+  opacity: 1;
+}
+/* 減少動畫偏好時：直接顯示、不做淡入淡出 */
+@media (prefers-reduced-motion: reduce){
+  .ann-layer{ transition: none !important; }
+}
+
+
 .ann-text{
   display: inline-block;
   max-width: 100%;
