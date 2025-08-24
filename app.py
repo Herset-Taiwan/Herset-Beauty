@@ -202,7 +202,6 @@ def admin_dashboard():
     if not session.get("admin_logged_in"):
         return redirect("/admin0363")
 
-    from pytz import timezone
     from dateutil import parser
     import json
 
@@ -2639,17 +2638,19 @@ def check_member_messages():
 def member_messages():
     if "member_id" not in session:
         return redirect("/login")
-    tz = tw
+
+    tz = TW   # ✅ 用全域台灣時區
+
     member_id = session["member_id"]
     page = int(request.args.get("page", 1))
     per_page = 5
 
     # 全部留言（新 → 舊）
-    all_messages = supabase.table("messages") \
-        .select("*") \
-        .eq("member_id", member_id) \
-        .order("created_at", desc=True) \
-        .execute().data or []
+    all_messages = (supabase.table("messages")
+        .select("*")
+        .eq("member_id", member_id)
+        .order("created_at", desc=True)
+        .execute().data or [])
 
     # 顯示台灣時間 & 是否為新回覆
     for m in all_messages:
@@ -2669,12 +2670,12 @@ def member_messages():
 
     # 設為已讀
     if messages:
-        supabase.table("messages") \
-            .update({"is_read": True}) \
-            .eq("member_id", member_id) \
-            .eq("is_replied", True) \
-            .eq("is_read", False) \
-            .execute()
+        (supabase.table("messages")
+            .update({"is_read": True})
+            .eq("member_id", member_id)
+            .eq("is_replied", True)
+            .eq("is_read", False)
+            .execute())
 
     session["has_new_reply"] = False
 
@@ -2683,8 +2684,6 @@ def member_messages():
                            page=page,
                            has_prev=has_prev,
                            has_next=has_next)
-
-
 
 
 
