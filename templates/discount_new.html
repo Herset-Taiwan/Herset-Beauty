@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>新增折扣碼</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="admin-container" style="max-width:760px;">
+    <h2>新增折扣碼</h2>
+    <form method="post" action="/admin0363/discounts/new" style="background:#fff; padding:20px; border-radius:10px; border:1px solid #eee;">
+      <label>折扣碼（英文/數字）：</label><br>
+      <input name="code" required style="width:100%; padding:8px;"><br><br>
+
+      <label>折扣類型：</label>
+      <select name="type">
+        <option value="amount">金額（$）</option>
+        <option value="percent">百分比（%）</option>
+      </select>
+
+      <label style="margin-left:20px;">折扣數值：</label>
+      <input name="value" type="number" step="0.01" required style="width:120px;">
+
+      <label style="margin-left:20px;">最低金額：</label>
+      <input name="min_order_amt" type="number" step="0.01" value="0" style="width:120px;"><br><br>
+
+      <label>開始時間：</label>
+      <input name="start_at" type="datetime-local">
+
+      <label style="margin-left:20px;">到期時間：</label>
+      <input name="expires_at" type="datetime-local"><br><br>
+
+      <label>總使用上限：</label>
+      <input name="usage_limit" type="number" min="1" placeholder="空白=不限" style="width:120px;">
+
+      <label style="margin-left:20px;">每人上限：</label>
+      <input name="per_user_limit" type="number" min="1" placeholder="空白=不限" style="width:120px;"><br><br>
+
+      <label><input type="checkbox" name="is_active" checked> 啟用</label><br><br>
+
+      <label>備註：</label><br>
+      <textarea name="note" rows="3" style="width:100%;"></textarea><br><br>
+
+      <button type="submit" class="add-btn">儲存</button>
+      <a href="/admin0363/features" class="add-btn" style="background:#aaa; margin-left:8px;">取消</a>
+    </form>
+  </div>
+</body>
+</html>

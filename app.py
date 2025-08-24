@@ -1002,7 +1002,7 @@ def tinymce_upload():
     url = url_for('static', filename=f'uploads/rte/{filename}')
     return jsonify({'location': url})
 
-#admin 功能管理
+#admin 功能管理標籤
 @app.route("/admin0363/features")
 def admin_features():
     if not session.get("admin_logged_in"):
@@ -1010,6 +1010,45 @@ def admin_features():
 
     discounts = supabase.table("discounts").select("*").execute().data or []
     return render_template("features.html", discounts=discounts, tab="features")
+
+
+# === 新增折扣碼（表單頁） ===
+@app.route("/admin0363/discounts/new")
+def admin_discounts_new():
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
+    return render_template("discount_new.html")
+
+# === 新增折扣碼（提交） ===
+@app.route("/admin0363/discounts/new", methods=["POST"])
+def admin_discounts_create():
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
+    form = request.form
+    payload = {
+        "code": (form.get("code") or "").strip().upper(),
+        "type": form.get("type") or "amount",
+        "value": float(form.get("value") or 0),
+        "min_order_amt": float(form.get("min_order_amt") or 0),
+        "start_at": form.get("start_at") or None,
+        "expires_at": form.get("expires_at") or None,
+        "usage_limit": int(form.get("usage_limit")) if form.get("usage_limit") else None,
+        "per_user_limit": int(form.get("per_user_limit")) if form.get("per_user_limit") else None,
+        "is_active": form.get("is_active") == "on",
+        "note": form.get("note") or None,
+    }
+    supabase.table("discounts").insert(payload).execute()
+    flash("折扣碼已新增", "success")
+    return redirect("/admin0363/features")
+
+# === 刪除折扣碼 ===
+@app.route("/admin0363/discounts/delete/<int:did>", methods=["POST"])
+def admin_discounts_delete(did):
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
+    supabase.table("discounts").delete().eq("id", did).execute()
+    flash("折扣碼已刪除", "success")
+    return redirect("/admin0363/features")
 
 
 @app.route("/admin0363/mark_seen_orders", methods=["POST"])
