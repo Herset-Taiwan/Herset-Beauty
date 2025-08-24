@@ -3,81 +3,178 @@
 {% block title %}我的留言 - HERSET{% endblock %}
 {% block banner %}{% endblock %}
 
-
 {% block content %}
+<div class="msg-page">
+  <h1>📨 我的留言</h1>
 
-<div class="container" style="max-width: 800px; margin: 40px auto;">
-  <h2 style="text-align: center; color: #e91e63;">📨 我的留言</h2>
+  {# 計數（前端顯示用） #}
+  {% set replied_count   = (messages | selectattr('is_replied','equalto',True) | list | length) %}
+  {% set unreplied_count = (messages | selectattr('is_replied','equalto',False) | list | length) %}
+
+  <!-- Tabs -->
+  <div class="msg-tabs" role="tablist" aria-label="留言篩選">
+    <button class="msg-tab active" data-filter="all"  role="tab" aria-selected="true">全部 <span class="badge">{{ messages|length }}</span></button>
+    <button class="msg-tab"        data-filter="open" role="tab" aria-selected="false">未回覆 <span class="badge">{{ unreplied_count }}</span></button>
+    <button class="msg-tab"        data-filter="done" role="tab" aria-selected="false">已回覆 <span class="badge">{{ replied_count }}</span></button>
+  </div>
 
   {% if messages %}
-    {% for msg in messages %}
-   <div style="
-  position: relative;
-  background: #fafafa;
-  padding: 24px;
-  border-radius: 16px;
-  border: 1px solid #eee;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
-  margin: 30px 0;
-  transition: box-shadow 0.3s ease;"
-  onmouseover="this.style.boxShadow='0 8px 16px rgba(0,0,0,0.08)'"
-  onmouseout="this.style.boxShadow='0 4px 10px rgba(0, 0, 0, 0.03)'"
->
+    <div id="msgList">
+      {% for msg in messages %}
+        {# 卡片：用 data-status 提供前端篩選 #}
+        <article class="msg-card {% if msg['is_new'] %}is-new{% endif %}"
+                 data-status="{{ 'done' if msg['is_replied'] else 'open' }}">
+          <header class="msg-head">
+            <div class="left">
+              <span class="type-chip">{{ msg['type'] or '其他' }}</span>
+              <span class="subject" title="{{ msg['subject'] }}">{{ msg['subject'] or '（無主題）' }}</span>
+              <span class="time">{{ msg['local_created_at'] }}</span>
+            </div>
+            <div class="right">
+              {% if msg['is_new'] %}
+                <span class="badge-pill new">🔔 新回覆</span>
+              {% endif %}
+              <span class="badge-pill {{ 'ok' if msg['is_replied'] else 'warn' }}">
+                {{ '已回覆' if msg['is_replied'] else '等待回覆' }}
+              </span>
+              <button class="toggle">查看</button>
+            </div>
+          </header>
 
+          <div class="msg-body">
+            {% if msg['order_number'] %}
+              <div class="row"><span class="label">訂單編號</span><span class="val code">{{ msg['order_number'] }}</span></div>
+            {% endif %}
 
-      <p><strong>留言時間：</strong>{{ msg['local_created_at'] }}</p>
-      {% if msg['is_new'] %}
-  <span style="
-    position: absolute;
-    top: 12px;
-    right: 16px;
-    color: #e91e63;
-    background: #fff0f5;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-weight: bold;
-    font-size: 13px;
-    box-shadow: 0 0 4px rgba(0,0,0,0.1);
-  ">🔔 新回覆</span>
-{% endif %}
+            <div class="row">
+              <span class="label">留言內容</span>
+              <div class="bubble q">
+                <div class="text">{{ msg['content'] }}</div>
+              </div>
+            </div>
 
-</p>
-      <p><strong>類型：</strong>{{ msg['type'] }}</p>
-      <p><strong>主題：</strong>{{ msg['subject'] }}</p>
-      {% if msg['order_number'] %}
-        <p><strong>訂單編號：</strong>{{ msg['order_number'] }}</p>
+            {% if msg['reply_text'] %}
+              <div class="row">
+                <span class="label">管理員回覆</span>
+                <div class="bubble a">
+                  <div class="text">{{ msg['reply_text'] }}</div>
+                </div>
+              </div>
+            {% else %}
+              <div class="row">
+                <span class="label">回覆狀態</span>
+                <div class="note">尚未收到回覆</div>
+              </div>
+            {% endif %}
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+
+    <!-- 分頁 -->
+    <div class="pagination">
+      {% if has_prev %}
+        <a class="page-btn" href="{{ url_for('member_messages', page=page-1) }}">← 上一頁</a>
       {% endif %}
-      <p><strong>留言內容：</strong><br>
-        <span style="white-space: pre-wrap;">{{ msg['content'] }}</span>
-      </p>
-
-      {% if msg['reply_text'] %}
-        <hr style="margin: 15px 0;">
-        <p><strong style="color: #4caf50;">管理員回覆：</strong><br>
-          <span style="white-space: pre-wrap; color: #333;">{{ msg['reply_text'] }}</span>
-        </p>
-      {% else %}
-        <p><span style="color: gray;">尚未收到回覆</span></p>
+      {% if has_next %}
+        <a class="page-btn" href="{{ url_for('member_messages', page=page+1) }}">下一頁 →</a>
       {% endif %}
     </div>
-    {% endfor %}
-
-<div class="pagination" style="text-align: center; margin-top: 30px;">
-  {% if has_prev %}
-    <a href="{{ url_for('member_messages', page=page-1) }}"
-       style="margin-right: 10px; padding: 6px 12px; background: #eee; border-radius: 6px; text-decoration: none;">← 上一頁</a>
-  {% endif %}
-  {% if has_next %}
-    <a href="{{ url_for('member_messages', page=page+1) }}"
-       style="margin-left: 10px; padding: 6px 12px; background: #eee; border-radius: 6px; text-decoration: none;">下一頁 →</a>
-  {% endif %}
-</div>
-
-
-
-
   {% else %}
-    <p style="text-align: center; color: gray;">您尚未留言過任何問題</p>
+    <div class="msg-empty">您尚未留言過任何問題</div>
   {% endif %}
 </div>
+
+<style>
+  :root{
+    --ink:#5A4B45; --muted:#8b7b74; --brand:#c08474; --brand2:#a66f63;
+    --bg:#f4e8e4; --card:#fff; --chip:#ead9d2; --ok:#3c9d6a; --warn:#e91e63;
+    --line:#efe1dc;
+  }
+  .msg-page{max-width:980px;margin:28px auto 40px;padding:0 16px;color:var(--ink)}
+  .msg-page h1{font-size:26px;text-align:center;margin:6px 0 18px}
+
+  /* tabs */
+  .msg-tabs{display:flex;gap:10px;justify-content:center;margin-bottom:16px}
+  .msg-tab{
+    border:1px solid #e2d2cb;background:#f6edea;color:var(--ink);
+    padding:8px 14px;border-radius:999px;font-weight:700;cursor:pointer;display:flex;gap:8px;align-items:center
+  }
+  .msg-tab .badge{background:var(--chip);padding:2px 8px;border-radius:999px;font-size:12px}
+  .msg-tab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .msg-tab.active .badge{background:rgba(255,255,255,.25);color:#fff}
+
+  /* card */
+  .msg-card{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:14px 16px;margin:12px 0;box-shadow:0 8px 18px rgba(0,0,0,.06);
+    transition:box-shadow .15s ease;
+  }
+  .msg-card:hover{box-shadow:0 12px 22px rgba(0,0,0,.08)}
+  .msg-head{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+  .msg-head .left{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .type-chip{background:var(--chip);padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700}
+  .subject{font-weight:800}
+  .time{color:var(--muted);font-size:13px}
+  .right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .badge-pill{padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700}
+  .badge-pill.ok{background:#dff3e9;color:var(--ok)}
+  .badge-pill.warn{background:#ffe3ec;color:var(--warn)}
+  .badge-pill.new{background:#fff0f5;color:var(--warn);box-shadow:0 0 4px rgba(0,0,0,.1)}
+  .toggle{border:1px solid #e7d5ce;background:#fff;padding:8px 12px;border-radius:10px;font-weight:700;cursor:pointer}
+  .toggle:hover{background:#faf6f5}
+
+  /* body (collapsed by default) */
+  .msg-body{display:none;padding-top:10px;border-top:1px dashed var(--line);margin-top:8px}
+  .msg-card.open .msg-body{display:block}
+
+  .row{display:grid;grid-template-columns:92px 1fr;gap:10px;margin:10px 0}
+  .label{color:var(--muted);font-size:13px;padding-top:6px}
+  .val.code{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace}
+  .bubble{border-radius:12px;padding:12px 14px;position:relative}
+  .bubble.q{background:#faf6f5;border:1px solid #f0e2dc}
+  .bubble.a{background:#eef8f2;border:1px solid #daf0e5}
+  .bubble .text{white-space:pre-wrap;line-height:1.7}
+  .note{color:var(--muted)}
+  .pagination{display:flex;justify-content:center;gap:12px;margin-top:16px}
+  .page-btn{background:#eee;border-radius:8px;padding:8px 12px;text-decoration:none;color:var(--ink)}
+  .msg-empty{
+    background:#f8efec;border:1px dashed #e1cfc8;color:var(--muted);
+    padding:18px;border-radius:12px;text-align:center;margin:18px 0
+  }
+
+  @media (max-width:720px){
+    .msg-head{grid-template-columns:1fr}
+    .row{grid-template-columns:1fr}
+    .label{padding-top:0}
+  }
+</style>
+
+<script>
+  // 展開/收合
+  document.addEventListener('click', (e)=>{
+    if(!e.target.classList.contains('toggle')) return;
+    const card = e.target.closest('.msg-card');
+    card.classList.toggle('open');
+    e.target.textContent = card.classList.contains('open') ? '收合' : '查看';
+  });
+
+  // 濾鏡：全部 / 未回覆 / 已回覆（純前端）
+  document.querySelectorAll('.msg-tab').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.msg-tab').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const filter = btn.dataset.filter; // all | open | done
+      document.querySelectorAll('#msgList .msg-card').forEach(card=>{
+        const status = card.getAttribute('data-status'); // open | done
+        const show = (filter==='all') || (filter===status);
+        card.style.display = show ? '' : 'none';
+      });
+
+      // 捲回頂端，視覺像切頁
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+  });
+</script>
 {% endblock %}
