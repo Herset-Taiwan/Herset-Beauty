@@ -85,19 +85,40 @@
       background:var(--card); border:1px dashed var(--border); border-radius:var(--radius);
       padding:28px; text-align:center; color:var(--muted);
     }
+
+      .subnav{display:flex;gap:10px;margin:6px 0 16px;}
+  .pill{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:8px 12px;border-radius:999px;
+    background:#f3f4f6;color:#111827;border:1px solid #e5e7eb;
+    text-decoration:none;font-weight:800;
+  }
+  .pill.active{background:#ffe4ed;color:#e91e63;border-color:#fbcfe8;}
   </style>
 </head>
 
 <body>
   <div class="container">
 
-    <div class="header">
-      <div>
-        <div class="title">✨ 功能管理</div>
-        <div class="subtitle">這裡可以設定折扣碼與其他功能。</div>
-      </div>
-      <a class="back" href="/admin0363/dashboard">← 返回後台</a>
-    </div>
+    <!-- 頁首：標題 + 返回 + 二級導覽 -->
+<div class="header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+  <div>
+    <div class="title">✨ 功能管理</div>
+    <div class="subtitle">這裡可以設定折扣碼與其他功能。</div>
+  </div>
+  <div style="display:flex;gap:10px;">
+    <a class="back" href="/admin0363/features">← 功能總覽</a>
+    <a class="back" href="/admin0363/dashboard" style="background:#9ca3af;">← 返回後台</a>
+  </div>
+</div>
+
+<!-- 🟣 二級導覽（現在有兩個：折扣碼 / 公告） -->
+<div class="subnav">
+  <a href="/admin0363/features/discounts" class="pill active">折扣碼</a>
+  <a href="/admin0363/features/announcements" class="pill">公告</a>
+  <!-- 之後要新增功能，就在這裡多一顆 pill -->
+</div>
+
 
     <div class="toolbar">
       <a href="/admin0363/discounts/new" class="btn btn-primary">＋ 新增折扣碼</a>
