@@ -278,6 +278,52 @@
 </script>
 
 <!-- 公告條 -->
+<script>
+(function(){
+  const el = document.getElementById('annText');
+  if(!el) return;                      // 非首頁或沒放容器就不跑
+
+  const API = '/announcements/active';
+  const INTERVAL = 3000;
+
+  // 後端可能回：[], {items:[]}, {data:[]}
+  const normalize = (p) => {
+    if (!p) return [];
+    if (Array.isArray(p)) return p;
+    if (Array.isArray(p.items)) return p.items;
+    if (Array.isArray(p.data)) return p.data;
+    return [];
+  };
+
+  const textOf = (a) => {
+    const t = (a?.title || '').trim();
+    const c = (a?.content || '').trim();
+    return (t && c) ? `${t}｜${c}` : (t || c);
+  };
+
+  function start(items){
+    if(!items.length){ el.textContent = ''; return; }
+
+    let i = 0;
+    function render(){
+      el.classList.remove('show');
+      setTimeout(() => {              // 小延遲讓淡入生效
+        el.textContent = items[i];
+        el.classList.add('show');
+        i = (i + 1) % items.length;
+      }, 120);
+    }
+    render();
+    if(items.length > 1) setInterval(render, INTERVAL);
+  }
+
+  fetch(API, { credentials:'same-origin' })
+    .then(r => r.ok ? r.json() : null)
+    .then(json => normalize(json).map(textOf).filter(Boolean))
+    .then(start)
+    .catch(() => { /* 靜默失敗就不顯示 */ });
+})();
+</script>
 
 
 
@@ -585,55 +631,7 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 </script>
 
-<script>
-(function(){
-  const API = '/announcements/active';   // 你後端的「取有效公告」API
-  const INTERVAL_MS = 3000;              // 每則顯示 3 秒
-  const esc = s => (s??'').toString()
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-  async function initAnnouncements(){
-    const bar = document.getElementById('annbar');
-    const slides = document.getElementById('annSlides');
-    if(!bar || !slides) return;
-
-    let list = [];
-    try{
-      const res = await fetch(API, {credentials:'same-origin'});
-      list = await res.json();
-    }catch(_){ /* 無公告或網路錯誤就直接不顯示 */ }
-
-    // 沒資料 → 隱藏整條
-    if(!Array.isArray(list) || list.length === 0){
-      bar.style.display = 'none';
-      return;
-    }
-
-    // 組內容：標題與內容擇一或合併
-    slides.innerHTML = list.map(a => {
-      const title = (a.title||'').trim();
-      const content = (a.content||'').trim();
-      const text = title && content ? `${title}｜${content}` : (title || content);
-      return `<div class="ann-item">${esc(text)}</div>`;
-    }).join('');
-
-    const items = Array.from(slides.children);
-    let idx = 0;
-    items[0].classList.add('show');
-
-    // 只有 1 則就固定顯示，不啟動輪播
-    if(items.length === 1) return;
-
-    setInterval(() => {
-      items[idx].classList.remove('show');
-      idx = (idx + 1) % items.length;
-      items[idx].classList.add('show');
-    }, INTERVAL_MS);
-  }
-
-  document.addEventListener('DOMContentLoaded', initAnnouncements);
-})();
-</script>
 
 <!-- 公告輪播腳本 -->
 <script>
