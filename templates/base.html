@@ -355,15 +355,22 @@ function cancelCloseProfile() {
 
 
 <script>
-  // ✅ 點擊遮罩區關閉（會走 closeProfileModal 的驗證流程）
-  document.addEventListener('click', (e) => {
-    const modal = document.getElementById('profile-modal');
-    if (!modal || modal.style.display !== 'block') return;
+  // 只在「點到背景（不是內容）」時才嘗試關閉
+(function () {
+  const modal = document.getElementById('profile-modal');
+  if (!modal) return;
+
+  modal.addEventListener('click', (e) => {
     const content = modal.querySelector('.modal-content');
-    if (e.target === modal && !content.contains(e.target)) {
+    if (!content.contains(e.target)) {
       closeProfileModal();
     }
   });
+
+  // 點內容區一律阻止冒泡，避免誤判成點到背景
+  const content = modal.querySelector('.modal-content');
+  if (content) content.addEventListener('click', (e) => e.stopPropagation());
+})();
 
   // ✅ 按 ESC 關閉
   document.addEventListener('keydown', (e) => {
