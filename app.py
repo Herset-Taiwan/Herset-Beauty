@@ -32,6 +32,17 @@ TW = tz("Asia/Taipei")
 
 load_dotenv()
 
+
+# ---- helpers ------------------------------------------------------------
+def _clean_bundle_label(s: str) -> str:
+    if not s:
+        return ""
+    s = str(s)
+    s = re.sub(r'^\s*#?\s*\d+\s*', '', s)   # 去掉開頭的 #1 / 1 等標號
+    s = s.replace('／', ' / ')              # 全形斜線換成半形，前後加空白
+    s = re.sub(r'\s{2,}', ' ', s)           # 連續空白壓成一個
+    return s.strip()
+
 # 新增：把 <input type="datetime-local"> 的台灣時間轉成 UTC ISO
 def to_utc_iso_from_tw(local_str: str):
     if not local_str:
@@ -1409,7 +1420,9 @@ def cart():
                     nm = c.get('name') or c.get('title') or c.get('product_name') or c.get('label')
                     q = int(c.get('qty') or c.get('count') or 1)
                     if nm:
+                        nm = _clean_bundle_label(nm)
                         bundle_lines.append(f"{nm} × {q}" if q > 1 else nm)
+
             # 可能的欄位 2：list[...]，例如 ['A','B'] 或 [{'label':'A'}]
             elif isinstance(item.get('bundle_selected'), list):
                 for s in item['bundle_selected']:
@@ -1417,7 +1430,9 @@ def cart():
                         nm = s.get('name') or s.get('title') or s.get('label') or str(s.get('value') or '')
                         q = int(s.get('qty') or s.get('count') or 1)
                         if nm:
+                            nm = _clean_bundle_label(nm)
                             bundle_lines.append(f"{nm} × {q}" if q > 1 else nm)
+
                     else:
                         if s:
                             bundle_lines.append(str(s))
