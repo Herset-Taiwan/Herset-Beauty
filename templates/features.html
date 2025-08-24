@@ -4,45 +4,147 @@
   <meta charset="UTF-8">
   <title>功能管理 - HERSET BEAUTY</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  <!-- 美化：只影響本頁的局部樣式 -->
+  <style>
+    :root{
+      --pink:#e91e63;
+      --pink-100:#ffe4ed;
+      --ink:#333;
+      --muted:#6b7280;
+      --card:#fff;
+      --bg:#f6f7f9;
+      --border:#e5e7eb;
+      --shadow:0 6px 18px rgba(0,0,0,.06);
+      --radius:14px;
+    }
+    html,body{background:var(--bg); color:var(--ink); font-family:"Segoe UI","Noto Sans TC",sans-serif; margin:0;}
+    .container{max-width:1100px;margin:32px auto 80px;padding:0 20px;}
+    .header{
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:18px;
+    }
+    .title{
+      font-size:28px; font-weight:800; letter-spacing:.5px;
+      display:flex; align-items:center; gap:10px;
+    }
+    .subtitle{color:var(--muted); margin-top:6px}
+    .back{
+      text-decoration:none; color:#fff; background:#9ca3af; padding:8px 14px; border-radius:10px;
+      box-shadow:var(--shadow);
+    }
+    .toolbar{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      margin:18px 0 14px;
+    }
+    .btn{
+      display:inline-flex; align-items:center; gap:8px; border:none; cursor:pointer; font-weight:700;
+      padding:10px 16px; border-radius:10px; text-decoration:none;
+    }
+    .btn-primary{background:var(--pink); color:#fff; box-shadow:var(--shadow)}
+    .btn-ghost{background:transparent; color:var(--pink); border:1px solid var(--pink)}
+    .btn-text{background:transparent; color:var(--pink); padding:0}
+    .btn-gray{background:#f3f4f6; color:#111827}
+    .list{
+      display:grid; grid-template-columns:1fr; gap:14px;
+    }
+    @media(min-width:720px){
+      .list{grid-template-columns:1fr 1fr;}
+    }
+    .card{
+      background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+      box-shadow:var(--shadow); padding:18px 18px 16px; position:relative; overflow:hidden;
+    }
+    .card:before{
+      content:""; position:absolute; inset:auto -24px -24px auto; width:140px; height:140px;
+      background:conic-gradient(from 180deg at 50% 50%, #fff0, var(--pink-100));
+      border-radius:50%;
+      transform:rotate(-15deg);
+      pointer-events:none;
+    }
+    .card-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;}
+    .code{
+      font-weight:900; font-size:18px; letter-spacing:1px;
+      padding:4px 10px; border-radius:8px; background:var(--pink-100); color:var(--pink);
+    }
+    .status{
+      padding:4px 10px; border-radius:999px; font-weight:700; font-size:12px;
+    }
+    .status.on{background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7;}
+    .status.off{background:#fff3cd; color:#856404; border:1px solid #ffe08a;}
+    .meta{color:var(--muted); line-height:1.9;}
+    .meta strong{color:#111827; display:inline-block; min-width:92px;}
+    .row{display:flex; flex-wrap:wrap; gap:16px; margin:10px 0 4px;}
+    .tag{
+      display:inline-flex; align-items:center; gap:6px;
+      padding:6px 10px; border-radius:999px; background:#f3f4f6; color:#111827; font-size:12px; font-weight:700;
+    }
+    .actions{display:flex; align-items:center; gap:14px; margin-top:10px;}
+    .actions a, .actions button{font-weight:700; text-decoration:none;}
+    .empty{
+      background:var(--card); border:1px dashed var(--border); border-radius:var(--radius);
+      padding:28px; text-align:center; color:var(--muted);
+    }
+  </style>
 </head>
+
 <body>
-  <!-- 回主後台 -->
-  <div style="text-align:right; margin:10px 20px;">
-    <a href="/admin0363/dashboard" style="background:#aaa; color:white; padding:6px 12px; border-radius:6px; text-decoration:none;">← 返回後台</a>
-  </div>
+  <div class="container">
 
-  <div class="admin-container">
-    <h2>功能管理</h2>
-    <p>這裡可以設定折扣碼與其他功能。</p>
+    <div class="header">
+      <div>
+        <div class="title">✨ 功能管理</div>
+        <div class="subtitle">這裡可以設定折扣碼與其他功能。</div>
+      </div>
+      <a class="back" href="/admin0363/dashboard">← 返回後台</a>
+    </div>
 
-    <div style="background:#fff; padding:20px; border-radius:10px; border:1px solid #eee;">
-      <h3>折扣碼管理</h3>
-      <a href="/admin0363/discounts/new" class="add-btn">＋ 新增折扣碼</a>
-      <div id="discount-list">
+    <div class="toolbar">
+      <a href="/admin0363/discounts/new" class="btn btn-primary">＋ 新增折扣碼</a>
+      <!-- 需要搜尋再開啟
+      <input class="btn-gray" style="padding:10px 14px; border-radius:10px; border:1px solid var(--border);" placeholder="搜尋折扣碼…">
+      -->
+    </div>
+
+    {% if discounts and discounts|length > 0 %}
+      <div class="list">
         {% for d in discounts %}
-          <div class="order-row">
-            <div class="info">
-              <strong>折扣碼：</strong>{{ d['code'] }}<br>
-              <strong>折扣方式：</strong>
-                {% if d['type'] == 'percent' %}
-                  {{ d['value'] }} %
-                {% else %}
-                  - ${{ d['value'] }}
-                {% endif %}<br>
-              <strong>有效期限：</strong>{{ d['expires_at'] or '不限' }}
-            </div>
-            <div class="actions">
-              <a href="/admin0363/discounts/edit/{{ d['id'] }}">✏️ 編輯</a>
-              <form action="/admin0363/discounts/delete/{{ d['id'] }}" method="post" style="display:inline;" onsubmit="return confirm('確定要刪除折扣碼？')">
-                <button type="submit" style="color: #e91e63; border: none; background: none; cursor: pointer;">🗑️ 刪除</button>
-              </form>
-            </div>
+        <div class="card">
+          <div class="card-head">
+            <span class="code">{{ d.code }}</span>
+            <span class="status {{ 'on' if d.is_active else 'off' }}">
+              {{ '啟用' if d.is_active else '停用' }}
+            </span>
           </div>
-        {% else %}
-          <p style="color:gray;">目前沒有折扣碼</p>
+
+          <div class="row">
+            <span class="tag">
+              {% if d.type == 'percent' %}折扣：{{ d.value }}%{% else %}折扣：$ {{ '%.0f'|format(d.value|float) }}{% endif %}
+            </span>
+            <span class="tag">最低金額：$ {{ (d.min_order_amt or 0)|int }}</span>
+            <span class="tag">總使用：{{ d.used_count or 0 }}/{{ d.usage_limit or '不限' }}</span>
+            <span class="tag">每人：{{ d.per_user_limit or '不限' }}</span>
+          </div>
+
+          <div class="meta" style="margin-top:6px;">
+            <div><strong>有效期間：</strong>{{ d.start_at or '—' }} ~ {{ d.expires_at or '—' }}</div>
+            {% if d.note %}<div><strong>備註：</strong>{{ d.note }}</div>{% endif %}
+          </div>
+
+          <div class="actions">
+            <a href="/admin0363/discounts/edit/{{ d.id }}" class="btn btn-ghost">✏️ 編輯</a>
+            <form action="/admin0363/discounts/delete/{{ d.id }}" method="post" onsubmit="return confirm('確定要刪除折扣碼？');">
+              <button type="submit" class="btn btn-text">🗑️ 刪除</button>
+            </form>
+          </div>
+        </div>
         {% endfor %}
       </div>
-    </div>
+    {% else %}
+      <div class="empty">
+        目前沒有折扣碼。<a class="btn btn-text" href="/admin0363/discounts/new">立即新增 →</a>
+      </div>
+    {% endif %}
   </div>
 </body>
 </html>
