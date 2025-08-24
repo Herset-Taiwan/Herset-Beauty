@@ -115,9 +115,18 @@
   const $ = (sel,root=document)=>root.querySelector(sel);
 
   const esc = s => (s ?? '').toString()
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-  const zhStatus = s => s==='shipped' ? '已出貨' : s==='paid' ? '已付款' : '待處理';
+function formatOptionLines(optText){
+  if(!optText) return '';
+  // 支援半形 | 與全形 ｜，切成多段
+  const parts = optText.split(/\s*[|｜]\s*/).filter(Boolean);
+  // 每段各一行（先做 escape）
+  return parts.map(t => `<div>${esc(t)}</div>`).join('');
+} // ← 這個大括號你漏了，別忘了關閉
+
+const zhStatus = s => s==='shipped' ? '已出貨' : s==='paid' ? '已付款' : '待處理';
+
 
   function renderList(data, boxId, pagerId, page=1){
     const box = document.getElementById(boxId);
@@ -129,14 +138,15 @@
 
     slice.forEach(o=>{
       const items = (o.items||[]).map(i=>{
-  const opt = i.option ? `<div class="opt">${esc(i.option)}</div>` : '';
+  const optHTML = i.option ? `<div class="opt">${formatOptionLines(i.option)}</div>` : '';
   return `<li class="item">
-            <div class="name">${esc(i.product_name || '')}</div>
-            <div class="qty">× ${i.qty || 1}</div>
-            <div class="price">$${i.price || 0}</div>
-            ${opt}     <!-- 第二行：完整的套組內容/選項 -->
+            <div class="name">${esc(i.product_name||'')}</div>
+            <div class="qty">× ${i.qty||1}</div>
+            <div class="price">$${i.price||0}</div>
+            ${optHTML}   <!-- 套組內容：一行一個 -->
           </li>`;
 }).join('');
+
 
 
       const paid = (o.payment_status||'') === 'paid';
