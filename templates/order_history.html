@@ -1,230 +1,244 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>歷史訂單 - HERSET BEAUTY</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-  body {
-    font-family: 'Segoe UI', sans-serif;
-    background-color: #f4e8e4;
-    padding: 40px;
-    color: #3C3C3C;
-  }
+    :root{
+      --ink:#5A4B45;
+      --bg:#f4e8e4;
+      --card:#ffffff;
+      --muted:#8b7b74;
+      --brand:#c08474;
+      --brand-dark:#a66f63;
+      --chip:#ead9d2;
+      --ok:#3c9d6a;
+      --warn:#e91e63;
+    }
+    body{background:var(--bg);padding:32px;color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI","Noto Sans TC",sans-serif}
+    .page{max-width:1060px;margin:0 auto}
+    .page h1{font-size:28px;margin:6px 0 18px 0;text-align:center}
+    /* tabs */
+    .tabs{display:flex;gap:10px;justify-content:center;position:sticky;top:0;z-index:10;margin-bottom:18px}
+    .tab{
+      appearance:none;border:1px solid #e2d2cb;background:#f6edea;color:var(--ink);
+      padding:10px 16px;border-radius:999px;font-weight:700;cursor:pointer;
+      display:flex;align-items:center;gap:10px;transition:.15s;
+    }
+    .tab .badge{background:var(--chip);padding:2px 8px;border-radius:999px;font-size:12px}
+    .tab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+    .tab.active .badge{background:rgba(255,255,255,.25);color:#fff}
 
-  h2.center-title {
-    text-align: center;
-    color: #5A4B45;
-    margin-bottom: 40px;
-  }
+    /* list */
+    .tab-panel{display:none}
+    .tab-panel.active{display:block}
 
-  .back-btn {
-    display: inline-block;
-    background-color: #e91e63;
-    color: #fff;
-    padding: 10px 20px;
-    border-radius: 30px;
-    text-decoration: none;
-    font-weight: bold;
-    margin-bottom: 30px;
-  }
+    .order-card{
+      background:var(--card);border-radius:14px;padding:14px 16px;margin:0 0 14px 0;
+      box-shadow:0 8px 18px rgba(0,0,0,.06);
+    }
+    .order-head{
+      display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;
+    }
+    .order-meta{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+    .oid{font-weight:800;letter-spacing:.2px}
+    .otime{color:var(--muted);font-size:13px}
+    .amount{font-weight:800;color:var(--brand)}
+    .chips{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{
+      background:var(--chip);padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;color:var(--ink)
+    }
+    .chip.ok{background:#dff3e9;color:var(--ok)}
+    .chip.warn{background:#ffe3ec;color:var(--warn)}
+    .head-actions{display:flex;gap:10px}
+    .toggler{
+      border:1px solid #e7d5ce;background:#fff;padding:8px 12px;border-radius:10px;cursor:pointer;font-weight:700
+    }
+    .toggler:hover{background:#faf6f5}
+    .repay{background:var(--brand);border:none;color:#fff;padding:8px 14px;border-radius:10px;font-weight:800;cursor:pointer}
+    .repay:hover{background:var(--brand-dark)}
 
-  .order-box {
-    background-color: #fff;
-    border-radius: 12px;
-    padding: 24px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    margin-bottom: 30px;
-    transition: transform 0.2s ease;
-  }
+    /* body (collapsed) */
+    .order-body{display:none;padding-top:10px;border-top:1px dashed #e6d6d0;margin-top:10px}
+    .order-card.open .order-body{display:block}
 
-  .order-box:hover {
-    transform: scale(1.01);
-  }
+    .items{display:grid;grid-template-columns:1fr auto;row-gap:6px;column-gap:10px;margin:4px 0 10px 0}
+    .item-name{font-size:14px}
+    .item-qty{justify-self:end;color:var(--muted);font-size:13px}
+    .summary{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center}
+    .summary .label{color:var(--muted)}
+    .summary .val{justify-self:end}
+    .divider{height:1px;background:#f0e2dc;margin:10px 0}
 
-  .order-box .row {
-  display: flex;
-  margin-bottom: 8px;
-  line-height: 1.6;
-}
-
-  .order-box .label {
-  flex: 0 0 100px;
-  font-weight: bold;
-  color: #5A4B45;
-}
-
-  .order-box ul {
-    padding-left: 24px;
-    margin-top: 8px;
-    color: #5A4B45;
-  }
-
-  .repay-btn {
-    margin-top: 12px;
-    padding: 10px 20px;
-    background-color: #5A4B45;
-    color: white;
-    border: none;
-    border-radius: 25px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: background-color 0.2s ease;
-  }
-
-  .repay-btn:hover {
-    background-color: #7b5c54;
-  }
-
-  .pagination {
-    text-align: center;
-    margin-top: 20px;
-  }
-
-  .pagination button {
-    margin: 0 5px;
-    padding: 6px 14px;
-    border-radius: 5px;
-    border: none;
-    background: #d6c1b4;
-    color: #3C3C3C;
-    font-weight: bold;
-    cursor: pointer;
-  }
-
-  .pagination button:disabled {
-    background-color: #eee;
-    color: #aaa;
-    cursor: default;
-  }
-</style>
-
-</head>
-<body>
-
-  <a href="/" class="back-btn">← 返回首頁</a>
-  <h2 class="center-title">🧾 我的歷史訂單</h2>
-
-  {% set pending_orders = orders | selectattr("status", "ne", "shipped") | list %}
-  {% set completed_orders = orders | selectattr("status", "equalto", "shipped") | list %}
-
-  <div class="order-section" id="pending-section">
-    <h3>📦 待出貨訂單</h3>
-    {% if pending_orders %}
-      <div id="pending-orders"></div>
-    {% else %}
-      <p>目前沒有待出貨訂單。</p>
-    {% endif %}
-  </div>
-
-  <div class="order-section" id="completed-section">
-    <h3>✅ 訂單已完成</h3>
-    {% if completed_orders %}
-      <div id="completed-orders"></div>
-    {% else %}
-      <p>目前沒有已完成訂單。</p>
-    {% endif %}
-  </div>
-
-  <script>
-    const pendingData = {{ pending_orders | tojson }};
-    const completedData = {{ completed_orders | tojson }};
-    const pageSize = 10;
-
-    function translateStatus(status) {
-      switch (status) {
-        case 'pending': return '待處理';
-        case 'paid': return '已付款';
-        case 'shipped': return '已出貨';
-        default: return status;
-      }
+    .empty{
+      background:#f8efec;border:1px dashed #e1cfc8;color:var(--muted);
+      padding:18px;border-radius:12px;text-align:center;margin:18px 0
     }
 
-    function renderOrders(data, containerId, page) {
-  const container = document.getElementById(containerId);
-  container.innerHTML = '';
-  const start = (page - 1) * pageSize;
-  const end = start + pageSize;
-  const pageData = data.slice(start, end);
+    /* small */
+    @media (max-width:720px){
+      .order-head{grid-template-columns:1fr}
+      .head-actions{justify-content:flex-end}
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <h1>🧾 我的歷史訂單</h1>
 
-  pageData.forEach(o => {
-    
-    const box = document.createElement('div');
-    const itemList = o.items.map(i => {
-  const opt = i.option ? `（${i.option}）` : '';
-  return `<div>${i.product_name}${opt} × ${i.qty}（$${i.price}）</div>`;
-}).join('');
-    const itemSubtotal = o.items.reduce((sum, i) => sum + (i.price * i.qty), 0);
-    const shipping = o.shipping_fee || 0;
-    const finalAmount = o.total_amount;
-    box.className = 'order-box';
-    box.innerHTML = `
-  <!-- 🟫 訂單資訊 -->
-  <div class="row"><div class="label">訂單編號：</div><div>#${o.id}</div></div>
-  <div class="row"><div class="label">訂單時間：</div><div>${o.created_local}</div></div>
+  {% set pending_orders   = orders | selectattr("status", "ne", "shipped") | list %}
+  {% set completed_orders = orders | selectattr("status", "equalto", "shipped") | list %}
 
-  <hr style="margin: 10px 0; border-top: 1px dashed #ccc;">
-
-  <!-- 🟦 商品與金額區塊 -->
-  <div class="row"><div class="label">商品明細：</div><div>${itemList}</div></div>
-  <div class="row">
-  <div class="label">運費：</div>
-  <div style="color:#e91e63;">
-    $${shipping}${shipping === 0 ? '（免運）' : ''}
+  <div class="tabs" role="tablist" aria-label="訂單篩選">
+    <button class="tab active" data-target="pending" role="tab" aria-selected="true">
+      📦 待出貨訂單 <span class="badge">{{ pending_orders|length }}</span>
+    </button>
+    <button class="tab" data-target="done" role="tab" aria-selected="false">
+      ✅ 訂單已完成 <span class="badge">{{ completed_orders|length }}</span>
+    </button>
   </div>
+
+  <!-- 待出貨 -->
+  <section id="tab-pending" class="tab-panel active">
+    {% if not pending_orders %}
+      <div class="empty">目前沒有待出貨訂單。</div>
+    {% endif %}
+    {% for o in pending_orders %}
+      <article class="order-card" data-id="{{ o.id }}">
+        <header class="order-head">
+          <div class="order-meta">
+            <div class="oid">#{{ o.id }}</div>
+            <div class="otime">{{ o.created_local }}</div>
+            <div class="chips">
+              <span class="chip {{ 'ok' if o.payment_status=='paid' else 'warn' }}">
+                付款：{{ '已付款' if o.payment_status=='paid' else '未付款' }}
+              </span>
+              <span class="chip">出貨：{{ '已出貨' if o.status=='shipped' else '待處理' if o.status=='pending' else '已付款' if o.status=='paid' else o.status }}</span>
+            </div>
+          </div>
+          <div class="head-actions">
+            <div class="amount">NT$ {{ o.total_amount|int }}</div>
+            {% if o.payment_status != 'paid' and o.MerchantTradeNo %}
+              <button class="repay" onclick="goToPay('{{ o.MerchantTradeNo }}')">🔁 重新付款</button>
+            {% endif %}
+            <button class="toggler" type="button">明細</button>
+          </div>
+        </header>
+
+        <div class="order-body">
+          <div class="items">
+            {% for i in o.items %}
+              <div class="item-name">
+                {{ i.product_name }}{% if i.option %}（{{ i.option }}）{% endif %}
+              </div>
+              <div class="item-qty">× {{ i.qty }}　$ {{ i.price|int }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="summary">
+            <div class="label">運費</div><div></div>
+            <div class="val" style="color:{{ 'var(--warn)' if (o.shipping_fee or 0)==0 else 'inherit' }}">
+              $ {{ (o.shipping_fee or 0)|int }}{% if (o.shipping_fee or 0) == 0 %}（免運）{% endif %}
+            </div>
+
+            {% if o.discount_amount and o.discount_amount>0 %}
+              <div class="label">折扣</div><div></div>
+              <div class="val" style="color:var(--warn)">− $ {{ o.discount_amount|int }}</div>
+            {% endif %}
+
+            <div class="label" style="font-weight:800">應付金額</div><div></div>
+            <div class="val" style="font-weight:800;color:var(--brand)">$ {{ o.total_amount|int }}</div>
+          </div>
+        </div>
+      </article>
+    {% endfor %}
+  </section>
+
+  <!-- 已完成 -->
+  <section id="tab-done" class="tab-panel">
+    {% if not completed_orders %}
+      <div class="empty">目前沒有已完成訂單。</div>
+    {% endif %}
+    {% for o in completed_orders %}
+      <article class="order-card" data-id="{{ o.id }}">
+        <header class="order-head">
+          <div class="order-meta">
+            <div class="oid">#{{ o.id }}</div>
+            <div class="otime">{{ o.created_local }}</div>
+            <div class="chips">
+              <span class="chip ok">付款：已付款</span>
+              <span class="chip">出貨：已出貨</span>
+            </div>
+          </div>
+          <div class="head-actions">
+            <div class="amount">NT$ {{ o.total_amount|int }}</div>
+            <button class="toggler" type="button">明細</button>
+          </div>
+        </header>
+
+        <div class="order-body">
+          <div class="items">
+            {% for i in o.items %}
+              <div class="item-name">
+                {{ i.product_name }}{% if i.option %}（{{ i.option }}）{% endif %}
+              </div>
+              <div class="item-qty">× {{ i.qty }}　$ {{ i.price|int }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="summary">
+            <div class="label">運費</div><div></div>
+            <div class="val" style="color:{{ 'var(--warn)' if (o.shipping_fee or 0)==0 else 'inherit' }}">
+              $ {{ (o.shipping_fee or 0)|int }}{% if (o.shipping_fee or 0) == 0 %}（免運）{% endif %}
+            </div>
+
+            {% if o.discount_amount and o.discount_amount>0 %}
+              <div class="label">折扣</div><div></div>
+              <div class="val" style="color:var(--warn)">− $ {{ o.discount_amount|int }}</div>
+            {% endif %}
+
+            <div class="label" style="font-weight:800">實付金額</div><div></div>
+            <div class="val" style="font-weight:800;color:var(--brand)">$ {{ o.total_amount|int }}</div>
+          </div>
+        </div>
+      </article>
+    {% endfor %}
+  </section>
 </div>
 
-  <div class="row"><div class="label">總金額：</div><div style="font-weight:bold; color:#c2185b;">$${finalAmount}</div></div>
+<script>
+  // 分頁切換
+  document.querySelectorAll('.tab').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
 
-  <hr style="margin: 10px 0; border-top: 1px dashed #ccc;">
+      const target = btn.dataset.target;
+      document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+      document.getElementById('tab-'+target).classList.add('active');
+      // 捲回頂部更有「切頁」感
+      window.scrollTo({top:0,behavior:'smooth'});
+    });
+  });
 
-  <!-- 🟩 狀態資訊 -->
-  <div class="row"><div class="label">付款狀態：</div><div>${o.payment_status === 'paid' ? '已付款' : '未付款'}</div></div>
-  <div class="row"><div class="label">出貨狀態：</div><div>${translateStatus(o.status)}</div></div>
+  // 展開/收合明細
+  document.addEventListener('click', (e)=>{
+    if(!e.target.classList.contains('toggler')) return;
+    const card = e.target.closest('.order-card');
+    card.classList.toggle('open');
+    e.target.textContent = card.classList.contains('open') ? '收合' : '明細';
+  });
 
-  ${o.payment_status !== 'paid' && o.MerchantTradeNo
-    ? `<button class="repay-btn" onclick="goToPay('${o.MerchantTradeNo}')">🔁 重新付款</button>`
-    : ''}
-`;
-    container.appendChild(box);
-  }); // ✅ forEach 內結束後，不要再 append box！
-
-  const nav = document.createElement('div');
-  nav.className = 'pagination';
-
-  const totalPages = Math.ceil(data.length / pageSize);
-
-  if (totalPages > 1) {
-    const prev = document.createElement('button');
-    prev.textContent = '← 上一頁';
-    prev.disabled = page === 1;
-    prev.onclick = () => renderOrders(data, containerId, page - 1);
-
-    const next = document.createElement('button');
-    next.textContent = '下一頁 →';
-    next.disabled = page === totalPages;
-    next.onclick = () => renderOrders(data, containerId, page + 1);
-
-    const info = document.createElement('span');
-    info.textContent = `第 ${page} 頁 / 共 ${totalPages} 頁`;
-    info.style.margin = '0 10px';
-
-    nav.appendChild(prev);
-    nav.appendChild(info);
-    nav.appendChild(next);
-    container.appendChild(nav);
+  // 重新付款
+  function goToPay(merchantTradeNo){
+    location.href = `/repay/${merchantTradeNo}`;
   }
-}
-
-
-    renderOrders(pendingData, 'pending-orders', 1);
-    renderOrders(completedData, 'completed-orders', 1);
-  </script>
-  <script>
-function goToPay(merchantTradeNo) {
-  window.location.href = `/repay/${merchantTradeNo}`;
-}
+  window.goToPay = goToPay; // 給 inline onclick 用
 </script>
-
 </body>
 </html>
