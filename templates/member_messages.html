@@ -3,81 +3,129 @@
 {% block title %}我的留言 - HERSET{% endblock %}
 {% block banner %}{% endblock %}
 
-
 {% block content %}
+<div class="msg-wrap">
+  <h2 class="msg-title">📨 我的留言</h2>
 
-<div class="container" style="max-width: 800px; margin: 40px auto;">
-  <h2 style="text-align: center; color: #e91e63;">📨 我的留言</h2>
+  <!-- 篩選 Tabs -->
+  <div class="msg-tabs">
+    <a class="msg-tab {{ 'is-active' if (status|default('all'))=='all' else '' }}"
+       href="{{ url_for('member_messages', status='all') }}">
+      全部 <span class="msg-badge">{{ count_all|default(0) }}</span>
+    </a>
+    <a class="msg-tab {{ 'is-active' if status=='unreplied' else '' }}"
+       href="{{ url_for('member_messages', status='unreplied') }}">
+      未回覆 <span class="msg-badge">{{ count_unreplied|default(0) }}</span>
+    </a>
+    <a class="msg-tab {{ 'is-active' if status=='replied' else '' }}"
+       href="{{ url_for('member_messages', status='replied') }}">
+      已回覆 <span class="msg-badge">{{ count_replied|default(0) }}</span>
+    </a>
+  </div>
 
   {% if messages %}
-    {% for msg in messages %}
-   <div style="
-  position: relative;
-  background: #fafafa;
-  padding: 24px;
-  border-radius: 16px;
-  border: 1px solid #eee;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
-  margin: 30px 0;
-  transition: box-shadow 0.3s ease;"
-  onmouseover="this.style.boxShadow='0 8px 16px rgba(0,0,0,0.08)'"
-  onmouseout="this.style.boxShadow='0 4px 10px rgba(0, 0, 0, 0.03)'"
->
+    <div class="msg-list">
+      {% for msg in messages %}
+      <article class="msg-card">
+        <header class="msg-head">
+          <div class="msg-type">{{ msg['type'] }}</div>
+          <time class="msg-time">{{ msg['local_created_at'] }}</time>
 
+          {% if msg['is_replied'] %}
+            <span class="msg-chip is-done">已回覆</span>
+          {% else %}
+            <span class="msg-chip is-pending">未回覆</span>
+          {% endif %}
 
-      <p><strong>留言時間：</strong>{{ msg['local_created_at'] }}</p>
-      {% if msg['is_new'] %}
-  <span style="
-    position: absolute;
-    top: 12px;
-    right: 16px;
-    color: #e91e63;
-    background: #fff0f5;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-weight: bold;
-    font-size: 13px;
-    box-shadow: 0 0 4px rgba(0,0,0,0.1);
-  ">🔔 新回覆</span>
-{% endif %}
+          {% if msg['is_new'] %}
+            <span class="msg-chip is-new">🔔 新回覆</span>
+          {% endif %}
+        </header>
 
-</p>
-      <p><strong>類型：</strong>{{ msg['type'] }}</p>
-      <p><strong>主題：</strong>{{ msg['subject'] }}</p>
-      {% if msg['order_number'] %}
-        <p><strong>訂單編號：</strong>{{ msg['order_number'] }}</p>
-      {% endif %}
-      <p><strong>留言內容：</strong><br>
-        <span style="white-space: pre-wrap;">{{ msg['content'] }}</span>
-      </p>
+        <h3 class="msg-subject">{{ msg['subject'] }}</h3>
 
-      {% if msg['reply_text'] %}
-        <hr style="margin: 15px 0;">
-        <p><strong style="color: #4caf50;">管理員回覆：</strong><br>
-          <span style="white-space: pre-wrap; color: #333;">{{ msg['reply_text'] }}</span>
-        </p>
+        {% if msg['order_number'] %}
+        <div class="msg-row">
+          <span class="msg-label">訂單編號</span>
+          <span class="msg-value">#{{ msg['order_number'] }}</span>
+        </div>
+        {% endif %}
+
+        <div class="msg-row">
+          <span class="msg-label">留言內容</span>
+          <div class="msg-content">{{ msg['content'] }}</div>
+        </div>
+
+        {% if msg['reply_text'] %}
+        <div class="msg-reply">
+          <div class="msg-reply-title">管理員回覆</div>
+          <div class="msg-reply-body">{{ msg['reply_text'] }}</div>
+        </div>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+
+    <!-- 分頁 -->
+    <div class="msg-pager">
+      {% if has_prev %}
+      <a class="pager-btn" href="{{ url_for('member_messages', page=page-1, status=status|default('all')) }}">← 上一頁</a>
       {% else %}
-        <p><span style="color: gray;">尚未收到回覆</span></p>
+      <span class="pager-btn is-disabled">← 上一頁</span>
+      {% endif %}
+
+      {% if has_next %}
+      <a class="pager-btn" href="{{ url_for('member_messages', page=page+1, status=status|default('all')) }}">下一頁 →</a>
+      {% else %}
+      <span class="pager-btn is-disabled">下一頁 →</span>
       {% endif %}
     </div>
-    {% endfor %}
-
-<div class="pagination" style="text-align: center; margin-top: 30px;">
-  {% if has_prev %}
-    <a href="{{ url_for('member_messages', page=page-1) }}"
-       style="margin-right: 10px; padding: 6px 12px; background: #eee; border-radius: 6px; text-decoration: none;">← 上一頁</a>
-  {% endif %}
-  {% if has_next %}
-    <a href="{{ url_for('member_messages', page=page+1) }}"
-       style="margin-left: 10px; padding: 6px 12px; background: #eee; border-radius: 6px; text-decoration: none;">下一頁 →</a>
-  {% endif %}
-</div>
-
-
-
 
   {% else %}
-    <p style="text-align: center; color: gray;">您尚未留言過任何問題</p>
+    <p class="msg-empty">目前沒有符合條件的留言</p>
   {% endif %}
 </div>
+
+<style>
+/* —— 外層 —— */
+.msg-wrap{max-width:920px;margin:40px auto 80px;padding:0 16px}
+.msg-title{text-align:center;color:#c08474;font-weight:700;margin:0 0 14px}
+.msg-tabs{display:flex;gap:10px;justify-content:center;margin:8px 0 22px}
+.msg-tab{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid #eaded7;border-radius:999px;background:#fff;color:#6e5b52;text-decoration:none;font-weight:600}
+.msg-tab:hover{background:#fbf7f5}
+.msg-tab.is-active{background:#e8d7cf;border-color:#e8d7cf;color:#4b3a34}
+.msg-badge{min-width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;padding:0 6px;border-radius:11px;background:#fff;color:#6e5b52;border:1px solid rgba(0,0,0,.06);font-size:12px}
+
+/* —— 卡片 —— */
+.msg-list{display:flex;flex-direction:column;gap:16px}
+.msg-card{background:#fff;border:1px solid #eee;border-radius:16px;padding:18px 20px;box-shadow:0 6px 20px rgba(0,0,0,.04)}
+.msg-card:hover{box-shadow:0 10px 28px rgba(0,0,0,.07)}
+.msg-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.msg-type{padding:4px 10px;border-radius:999px;background:#f2ebe7;color:#6b564c;font-weight:700}
+.msg-time{margin-left:auto;color:#9a867c;font-size:13px}
+.msg-chip{padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;border:1px solid transparent}
+.msg-chip.is-done{background:#e8f6ee;color:#2e7d32;border-color:#cfead9}
+.msg-chip.is-pending{background:#fff6e5;color:#a15f00;border-color:#ffe2ad}
+.msg-chip.is-new{background:#fff0f5;color:#c62828;border-color:#ffd6e2}
+.msg-subject{margin:6px 0 10px;font-size:18px;color:#3b2f2a}
+.msg-row{display:flex;gap:10px;align-items:flex-start;margin:8px 0}
+.msg-label{flex:0 0 80px;color:#8a776f;font-weight:600}
+.msg-value{color:#4b3a34}
+.msg-content{white-space:pre-wrap;color:#3d312c;line-height:1.7}
+
+.msg-reply{margin-top:12px;border-left:4px solid #c08474;background:#fdf7f5;border-radius:10px;padding:12px 14px}
+.msg-reply-title{font-weight:700;color:#7e5b53;margin-bottom:6px}
+.msg-reply-body{white-space:pre-wrap;color:#3b2f2a}
+
+/* —— 分頁 —— */
+.msg-pager{display:flex;justify-content:center;gap:10px;margin-top:22px}
+.pager-btn{padding:10px 16px;border:1px solid #eaded7;border-radius:10px;background:#fff;text-decoration:none;color:#5a4841}
+.pager-btn:hover{background:#fbf7f5}
+.pager-btn.is-disabled{opacity:.5;pointer-events:none}
+.msg-empty{text-align:center;color:#9a867c;margin:40px 0}
+@media (max-width:560px){
+  .msg-label{flex-basis:68px}
+  .msg-time{width:100%;order:3;margin-left:0}
+}
+</style>
 {% endblock %}

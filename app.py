@@ -2640,36 +2640,49 @@ def member_messages():
     if "member_id" not in session:
         return redirect("/login")
 
-    tz = TW   # ✅ 用全域台灣時區
-
+    tz = TW  # ✅ 全域台灣時區
     member_id = session["member_id"]
     page = int(request.args.get("page", 1))
     per_page = 5
+    status = request.args.get("status", "all")  # all | replied | unreplied
 
-    # 全部留言（新 → 舊）
+    # 取出該會員全部留言（新→舊）
     all_messages = (supabase.table("messages")
         .select("*")
         .eq("member_id", member_id)
         .order("created_at", desc=True)
         .execute().data or [])
 
+    # ✅ 跨頁總數（給上方徽章用）
+    count_all = len(all_messages)
+    count_replied = sum(1 for m in all_messages if m.get("is_replied"))
+    count_unreplied = count_all - count_replied
+
     # 顯示台灣時間 & 是否為新回覆
     for m in all_messages:
         try:
             m["local_created_at"] = parser.parse(m["created_at"]).astimezone(tz).strftime("%Y-%m-%d %H:%M")
-        except:
+        except Exception:
             m["local_created_at"] = m["created_at"]
-        m["is_new"] = m.get("is_replied") and not m.get("is_read")
+        m["is_new"] = bool(m.get("is_replied") and not m.get("is_read"))
 
-    # 分頁
-    total = len(all_messages)
+    # ✅ 依 tab 過濾（不影響上方三個總數）
+    if status == "replied":
+        working = [m for m in all_messages if m.get("is_replied")]
+    elif status == "unreplied":
+        working = [m for m in all_messages if not m.get("is_replied")]
+    else:
+        working = all_messages
+
+    # 分頁（針對過濾後的集合）
+    total = len(working)
     start = (page - 1) * per_page
     end = start + per_page
-    messages = all_messages[start:end]
+    messages = working[start:end]
     has_prev = page > 1
     has_next = end < total
 
-    # 設為已讀
+    # 設為已讀（沿用你的做法：進入頁面即把該會員所有「已回覆未讀」設為已讀）
     if messages:
         (supabase.table("messages")
             .update({"is_read": True})
@@ -2684,7 +2697,12 @@ def member_messages():
                            messages=messages,
                            page=page,
                            has_prev=has_prev,
-                           has_next=has_next)
+                           has_next=has_next,
+                           # 👇 新增給模板的徽章數 & 當前狀態
+                           count_all=count_all,
+                           count_replied=count_replied,
+                           count_unreplied=count_unreplied,
+                           status=status)
 
 
 
