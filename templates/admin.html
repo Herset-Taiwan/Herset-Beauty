@@ -336,6 +336,19 @@
   color: #333 !important;
 }
 
+/* 讓 a.tab-btn 與 button.tab-btn 視覺一致、置中不跑版 */
+.tabs .tab-btn {
+  display: inline-block;           /* a 預設是 inline，統一成 inline-block */
+  text-decoration: none;           /* 拿掉連結底線 */
+  vertical-align: middle;          /* 與其他按鈕對齊 */
+}
+.tabs {
+  display: flex;
+  justify-content: center;
+  align-items: center;             /* 多行時垂直置中 */
+  gap: 12px;
+}
+
 </style>
 
 </head>
@@ -763,21 +776,28 @@
 
   <script>
 function switchTab(tabId) {
-  const tabs = document.querySelectorAll('.tab-content');
-  const buttons = document.querySelectorAll('.tab-btn');
-  tabs.forEach(t => t.classList.remove('active'));
-  buttons.forEach(b => b.classList.remove('active'));
+  // 內容顯示
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  const target = document.getElementById(tabId);
+  if (target) target.classList.add('active');
 
-  document.getElementById(tabId).classList.add('active');
-  document.querySelector('.tab-btn[onclick*="' + tabId + '"]').classList.add('active');
+  // 標籤 active 樣式（同時處理 button 與 a）
+  document.querySelectorAll('.tabs .tab-btn').forEach(b => b.classList.remove('active'));
+
+  // 先找 onclick 的（button）
+  let btn = document.querySelector(`.tabs .tab-btn[onclick*="${tabId}"]`);
+  if (!btn) {
+    // 再找 href 的（a），容錯 /admin0363/features 或 /admin0363/features?...
+    btn = Array.from(document.querySelectorAll('.tabs .tab-btn[href]'))
+      .find(a => (a.getAttribute('href') || '').includes(`/${tabId}`));
+  }
+  if (btn) btn.classList.add('active');
 
   if (tabId === "orders") {
-    filterOrders();  // ✅ 主動顯示訂單
-      // 🔥 第一次切 orders 頁面時通知後端更新 session
-  fetch("/admin0363/mark_seen_orders", { method: "POST" });
+    filterOrders();
+    fetch("/admin0363/mark_seen_orders", { method: "POST" });
   }
 }
-
 
 
 let allOrders = {{ orders | tojson }};
