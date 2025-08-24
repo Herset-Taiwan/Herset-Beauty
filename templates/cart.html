@@ -74,6 +74,10 @@
     .opt-lines { color:#666; font-size:14px; line-height:1.6; margin:4px 0 2px; }
     .opt-label { color:#888; font-size:13px; margin-bottom:2px; }
     .opt-line { display:block; }
+
+    @media (min-width: 560px){
+  .opt-lines { column-count: 2; column-gap: 18px; }
+}
   </style>
 </head>
 <body>
@@ -160,19 +164,19 @@
           <div class="cart-actions">
             <form method="POST">
               <input type="hidden" name="product_id" value="{{ p['id'] }}">
-              <input type="hidden" name="option" value="{{ p['option'] }}">
+              <input type="hidden" name="option" value="{{ p.get('option','') }}">
               <input type="hidden" name="action" value="decrease">
               <button type="submit">−</button>
             </form>
             <form method="POST">
               <input type="hidden" name="product_id" value="{{ p['id'] }}">
-              <input type="hidden" name="option" value="{{ p['option'] }}">
+              <input type="hidden" name="option" value="{{ p.get('option','') }}">
               <input type="hidden" name="action" value="increase">
               <button type="submit">＋</button>
             </form>
             <form method="POST">
               <input type="hidden" name="product_id" value="{{ p['id'] }}">
-              <input type="hidden" name="option" value="{{ p['option'] }}">
+              <input type="hidden" name="option" value="{{ p.get('option','') }}">
               <input type="hidden" name="action" value="remove">
               <button type="submit">🗑️ 移除</button>
             </form>

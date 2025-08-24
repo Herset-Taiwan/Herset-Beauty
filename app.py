@@ -1395,7 +1395,7 @@ def cart():
                      .eq("id", pid).single().execute()
         dbp = db.data or {}
 
-                images = item.get('images') or dbp.get('images') or []
+        images = item.get('images') or dbp.get('images') or []
         image = item.get('image') or dbp.get('image') \
                 or (images[0] if images else None)
 
