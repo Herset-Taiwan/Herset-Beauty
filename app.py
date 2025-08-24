@@ -51,6 +51,7 @@ def to_utc_iso_from_tw(local_str: str):
     dt_tw = TW.localize(dt)
     return dt_tw.astimezone(timezone.utc).isoformat()
 
+
     
 def generate_check_mac_value(params, hash_key, hash_iv):
     # 1. 將參數依照字母順序排列
