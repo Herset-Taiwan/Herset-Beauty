@@ -361,7 +361,7 @@
 
 <!-- 正中間的頁籤按鈕 -->
 <div class="tabs">
-  {% set valid_tabs = ['products', 'members', 'orders', 'messages'] %}
+  {% set valid_tabs = ['products', 'members', 'orders', 'messages', 'features'] %}
   
   <button class="tab-btn {% if tab == 'products' %}active{% endif %}" onclick="switchTab('products')">商品管理</button>
   <button class="tab-btn {% if tab == 'members' %}active{% endif %}" onclick="switchTab('members')">會員系統管理</button>
@@ -375,6 +375,10 @@
     留言管理
     {% if new_message_alert %}<span class="badge-icon">📩 新留言</span>{% endif %}
   </button>
+
+  <a href="/admin0363/features" class="tab-btn {% if tab == 'features' %}active{% endif %}">功能管理</a>
+</div>
+
 
   {# ✅ 防呆：如果 tab 是未知值，渲染這個 debug 按鈕讓你知道 #}
   {% if tab not in valid_tabs %}

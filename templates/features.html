@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>功能管理 - HERSET BEAUTY</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <!-- 回主後台 -->
+  <div style="text-align:right; margin:10px 20px;">
+    <a href="/admin0363/dashboard" style="background:#aaa; color:white; padding:6px 12px; border-radius:6px; text-decoration:none;">← 返回後台</a>
+  </div>
+
+  <div class="admin-container">
+    <h2>功能管理</h2>
+    <p>這裡可以設定折扣碼與其他功能。</p>
+
+    <div style="background:#fff; padding:20px; border-radius:10px; border:1px solid #eee;">
+      <h3>折扣碼管理</h3>
+      <a href="/admin0363/discounts/new" class="add-btn">＋ 新增折扣碼</a>
+      <div id="discount-list">
+        {% for d in discounts %}
+          <div class="order-row">
+            <div class="info">
+              <strong>折扣碼：</strong>{{ d['code'] }}<br>
+              <strong>折扣方式：</strong>
+                {% if d['type'] == 'percent' %}
+                  {{ d['value'] }} %
+                {% else %}
+                  - ${{ d['value'] }}
+                {% endif %}<br>
+              <strong>有效期限：</strong>{{ d['expires_at'] or '不限' }}
+            </div>
+            <div class="actions">
+              <a href="/admin0363/discounts/edit/{{ d['id'] }}">✏️ 編輯</a>
+              <form action="/admin0363/discounts/delete/{{ d['id'] }}" method="post" style="display:inline;" onsubmit="return confirm('確定要刪除折扣碼？')">
+                <button type="submit" style="color: #e91e63; border: none; background: none; cursor: pointer;">🗑️ 刪除</button>
+              </form>
+            </div>
+          </div>
+        {% else %}
+          <p style="color:gray;">目前沒有折扣碼</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</body>
+</html>

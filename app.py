@@ -1002,6 +1002,14 @@ def tinymce_upload():
     url = url_for('static', filename=f'uploads/rte/{filename}')
     return jsonify({'location': url})
 
+#admin 功能管理
+@app.route("/admin0363/features")
+def admin_features():
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
+
+    discounts = supabase.table("discounts").select("*").execute().data or []
+    return render_template("features.html", discounts=discounts, tab="features")
 
 
 @app.route("/admin0363/mark_seen_orders", methods=["POST"])
