@@ -27,16 +27,10 @@
 
     <a class="btn" href="/admin0363/announcements/new">＋ 新增公告</a>
 
-    {% if items and items|length>0 %}
-      <!-- 之後放公告列表卡片 -->
-    {% else %}
-      <div class="empty">目前沒有公告，點擊「新增公告」建立第一則。</div>
-    {% endif %}
-  </div>
-
-  <!-- 列表容器 -->
-<div id="ann-empty" style="padding:16px;color:#777;">目前沒有公告，點擊「新增公告」建立第一則。</div>
+    <!-- 列表容器（放在 .wrap 裡） -->
+<div id="ann-empty" class="empty" style="display:none">目前沒有公告，點擊「新增公告」建立第一則。</div>
 <ul id="ann-list" style="list-style:none;padding:0;margin:0;"></ul>
+  </div>
 
 <script>
 function esc(s){return (s??'').toString()

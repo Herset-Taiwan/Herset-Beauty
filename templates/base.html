@@ -283,51 +283,55 @@
 
 <!-- 公告條 -->
 <script>
-(function(){
-  const el = document.getElementById('annText');
-  if(!el) return;                      // 非首頁或沒放容器就不跑
+(function () {
+  const A = document.getElementById('annA');
+  const B = document.getElementById('annB');
+  if (!A || !B) return;                       // 不是首頁就不跑
 
-  // 用現有可用的端點
-  const API = '/announcements.json';
-  const INTERVAL = 3000;
+  const API = '/announcements.json';          // 目前站上可用的端點
+  const INTERVAL = 3000;                      // 3 秒一則（呼吸感）
 
-  // 後端可能回：[], {items:[]}, {data:[]}
-  const normalize = (p) => {
-    if (!p) return [];
-    if (Array.isArray(p)) return p;
-    if (Array.isArray(p.items)) return p.items;
-    if (Array.isArray(p.data))  return p.data;
-    return [];
-  };
-
-  const textOf = (a) => {
+  const pickText = (a) => {
     const t = (a?.title || '').trim();
     const c = (a?.content || '').trim();
     return (t && c) ? `${t}｜${c}` : (t || c);
   };
+  const normalize = (raw) =>
+    Array.isArray(raw) ? raw : (raw?.items || raw?.data || []);
 
-  function start(items){
-    if(!items.length){ el.textContent = ''; return; }
-    let i = 0;
-    function render(){
-      el.classList.remove('show');
-      setTimeout(() => {
-        el.textContent = items[i];
-        el.classList.add('show');
+  fetch(API, { credentials: 'same-origin' })
+    .then(r => r.ok ? r.json() : [])
+    .then(json => normalize(json).map(pickText).filter(Boolean))
+    .then(items => {
+      if (!items.length) { A.textContent = ''; return; }
+
+      let i = 0, flip = false;
+      A.textContent = items[0];
+      A.classList.add('on');
+
+      if (items.length === 1) return;         // 只有一則就常駐不切換
+
+      setInterval(() => {
+        const next = items[(i + 1) % items.length];
+        if (flip) {
+          // 顯示 A
+          A.textContent = next;
+          A.classList.add('on');
+          B.classList.remove('on');
+        } else {
+          // 顯示 B
+          B.textContent = next;
+          B.classList.add('on');
+          A.classList.remove('on');
+        }
         i = (i + 1) % items.length;
-      }, 120);
-    }
-    render();
-    if(items.length > 1) setInterval(render, INTERVAL);
-  }
-
-  fetch(API, { credentials:'same-origin' })
-    .then(r => r.ok ? r.json() : null)
-    .then(json => normalize(json).map(textOf).filter(Boolean))
-    .then(start)
-    .catch(() => { /* 失敗就靜默 */ });
+        flip = !flip;
+      }, INTERVAL);
+    })
+    .catch(() => { /* 靜默失敗 */ });
 })();
 </script>
+
 
 
 
@@ -636,53 +640,6 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 </script>
 
-
-
-<!-- 公告輪播腳本 -->
-<script>
-(function(){
-  const el = document.getElementById('annText');
-  if(!el) return;
-
-  const API = '/announcements/active';
-  const INTERVAL = 5000;
-
-  const pickText = (a) => {
-    const t = (a.title||'').trim();
-    const c = (a.content||'').trim();
-    return (t && c) ? `${t}｜${c}` : (t || c);
-  };
-
-  fetch(API, { credentials: 'same-origin' })
-    .then(r => r.ok ? r.json() : [])
-    .then(list => {
-      if(!Array.isArray(list)) list = [];
-      const items = list.map(pickText).filter(Boolean);
-      if(items.length === 0){
-        // 沒有效公告就留白（或 el.parentElement.style.display='none' 也可）
-        el.textContent = '';
-        return;
-      }
-
-      let i = 0;
-      function show(){
-        el.classList.remove('show');
-        // 小延遲讓淡出生效
-        setTimeout(() => {
-          el.textContent = items[i];
-          el.classList.add('show');
-          i = (i + 1) % items.length;
-        }, 120);
-      }
-
-      show();
-      if(items.length > 1){
-        setInterval(show, INTERVAL);
-      }
-    })
-    .catch(() => { /* 失敗就靜默 */ });
-})();
-</script>
 
 
 
