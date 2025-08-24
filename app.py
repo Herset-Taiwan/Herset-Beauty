@@ -2639,8 +2639,6 @@ def check_member_messages():
 def member_messages():
     if "member_id" not in session:
         return redirect("/login")
-
-    tw = timezone("Asia/Taipei")
     tz = tw
     member_id = session["member_id"]
     page = int(request.args.get("page", 1))
