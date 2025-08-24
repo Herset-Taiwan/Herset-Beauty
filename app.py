@@ -13,6 +13,7 @@ from pytz import timezone
 from werkzeug.security import generate_password_hash
 from postgrest.exceptions import APIError
 from datetime import datetime, timezone
+from pytz import timezone as tz
 import os
 import tempfile
 import urllib.parse
@@ -26,10 +27,17 @@ from uuid import UUID
 from flask import redirect
 
 from utils import generate_check_mac_value, generate_ecpay_form
-
+TW = tz("Asia/Taipei")
 
 load_dotenv()
 
+# 新增：把 <input type="datetime-local"> 的台灣時間轉成 UTC ISO
+def to_utc_iso_from_tw(local_str: str):
+    if not local_str:
+        return None
+    dt = datetime.strptime(local_str, "%Y-%m-%dT%H:%M")
+    dt_tw = TW.localize(dt)
+    return dt_tw.astimezone(timezone.utc).isoformat()
 
     
 def generate_check_mac_value(params, hash_key, hash_iv):
@@ -1032,8 +1040,8 @@ def admin_discounts_create():
         "type": form.get("type") or "amount",
         "value": float(form.get("value") or 0),
         "min_order_amt": float(form.get("min_order_amt") or 0),
-        "start_at": form.get("start_at") or None,
-        "expires_at": form.get("expires_at") or None,
+        "start_at":   to_utc_iso_from_tw(form.get("start_at")),
+        "expires_at": to_utc_iso_from_tw(form.get("expires_at")),
         "usage_limit": int(form.get("usage_limit")) if form.get("usage_limit") else None,
         "per_user_limit": int(form.get("per_user_limit")) if form.get("per_user_limit") else None,
         "is_active": form.get("is_active") == "on",
@@ -1088,8 +1096,8 @@ def admin_discounts_update(did):
         "type": _type,
         "value": _value,
         "min_order_amt": float(form.get("min_order_amt") or 0),
-        "start_at": form.get("start_at") or None,
-        "expires_at": form.get("expires_at") or None,
+        "start_at":   to_utc_iso_from_tw(form.get("start_at")),
+        "expires_at": to_utc_iso_from_tw(form.get("expires_at")),
         "usage_limit": int(form.get("usage_limit")) if form.get("usage_limit") else None,
         "per_user_limit": int(form.get("per_user_limit")) if form.get("per_user_limit") else None,
         "is_active": form.get("is_active") == "on",
@@ -1444,20 +1452,27 @@ def cart():
         discount_deduct=discount_deduct,
     )
 
-#驗證 折扣碼
-def _parse_iso(ts: str):
-    # 允許 None；允許 '2025-08-24T08:00:00+00:00'
-    if not ts: return None
-    try:
-        return datetime.fromisoformat(ts.replace("Z", "+00:00"))
-    except Exception:
+# 以台灣時間解讀開始/到期；購物車驗證也用台灣時間
+def _parse_tw_local(ts: str):
+    """
+    把資料庫回來的時間字串（可能是 '2025-08-24T08:00:00+00:00' 或 '2025-08-24T08:00'）
+    統一「以台灣時間」解讀，回傳 tz-aware 的台灣時間 datetime。
+    """
+    if not ts:
         return None
+    s = str(ts).replace("Z", "")
+    base = s[:16]  # 只取到分鐘，'YYYY-MM-DDTHH:MM'
+    try:
+        dt = datetime.strptime(base, "%Y-%m-%dT%H:%M")
+    except ValueError:
+        base = base.replace("T", " ")
+        dt = datetime.strptime(base, "%Y-%m-%d %H:%M")
+    return TW.localize(dt)
 
 def validate_discount_for_cart(code: str, subtotal: float):
     """
-    驗證折扣碼是否可在購物車使用；只檢查基本條件，不動用次數。
+    驗證折扣碼是否可在購物車使用（以台灣時間判斷有效期）。
     回傳 (ok:bool, msg:str, info:dict|None)
-    info = {code,type,value,min_order_amt,amount}
     """
     if not code:
         return False, "請輸入折扣碼", None
@@ -1472,12 +1487,12 @@ def validate_discount_for_cart(code: str, subtotal: float):
     if not d:
         return False, "折扣碼不存在或未啟用", None
 
-    now = datetime.now(timezone.utc)
-    start_at = _parse_iso(d.get("start_at"))
-    expires_at = _parse_iso(d.get("expires_at"))
-    if start_at and now < start_at:
+    now_tw = datetime.now(TW)
+    start_at = _parse_tw_local(d.get("start_at"))
+    expires_at = _parse_tw_local(d.get("expires_at"))
+    if start_at and now_tw < start_at:
         return False, "折扣碼尚未開始", None
-    if expires_at and now > expires_at:
+    if expires_at and now_tw > expires_at:
         return False, "折扣碼已逾期", None
 
     min_amt = float(d.get("min_order_amt") or 0)
@@ -1488,8 +1503,8 @@ def validate_discount_for_cart(code: str, subtotal: float):
     val = float(d.get("value") or 0)
     if dtype == "percent":
         val = max(0.0, min(100.0, val))
-        amount = round(subtotal * (val/100.0))
-    else:  # amount
+        amount = round(subtotal * (val / 100.0))
+    else:
         amount = min(round(val), round(subtotal))
 
     info = {
