@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>公告管理 - HERSET BEAUTY</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    :root{--pink:#e91e63;--bg:#f6f7f9;--card:#fff;--border:#e5e7eb;--shadow:0 8px 20px rgba(0,0,0,.06);--radius:16px}
+    html,body{background:var(--bg);margin:0;font-family:"Segoe UI","Noto Sans TC",sans-serif}
+    .wrap{max-width:1100px;margin:32px auto 80px;padding:0 20px}
+    .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+    .title{font-size:28px;font-weight:800}
+    .back{background:#9ca3af;color:#fff;text-decoration:none;padding:8px 14px;border-radius:10px;box-shadow:var(--shadow)}
+    .btn{background:var(--pink);color:#fff;text-decoration:none;padding:10px 14px;border-radius:10px;box-shadow:var(--shadow);font-weight:800}
+    .empty{background:var(--card);border:1px dashed var(--border);border-radius:var(--radius);padding:28px;text-align:center;color:#6b7280}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="head">
+      <div>
+        <div class="title">📢 公告管理</div>
+        <div style="color:#6b7280;margin-top:6px">張貼與管理站內公告。</div>
+      </div>
+      <a class="back" href="/admin0363/features">← 回功能中樞</a>
+    </div>
+
+    <a class="btn" href="/admin0363/announcements/new">＋ 新增公告</a>
+
+    {% if items and items|length>0 %}
+      <!-- 之後放公告列表卡片 -->
+    {% else %}
+      <div class="empty">目前沒有公告，點擊「新增公告」建立第一則。</div>
+    {% endif %}
+  </div>
+</body>
+</html>

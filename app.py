@@ -1004,7 +1004,7 @@ def tinymce_upload():
 
 #admin 功能管理標籤
 @app.route("/admin0363/features")
-def admin_features():
+def admin_features_hub():
     if not session.get("admin_logged_in"):
         return redirect("/admin0363")
 
@@ -1100,6 +1100,23 @@ def admin_discounts_update(did):
         flash("更新失敗，請稍後再試", "error")
     return redirect("/admin0363/features")
 
+#admin 折扣碼 子頁
+@app.route("/admin0363/features/discounts")
+def admin_features_discounts():
+    if not session.get("admin_logged_in"): return redirect("/admin0363")
+    try:
+        discounts = supabase.table("discounts").select("*").order("created_at", desc=True).execute().data or []
+    except Exception:
+        discounts = []
+        flash("折扣碼資料表不存在，請先建立。", "error")
+    return render_template("discounts.html", discounts=discounts, tab="features")
+
+#admin 公告 子頁
+@app.route("/admin0363/features/announcements")
+def admin_features_announcements():
+    if not session.get("admin_logged_in"): return redirect("/admin0363")
+    # 先不查資料，之後補資料表/CRUD
+    return render_template("announcements.html", items=[])
 
 
 @app.route("/admin0363/mark_seen_orders", methods=["POST"])

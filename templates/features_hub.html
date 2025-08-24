@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>功能管理 - HERSET BEAUTY</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    :root{--pink:#e91e63;--bg:#f6f7f9;--card:#fff;--border:#e5e7eb;--shadow:0 8px 20px rgba(0,0,0,.06);--radius:16px}
+    html,body{background:var(--bg);margin:0;font-family:"Segoe UI","Noto Sans TC",sans-serif}
+    .wrap{max-width:1100px;margin:32px auto 80px;padding:0 20px}
+    .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+    .title{font-size:28px;font-weight:800}
+    .back{background:#9ca3af;color:#fff;text-decoration:none;padding:8px 14px;border-radius:10px;box-shadow:var(--shadow)}
+    .grid{display:grid;grid-template-columns:1fr;gap:18px}
+    @media(min-width:720px){.grid{grid-template-columns:repeat(3,1fr)}}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;display:flex;flex-direction:column;gap:8px}
+    .card h3{margin:0;font-size:18px}
+    .card p{margin:0;color:#6b7280}
+    .go{margin-top:10px;align-self:flex-start;background:var(--pink);color:#fff;text-decoration:none;padding:10px 14px;border-radius:10px;box-shadow:var(--shadow);font-weight:800}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <div class="title">✨ 功能管理</div>
+        <div style="color:#6b7280;margin-top:6px">選擇要管理的功能模組。</div>
+      </div>
+      <a class="back" href="/admin0363/dashboard">← 返回後台</a>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>折扣碼</h3>
+        <p>建立金額或百分比折扣，設定門檻、有效期間與使用上限。</p>
+        <a class="go" href="/admin0363/features/discounts">管理折扣碼 →</a>
+      </div>
+
+      <div class="card">
+        <h3>公告</h3>
+        <p>張貼站內公告／活動訊息，顯示於前台首頁或購物流程。</p>
+        <a class="go" href="/admin0363/features/announcements">管理公告 →</a>
+      </div>
+
+      <!-- 之後要新增功能，只要複製一張卡片 -->
+    </div>
+  </div>
+</body>
+</html>
