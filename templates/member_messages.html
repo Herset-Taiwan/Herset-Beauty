@@ -1,180 +1,175 @@
 {% extends "base.html" %}
-
 {% block title %}我的留言 - HERSET{% endblock %}
 {% block banner %}{% endblock %}
 
 {% block content %}
-<div class="msg-page">
-  <h1>📨 我的留言</h1>
+<div class="msg-wrap">
 
-  {# 計數（前端顯示用） #}
-  {% set replied_count   = (messages | selectattr('is_replied','equalto',True) | list | length) %}
-  {% set unreplied_count = (messages | selectattr('is_replied','equalto',False) | list | length) %}
+  <h2 class="msg-title">📨 我的留言</h2>
 
-  <!-- Tabs -->
-  <div class="msg-tabs" role="tablist" aria-label="留言篩選">
-    <button class="msg-tab active" data-filter="all"  role="tab" aria-selected="true">全部 <span class="badge">{{ messages|length }}</span></button>
-    <button class="msg-tab"        data-filter="open" role="tab" aria-selected="false">未回覆 <span class="badge">{{ unreplied_count }}</span></button>
-    <button class="msg-tab"        data-filter="done" role="tab" aria-selected="false">已回覆 <span class="badge">{{ replied_count }}</span></button>
+  <!-- 篩選 Segmented Tabs（純前端，不改後端） -->
+  <div class="msg-tabs" role="tablist">
+    <button class="msg-tab is-active" data-filter="all" role="tab">全部
+      <span class="msg-badge" id="count-all">0</span>
+    </button>
+    <button class="msg-tab" data-filter="unreplied" role="tab">未回覆
+      <span class="msg-badge" id="count-unreplied">0</span>
+    </button>
+    <button class="msg-tab" data-filter="replied" role="tab">已回覆
+      <span class="msg-badge" id="count-replied">0</span>
+    </button>
   </div>
 
-  {% if messages %}
-    <div id="msgList">
-      {% for msg in messages %}
-        {# 卡片：用 data-status 提供前端篩選 #}
-        <article class="msg-card {% if msg['is_new'] %}is-new{% endif %}"
-                 data-status="{{ 'done' if msg['is_replied'] else 'open' }}">
-          <header class="msg-head">
-            <div class="left">
-              <span class="type-chip">{{ msg['type'] or '其他' }}</span>
-              <span class="subject" title="{{ msg['subject'] }}">{{ msg['subject'] or '（無主題）' }}</span>
-              <span class="time">{{ msg['local_created_at'] }}</span>
-            </div>
-            <div class="right">
-              {% if msg['is_new'] %}
-                <span class="badge-pill new">🔔 新回覆</span>
-              {% endif %}
-              <span class="badge-pill {{ 'ok' if msg['is_replied'] else 'warn' }}">
-                {{ '已回覆' if msg['is_replied'] else '等待回覆' }}
-              </span>
-              <button class="toggle">查看</button>
-            </div>
-          </header>
-
-          <div class="msg-body">
-            {% if msg['order_number'] %}
-              <div class="row"><span class="label">訂單編號</span><span class="val code">{{ msg['order_number'] }}</span></div>
-            {% endif %}
-
-            <div class="row">
-              <span class="label">留言內容</span>
-              <div class="bubble q">
-                <div class="text">{{ msg['content'] }}</div>
-              </div>
-            </div>
-
-            {% if msg['reply_text'] %}
-              <div class="row">
-                <span class="label">管理員回覆</span>
-                <div class="bubble a">
-                  <div class="text">{{ msg['reply_text'] }}</div>
-                </div>
-              </div>
-            {% else %}
-              <div class="row">
-                <span class="label">回覆狀態</span>
-                <div class="note">尚未收到回覆</div>
-              </div>
+  <!-- 列表 -->
+  <div class="msg-list">
+    {% if messages %}
+      {% for m in messages %}
+      <article class="msg-card"
+               data-status="{{ 'replied' if m['reply_text'] else 'unreplied' }}"
+               aria-expanded="false">
+        <header class="msg-head" onclick="toggleMsg(this)" tabindex="0"
+                onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleMsg(this)}">
+          <span class="msg-type">{{ m['type'] or '其他' }}</span>
+          <div class="msg-subject">
+            {{ m['subject'] or '（無主題）' }}
+            {% if m['is_new'] %}
+              <span class="msg-new">新回覆</span>
             {% endif %}
           </div>
-        </article>
+          <time class="msg-time">{{ m['local_created_at'] }}</time>
+          <span class="msg-chip {{ 'ok' if m['reply_text'] else 'muted' }}">
+            {{ '已回覆' if m['reply_text'] else '未回覆' }}
+          </span>
+          <span class="msg-chevron" aria-hidden="true">▾</span>
+        </header>
+
+        <div class="msg-body">
+          <div class="msg-col">
+            <div class="msg-label">留言內容</div>
+            <div class="msg-text">{{ (m['content'] or '') | e | replace('\n','<br>') | safe }}</div>
+            {% if m['order_number'] %}
+              <div class="msg-order">訂單編號：<strong>#{{ m['order_number'] }}</strong></div>
+            {% endif %}
+          </div>
+
+          <div class="msg-col">
+            <div class="msg-label">管理員回覆</div>
+            {% if m['reply_text'] %}
+              <div class="msg-reply">{{ m['reply_text'] | e | replace('\n','<br>') | safe }}</div>
+            {% else %}
+              <div class="msg-reply empty">尚未回覆</div>
+            {% endif %}
+          </div>
+        </div>
+      </article>
       {% endfor %}
-    </div>
+    {% else %}
+      <div class="msg-empty">目前沒有留言記錄</div>
+    {% endif %}
+  </div>
 
-    <!-- 分頁 -->
-    <div class="pagination">
-      {% if has_prev %}
-        <a class="page-btn" href="{{ url_for('member_messages', page=page-1) }}">← 上一頁</a>
-      {% endif %}
-      {% if has_next %}
-        <a class="page-btn" href="{{ url_for('member_messages', page=page+1) }}">下一頁 →</a>
-      {% endif %}
-    </div>
-  {% else %}
-    <div class="msg-empty">您尚未留言過任何問題</div>
-  {% endif %}
+  <!-- 分頁 -->
+  <div class="msg-pager">
+    {% if has_prev %}
+      <a class="pager-btn" href="{{ url_for('member_messages', page=page-1) }}">← 上一頁</a>
+    {% endif %}
+    {% if has_next %}
+      <a class="pager-btn" href="{{ url_for('member_messages', page=page+1) }}">下一頁 →</a>
+    {% endif %}
+  </div>
 </div>
+{% endblock %}
 
+{% block script %}
 <style>
   :root{
-    --ink:#5A4B45; --muted:#8b7b74; --brand:#c08474; --brand2:#a66f63;
-    --bg:#f4e8e4; --card:#fff; --chip:#ead9d2; --ok:#3c9d6a; --warn:#e91e63;
-    --line:#efe1dc;
+    --ink:#3c3c3c; --muted:#8a7f79; --line:#eadad3;
+    --brand:#c08474; --brand-2:#c6456c; --paper:#fff; --bg:#faf7f5;
+    --ok:#2e7d32;
   }
-  .msg-page{max-width:980px;margin:28px auto 40px;padding:0 16px;color:var(--ink)}
-  .msg-page h1{font-size:26px;text-align:center;margin:6px 0 18px}
+  .msg-wrap{max-width:900px;margin:32px auto;padding:0 16px}
+  .msg-title{margin:10px 0 18px;text-align:center;color:#5a4b45}
 
   /* tabs */
-  .msg-tabs{display:flex;gap:10px;justify-content:center;margin-bottom:16px}
-  .msg-tab{
-    border:1px solid #e2d2cb;background:#f6edea;color:var(--ink);
-    padding:8px 14px;border-radius:999px;font-weight:700;cursor:pointer;display:flex;gap:8px;align-items:center
-  }
-  .msg-tab .badge{background:var(--chip);padding:2px 8px;border-radius:999px;font-size:12px}
-  .msg-tab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
-  .msg-tab.active .badge{background:rgba(255,255,255,.25);color:#fff}
+  .msg-tabs{display:flex;justify-content:center;gap:10px;margin:6px 0 18px;flex-wrap:wrap}
+  .msg-tab{appearance:none;border:1px solid var(--line);background:var(--paper);
+    padding:8px 14px;border-radius:999px;cursor:pointer;font-weight:700;color:#5a4b45}
+  .msg-tab.is-active{background:var(--brand);color:#fff;border-color:transparent}
+  .msg-badge{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;background:rgba(255,255,255,.25);font-size:12px}
 
-  /* card */
-  .msg-card{
-    background:var(--card);border:1px solid var(--line);border-radius:14px;
-    padding:14px 16px;margin:12px 0;box-shadow:0 8px 18px rgba(0,0,0,.06);
-    transition:box-shadow .15s ease;
-  }
-  .msg-card:hover{box-shadow:0 12px 22px rgba(0,0,0,.08)}
-  .msg-head{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
-  .msg-head .left{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  .type-chip{background:var(--chip);padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700}
-  .subject{font-weight:800}
-  .time{color:var(--muted);font-size:13px}
-  .right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  .badge-pill{padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700}
-  .badge-pill.ok{background:#dff3e9;color:var(--ok)}
-  .badge-pill.warn{background:#ffe3ec;color:var(--warn)}
-  .badge-pill.new{background:#fff0f5;color:var(--warn);box-shadow:0 0 4px rgba(0,0,0,.1)}
-  .toggle{border:1px solid #e7d5ce;background:#fff;padding:8px 12px;border-radius:10px;font-weight:700;cursor:pointer}
-  .toggle:hover{background:#faf6f5}
+  /* list & card */
+  .msg-list{display:flex;flex-direction:column;gap:12px}
+  .msg-card{background:var(--paper);border:1px solid var(--line);border-radius:16px;
+    box-shadow:0 6px 14px rgba(0,0,0,.05);overflow:hidden}
+  .msg-head{display:grid;grid-template-columns:max-content 1fr max-content max-content 20px;
+    align-items:center;gap:12px;padding:14px 16px;cursor:pointer}
+  .msg-head:focus-visible{outline:2px solid var(--brand)}
+  .msg-type{background:#efe2dd;border:1px solid var(--line);border-radius:999px;
+    padding:4px 10px;font-weight:700;color:#6d5b54}
+  .msg-subject{font-weight:800;color:#534741;display:flex;gap:8px;align-items:center}
+  .msg-new{font-size:12px;color:var(--brand-2);background:#fff0f5;border-radius:999px;padding:2px 8px}
+  .msg-time{color:var(--muted);font-size:14px}
+  .msg-chip{border-radius:999px;padding:6px 10px;font-weight:700;font-size:12px}
+  .msg-chip.ok{background:#e8f5e9;color:var(--ok)}
+  .msg-chip.muted{background:#fff5f5;color:#c62828}
+  .msg-chevron{transform:rotate(0deg);transition:transform .25s ease;color:#9a8f8a}
+  .msg-card[aria-expanded="true"] .msg-chevron{transform:rotate(180deg)}
 
-  /* body (collapsed by default) */
-  .msg-body{display:none;padding-top:10px;border-top:1px dashed var(--line);margin-top:8px}
-  .msg-card.open .msg-body{display:block}
+  .msg-body{border-top:1px dashed var(--line);background:var(--bg);
+    max-height:0;overflow:hidden;transition:max-height .35s ease}
+  .msg-card[aria-expanded="true"] .msg-body{max-height:1000px}
 
-  .row{display:grid;grid-template-columns:92px 1fr;gap:10px;margin:10px 0}
-  .label{color:var(--muted);font-size:13px;padding-top:6px}
-  .val.code{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace}
-  .bubble{border-radius:12px;padding:12px 14px;position:relative}
-  .bubble.q{background:#faf6f5;border:1px solid #f0e2dc}
-  .bubble.a{background:#eef8f2;border:1px solid #daf0e5}
-  .bubble .text{white-space:pre-wrap;line-height:1.7}
-  .note{color:var(--muted)}
-  .pagination{display:flex;justify-content:center;gap:12px;margin-top:16px}
-  .page-btn{background:#eee;border-radius:8px;padding:8px 12px;text-decoration:none;color:var(--ink)}
-  .msg-empty{
-    background:#f8efec;border:1px dashed #e1cfc8;color:var(--muted);
-    padding:18px;border-radius:12px;text-align:center;margin:18px 0
-  }
+  .msg-body{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:0 16px}
+  .msg-col{padding:14px 0}
+  @media (max-width:820px){.msg-body{grid-template-columns:1fr}}
 
-  @media (max-width:720px){
-    .msg-head{grid-template-columns:1fr}
-    .row{grid-template-columns:1fr}
-    .label{padding-top:0}
-  }
+  .msg-label{font-size:13px;color:#7a6c66;margin-bottom:8px}
+  .msg-text,.msg-reply{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;line-height:1.6;color:#4b413d}
+  .msg-reply.empty{background:#fff;border-style:dashed;color:#a19793}
+  .msg-order{margin-top:10px;color:#6b5d57}
+
+  .msg-empty{text-align:center;color:#a0938d;background:#fff;border:1px dashed var(--line);padding:22px;border-radius:14px}
+
+  /* pager */
+  .msg-pager{display:flex;justify-content:center;gap:10px;margin:20px 0}
+  .pager-btn{display:inline-block;padding:8px 14px;border-radius:10px;border:1px solid var(--line);background:#fff;text-decoration:none;color:#5a4b45}
+  .pager-btn:hover{background:#f7efec}
 </style>
 
 <script>
-  // 展開/收合
-  document.addEventListener('click', (e)=>{
-    if(!e.target.classList.contains('toggle')) return;
-    const card = e.target.closest('.msg-card');
-    card.classList.toggle('open');
-    e.target.textContent = card.classList.contains('open') ? '收合' : '查看';
-  });
+  // 收合
+  function toggleMsg(head){
+    const card = head.closest('.msg-card');
+    const expanded = card.getAttribute('aria-expanded') === 'true';
+    card.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+  }
 
-  // 濾鏡：全部 / 未回覆 / 已回覆（純前端）
-  document.querySelectorAll('.msg-tab').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      document.querySelectorAll('.msg-tab').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
+  // 篩選
+  const tabs = document.querySelectorAll('.msg-tab');
+  const cards = document.querySelectorAll('.msg-card');
 
-      const filter = btn.dataset.filter; // all | open | done
-      document.querySelectorAll('#msgList .msg-card').forEach(card=>{
-        const status = card.getAttribute('data-status'); // open | done
-        const show = (filter==='all') || (filter===status);
-        card.style.display = show ? '' : 'none';
-      });
-
-      // 捲回頂端，視覺像切頁
-      window.scrollTo({top:0, behavior:'smooth'});
+  function applyFilter(key){
+    tabs.forEach(t=>t.classList.toggle('is-active', t.dataset.filter===key));
+    cards.forEach(c=>{
+      const st = c.dataset.status;
+      const show = (key==='all') || (key===st);
+      c.style.display = show ? '' : 'none';
     });
+  }
+
+  tabs.forEach(t=>{
+    t.addEventListener('click', ()=>applyFilter(t.dataset.filter));
   });
+
+  // 計數（顯示目前頁面上的筆數）
+  function renderCounts(){
+    const all = cards.length;
+    const replied = [...cards].filter(c=>c.dataset.status==='replied').length;
+    const unreplied = all - replied;
+    document.getElementById('count-all').textContent = all;
+    document.getElementById('count-replied').textContent = replied;
+    document.getElementById('count-unreplied').textContent = unreplied;
+  }
+  renderCounts();
 </script>
 {% endblock %}
