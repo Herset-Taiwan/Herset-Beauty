@@ -283,7 +283,8 @@
   const el = document.getElementById('annText');
   if(!el) return;                      // 非首頁或沒放容器就不跑
 
-  const API = '/announcements/active';
+  // 用現有可用的端點
+  const API = '/announcements.json';
   const INTERVAL = 3000;
 
   // 後端可能回：[], {items:[]}, {data:[]}
@@ -291,7 +292,7 @@
     if (!p) return [];
     if (Array.isArray(p)) return p;
     if (Array.isArray(p.items)) return p.items;
-    if (Array.isArray(p.data)) return p.data;
+    if (Array.isArray(p.data))  return p.data;
     return [];
   };
 
@@ -303,11 +304,10 @@
 
   function start(items){
     if(!items.length){ el.textContent = ''; return; }
-
     let i = 0;
     function render(){
       el.classList.remove('show');
-      setTimeout(() => {              // 小延遲讓淡入生效
+      setTimeout(() => {
         el.textContent = items[i];
         el.classList.add('show');
         i = (i + 1) % items.length;
@@ -321,9 +321,10 @@
     .then(r => r.ok ? r.json() : null)
     .then(json => normalize(json).map(textOf).filter(Boolean))
     .then(start)
-    .catch(() => { /* 靜默失敗就不顯示 */ });
+    .catch(() => { /* 失敗就靜默 */ });
 })();
 </script>
+
 
 
 
