@@ -33,5 +33,63 @@
       <div class="empty">目前沒有公告，點擊「新增公告」建立第一則。</div>
     {% endif %}
   </div>
+
+  <!-- 列表容器 -->
+<div id="ann-empty" style="padding:16px;color:#777;">目前沒有公告，點擊「新增公告」建立第一則。</div>
+<ul id="ann-list" style="list-style:none;padding:0;margin:0;"></ul>
+
+<script>
+function esc(s){return (s??'').toString()
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+function fmt(ts){
+  if(!ts) return '—';
+  const d = new Date(ts);
+  if(isNaN(d)) return esc(ts);
+  const p = n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+async function loadAnns(){
+  const list = document.getElementById('ann-list');
+  const empty = document.getElementById('ann-empty');
+  list.innerHTML = '';
+  try{
+    const res = await fetch('/admin0363/announcements', {credentials:'same-origin'});
+    const data = await res.json();
+    if(!data.length){ empty.style.display='block'; return; }
+    empty.style.display='none';
+
+    list.innerHTML = data.map(a => `
+      <li style="display:flex;gap:12px;align-items:center;justify-content:space-between;
+                 padding:12px 14px;margin:10px 0;border:1px dashed #e3d9d6;border-radius:10px;background:#fff;">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;color:#5a4b45">${esc(a.title)||'(無標題)'}</div>
+          <div style="color:#7a6c66;font-size:13px;margin-top:4px;">${esc(a.content||'')}</div>
+          <div style="color:#9b8f8a;font-size:12px;margin-top:6px;">
+            期間：${fmt(a.start_at)} ～ ${fmt(a.end_at)}
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;white-space:nowrap">
+          <span style="padding:6px 10px;border-radius:999px;font-weight:700;
+                       ${a.is_active?'background:#e8f5e9;color:#2e7d32;':'background:#fff5f5;color:#c62828;'}">
+            ${a.is_active?'啟用':'停用'}
+          </span>
+          <a href="/admin0363/announcements/${a.id}/edit"
+             style="text-decoration:none;padding:8px 12px;border-radius:10px;border:1px solid #e3d9d6;color:#5a4b45;">
+            編輯
+          </a>
+        </div>
+      </li>
+    `).join('');
+  }catch(e){
+    empty.style.display='block';
+    empty.textContent = '載入失敗，請稍後再試';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadAnns);
+</script>
+
 </body>
 </html>

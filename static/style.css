@@ -70,29 +70,42 @@ footer {
 }
 
 /* 公告條 */
-.announce-bar{
-  display:none; align-items:center; justify-content:space-between; gap:10px;
-  max-width:1100px; margin:10px auto 0; padding:10px 12px;
-  background:#f7e9e5; border:1px solid #ead3cd; border-radius:10px;
-  box-shadow:0 4px 10px rgba(0,0,0,.03);
+.annbar{
+  display:flex; align-items:center; gap:12px;
+  padding:8px 16px;
+  background:#f9f3f1; border-bottom:1px solid #eadad3; color:#5a4b45;
+  font-size:14px; line-height:1.4;
 }
-.announce-inner{ display:flex; align-items:center; gap:10px; min-width:0; }
-.pill{
-  background:#fff; border:1px solid #e3cfc9; color:#c08474;
-  font-weight:800; font-size:12px; padding:2px 8px; border-radius:999px;
+.ann-tag{
+  background:#c08474; color:#fff; font-weight:700;
+  padding:2px 10px; border-radius:999px; letter-spacing:.05em;
 }
-.announce-text{
-  color:#5a4b45; font-weight:600; white-space:nowrap; overflow:hidden;
-  text-overflow:ellipsis; display:block; max-width:65vw;
+.ann-viewport{ position:relative; flex:1; height:22px; overflow:hidden; }
+.ann-slides{ position:relative; height:100%; }
+.ann-item{
+  position:absolute; inset:0; display:flex; align-items:center;
+  opacity:0; transition:opacity .45s ease;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
-.announce-controls{ display:flex; align-items:center; gap:6px; }
-.announce-btn{
-  background:#fff; border:1px solid #e3cfc9; border-radius:8px;
-  padding:2px 8px; cursor:pointer; font-weight:700; color:#5a4b45;
-}
-.announce-pos{ font-size:12px; color:#7a6c66; min-width:48px; text-align:center; }
-@media (max-width:600px){ .announce-text{ max-width:52vw; } }
+.ann-item.show{ opacity:1; }
+/* RWD：在小螢幕稍微縮字 */
+@media (max-width: 520px){ .annbar{ font-size:13px; } .ann-viewport{ height:20px; } }
 
+.toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 14px 28px;
+  border-radius: 8px;
+  background: #c08474;
+  color: white;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transition: opacity 0.6s ease;
+}
 
 /* ===== 商品分類 ===== */
 .sub-categories {

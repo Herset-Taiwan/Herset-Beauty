@@ -1204,6 +1204,19 @@ def admin_announcement_update(ann_id):
     flash(("success", "公告已更新"))
     return redirect("/admin0363/features/announcements")
 
+# 後台：公告清單（JSON）
+@app.get("/admin0363/announcements")
+def admin_announcement_index():
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
+
+    rows = (supabase.table("announcements")
+            .select("*")
+            .order("created_at", desc=True)
+            .execute().data or [])
+    # 也可在這裡加上時間/狀態的標準化
+    return jsonify(rows)
+
 
 
 @app.route("/admin0363/mark_seen_orders", methods=["POST"])
