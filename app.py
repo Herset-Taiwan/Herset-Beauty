@@ -1002,14 +1002,15 @@ def tinymce_upload():
     url = url_for('static', filename=f'uploads/rte/{filename}')
     return jsonify({'location': url})
 
-#admin 功能管理標籤
+#admin 功能管理標籤 功能管理中樞頁（Hub）
+
 @app.route("/admin0363/features")
 def admin_features_hub():
     if not session.get("admin_logged_in"):
         return redirect("/admin0363")
+    # 中樞頁不需要 discounts 參數
+    return render_template("features_hub.html")
 
-    discounts = supabase.table("discounts").select("*").execute().data or []
-    return render_template("features.html", discounts=discounts, tab="features")
 
 
 # === 新增折扣碼（表單頁） ===
