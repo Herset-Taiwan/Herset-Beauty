@@ -3,32 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <title>新增套組 - HERSET BEAUTY</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  <!-- Selectize -->
   <link href="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/css/selectize.default.css" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
   <style>
-    form {
-      max-width: 820px;
-      margin: 36px auto;
-      background: #fff;
-      border: 1px solid #eee;
-      border-radius: 12px;
-      padding: 24px 28px;
-    }
-    h2 { margin-top:0 }
-    label { display:block; margin-top:12px; font-weight:700; }
-    input[type="text"], input[type="number"], textarea, select {
-      width:100%; padding:8px; border:1px solid #ccc; border-radius:8px;
-      box-sizing:border-box; margin-top:6px;
-    }
-    .row { display:flex; gap:16px; }
-    .row > div { flex:1 }
-    .note{color:#777; font-size:13px}
-    .help{color:#9a877e; font-size:12px; margin-top:6px}
-    .btn {
-      background:#5E3C2C; color:#fff; border:none; border-radius:8px; padding:12px 16px; cursor:pointer;
-    }
-    .btn:disabled{ opacity:.6; cursor:not-allowed; }
-    hr{ border:none; border-top:1px solid #eee; margin:20px 0; }
+    form { max-width: 820px; margin: 36px auto; background:#fff; border:1px solid #eee; border-radius:12px; padding:24px 28px; }
+    h2 { margin-top:0; }
+    label { display:block; margin:14px 0 6px; font-weight:600; }
+    input[type="text"], input[type="number"], textarea, select { width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; }
+    textarea { min-height:120px; }
+    .note { color:#888; font-size:12px; margin-top:6px; }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .btn { cursor:pointer; background:#5E3C2C; color:#fff; border:none; border-radius:8px; padding:12px 14px; font-size:16px; }
+    hr { border:none; border-top:1px solid #eee; margin:18px 0; }
   </style>
 </head>
 <body>
@@ -37,73 +26,76 @@
   <h2>新增套組</h2>
 
   <label>套組名稱</label>
-  <input type="text" name="name" placeholder="例：寵物除臭噴霧 任選3入 超值組" required>
-
-  <!-- 套組名稱下方插入 -->
-<!-- ✅ 分類（可多選 + 可新增） -->
-<label>分類（可多選 + 可新增）</label>
-<select id="categories" name="categories[]" multiple>
-  {# 你也可以把這個清單改成從後端帶進來的 categories_options #}
-  {% set base_cats = ['身體保養','生活香氛','寵物友善','品牌嚴選','套組優惠'] %}
-  {% set cur = bundle.get('categories') or [] %}
-  {% for c in base_cats %}
-    <option value="{{ c }}" {% if c in cur %}selected{% endif %}>{{ c }}</option>
-  {% endfor %}
-  {# 把資料裡有、但不在預設清單的自訂分類也補出來 #}
-  {% for c in cur %}
-    {% if c not in base_cats %}
-      <option value="{{ c }}" selected>{{ c }}</option>
-    {% endif %}
-  {% endfor %}
-</select>
-
-<!-- ✅ 標籤（可多選 + 可新增） -->
-<label>標籤（可多選 + 可新增）</label>
-<select id="tags" name="tags[]" multiple>
-  {% set base_tags = ['新品優惠','熱銷推薦','限量販售','天然成分','主打商品'] %}
-  {% set cur_tags = bundle.get('tags') or [] %}
-  {% for t in base_tags %}
-    <option value="{{ t }}" {% if t in cur_tags %}selected{% endif %}>{{ t }}</option>
-  {% endfor %}
-  {% for t in cur_tags %}
-    {% if t not in base_tags %}
-      <option value="{{ t }}" selected>{{ t }}</option>
-    {% endif %}
-  {% endfor %}
-</select>
-
-
+  <input type="text" name="name" required value="{{ bundle.get('name','') }}">
 
   <div class="row">
     <div>
-      <label>套組售價（必填）</label>
-      <input type="number" name="price" min="0" step="1" required>
+      <label>現價</label>
+      <input type="number" name="price" step="1" min="0" value="{{ bundle.get('price') or '' }}">
     </div>
     <div>
-      <label>顯示原價（選填）</label>
-      <input type="number" name="compare_at" min="0" step="1" placeholder="例：3240">
-    </div>
-    <div>
-      <label>套組庫存（必填）</label>
-      <input type="number" name="stock" min="0" step="1" value="0" required>
+      <label>原價（選填，用於顯示劃線價）</label>
+      <input type="number" name="compare_at" step="1" min="0" value="{{ bundle.get('compare_at') or '' }}">
     </div>
   </div>
 
   <div class="row">
     <div>
-      <label>應選商品數量（0＝不用逐步挑選）</label>
-      <input type="number" name="required_total" min="0" step="1" value="0">
-      <div class="help">
-        例：設為 3，前台將引導消費者依序挑滿 3 樣；若「可選商品池」只有 1 樣商品，前台會顯示該商品並自動帶出其附加選項（如口味）讓消費者選。
-      </div>
+      <label>庫存數量</label>
+      <input type="number" name="stock" step="1" min="0" value="{{ bundle.get('stock',0) }}">
+    </div>
+    <div>
+      <label>一次需挑選總數（0＝不限，逐步挑選模式）</label>
+      <input type="number" name="required_total" step="1" min="0" value="{{ bundle.get('required_total',0) }}">
+      <div class="note">例：設 3，前台會引導使用者挑滿 3 樣；為 0 則不限制。</div>
     </div>
   </div>
 
-  <label>封面圖（首圖）</label>
+  <!-- 分類 / 標籤 -->
+  <label>分類（可多選，可新增）</label>
+  <select id="categories" name="categories[]" multiple placeholder="請選擇或輸入分類">
+    {% set base_cats = ['身體保養','生活香氛','寵物友善','品牌嚴選','套組優惠'] %}
+    {% set cur = bundle.get('categories') or [] %}
+    {% for c in base_cats %}
+      <option value="{{ c }}" {% if c in cur %}selected{% endif %}>{{ c }}</option>
+    {% endfor %}
+    {% for c in cur %}
+      {% if c not in base_cats %}
+        <option value="{{ c }}" selected>{{ c }}</option>
+      {% endif %}
+    {% endfor %}
+  </select>
+
+  <label>標籤（可多選，可新增）</label>
+  <select id="tags" name="tags[]" multiple>
+    {% set base_tags = ['新品優惠','熱銷推薦','限量販售','天然成分','主打商品'] %}
+    {% set cur_tags = bundle.get('tags') or [] %}
+    {% for t in base_tags %}
+      <option value="{{ t }}" {% if t in cur_tags %}selected{% endif %}>{{ t }}</option>
+    {% endfor %}
+    {% for t in cur_tags %}
+      {% if t not in base_tags %}
+        <option value="{{ t }}" selected>{{ t }}</option>
+      {% endif %}
+    {% endfor %}
+  </select>
+
+  <hr>
+
+  <label>套組封面圖（首頁展示）</label>
   <input type="file" name="cover_image" accept="image/*">
 
+  <!-- 🔸 商品介紹（RTE） -->
+  <label>商品介紹</label>
+  <textarea name="intro" class="rich" rows="12">{{ bundle.get('intro','')|safe }}</textarea>
+
+  <!-- 🔸 商品特色（RTE） -->
+  <label>商品特色</label>
+  <textarea name="feature" class="rich" rows="12">{{ bundle.get('feature','')|safe }}</textarea>
+
+  <!-- 後台備註/描述（只進 bundles，不會影響前台說明） -->
   <label>後台備註／描述（選填）</label>
-  <textarea name="description" rows="3" placeholder="給自己看的備註，例如活動文案、套組組成說明等"></textarea>
+  <textarea name="description" rows="3" placeholder="給自己看的備註，例如活動文案、組成說明等">{{ bundle.get('description','') }}</textarea>
 
   <hr>
 
@@ -113,29 +105,66 @@
       <option value="{{ p['id'] }}">#{{ p['id'] }}｜{{ p['name'] }}（$ {{ p['price'] }}）</option>
     {% endfor %}
   </select>
-  <div class="note">
-    前台會從這個池子顯示商品供消費者挑選。若此池只有 1 樣商品，會直接顯示該商品並帶出該商品的附加選項（如口味）讓消費者選擇。
-  </div>
+  <div class="note">前台會從這個池子顯示商品供消費者挑選；若此池只有 1 樣商品，會直接顯示該商品並帶出該商品的附加選項。</div>
 
   <div style="margin-top:22px;">
     <button class="btn" type="submit" style="width:100%;">建立套組</button>
   </div>
 </form>
 
+<!-- JS -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
-<script>
-  // 可選池多選
-  $('#pool').selectize({ plugins:['remove_button'], persist:false, delimiter:',', create:false });
-</script>
 
+<!-- TinyMCE -->
+<script src="https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js"></script>
 <script>
-  $('#pool').selectize({ plugins:['remove_button'], persist:false, delimiter:',', create:false });
-
-  // 新增：分類、標籤多選＋可新增
+  // selectize
   $('#categories').selectize({ plugins:['remove_button'], persist:false, create:true });
   $('#tags').selectize({ plugins:['remove_button'], persist:false, create:true });
-</script>
+  $('#pool').selectize({ plugins:['remove_button'], persist:false, delimiter:',', create:false });
 
+  // TinyMCE (與新增商品一致)
+  tinymce.init({
+    selector: 'textarea.rich',
+    language: 'zh_TW',
+    height: 320,
+    menubar: false,
+    branding: false,
+    promotion: false,
+    plugins: 'lists link table code advlist autolink charmap preview anchor searchreplace visualblocks fullscreen insertdatetime media wordcount image paste',
+    toolbar: 'undo redo | blocks | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table image | removeformat | code',
+    fontsize_formats: '12px 14px 16px 18px 20px 24px 28px 32px 36px',
+    content_style: 'body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans TC","Microsoft JhengHei",sans-serif; line-height:1.8;}',
+    paste_data_images: true,
+    images_upload_url: '/admin0363/tinymce/upload',
+    images_upload_handler: function (blobInfo, progress) {
+      return new Promise(function (resolve, reject) {
+        var xhr = new XMLHttpRequest();
+        xhr.withCredentials = false;
+        xhr.open('POST', '/admin0363/tinymce/upload');
+        xhr.upload.onprogress = function (e) { progress(e.loaded / e.total * 100); };
+        xhr.onload = function () {
+          if (xhr.status !== 200) { reject('HTTP Error: ' + xhr.status); return; }
+          var json = JSON.parse(xhr.responseText);
+          if (!json || typeof json.location != 'string') { reject('Invalid JSON: ' + xhr.responseText); return; }
+          resolve(json.location);
+        };
+        xhr.onerror = function () { reject('Image upload failed due to a XHR Transport error.'); };
+        var formData = new FormData();
+        formData.append('file', blobInfo.blob(), blobInfo.filename());
+        xhr.send(formData);
+      });
+    }
+  });
+
+  // 提交前同步編輯器內容
+  const form = document.querySelector('form');
+  if (form) {
+    form.addEventListener('submit', function () {
+      if (window.tinymce) tinymce.triggerSave();
+    });
+  }
+</script>
 </body>
 </html>
