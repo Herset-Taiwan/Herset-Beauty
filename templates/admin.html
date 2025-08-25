@@ -277,6 +277,36 @@
 .btn-solid{padding:8px 12px;border:none;background:#e91e63;color:#fff;border-radius:10px;font-weight:800;cursor:pointer}
 /* === 讓訂單管理系統沿用「歷史訂單」的卡片視覺結束 === */
 
+/* === 訂購人資訊樣式（與摘要盒一致） === */
+.buyer{
+  background:#faf7f5;
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:14px;
+  margin-top:12px;
+}
+.buyer-title{
+  font-weight:900;
+  color:#5a4b45;
+  margin-bottom:8px;
+}
+.buyer-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px 16px;
+}
+@media (max-width:840px){ .buyer-grid{ grid-template-columns:1fr; } }
+.buyer-item label{
+  display:inline-block;
+  min-width:86px;
+  color:#7a6c66;
+}
+.buyer-item .text{
+  color:#3c3c3c;
+  word-break:break-word;
+}
+
+
 /* 訂單出貨完成樣式*/
 .order-box {
   position: relative;
@@ -897,8 +927,11 @@ function filterOrders(){
   currentPage = 1;
   filteredOrders = (allOrders||[]).filter(o=>{
     const kw = o.id.toString().includes(keyword)
-            || (o.member?.account||'').toLowerCase().includes(keyword)
-            || (o.member?.name||'').toLowerCase().includes(keyword);
+        || (o.member?.account||'').toLowerCase().includes(keyword)
+        || (o.member?.name||'').toLowerCase().includes(keyword)
+        || (o.member?.phone||'').toLowerCase().includes(keyword)
+        || (o.member?.address||'').toLowerCase().includes(keyword);
+
     const st = status==='all'
             || (status==='unshipped' && o.status!=='shipped')
             || (status==='shipped'   && o.status==='shipped');
@@ -939,46 +972,80 @@ function renderOrderPage(pageSize){
     const shipped = o.status==='shipped';
 
     const card = document.createElement('article');
-    card.className = 'order-card';
-    card.innerHTML = `
-      <div class="order-head">
-        <div class="order-id">訂單 #${o.id}</div>
-        <div class="order-time">${esc(o.created_local||'')}</div>
-        <div class="order-chips">
-          <span class="order-chip ${paid?'pay':'unpay'}">${paid?'已付款':'未付款'}</span>
-          <span class="order-chip ${shipped?'ship':'pending'}">${zhStatus(o.status)}</span>
-          ${o.discount_code ? `<span class="order-chip pending">折扣：${esc(o.discount_code)}</span>` : ''}
-        </div>
-      </div>
+card.className = 'order-card';
+card.innerHTML = `
+  <div class="order-head">
+    <div class="order-id">訂單 #${o.id}</div>
+    <div class="order-time">${esc(o.created_local||'')}</div>
+    <div class="order-chips">
+      <span class="order-chip ${ (o.payment_status||'')==='paid' ? 'pay':'unpay'}">
+        ${ (o.payment_status||'')==='paid' ? '已付款':'未付款' }
+      </span>
+      <span class="order-chip ${o.status==='shipped'?'ship':'pending'}">${zhStatus(o.status)}</span>
+      ${o.discount_code ? `<span class="order-chip pending">折扣：${esc(o.discount_code)}</span>` : ''}
+    </div>
+  </div>
 
-      <div class="order-grid">
-        <ul class="ol">${itemsHTML || '<li class="li"><div class="name">（此訂單無商品）</div></li>'}</ul>
-        <div>
-          <div class="sum">
-            <div class="sum-row"><span>小計（不含運）</span><span>$${subtotal}</span></div>
-            ${discount ? `<div class="sum-row"><span>折扣</span><span>-$${discount}</span></div>` : ''}
-            <div class="sum-row"><span>運費</span><span>${shipFee===0?'<span class="sum-free">$0（免運）</span>':`$${shipFee}`}</span></div>
-            <div class="sum-row sum-total"><span>應付總額</span><span>$${total}</span></div>
-          </div>
-          <div class="order-actions">
-            <button class="btn-solid" onclick="printOrder(${o.id})">🖨 列印訂單</button>
-            <button class="btn-outline" onclick="openDeleteDialog(${o.id})">🗑 刪除</button>
-          </div>
-        </div>
-      </div>
+  <div class="order-grid">
+    <ul class="ol">
+      ${
+        (o.items||[]).map(i=>{
+          const opts = splitOptions(i.option).map(t=>`<div>${esc(t)}</div>`).join('');
+          const optHtml = opts ? `<div class="opt">${opts}</div>` : '';
+          return `<li class="li">
+                    <div class="name">${esc(i.product_name||'')}</div>
+                    <div class="qty">× ${i.qty||1}</div>
+                    <div class="price">$${i.price||0}</div>
+                    ${optHtml}
+                  </li>`;
+        }).join('') || '<li class="li"><div class="name">（此訂單無商品）</div></li>'
+      }
+    </ul>
 
-      <div style="margin-top:10px;display:flex;align-items:center;gap:10px;">
-        <strong>出貨狀態：</strong> ${shipped?'已出貨':(o.status==='paid'?'已付款':'待處理')}
-        <form method="POST" action="/admin0363/orders/update_status/${o.id}">
-          <strong style="margin-left:20px;">修改狀態：</strong>
-          <select name="status" onchange="this.form.submit()">
-            <option value="pending" ${o.status==='pending'?'selected':''}>待處理</option>
-            <option value="paid" ${o.status==='paid'?'selected':''}>已付款</option>
-            <option value="shipped" ${shipped?'selected':''}>已出貨</option>
-          </select>
-        </form>
+    <div>
+      <div class="sum">
+        <div class="sum-row"><span>小計（不含運）</span><span>$${(o.items||[]).reduce((s,i)=> s + (Number(i.price)||0)*(Number(i.qty)||1), 0)}</span></div>
+        ${ Number(o.discount_amount||0) ? `<div class="sum-row"><span>折扣</span><span>-$${Number(o.discount_amount||0)}</span></div>` : '' }
+        <div class="sum-row"><span>運費</span><span>${
+          Number(o.shipping_fee||0)===0 ? '<span class="sum-free">$0（免運）</span>' : `$${Number(o.shipping_fee||0)}`
+        }</span></div>
+        <div class="sum-row sum-total"><span>應付總額</span><span>$${Math.max(
+          (o.items||[]).reduce((s,i)=> s + (Number(i.price)||0)*(Number(i.qty)||1), 0) + Number(o.shipping_fee||0) - Number(o.discount_amount||0), 0
+        )}</span></div>
       </div>
-    `;
+      <div class="order-actions">
+        <button class="btn-solid" onclick="printOrder(${o.id})">🖨 列印訂單</button>
+        <button class="btn-outline" onclick="openDeleteDialog(${o.id})">🗑 刪除</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🔽 新增：訂購人資訊 -->
+  <div class="buyer">
+    <div class="buyer-title">訂購人資訊</div>
+    <div class="buyer-grid">
+      <div class="buyer-item"><label>會員帳號：</label><span class="text">${esc(o.member?.account || '—')}</span></div>
+      <div class="buyer-item"><label>姓名：</label><span class="text">${esc(o.member?.name || '—')}</span></div>
+      <div class="buyer-item"><label>電話：</label><span class="text">${esc(o.member?.phone || '—')}</span></div>
+      <div class="buyer-item"><label>地址：</label><span class="text">${esc(o.member?.address || '—')}</span></div>
+      <div class="buyer-item"><label>訂單備註：</label><span class="text">${esc(o.member?.note || o.note || '—')}</span></div>
+      <div class="buyer-item"><label>付款方式：</label><span class="text">${esc(o.payment_method || '—')}</span></div>
+    </div>
+  </div>
+
+  <div style="margin-top:10px;display:flex;align-items:center;gap:10px;">
+    <strong>出貨狀態：</strong> ${o.status==='shipped'?'已出貨':(o.status==='paid'?'已付款':'待處理')}
+    <form method="POST" action="/admin0363/orders/update_status/${o.id}">
+      <strong style="margin-left:20px;">修改狀態：</strong>
+      <select name="status" onchange="this.form.submit()">
+        <option value="pending" ${o.status==='pending'?'selected':''}>待處理</option>
+        <option value="paid" ${o.status==='paid'?'selected':''}>已付款</option>
+        <option value="shipped" ${o.status==='shipped'?'selected':''}>已出貨</option>
+      </select>
+    </form>
+  </div>
+`;
+
     box.appendChild(card);
   });
 
