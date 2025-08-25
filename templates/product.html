@@ -436,6 +436,46 @@ body.product-page .tab-btn.active {
   100% { transform: scale(1); opacity: 1; }
 }
 
+/* --- 回到頂端懸浮按鈕 --- */
+.to-top{
+  position: fixed;
+  right: 22px;
+  bottom: 24px;
+  width: 54px;
+  height: 54px;
+  border: none;
+  border-radius: 14px;
+  background: #5E3C2C;         /* 與站上色系一致 */
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 20px rgba(0,0,0,.15);
+  cursor: pointer;
+  z-index: 1000;
+
+  /* 初始隱藏 + 小位移 */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition: opacity .25s ease, transform .25s ease, visibility 0s .25s;
+}
+.to-top.show{
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  transition: opacity .25s ease, transform .25s ease;
+}
+.to-top:hover{ transform: translateY(0) scale(1.04); }
+.to-top svg{ width: 22px; height: 22px; }
+
+@media (max-width: 768px){
+  .to-top{ right: 14px; bottom: 84px; } /* 讓出下方空間 */
+}
+@media (prefers-reduced-motion: reduce){
+  .to-top{ transition: none !important; }
+}
+
 
 /* 逐步挑選模式 */
 #bundle-steps .step{
@@ -971,6 +1011,37 @@ function collectSequentialSelection(){
 ">
   ✅ 已加入購物車！
 </div>
+
+<!-- 右邊懸浮Top -->
+<button id="toTop" class="to-top" aria-label="回到頁首" title="回到頁首" type="button">
+  <!-- 向上箭頭 SVG -->
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+       stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <polyline points="18 15 12 9 6 15"></polyline>
+  </svg>
+</button>
+<script>
+(function(){
+  const btn = document.getElementById('toTop');
+  if (!btn) return;
+
+  const SHOW_AT = 600;   // 滾動超過 600px 才顯示
+
+  function toggle(){
+    if (window.scrollY > SHOW_AT) btn.classList.add('show');
+    else btn.classList.remove('show');
+  }
+  window.addEventListener('scroll', toggle, { passive: true });
+  window.addEventListener('load', toggle);
+
+  function goTop(){ window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  btn.addEventListener('click', goTop);
+  btn.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goTop(); }
+  });
+})();
+</script>
+
 
 </body>
 </html>
