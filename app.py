@@ -1899,63 +1899,73 @@ def update_order_status(order_id):
 
 
 
-
-
-
 # 取代整段：商品詳情（同時支援單品 & 套組）
 @app.route('/product/<product_id>')
 def product_detail(product_id):
-    # 先抓商品
-    res = supabase.table("products").select("*").eq("id", product_id).single().execute()
-    product = res.data
+    try:
+        # ⚠️ 避免 .single() 遇到 0 筆/多筆直接丟 PGRST116
+        res = supabase.table("products").select("*").eq("id", product_id).limit(1).execute()
+        product = (res.data or [None])[0]
+    except Exception as e:
+        app.logger.error(f"🚨 讀取商品錯誤 id={product_id}: {e}")
+        return "找不到商品", 404
+
     if not product:
+        # 不存在 → 回 404（不要 500）
         return "找不到商品", 404
 
     cart = session.get('cart', [])
-    cart_count = sum(item['qty'] for item in cart)
+    cart_count = sum(item.get('qty', 0) for item in cart)
 
     # 預設值（避免未定義）
     bundle = None
-    slots = []              # 已停用 slots，但保留給模板相容
+    slots = []
     pool_products = []
-    slot_allowed = {}       # 已停用 slots，但保留給模板相容
+    slot_allowed = {}
     total_mode = False
     required_total = 0
 
     # 套組殼商品：採用 required_total + pool 模式
     if product.get('product_type') == 'bundle':
-        bres = (
-            supabase.table("bundles")
-            .select("*")
-            .eq("shell_product_id", product["id"])
-            .single()
-            .execute()
-        )
-        bundle = bres.data or None
+        try:
+            bres = (
+                supabase.table("bundles")
+                .select("*")
+                .eq("shell_product_id", product.get("id"))
+                .limit(1)
+                .execute()
+            )
+            bundle = (bres.data or [None])[0]
+        except Exception as e:
+            app.logger.warning(f"⚠️ 讀取套組失敗 product_id={product.get('id')}: {e}")
+            bundle = None
 
         if bundle:
             required_total = int(bundle.get("required_total") or 0)
             total_mode = required_total > 0
 
             # 共用可選池
-            pres = (
-                supabase.table("bundle_pool")
-                .select("product_id")
-                .eq("bundle_id", bundle["id"])
-                .execute()
-            )
-            pool_ids = [r["product_id"] for r in (pres.data or [])]
-
-            if pool_ids:
-                pool_products = (
-                    supabase.table("products")
-                    .select("id,name,price,options,image,images")
-                    .in_("id", pool_ids)
-                    .order("name")
+            try:
+                pres = (
+                    supabase.table("bundle_pool")
+                    .select("product_id")
+                    .eq("bundle_id", bundle["id"])
                     .execute()
-                    .data
-                    or []
                 )
+                pool_ids = [r["product_id"] for r in (pres.data or [])]
+                if pool_ids:
+                    pool_products = (
+                        supabase.table("products")
+                        .select("id,name,price,options,image,images")
+                        .in_("id", pool_ids)
+                        .order("name")
+                        .execute()
+                        .data
+                        or []
+                    )
+            except Exception as e:
+                app.logger.warning(f"⚠️ 讀取套組可選池失敗 bundle_id={bundle.get('id')}: {e}")
+                pool_products = []
 
     return render_template(
         "product.html",
@@ -1965,9 +1975,10 @@ def product_detail(product_id):
         slots=slots,
         pool_products=pool_products,
         slot_allowed=slot_allowed,
-        total_mode=total_mode,         # ✅ 已定義
-        required_total=required_total  # ✅ 已定義
+        total_mode=total_mode,
+        required_total=required_total
     )
+
 
 
 
