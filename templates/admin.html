@@ -499,9 +499,10 @@
 </select>
 
   <label style="margin-left: 20px;">商品名稱：</label>
-  <input type="text" name="product_keyword"
+  <input id="product-keyword" type="text" name="product_keyword"
        value="{{ request.args.get('product_keyword', '') }}"
        placeholder="輸入關鍵字">
+
 
   <label style="margin-left: 20px;">每頁顯示：</label>
   <select name="page_size" onchange="document.getElementById('product-search-form').submit()">
@@ -868,6 +869,12 @@ function switchTab(tabId) {
     fetch("/admin0363/mark_seen_orders", { method: "POST" });
   }
 }
+
+
+// === 訂單列表需要用到的全域變數（新增） ===
+let allOrders = {{ orders | tojson }};
+let filteredOrders = [];
+let currentPage = 1;
 
 
 //訂單管理頁面
@@ -1324,12 +1331,15 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 <!-- 商品搜尋 -->
  <script>
-  document.getElementById("product-keyword").addEventListener("input", function () {
+  const pk = document.getElementById("product-keyword");
+if (pk) {
+  pk.addEventListener("input", function () {
     clearTimeout(window.keywordSearchTimer);
     window.keywordSearchTimer = setTimeout(() => {
       document.getElementById("product-search-form").submit();
-    }, 500); // 延遲 0.5 秒避免輸入過快導致太多請求
+    }, 500);
   });
+}
 
 </script>
 <!-- 搜尋 -->
