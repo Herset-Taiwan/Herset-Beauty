@@ -9,11 +9,31 @@
     form { max-width: 820px; margin: 36px auto; background:#fff; border:1px solid #eee; border-radius:12px; padding:24px 28px; }
     h2 { margin-top:0 }
     label { display:block; margin-top:12px; font-weight:700; }
-    input[type="text"], input[type="number"], textarea, select {
-      width:100%; padding:8px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box; margin-top:6px;
-    }
-    .row { display:flex; gap:16px; }
-    .row > div { flex:1 }
+    /* 表單元件：給上限，避免過長 */
+input[type="text"], input[type="number"], textarea, select{
+  width:100%;
+  max-width:640px;
+  padding:8px;
+  border:1px solid #ccc;
+  border-radius:8px;
+  box-sizing:border-box;
+  margin-top:6px;
+}
+
+/* 寬度工具類 */
+.input-sm{ max-width:280px; }
+.input-md{ max-width:420px; }
+.input-lg{ max-width:640px; }
+
+/* 列排版 */
+.row{ display:flex; flex-wrap:wrap; gap:16px; align-items:flex-start; }
+.row > div{ flex:0 0 auto; } /* 子項寬度由內容/工具類決定，不再撐滿 */
+
+@media (max-width:768px){
+  .row > div{ flex:1 1 100%; }   /* 小螢幕單欄 */
+  .input-sm,.input-md,.input-lg{ max-width:100%; } /* 滿版 */
+}
+
     .note{color:#777; font-size:13px}
     .help{color:#9a877e; font-size:12px; margin-top:6px}
     .btn { background:#5E3C2C; color:#fff; border:none; border-radius:8px; padding:12px 16px; cursor:pointer; }
@@ -27,7 +47,8 @@
   <h2>編輯套組</h2>
 
   <label>套組名稱</label>
-  <input type="text" name="name" value="{{ bundle['name'] }}" required>
+<input type="text" name="name" class="input-lg" value="{{ bundle['name'] }}" required>
+
 
   <!-- 套組名稱下方插入 -->
 <!-- ✅ 分類（可多選 + 可新增） -->
@@ -62,32 +83,32 @@
   {% endfor %}
 </select>
 
+  <div class="row">
+  <div>
+    <label>套組售價（必填）</label>
+    <input type="number" name="price" min="0" step="1" class="input-sm" value="{{ bundle['price'] }}" required>
+  </div>
+  <div>
+    <label>顯示原價（選填）</label>
+    <input type="number" name="compare_at" min="0" step="1" class="input-sm" value="{{ bundle['compare_at'] or '' }}">
+  </div>
+  <div>
+    <label>套組庫存（必填）</label>
+    <input type="number" name="stock" min="0" step="1" class="input-sm" value="{{ bundle['stock'] or 0 }}" required>
+  </div>
+</div>
 
 
   <div class="row">
-    <div>
-      <label>套組售價（必填）</label>
-      <input type="number" name="price" min="0" step="1" value="{{ bundle['price'] }}" required>
-    </div>
-    <div>
-      <label>顯示原價（選填）</label>
-      <input type="number" name="compare_at" min="0" step="1" value="{{ bundle['compare_at'] or '' }}">
-    </div>
-    <div>
-      <label>套組庫存（必填）</label>
-      <input type="number" name="stock" min="0" step="1" value="{{ bundle['stock'] or 0 }}" required>
+  <div>
+    <label>應選商品數量（0＝不用逐步挑選）</label>
+    <input type="number" name="required_total" min="0" step="1" class="input-sm" value="{{ bundle['required_total'] or 0 }}">
+    <div class="help">
+      例：設為 3，前台會引導消費者依序挑滿 3 樣；若上方「可選商品池」只有 1 樣商品，會顯示該商品並帶入其附加選項（如口味）讓消費者選。
     </div>
   </div>
+</div>
 
-  <div class="row">
-    <div>
-      <label>應選商品數量（0＝不用逐步挑選）</label>
-      <input type="number" name="required_total" min="0" step="1" value="{{ bundle['required_total'] or 0 }}">
-      <div class="help">
-        例：設為 3，前台會引導消費者依序挑滿 3 樣；若上方「可選商品池」只有 1 樣商品，會顯示該商品並帶入其附加選項（如口味）讓消費者選。
-      </div>
-    </div>
-  </div>
 
   <label>封面圖（若不更換可略過）</label>
   <input type="file" name="cover_image" accept="image/*">
