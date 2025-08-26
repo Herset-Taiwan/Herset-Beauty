@@ -475,18 +475,19 @@ def admin_new_bundle():
 
     # ✅ 提供空的 bundle（模板會用到）
     empty_bundle = {
-        "name": "",
-        "price": None,
-        "compare_at": None,
-        "stock": 0,
-        "description": "",   # 後台備註/描述（只存在 bundles）
-        "intro": "",         # 🔸商品介紹（寫進殼商品 products.intro）
-        "feature": "",       # 🔸商品特色（寫進殼商品 products.feature）
-        "categories": ["套組優惠"],
-        "tags": [],
-        "required_total": 0,
-        "cover_image": None,
-    }
+    "name": "",
+    "price": None,
+    "compare_at": None,
+    "stock": 0,
+    "description": "",   # 後台備註（bundles.description）
+    "intro": "",         # 前台商品介紹（products.intro）
+    "feature": "",       # 前台商品特色（products.feature）
+    "spec": "",          # ✅ 新增：商品規格描述（products.spec）
+    "categories": ["套組優惠"],
+    "tags": [],
+    "required_total": 0,
+    "cover_image": None,
+}
 
     return render_template(
         "new_bundle.html",
@@ -511,6 +512,8 @@ def admin_create_bundle():
     name    = (form.get("name") or "").strip()
     intro   = (form.get("intro") or "").strip()     # 🔸商品介紹（RTE）
     feature = (form.get("feature") or "").strip()   # 🔸商品特色（RTE）
+    spec = (form.get("spec") or "").strip()   # ✅ 商品規格描述（RTE）
+
 
     # 數值容錯
     def _to_float(v, default=None):
@@ -556,13 +559,22 @@ def admin_create_bundle():
         filename = secure_filename(cover_image_file.filename)
         unique_filename = f"{uuid.uuid4()}_{filename}"
         storage_path = f"bundle_images/{unique_filename}"
+        tmp_path = None
         with tempfile.NamedTemporaryFile(delete=False) as tmp:
             cover_image_file.save(tmp.name)
-            try:
-                supabase.storage.from_("images").upload(storage_path, tmp.name)
-                cover_image_url = supabase.storage.from_("images").get_public_url(storage_path)
-            except Exception as e:
-                print("❗️套組封面上傳錯誤：", e)
+            tmp_path = tmp.name
+        try:
+            supabase.storage.from_("images").upload(storage_path, tmp_path)
+            cover_image_url = supabase.storage.from_("images").get_public_url(storage_path)
+        except Exception as e:
+            print("❗️套組封面上傳錯誤：", e)
+        finally:
+            if tmp_path:
+                try:
+                    os.unlink(tmp_path)
+                except:
+                    pass
+
 
     # 1) 建立 bundles 主檔
     inserted = (
@@ -634,7 +646,7 @@ def admin_create_bundle():
                 "images": [],
                 "intro": intro,        # ✅ 正確
                 "feature": feature,    # ✅ 正確
-                "spec": "",
+                "spec": spec,
                 "ingredient": "",
                 "options": [],
                 "categories": final_categories,
@@ -655,7 +667,6 @@ def admin_create_bundle():
     return redirect("/admin0363/dashboard?tab=products")
 
 
-
 # ================================
 #  後台：編輯套組（顯示頁）
 #  URL: GET /admin0363/bundles/<int:bundle_id>/edit
@@ -665,54 +676,57 @@ def admin_edit_bundle(bundle_id):
     if not session.get("admin_logged_in"):
         return redirect("/admin0363")
 
-    # 讀套組主檔
-    b = (
+    # 讀套組主檔（用 limit(1) 避免 .single() 在 0 筆時丟錯）
+    bres = (
         supabase.table("bundles")
         .select("*")
         .eq("id", bundle_id)
-        .single()
+        .limit(1)
         .execute()
-        .data
     )
+    b = (bres.data or [None])[0]
     if not b:
         return "找不到套組", 404
 
-    # ---- 取得全站的分類/標籤供下拉選 ----
+    # ---- 取得全站的分類/標籤供下拉選（從 products 彙整）----
     vocab_rows = supabase.table("products").select("categories,tags").execute().data or []
     cat_set, tag_set = set(), set()
     for r in vocab_rows:
         for c in (r.get("categories") or []):
-            if c:
-                cat_set.add(c)
+            if c: cat_set.add(c)
         for t in (r.get("tags") or []):
-            if t:
-                tag_set.add(t)
+            if t: tag_set.add(t)
 
-    # 先用 bundles 上的，若沒有再回退殼商品的
-    cats = b.get("categories") or []
-    tags = b.get("tags") or []
-    if (not cats) or (not isinstance(cats, list)) or (not tags) or (not isinstance(tags, list)):
-        shell_id = b.get("shell_product_id")
-        if shell_id:
-            sp = (
-                supabase.table("products")
-                .select("categories,tags")
-                .eq("id", shell_id)
-                .single()
-                .execute()
-                .data
-                or {}
-            )
-            if not cats:
-                cats = sp.get("categories") or []
-            if not tags:
-                tags = sp.get("tags") or []
+    # ---- 從殼商品讀 intro/feature/spec 與可能的分類/標籤 ----
+    sp = {}
+    shell_id = b.get("shell_product_id")
+    if shell_id:
+        spres = (
+            supabase.table("products")
+            .select("intro,feature,spec,categories,tags")
+            .eq("id", shell_id)
+            .limit(1)
+            .execute()
+        )
+        sp = (spres.data or [None])[0] or {}
 
-    # 給模板使用的目前值
+    # 分類/標籤：以 bundles 為主，沒有才回退殼商品
+    cats = b.get("categories")
+    if not isinstance(cats, list): cats = []
+    if not cats: cats = sp.get("categories") or []
+
+    tags = b.get("tags")
+    if not isinstance(tags, list): tags = []
+    if not tags: tags = sp.get("tags") or []
+
+    # 編輯頁需要的文字欄位：優先用殼商品，沒有再給空字串
+    b["intro"] = sp.get("intro") or b.get("intro") or ""
+    b["feature"] = sp.get("feature") or b.get("feature") or ""
+    b["spec"] = sp.get("spec") or b.get("spec") or ""
     b["categories"] = cats
     b["tags"] = tags
 
-    # 全部可選清單：包含站內蒐集 + 目前已選（避免沒出現在清單中而無法預設選取）
+    # 全部可選清單：包含站內蒐集 + 目前已選
     all_categories = sorted({*cat_set, *cats, "套組優惠"})
     all_tags = sorted({*tag_set, *tags})
 
@@ -769,9 +783,10 @@ def admin_edit_bundle(bundle_id):
         pool_ids=pool_ids,
         products=all_single_products,
         slot_pool_map=slot_pool_map,
-        all_categories=all_categories,  # ✅ 給分類下拉
-        all_tags=all_tags,              # ✅ 給標籤下拉
+        all_categories=all_categories,
+        all_tags=all_tags,
     )
+
 
 
 
@@ -809,6 +824,8 @@ def admin_update_bundle(bundle_id):
     required_total = _to_int(form.get("required_total"), 0)
     intro          = (form.get("intro") or "").strip()         # 🔸商品介紹
     feature        = (form.get("feature") or "").strip()       # 🔸商品特色
+    spec = (form.get("spec") or "").strip()   # ✅ 商品規格描述
+
 
     # 共用可選池 / 動態 slots / 分類標籤（略，保留你原本的）
     pool_ids    = [pid for pid in request.form.getlist("pool_ids[]") if pid]
@@ -823,18 +840,24 @@ def admin_update_bundle(bundle_id):
 
     # 封面圖（可更新）
     cover_image_url = None
-    cover_image_file = request.files.get("cover_image")
-    if cover_image_file and cover_image_file.filename:
-        filename = secure_filename(cover_image_file.filename)
-        unique_filename = f"{uuid.uuid4()}_{filename}"
-        storage_path = f"bundle_images/{unique_filename}"
-        with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            cover_image_file.save(tmp.name)
-            try:
-                supabase.storage.from_("images").upload(storage_path, tmp.name)
-                cover_image_url = supabase.storage.from_("images").get_public_url(storage_path)
-            except Exception as e:
-                print("❗️套組封面更新錯誤：", e)
+cover_image_file = request.files.get("cover_image")
+if cover_image_file and cover_image_file.filename:
+    filename = secure_filename(cover_image_file.filename)
+    unique_filename = f"{uuid.uuid4()}_{filename}"
+    storage_path = f"bundle_images/{unique_filename}"
+    tmp_path = None
+    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+        cover_image_file.save(tmp.name)
+        tmp_path = tmp.name
+    try:
+        supabase.storage.from_("images").upload(storage_path, tmp_path)
+        cover_image_url = supabase.storage.from_("images").get_public_url(storage_path)
+    except Exception as e:
+        print("❗️套組封面上傳錯誤：", e)
+    finally:
+        if tmp_path:
+            try: os.unlink(tmp_path)
+            except: pass
 
     # 1) 更新 bundles 主檔
     update_data = {
@@ -886,14 +909,14 @@ def admin_update_bundle(bundle_id):
             print("❗️寫入 bundle_pool 失敗：", pid, e)
 
     # 4) 同步殼商品（intro/feature 也要同步）
-    bundle_row = (
-        supabase.table("bundles")
-        .select("shell_product_id, cover_image")
-        .eq("id", bundle_id)
-        .single()
-        .execute()
-        .data
-    ) or {}
+    bres = (
+    supabase.table("bundles")
+    .select("shell_product_id, cover_image")
+    .eq("id", bundle_id)
+    .limit(1)
+    .execute()
+    )
+    bundle_row = (bres.data or [None])[0] or {}
 
     shell_id = bundle_row.get("shell_product_id")
     current_cover = cover_image_url or bundle_row.get("cover_image")
@@ -912,7 +935,7 @@ def admin_update_bundle(bundle_id):
                     "images": [],
                     "intro": intro,        # ✅
                     "feature": feature,    # ✅
-                    "spec": "",
+                    "spec": spec,
                     "ingredient": "",
                     "options": [],
                     "categories": final_categories,
@@ -935,6 +958,7 @@ def admin_update_bundle(bundle_id):
             "stock": stock,
             "intro": intro,        # ✅
             "feature": feature,    # ✅
+            "spec": spec,
             "categories": final_categories,
             "tags": final_tags,
         }

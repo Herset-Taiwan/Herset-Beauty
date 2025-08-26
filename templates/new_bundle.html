@@ -93,6 +93,10 @@
   <label>商品特色</label>
   <textarea name="feature" class="rich" rows="12">{{ bundle.get('feature','')|safe }}</textarea>
 
+  <!-- ✅ 商品規格描述（RTE） -->
+<label>商品規格描述</label>
+<textarea name="spec" class="rich" rows="12">{{ bundle.get('spec','')|safe }}</textarea>
+
   <!-- 後台備註/描述（只進 bundles，不會影響前台說明） -->
   <label>後台備註／描述（選填）</label>
   <textarea name="description" rows="3" placeholder="給自己看的備註，例如活動文案、組成說明等">{{ bundle.get('description','') }}</textarea>

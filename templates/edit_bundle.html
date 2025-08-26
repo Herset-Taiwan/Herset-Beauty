@@ -95,6 +95,19 @@
     <div class="note">目前封面：<a href="{{ bundle['cover_image'] }}" target="_blank">查看</a></div>
   {% endif %}
 
+<!-- ✅ 商品介紹（前台顯示） -->
+<label>商品介紹</label>
+<textarea name="intro" class="rich" rows="12">{{ bundle.get('intro','')|safe }}</textarea>
+
+<!-- ✅ 商品特色（前台顯示） -->
+<label>商品特色</label>
+<textarea name="feature" class="rich" rows="12">{{ bundle.get('feature','')|safe }}</textarea>
+
+<!-- ✅ 商品規格描述（前台顯示） -->
+<label>商品規格描述</label>
+<textarea name="spec" class="rich" rows="12">{{ bundle.get('spec','')|safe }}</textarea>
+
+
   <label>後台備註／描述（選填）</label>
   <textarea name="description" rows="3">{{ bundle['description'] or '' }}</textarea>
 
@@ -119,9 +132,7 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
-<script>
-  $('#pool').selectize({ plugins:['remove_button'], persist:false, delimiter:',', create:false });
-</script>
+
 
 <script>
   $('#pool').selectize({ plugins:['remove_button'], persist:false, delimiter:',', create:false });
@@ -130,6 +141,53 @@
   $('#categories').selectize({ plugins:['remove_button'], persist:false, create:true });
   $('#tags').selectize({ plugins:['remove_button'], persist:false, create:true });
 </script>
+
+<!-- TinyMCE -->
+<script src="https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js"></script>
+<script>
+  tinymce.init({
+    selector: 'textarea.rich',
+    language: 'zh_TW',
+    height: 320,
+    menubar: false,
+    branding: false,
+    promotion: false,
+    plugins: 'lists link table code advlist autolink charmap preview anchor searchreplace visualblocks fullscreen insertdatetime media wordcount image paste',
+    toolbar: 'undo redo | blocks | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table image | removeformat | code',
+    fontsize_formats: '12px 14px 16px 18px 20px 24px 28px 32px 36px',
+    content_style: 'body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans TC","Microsoft JhengHei",sans-serif; line-height:1.8;}',
+    paste_data_images: true,
+    images_upload_url: '/admin0363/tinymce/upload',
+    images_upload_handler: function (blobInfo, progress) {
+      return new Promise(function (resolve, reject) {
+        var xhr = new XMLHttpRequest();
+        xhr.withCredentials = false;
+        xhr.open('POST', '/admin0363/tinymce/upload');
+        xhr.upload.onprogress = function (e) { progress(e.loaded / e.total * 100); };
+        xhr.onload = function () {
+          if (xhr.status < 200 || xhr.status >= 300) { reject('HTTP Error: ' + xhr.status); return; }
+          var json = {}; try { json = JSON.parse(xhr.responseText); } catch(e) { reject('Invalid JSON'); return; }
+          if (!json || typeof json.location !== 'string') { reject('Invalid JSON: ' + xhr.responseText); return; }
+          resolve(json.location);
+        };
+        xhr.onerror = function () { reject('Image upload failed.'); };
+        var formData = new FormData();
+        formData.append('file', blobInfo.blob(), blobInfo.filename());
+        xhr.send(formData);
+      });
+    }
+  });
+
+  // 送出前把編輯器內容回寫到 textarea
+  const form = document.querySelector('form');
+  if (form) {
+    form.addEventListener('submit', function () {
+      if (window.tinymce) tinymce.triggerSave();
+    });
+  }
+</script>
+
+
 
 </body>
 </html>
