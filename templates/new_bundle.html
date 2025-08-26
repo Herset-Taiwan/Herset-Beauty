@@ -145,6 +145,7 @@
   $('#pool').selectize({ plugins:['remove_button'], persist:false, delimiter:',', create:false });
 
   // TinyMCE（與新增商品一致）
+  
   tinymce.init({
     selector: 'textarea.rich',
     language: 'zh_TW',
@@ -152,10 +153,18 @@
     menubar: false,
     branding: false,
     promotion: false,
-    plugins: 'lists link table code advlist autolink charmap preview anchor searchreplace visualblocks fullscreen insertdatetime media wordcount image paste',
-    toolbar: 'undo redo | blocks | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table image | removeformat | code',
+
+    /* ✅ 關鍵：加入 textcolor 外掛 */
+    plugins: 'lists link table code advlist autolink charmap preview anchor searchreplace visualblocks fullscreen insertdatetime media wordcount image paste textcolor',
+
+    /* ✅ 關鍵：把 forecolor/backcolor 加到工具列（或會出現在三點選單） */
+    toolbar: 'undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table image | removeformat | code',
+
+    toolbar_mode: 'sliding',
     fontsize_formats: '12px 14px 16px 18px 20px 24px 28px 32px 36px',
     content_style: 'body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans TC","Microsoft JhengHei",sans-serif; line-height:1.8;}',
+
+    /* 圖片貼上/上傳（維持你原本的） */
     paste_data_images: true,
     images_upload_url: '/admin0363/tinymce/upload',
     images_upload_handler: function (blobInfo, progress) {
@@ -166,7 +175,9 @@
         xhr.upload.onprogress = function (e) { progress(e.loaded / e.total * 100); };
         xhr.onload = function () {
           if (xhr.status < 200 || xhr.status >= 300) { reject('HTTP Error: ' + xhr.status); return; }
-          var json = {}; try { json = JSON.parse(xhr.responseText); } catch(e) { reject('Invalid JSON'); return; }
+          var json = {};
+          try { json = JSON.parse(xhr.responseText); }
+          catch(e) { reject('Invalid JSON'); return; }
           if (!json || typeof json.location !== 'string') { reject('Invalid JSON: ' + xhr.responseText); return; }
           resolve(json.location);
         };
@@ -178,7 +189,7 @@
     }
   });
 
-  // 送出前把編輯器內容回寫到 textarea
+  // 送出前把編輯器內容回寫到 textarea（保留）
   const form = document.querySelector('form');
   if (form) {
     form.addEventListener('submit', function () {
