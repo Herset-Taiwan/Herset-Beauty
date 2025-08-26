@@ -14,6 +14,7 @@ from dateutil import parser
 from dotenv import load_dotenv
 from pytz import timezone as pytz_timezone
 from utils import generate_ecpay_form 
+DEFAULT_SHELL_IMAGE = "/static/uploads/logo_0.png"
 # （刪掉重複的 import traceback；上面第一行已經有了）
 TW = pytz_timezone("Asia/Taipei")
 
@@ -643,7 +644,7 @@ def admin_create_bundle():
                 "price": price,
                 "discount_price": None,
                 "stock": stock,
-                "image": cover_image_url,
+                "image": (cover_image_url or DEFAULT_SHELL_IMAGE),   # ✅ 確保非空
                 "images": [],
                 "intro": intro,        # ✅ 正確
                 "feature": feature,    # ✅ 正確
@@ -923,7 +924,7 @@ def admin_update_bundle(bundle_id):
     bundle_row = (bres.data or [None])[0] or {}
 
     shell_id = bundle_row.get("shell_product_id")
-    current_cover = cover_image_url or bundle_row.get("cover_image")
+    current_cover = cover_image_url or bundle_row.get("cover_image") or DEFAULT_SHELL_IMAGE
 
     if not shell_id:
         # 補建殼商品
@@ -935,7 +936,7 @@ def admin_update_bundle(bundle_id):
                     "price": price,
                     "discount_price": None,
                     "stock": stock,
-                    "image": current_cover,
+                    "image": (current_cover or DEFAULT_SHELL_IMAGE),   # ✅ 確保非空
                     "images": [],
                     "intro": intro,        # ✅
                     "feature": feature,    # ✅
