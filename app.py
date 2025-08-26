@@ -553,6 +553,7 @@ def admin_create_bundle():
     final_tags = list(dict.fromkeys(sel_tags + new_tags))
 
     # 封面圖
+    import os  # 若檔案頂部已有就略過
     cover_image_url = None
     cover_image_file = request.files.get("cover_image")
     if cover_image_file and cover_image_file.filename:
@@ -838,26 +839,29 @@ def admin_update_bundle(bundle_id):
     new_tags = [s.strip() for s in (form.get("new_tags") or "").split(",") if s.strip()]
     final_tags = list(dict.fromkeys(sel_tags + new_tags))
 
-    # 封面圖（可更新）
+    # 封面圖
+    import os  # 若檔案頂部已有就略過
     cover_image_url = None
-cover_image_file = request.files.get("cover_image")
-if cover_image_file and cover_image_file.filename:
-    filename = secure_filename(cover_image_file.filename)
-    unique_filename = f"{uuid.uuid4()}_{filename}"
-    storage_path = f"bundle_images/{unique_filename}"
-    tmp_path = None
-    with tempfile.NamedTemporaryFile(delete=False) as tmp:
-        cover_image_file.save(tmp.name)
-        tmp_path = tmp.name
-    try:
-        supabase.storage.from_("images").upload(storage_path, tmp_path)
-        cover_image_url = supabase.storage.from_("images").get_public_url(storage_path)
-    except Exception as e:
-        print("❗️套組封面上傳錯誤：", e)
-    finally:
-        if tmp_path:
-            try: os.unlink(tmp_path)
-            except: pass
+    cover_image_file = request.files.get("cover_image")
+    if cover_image_file and cover_image_file.filename:
+        filename = secure_filename(cover_image_file.filename)
+        unique_filename = f"{uuid.uuid4()}_{filename}"
+        storage_path = f"bundle_images/{unique_filename}"
+        tmp_path = None
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            cover_image_file.save(tmp.name)
+            tmp_path = tmp.name
+        try:
+            supabase.storage.from_("images").upload(storage_path, tmp_path)
+            cover_image_url = supabase.storage.from_("images").get_public_url(storage_path)
+        except Exception as e:
+            print("❗️套組封面上傳錯誤：", e)
+        finally:
+            if tmp_path:
+                try:
+                    os.unlink(tmp_path)
+                except:
+                    pass
 
     # 1) 更新 bundles 主檔
     update_data = {
