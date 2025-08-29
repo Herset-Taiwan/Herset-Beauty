@@ -276,15 +276,13 @@ footer {
   text-align: center;/* 商品名稱置中 */
 }
 
-/* ===== 商品頁TOP按鈕===== */
-/* ===== 回到最上面：美化版 ===== */
+/* ===== 商品頁TOP按鈕：美化版===== */
 :root{
   --top-btn-size: 56px;
   --top-btn-bg: rgba(25,25,25,.75);
-  --top-btn-bg-hover: rgba(25,25,25,.9);
   --top-btn-glow: rgba(0,0,0,.25);
   --top-btn-highlight: rgba(255,255,255,.25);
-  --brand-grad: linear-gradient(135deg,#111 0%, #3b3b3b 100%);
+  --brand-grad: linear-gradient(135deg, #5B3FC4 0%, #A057D6 100%);
 }
 
 .btn-top{
@@ -303,6 +301,12 @@ footer {
   background: var(--brand-grad);
   color: #fff;
   backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);      /* Safari */
+
+  /* 讓 SVG 完全置中 */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 
   /* 立體陰影 */
   box-shadow:
@@ -313,8 +317,13 @@ footer {
   opacity: 0;
   pointer-events: none;
   transform: translateY(8px) scale(.96);
-  transition: opacity .22s ease, transform .22s ease, box-shadow .22s ease;
+  transition: opacity .22s ease, transform .22s ease, box-shadow .22s ease, background .22s ease;
+
+  /* iOS 安全區避免卡最邊 */
+  margin-bottom: env(safe-area-inset-bottom, 0);
+  margin-right:  env(safe-area-inset-right, 0);
 }
+
 
 /* 白邊光暈 */
 .btn-top::after{
@@ -333,6 +342,8 @@ footer {
   fill: #fff;
   display: block;
   margin: 0 auto;
+  pointer-events: none;     /* 避免吃到點擊 */
+  filter: drop-shadow(0 1px 0 rgba(0,0,0,.25));
 }
 
 /* 顯示時機 */
@@ -344,11 +355,12 @@ footer {
 
 /* Hover/Active 動態 */
 .btn-top:hover{
-  background: var(--top-btn-bg-hover);
-  transform: translateY(-2px) scale(1.03);
+  /* 改為更亮的漸層，不再用單色覆蓋 */
+  background: linear-gradient(135deg, #6C4AD8 0%, #C964B9 100%);
+  transform: translateY(-2px) scale(1.04);
   box-shadow:
-    0 14px 26px rgba(0,0,0,.28),
-    inset 0 1px 0 rgba(255,255,255,.3);
+    0 16px 30px rgba(0,0,0,.32),
+    inset 0 1px 0 rgba(255,255,255,.35);
 }
 .btn-top:active{
   transform: translateY(0) scale(.98);
@@ -357,7 +369,8 @@ footer {
 /* 深色模式微調（可選） */
 @media (prefers-color-scheme: dark){
   :root{
-    --brand-grad: linear-gradient(135deg,#1b1b1b 0%, #2a2a2a 100%);
+    /* 深色下把品牌漸層微微加深，但保留色相 */
+    --brand-grad: linear-gradient(135deg, #5334BD 0%, #8F3DBF 100%);
   }
 }
 
@@ -365,6 +378,32 @@ footer {
 @media (max-width: 768px){
   :root{ --top-btn-size: 52px; }
   .btn-top{ right: 12px; bottom: 12px; }
+}
+/* 鍵盤聚焦可視 */
+.btn-top:focus-visible{
+  outline: 2px solid rgba(255,255,255,.85);
+  outline-offset: 3px;
+}
+
+/* 觸控短按的視覺回饋（比 :active 更顯著） */
+@media (hover: none){
+  .btn-top:active{
+    transform: translateY(1px) scale(.98);
+  }
+}
+/*顯示動畫（更有質感，遵守減少動態偏好）*/
+@keyframes topBtnPop {
+  from { opacity: 0; transform: translateY(8px) scale(.92); }
+  to   { opacity: 1; transform: translateY(0)  scale(1); }
+}
+.btn-top.show{
+  animation: topBtnPop .18s ease-out;
+}
+@media (prefers-reduced-motion: reduce){
+  .btn-top, .btn-top:hover, .btn-top.show{
+    transition: none;
+    animation: none;
+  }
 }
 
 
