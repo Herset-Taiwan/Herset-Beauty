@@ -2099,9 +2099,8 @@ def process_payment():
             payment_url = data["info"]["paymentUrl"]["web"]
             # 記為待付款
             supabase.table("orders").update({
-                "payment_status": "pending",
-                "paid_via": "linepay"
-            }).eq("id", order["id"]).execute()
+    "payment_status": "pending"
+}).eq("id", order["id"]).execute()
             return redirect(payment_url)
         else:
             return f"LINE Pay 建立失敗：{data}", 400
@@ -2160,10 +2159,9 @@ def linepay_confirm():
 
     if data.get("returnCode") == "0000":
         supabase.table("orders").update({
-            "payment_status": "paid",
-            "paid_via": "linepay",
-            "linepay_transaction_id": transaction_id
-        }).eq("id", order_id).execute()
+    "payment_status": "paid",
+    "paid_trade_no": transaction_id
+}).eq("id", order_id).execute()
         return redirect("/thank-you")
 
     else:
