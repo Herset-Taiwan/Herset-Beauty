@@ -1,5 +1,6 @@
 # --- stdlib
 import os, re, json, uuid, hashlib, random, time, tempfile, urllib.parse, traceback
+import requests
 from uuid import uuid4, UUID
 from datetime import datetime, timezone as dt_timezone
 
@@ -14,6 +15,8 @@ from dateutil import parser
 from dotenv import load_dotenv
 from pytz import timezone as pytz_timezone
 from utils import generate_ecpay_form 
+
+
 DEFAULT_SHELL_IMAGE = "/static/uploads/logo_0.png"
 # （刪掉重複的 import traceback；上面第一行已經有了）
 TW = pytz_timezone("Asia/Taipei")
@@ -21,6 +24,16 @@ TW = pytz_timezone("Asia/Taipei")
 
 load_dotenv()
 
+# === LINE Pay 設定（先用 Sandbox）===
+LINE_PAY_CHANNEL_ID = os.getenv("LINE_PAY_CHANNEL_ID", "你的ChannelId")
+LINE_PAY_CHANNEL_SECRET = os.getenv("LINE_PAY_CHANNEL_SECRET", "你的SecretKey")
+LINE_PAY_BASE = os.getenv("LINE_PAY_BASE", "https://sandbox-api-pay.line.me")  # 上線改: https://api-pay.line.me
+
+LINE_PAY_REQUEST_URL = f"{LINE_PAY_BASE}/v3/payments/request"
+LINE_PAY_CONFIRM_URL = f"{LINE_PAY_BASE}/v3/payments/{{transactionId}}/confirm"
+
+# 站點外部可訪問網址（給 LINE Pay redirect 回來）
+SITE_BASE_URL = os.getenv("SITE_BASE_URL", "https://你的網域")
 
 # ---- helpers ------------------------------------------------------------
 def _clean_bundle_label(s: str) -> str:
@@ -1994,10 +2007,25 @@ def linepay_notify():
         print("❌ LinePay Webhook 錯誤:", e)
         return "FAIL", 500
 
+def _linepay_headers():
+    return {
+        "Content-Type": "application/json",
+        "X-LINE-ChannelId": LINE_PAY_CHANNEL_ID,
+        "X-LINE-ChannelSecret": LINE_PAY_CHANNEL_SECRET
+    }
+
+def _order_amount_currency(order):
+    """
+    從訂單取得總金額與幣別；把欄位改成你DB實際欄位。
+    例如：orders.amount_total / orders.currency；若沒有currency就預設TWD。
+    """
+    amount = int(round(float(order.get("amount_total", 0))))
+    currency = order.get("currency", "TWD")
+    return amount, currency
 
 
 
-#判斷用戶選的付款方式
+# 判斷用戶選的付款方式
 @app.route("/process_payment", methods=["POST"])
 def process_payment():
     order_id = request.form.get("order_id")
@@ -2010,7 +2038,42 @@ def process_payment():
         return "找不到訂單", 404
 
     if method == "linepay":
-        return render_template("linepay.html", order=order)  # 顯示 QR 碼或帳號資訊
+        # 👉 正確縮排，且整個 linepay 分支結束後才接續 elif bank/credit
+        amount, currency = _order_amount_currency(order)
+
+        body = {
+            "amount": amount,
+            "currency": currency,
+            "orderId": f"LP-{order['id']}",
+            "packages": [{
+                "id": "pkg-1",
+                "amount": amount,
+                "name": "HERSET 訂單",
+                "products": [{
+                    "name": f"訂單 {order['id']} 總額",
+                    "quantity": 1,
+                    "price": amount
+                }]
+            }],
+            "redirectUrls": {
+                "confirmUrl": f"{SITE_BASE_URL}/linepay/confirm?order_id={order['id']}",
+                "cancelUrl": f"{SITE_BASE_URL}/payment_cancel?order_id={order['id']}"
+            }
+        }
+
+        r = requests.post(LINE_PAY_REQUEST_URL, headers=_linepay_headers(), json=body)
+        data = r.json()
+
+        if data.get("returnCode") == "0000":
+            payment_url = data["info"]["paymentUrl"]["web"]
+            # 記為待付款
+            supabase.table("orders").update({
+                "payment_status": "pending",
+                "paid_via": "linepay"
+            }).eq("id", order["id"]).execute()
+            return redirect(payment_url)
+        else:
+            return f"LINE Pay 建立失敗：{data}", 400
 
     elif method == "bank":
         return render_template("bank_transfer.html", order=order)  # 顯示轉帳資料
@@ -2033,7 +2096,43 @@ def process_payment():
     else:
         return "未知付款方式", 400
 
+#Linepay付款成功後 confirm
+@app.route("/linepay/confirm")
+def linepay_confirm():
+    transaction_id = request.args.get("transactionId", "")
+    order_id = request.args.get("order_id", "")
+    if not transaction_id or not order_id:
+        return "參數不足：缺少 transactionId 或 order_id", 400
 
+    res = supabase.table("orders").select("*").eq("id", order_id).single().execute()
+    order = res.data
+    if not order:
+        return "找不到訂單", 404
+
+    amount, currency = _order_amount_currency(order)
+
+    r = requests.post(
+        LINE_PAY_CONFIRM_URL.format(transactionId=transaction_id),
+        headers=_linepay_headers(),
+        json={"amount": amount, "currency": currency}
+    )
+    data = r.json()
+
+    if data.get("returnCode") == "0000":
+        supabase.table("orders").update({
+            "payment_status": "paid",
+            "paid_via": "linepay",
+            "linepay_transaction_id": transaction_id
+        }).eq("id", order_id).execute()
+        return redirect(f"/order/success/{order_id}")  # 改成你站內成功頁
+    else:
+        return redirect(f"/order/fail/{order_id}")     # 改成你站內失敗頁
+        
+#Linepay取消返回
+@app.route("/payment_cancel")
+def linepay_cancel():
+    order_id = request.args.get("order_id", "")
+    return redirect(f"/order/cancel/{order_id}" if order_id else "/")
 
 # 歷史訂單重新付款
 @app.route("/repay/<merchant_trade_no>")

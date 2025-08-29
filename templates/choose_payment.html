@@ -2,6 +2,8 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <title>選擇付款方式</title>
   <style>
     body {
@@ -78,23 +80,35 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
 </head>
 <body>
   <div class="container">
-    <h2>請選擇付款方式</h2>
+  <h2>請選擇付款方式</h2>
 
-      <!-- ✅ 暫時版付款說明，正式金流恢復時可刪掉這段 -->
-  <p>目前網站試營運中，付款方式僅限 <strong>ATM 匯款或轉帳</strong>。</p>
-  <p>轉帳資訊：兆豐銀行 (017)<br>
-  帳號：24110300764</p>
-  <p>匯款完成後，請利用網頁上方的「<strong>商品詢問</strong>」留言功能告知已匯款完成，並提供匯款資訊，謝謝。</p>
+  <!-- （可留作備註）暫時版付款說明已停用；以下為正式付款表單 -->
 
-  <h3>留言範例：</h3>
-  <pre>
-留言類型：訂單問題
-主題：已匯款
-留言內容：
-已匯款完成，帳號後5碼為: XXXXX
-訂單單號為: #編號
-  </pre>
-    <!-- 🔙 返回首頁按鈕 -->
+  <form method="post" action="/process_payment" style="margin-top: 10px;">
+    <div class="radio-group">
+      <div class="radio-option">
+        <label><input type="radio" name="method" value="linepay" checked> LINE Pay</label>
+      </div>
+
+      <!-- 預留其他方式，之後要開再解除註解 -->
+      <!--
+      <div class="radio-option">
+        <label><input type="radio" name="method" value="bank"> 銀行轉帳</label>
+      </div>
+      <div class="radio-option">
+        <label><input type="radio" name="method" value="credit"> 信用卡（綠界）</label>
+      </div>
+      -->
+    </div>
+
+    <!-- 這兩個 hidden 一定要帶，後端會用到 -->
+    <input type="hidden" name="order_id" value="{{ order.id }}">
+    <input type="hidden" name="is_repay" value="{{ 1 if is_repay else 0 }}">
+
+    <button type="submit">前往付款</button>
+  </form>
+
+  <!-- 🔙 返回首頁按鈕 -->
   <a href="/" style="
       display: inline-block;
       padding: 12px 30px;
@@ -105,23 +119,23 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
       text-decoration: none;
       font-size: 16px;
   ">返回首頁</a>
-     <!-- 🔒 原始付款表單（暫時註解保留，需要時解除註解即可）
-    <form method="post" action="/process_payment">
-      <div class="radio-group">
-        <div class="radio-option">
-          <label><input type="radio" name="method" value="linepay"> Line Pay</label>
-        </div>
-        <div class="radio-option">
-          <label><input type="radio" name="method" value="bank"> 銀行轉帳</label>
-        </div>
-        <div class="radio-option">
-          <label><input type="radio" name="method" value="credit" checked> 信用卡付款</label>
-        </div>
-      </div>
-      <input type="hidden" name="order_id" value="{{ order.id }}">
-      <button type="submit">前往付款</button>
-    </form>
-    -->
-  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var form = document.querySelector('form[action="/process_payment"]');
+    if (!form) return;
+    var btn = form.querySelector('button[type="submit"]');
+    form.addEventListener('submit', function () {
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '正在前往 LINE Pay...';
+      }
+      try { if (typeof fbq === 'function') fbq('track', 'AddPaymentInfo'); } catch (e) {}
+    });
+  });
+</script>
+
+
 </body>
 </html>
