@@ -1,6 +1,7 @@
 # --- stdlib
-import os, re, json, uuid, hashlib, random, time, tempfile, urllib.parse, traceback
+import os, re, json, uuid, random, time, tempfile, urllib.parse, traceback, hmac, base64, hashlib
 import requests
+from uuid import uuid4, UUID
 from uuid import uuid4, UUID
 from datetime import datetime, timezone as dt_timezone
 
@@ -33,7 +34,8 @@ LINE_PAY_REQUEST_URL = f"{LINE_PAY_BASE}/v3/payments/request"
 LINE_PAY_CONFIRM_URL = f"{LINE_PAY_BASE}/v3/payments/{{transactionId}}/confirm"
 
 # 站點外部可訪問網址（給 LINE Pay redirect 回來）
-SITE_BASE_URL = os.getenv("SITE_BASE_URL", "https://你的網域")
+SITE_BASE_URL = os.getenv("SITE_BASE_URL") or os.getenv("RENDER_EXTERNAL_URL") or "http://localhost:5000"
+
 
 # ---- helpers ------------------------------------------------------------
 def _clean_bundle_label(s: str) -> str:
@@ -1980,10 +1982,6 @@ def pay():
         return "付款方式錯誤", 400
     
 
-#line pay結帳
-@app.route("/linepay")
-def linepay():
-    return render_template("linepay.html")
 
  #line pay結帳完成回傳
 @app.route("/linepay/notify", methods=["POST"])
@@ -2007,21 +2005,48 @@ def linepay_notify():
         print("❌ LinePay Webhook 錯誤:", e)
         return "FAIL", 500
 
-def _linepay_headers():
+def _lp_signature_headers(api_path: str, body_obj: dict | None, method: str = "POST"):
+    """
+    依 v3 規格計算 X-LINE-Authorization 與 X-LINE-Authorization-Nonce
+    POST: signature over (channelSecret + apiPath + jsonBody + nonce)
+    GET : signature over (channelSecret + apiPath + queryString + nonce)  # 若有需要才用
+    """
+    nonce = str(uuid4())
+
+    payload_str = ""
+    if method.upper() == "POST":
+        # 重要：JSON 要無空白，鍵值順序照 dumps 輸出即可
+        payload_str = json.dumps(body_obj or {}, separators=(",", ":"))
+        message = LINE_PAY_CHANNEL_SECRET + api_path + payload_str + nonce
+    else:
+        # GET 若有 queryString，請自行串在這裡
+        message = LINE_PAY_CHANNEL_SECRET + api_path + "" + nonce
+
+    mac = hmac.new(
+        LINE_PAY_CHANNEL_SECRET.encode("utf-8"),
+        msg=message.encode("utf-8"),
+        digestmod=hashlib.sha256,
+    ).digest()
+    signature = base64.b64encode(mac).decode("utf-8")
+
     return {
         "Content-Type": "application/json",
         "X-LINE-ChannelId": LINE_PAY_CHANNEL_ID,
-        "X-LINE-ChannelSecret": LINE_PAY_CHANNEL_SECRET
+        "X-LINE-Authorization-Nonce": nonce,
+        "X-LINE-Authorization": signature,
     }
+
 
 def _order_amount_currency(order):
     """
-    從訂單取得總金額與幣別；把欄位改成你DB實際欄位。
-    例如：orders.amount_total / orders.currency；若沒有currency就預設TWD。
+    從訂單取得實際應付金額與幣別（checkout 已寫入 orders.total_amount）
     """
-    amount = int(round(float(order.get("amount_total", 0))))
+    amount = int(round(float(order.get("total_amount", 0))))  # ← 正確欄位
+    if amount <= 0:
+        raise ValueError("LINE Pay 金額為 0，請檢查 orders.total_amount 寫入流程")
     currency = order.get("currency", "TWD")
     return amount, currency
+
 
 
 
@@ -2061,7 +2086,13 @@ def process_payment():
             }
         }
 
-        r = requests.post(LINE_PAY_REQUEST_URL, headers=_linepay_headers(), json=body)
+        api_path = "/v3/payments/request"
+        headers = _lp_signature_headers(api_path, body, method="POST")
+
+        # 確保簽名用的字串與送出的字串一致
+        payload = json.dumps(body, separators=(",", ":"))
+
+        r = requests.post(f"{LINE_PAY_BASE}{api_path}", headers=headers, data=payload)
         data = r.json()
 
         if data.get("returnCode") == "0000":
@@ -2096,7 +2127,7 @@ def process_payment():
     else:
         return "未知付款方式", 400
 
-#Linepay付款成功後 confirm
+# Linepay 付款成功後 confirm（v3 簽名版）
 @app.route("/linepay/confirm")
 def linepay_confirm():
     transaction_id = request.args.get("transactionId", "")
@@ -2104,6 +2135,7 @@ def linepay_confirm():
     if not transaction_id or not order_id:
         return "參數不足：缺少 transactionId 或 order_id", 400
 
+    # 查訂單
     res = supabase.table("orders").select("*").eq("id", order_id).single().execute()
     order = res.data
     if not order:
@@ -2111,11 +2143,19 @@ def linepay_confirm():
 
     amount, currency = _order_amount_currency(order)
 
-    r = requests.post(
-        LINE_PAY_CONFIRM_URL.format(transactionId=transaction_id),
-        headers=_linepay_headers(),
-        json={"amount": amount, "currency": currency}
-    )
+    # === v3 確認付款：簽名 + POST ===
+    confirm_body = {"amount": amount, "currency": currency}
+    confirm_path = f"/v3/payments/{transaction_id}/confirm"
+
+    # 用與簽名相同的 JSON 字串（無多餘空白）
+    payload = json.dumps(confirm_body, separators=(",", ":"))
+
+    # 產 header（需先有 _lp_signature_headers，見下方「新增哪一段」）
+    headers = _lp_signature_headers(confirm_path, confirm_body, method="POST")
+
+    r = requests.post(f"{LINE_PAY_BASE}{confirm_path}",
+                      headers=headers,
+                      data=payload)
     data = r.json()
 
     if data.get("returnCode") == "0000":
@@ -2124,9 +2164,12 @@ def linepay_confirm():
             "paid_via": "linepay",
             "linepay_transaction_id": transaction_id
         }).eq("id", order_id).execute()
-        return redirect(f"/order/success/{order_id}")  # 改成你站內成功頁
+        return redirect("/thank-you")
+
     else:
-        return redirect(f"/order/fail/{order_id}")     # 改成你站內失敗頁
+        # 你也可以把 data 記 log 方便除錯
+        return redirect("/cart")
+
         
 #Linepay取消返回
 @app.route("/payment_cancel")
