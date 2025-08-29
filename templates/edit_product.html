@@ -79,6 +79,10 @@
       border: 1px solid #ddd;
       border-radius: 5px;
     }
+
+    /* 影片縮圖容器（沿用 image-box 樣式即可） */
+.image-box video { width: 100px; height: 100px; object-fit: cover; border: 1px solid #ddd; border-radius: 6px; }
+
     .options-container input {
       display: block;
       width: 100%;
@@ -351,6 +355,20 @@
 <label>商品內頁圖片（可多張）</label>
 <input type="file" name="image_files" multiple accept="image/*">
 
+<!-- ✅ 商品影片（可上傳多支） -->
+<label>商品影片（可多支）</label>
+<input type="file" name="video_files" multiple accept="video/*">
+<div class="note">建議上傳 mp4/webm；影片較大時可改貼 YouTube 連結</div>
+
+<!-- ✅ 影片連結（YouTube 或 MP4 直連） -->
+<label>影片連結</label>
+<div id="video-url-wrapper">
+  <div class="option-group">
+    <input type="text" name="video_urls[]" placeholder="例： https://www.youtube.com/watch?v=xxxx 或 https://example.com/demo.mp4">
+    <button type="button" class="delete-option" onclick="removeVideoUrl(this)">✕</button>
+  </div>
+</div>
+<button type="button" class="add-option-btn" onclick="addVideoUrl()">＋ 新增一個影片連結</button>
 
 
       {% if product['images'] %}
@@ -365,6 +383,32 @@
           {% endfor %}
         </div>
       {% endif %}
+{% if product.get('videos') %}
+  <label>現有影片：</label>
+  <div class="image-preview" id="video-preview">
+    {% for v in product['videos'] %}
+      <div class="image-box">
+        {% set is_yt = ('youtube.com' in v) or ('youtu.be' in v) %}
+        {% if is_yt %}
+          <!-- YouTube 用 iframe 預覽 -->
+          {% set yt_id = v.split('v=')[-1].split('&')[0] if 'v=' in v else v.split('/')[-1] %}
+          <div style="width:100px;height:100px;position:relative;border:1px solid #ddd;border-radius:6px;overflow:hidden;background:#000;">
+            <iframe src="https://www.youtube.com/embed/{{ yt_id }}" frameborder="0" allowfullscreen
+                    style="position:absolute;inset:0;width:100%;height:100%"></iframe>
+          </div>
+        {% else %}
+          <video width="100" height="100" style="object-fit:cover;border-radius:6px;border:1px solid #ddd;" controls preload="metadata">
+            <source src="{{ v }}">
+          </video>
+        {% endif %}
+        <!-- 保留現有影片用 hidden；按✖刪掉整塊即可移除 -->
+        <input type="hidden" name="existing_videos[]" value="{{ v }}">
+        <button type="button" class="delete-img-btn" onclick="this.parentNode.remove()">✖</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
 
       <button type="submit" class="save-btn">儲存修改</button>
     </form>
@@ -479,7 +523,7 @@ tinymce.init({
   plugins: 'lists link table code advlist autolink charmap preview anchor searchreplace visualblocks fullscreen insertdatetime media wordcount image paste',
 
   /* ✅ 工具列加入圖片按鈕 */
-  toolbar: 'undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | fontsizeselect | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table image | removeformat | code',
+  toolbar: 'undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | fontsizeselect | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table image media | removeformat | code',
 
   fontsize_formats: '12px 14px 16px 18px 20px 24px 28px 32px 36px',
   content_style: 'body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Noto Sans TC,Microsoft JhengHei,Arial,sans-serif;line-height:1.8;} img{max-width:100%;height:auto;}',
@@ -521,6 +565,23 @@ tinymce.init({
     });
   })();
 </script>
+
+<script>
+  function addVideoUrl() {
+    const wrap = document.getElementById('video-url-wrapper');
+    const div = document.createElement('div');
+    div.className = 'option-group';
+    div.innerHTML = `
+      <input type="text" name="video_urls[]" placeholder="例： https://www.youtube.com/watch?v=xxxx 或 https://example.com/demo.mp4">
+      <button type="button" class="delete-option" onclick="removeVideoUrl(this)">✕</button>
+    `;
+    wrap.appendChild(div);
+  }
+  function removeVideoUrl(btn) {
+    btn.parentElement.remove();
+  }
+</script>
+
 
 
 </body>

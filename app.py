@@ -444,15 +444,124 @@ def admin_dashboard():
 #  後台：新增套組（顯示頁）
 #  URL: GET /admin0363/bundles/new
 # ================================
-@app.route("/admin0363/bundles/new", methods=["GET"])
+@app.route("/admin0363/bundles/new", methods=["GET", "POST"])
 def admin_new_bundle():
     if not session.get("admin_logged_in"):
         return redirect("/admin0363")
 
+    if request.method == "POST":
+        try:
+            # --- 1) 讀取表單欄位 ---
+            name = (request.form.get("name") or "").strip()
+            price = float(request.form.get("price") or 0)        # 套組現價（顯示用）
+            compare_at = request.form.get("compare_at")          # 套組原價（劃線價）
+            compare_at = float(compare_at) if compare_at else None
+            stock = int(request.form.get("stock") or 0)
+
+            required_total = int(request.form.get("required_total") or 0)  # 逐步挑選件數
+            categories = request.form.getlist("categories[]")
+            tags = request.form.getlist("tags[]")  # new_bundle.html 的 name="tags[]"
+            intro = (request.form.get("intro") or "").strip()
+            feature = (request.form.get("feature") or "").strip()
+            spec = (request.form.get("spec") or "").strip()
+            description = (request.form.get("description") or "").strip()  # 後台備註（bundles 專用）
+
+            # 可選商品池（僅單品 id）
+            pool_ids = request.form.getlist("pool_ids[]")
+            pool_ids = [int(x) for x in pool_ids if str(x).strip().isdigit()]
+
+            # --- 2) 封面圖（上傳到 images bucket/product_images/） ---
+            cover_url = None
+            cover_file = request.files.get("cover_image")
+            if cover_file and cover_file.filename:
+                filename = secure_filename(cover_file.filename)
+                unique_filename = f"{uuid.uuid4()}_{filename}"
+                storage_path = f"product_images/{unique_filename}"
+                with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                    cover_file.save(tmp.name)
+                    supabase.storage.from_("images").upload(storage_path, tmp.name)
+                    cover_url = supabase.storage.from_("images").get_public_url(storage_path)
+
+            # --- 3) 影片處理（上傳檔 + 連結） ---
+            # 3-1 表單貼連結
+            video_urls_from_form = [
+                (u or "").strip()
+                for u in request.form.getlist("video_urls[]")
+                if (u or "").strip()
+            ]
+
+            # 3-2 上傳檔（放到 images bucket/bundle_videos/）
+            allowed_video_ext = {"mp4", "webm", "ogv", "mov", "m4v"}
+            video_urls_from_upload = []
+            for vf in request.files.getlist("video_files"):
+                if not vf or not vf.filename:
+                    continue
+                ext = (vf.filename.rsplit(".", 1)[-1] or "").lower()
+                if ext not in allowed_video_ext:
+                    print(f"⚠️ 略過不支援的影片格式：{vf.filename}")
+                    continue
+                v_name = secure_filename(vf.filename)
+                v_unique = f"{uuid.uuid4()}_{v_name}"
+                v_path = f"bundle_videos/{v_unique}"
+                with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                    vf.save(tmp.name)
+                    supabase.storage.from_("images").upload(v_path, tmp.name)
+                    v_url = supabase.storage.from_("images").get_public_url(v_path)
+                    video_urls_from_upload.append(v_url)
+
+            videos = video_urls_from_upload + video_urls_from_form  # 合併
+
+            # --- 4) 先建立 products（殼商品，product_type='bundle'） ---
+            product_data = {
+                "name": name,
+                "price": price,              # 前台顯示現價
+                "stock": stock,
+                "image": cover_url,          # 封面圖
+                "images": [],                # 套組目前沒有多圖上傳欄位，先給空陣列
+                "intro": intro,
+                "feature": feature,
+                "spec": spec,
+                "ingredient": "",            # 套組不使用，可留空
+                "options": [],               # 套組不使用此欄（由 bundles 控制）
+                "categories": categories,
+                "tags": tags,
+                "product_type": "bundle",
+                "videos": videos,            # ✅ 套組也能在商品頁相簿顯示影片
+            }
+            pres = supabase.table("products").insert(product_data).execute()
+            if hasattr(pres, "error") and pres.error:
+                return f"建立套組殼商品失敗：{pres.error['message']}", 500
+            new_product = (pres.data or [None])[0]
+            if not new_product:
+                return "建立套組殼商品失敗：未知錯誤", 500
+            product_id = new_product["id"]
+
+            # --- 5) 再建立 bundles 明細（與殼商品關聯） ---
+            # 若你的專案已建立 bundles 表，欄位建議：product_id, compare_at, required_total, pool_ids(jsonb), description(text)
+            bundle_row = {
+                "product_id": product_id,
+                "compare_at": compare_at,          # 原價（劃線價）
+                "required_total": required_total,  # 逐步挑選件數
+                "pool_ids": pool_ids,              # 可選商品池（jsonb）
+                "description": description,        # 後台備註
+            }
+            bres = supabase.table("bundles").insert(bundle_row).execute()
+            if hasattr(bres, "error") and bres.error:
+                return f"建立套組明細失敗：{bres.error['message']}", 500
+
+            # --- 6) 完成 ---
+            return redirect("/admin0363/dashboard?tab=products")
+
+        except Exception as e:
+            print("🔥 新增套組錯誤：", e)
+            traceback.print_exc()
+            return f"新增套組時發生錯誤：{str(e)}", 500
+
+    # ---- GET：渲染表單 ----
     # 只抓單品當可選池
     products = (
         supabase.table("products")
-        .select("id,name,price,product_type")
+        .select("id,name,price,product_type,options")
         .eq("product_type", "single")
         .order("name")
         .execute()
@@ -460,7 +569,7 @@ def admin_new_bundle():
         or []
     )
 
-    # 🔽 彙整全站分類/標籤供下拉選
+    # 彙整全站分類/標籤供下拉選
     vocab_rows = supabase.table("products").select("categories,tags").execute().data or []
     cat_set, tag_set = set(), set()
     for r in vocab_rows:
@@ -474,21 +583,21 @@ def admin_new_bundle():
     all_categories = sorted({*cat_set, "套組優惠"})
     all_tags = sorted(tag_set)
 
-    # ✅ 提供空的 bundle（模板會用到）
+    # 空的 bundle（模板會用到）
     empty_bundle = {
-    "name": "",
-    "price": None,
-    "compare_at": None,
-    "stock": 0,
-    "description": "",   # 後台備註（bundles.description）
-    "intro": "",         # 前台商品介紹（products.intro）
-    "feature": "",       # 前台商品特色（products.feature）
-    "spec": "",          # ✅ 新增：商品規格描述（products.spec）
-    "categories": ["套組優惠"],
-    "tags": [],
-    "required_total": 0,
-    "cover_image": None,
-}
+        "name": "",
+        "price": None,
+        "compare_at": None,
+        "stock": 0,
+        "description": "",
+        "intro": "",
+        "feature": "",
+        "spec": "",
+        "categories": ["套組優惠"],
+        "tags": [],
+        "required_total": 0,
+        "cover_image": None,
+    }
 
     return render_template(
         "new_bundle.html",
@@ -497,7 +606,6 @@ def admin_new_bundle():
         all_tags=all_tags,
         bundle=empty_bundle,
     )
-
 
 
 # ================================
@@ -513,19 +621,16 @@ def admin_create_bundle():
     name    = (form.get("name") or "").strip()
     intro   = (form.get("intro") or "").strip()     # 🔸商品介紹（RTE）
     feature = (form.get("feature") or "").strip()   # 🔸商品特色（RTE）
-    spec = (form.get("spec") or "").strip()   # ✅ 商品規格描述（RTE）
-
+    spec    = (form.get("spec") or "").strip()      # 🔸商品規格描述（RTE）
 
     # 數值容錯
     def _to_float(v, default=None):
         try:
             s = (v or "").strip().replace(",", "")
-            if s == "":
-                return default
+            if s == "": return default
             return float(s)
         except Exception:
             return default
-
     def _to_int(v, default=0):
         try:
             return int((v or "0").strip())
@@ -538,9 +643,8 @@ def admin_create_bundle():
     description    = (form.get("description") or "").strip()  # 後台備註（只進 bundles）
     required_total = _to_int(form.get("required_total"), 0)
 
-    # 共用可選池
+    # 共用可選池 / 動態 slots
     pool_ids    = [pid for pid in request.form.getlist("pool_ids[]") if pid]
-    # 動態 slots
     slot_labels = request.form.getlist("slot_label[]")
     slot_counts = request.form.getlist("slot_required[]")
 
@@ -553,8 +657,7 @@ def admin_create_bundle():
     new_tags = [s.strip() for s in (form.get("new_tags") or "").split(",") if s.strip()]
     final_tags = list(dict.fromkeys(sel_tags + new_tags))
 
-    # 封面圖
-    import os  # 若檔案頂部已有就略過
+    # 封面圖（上傳至 images bucket 的 bundle_images/）
     cover_image_url = None
     cover_image_file = request.files.get("cover_image")
     if cover_image_file and cover_image_file.filename:
@@ -563,8 +666,7 @@ def admin_create_bundle():
         storage_path = f"bundle_images/{unique_filename}"
         tmp_path = None
         with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            cover_image_file.save(tmp.name)
-            tmp_path = tmp.name
+            cover_image_file.save(tmp.name); tmp_path = tmp.name
         try:
             supabase.storage.from_("images").upload(storage_path, tmp_path)
             cover_image_url = supabase.storage.from_("images").get_public_url(storage_path)
@@ -572,13 +674,45 @@ def admin_create_bundle():
             print("❗️套組封面上傳錯誤：", e)
         finally:
             if tmp_path:
-                try:
-                    os.unlink(tmp_path)
-                except:
-                    pass
+                try: os.unlink(tmp_path)
+                except: pass
 
+    # ✅ 新增哪一段：影片處理（表單連結 + 上傳檔）
+    # 表單貼的影片連結
+    video_urls_from_form = [
+        (u or "").strip()
+        for u in request.form.getlist("video_urls[]")
+        if (u or "").strip()
+    ]
+    # 上傳的影片檔（放到 images bucket 的 bundle_videos/）
+    allowed_video_ext = {"mp4", "webm", "ogv", "mov", "m4v"}
+    video_urls_from_upload = []
+    for vf in request.files.getlist("video_files"):
+        if not vf or not vf.filename: continue
+        ext = (vf.filename.rsplit(".", 1)[-1] or "").lower()
+        if ext not in allowed_video_ext:
+            print(f"⚠️ 略過不支援的影片格式：{vf.filename}")
+            continue
+        v_name = secure_filename(vf.filename)
+        v_unique = f"{uuid.uuid4()}_{v_name}"
+        v_path = f"bundle_videos/{v_unique}"
+        tmp_path = None
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            vf.save(tmp.name); tmp_path = tmp.name
+        try:
+            supabase.storage.from_("images").upload(v_path, tmp_path)
+            v_url = supabase.storage.from_("images").get_public_url(v_path)
+            video_urls_from_upload.append(v_url)
+        except Exception as e:
+            print("❗️影片上傳錯誤：", e)
+        finally:
+            if tmp_path:
+                try: os.unlink(tmp_path)
+                except: pass
 
-    # 1) 建立 bundles 主檔
+    videos = video_urls_from_upload + video_urls_from_form  # ← 合併
+
+    # 1) 建立 bundles 主檔（🔸這裡「取代」你原本 insert 的 dict，加入 videos）
     inserted = (
         supabase.table("bundles")
         .insert({
@@ -587,18 +721,19 @@ def admin_create_bundle():
             "compare_at": compare_at,
             "stock": stock,
             "cover_image": cover_image_url,
-            "description": description,   # ✅ 只放 bundles
+            "description": description,   # 只放 bundles
             "active": True,
             "required_total": required_total,
             "categories": final_categories,
             "tags": final_tags,
+            "videos": videos,             # ✅ 新增：套組影片
         })
         .execute()
         .data
     )
     bundle_id = inserted[0]["id"]
 
-    # 2) slots + slot 限定清單
+    # 2) slots + slot_pool（維持原本）
     for idx, label in enumerate(slot_labels):
         cnt = _to_int(slot_counts[idx] if idx < len(slot_counts) else 1, 1)
         ins = (
@@ -625,7 +760,7 @@ def admin_create_bundle():
             except Exception as e:
                 print("❗️寫入 bundle_slot_pool 失敗：", idx, pid, e)
 
-    # 3) 共用可選池
+    # 3) 共用可選池（維持原本）
     for pid in pool_ids:
         try:
             supabase.table("bundle_pool").insert({
@@ -635,7 +770,7 @@ def admin_create_bundle():
         except Exception as e:
             print("❗️寫入 bundle_pool 失敗：", pid, e)
 
-    # 4) 建立殼商品（🔴 intro/feature 來自表單，非 description）
+    # 4) 建立殼商品（🔴 intro/feature/spec 來自表單；✅ 同步寫入 products.videos）
     try:
         shell_insert = (
             supabase.table("products")
@@ -644,16 +779,17 @@ def admin_create_bundle():
                 "price": price,
                 "discount_price": None,
                 "stock": stock,
-                "image": (cover_image_url or DEFAULT_SHELL_IMAGE),   # ✅ 確保非空
+                "image": (cover_image_url or DEFAULT_SHELL_IMAGE),
                 "images": [],
-                "intro": intro,        # ✅ 正確
-                "feature": feature,    # ✅ 正確
+                "intro": intro,
+                "feature": feature,
                 "spec": spec,
                 "ingredient": "",
                 "options": [],
                 "categories": final_categories,
                 "tags": final_tags,
-                "product_type": "bundle"
+                "product_type": "bundle",
+                "videos": videos,  # ✅ 殼商品也存影片，商品頁相簿可直接顯示
             })
             .execute()
         )
@@ -661,12 +797,12 @@ def admin_create_bundle():
         supabase.table("bundles").update({
             "shell_product_id": shell_product_id
         }).eq("id", bundle_id).execute()
-
     except Exception as e:
         print("❗️建立套組殼品項或回寫失敗：", e)
 
     flash("已建立新的套組", "success")
     return redirect("/admin0363/dashboard?tab=products")
+
 
 
 # ================================
@@ -802,34 +938,27 @@ def admin_update_bundle(bundle_id):
         return redirect("/admin0363")
 
     form = request.form
-
     def _to_float(v, default=None):
         try:
             s = (v or "").strip().replace(",", "")
-            if s == "":
-                return default
+            if s == "": return default
             return float(s)
-        except Exception:
-            return default
-
+        except Exception: return default
     def _to_int(v, default=0):
-        try:
-            return int((v or "0").strip())
-        except Exception:
-            return default
+        try: return int((v or "0").strip())
+        except Exception: return default
 
     name           = (form.get("name") or "").strip()
     price          = _to_float(form.get("price"), 0.0)
     compare_at     = _to_float(form.get("compare_at"), None)
     stock          = _to_int(form.get("stock"), 0)
-    description    = (form.get("description") or "").strip()   # 後台備註
+    description    = (form.get("description") or "").strip()
     required_total = _to_int(form.get("required_total"), 0)
-    intro          = (form.get("intro") or "").strip()         # 🔸商品介紹
-    feature        = (form.get("feature") or "").strip()       # 🔸商品特色
-    spec = (form.get("spec") or "").strip()   # ✅ 商品規格描述
+    intro          = (form.get("intro") or "").strip()
+    feature        = (form.get("feature") or "").strip()
+    spec           = (form.get("spec") or "").strip()
 
-
-    # 共用可選池 / 動態 slots / 分類標籤（略，保留你原本的）
+    # 共用可選池 / 動態 slots / 分類標籤（維持你原本）
     pool_ids    = [pid for pid in request.form.getlist("pool_ids[]") if pid]
     slot_labels = request.form.getlist("slot_label[]")
     slot_counts = request.form.getlist("slot_required[]")
@@ -841,7 +970,6 @@ def admin_update_bundle(bundle_id):
     final_tags = list(dict.fromkeys(sel_tags + new_tags))
 
     # 封面圖
-    import os  # 若檔案頂部已有就略過
     cover_image_url = None
     cover_image_file = request.files.get("cover_image")
     if cover_image_file and cover_image_file.filename:
@@ -850,8 +978,7 @@ def admin_update_bundle(bundle_id):
         storage_path = f"bundle_images/{unique_filename}"
         tmp_path = None
         with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            cover_image_file.save(tmp.name)
-            tmp_path = tmp.name
+            cover_image_file.save(tmp.name); tmp_path = tmp.name
         try:
             supabase.storage.from_("images").upload(storage_path, tmp_path)
             cover_image_url = supabase.storage.from_("images").get_public_url(storage_path)
@@ -859,12 +986,44 @@ def admin_update_bundle(bundle_id):
             print("❗️套組封面上傳錯誤：", e)
         finally:
             if tmp_path:
-                try:
-                    os.unlink(tmp_path)
-                except:
-                    pass
+                try: os.unlink(tmp_path)
+                except: pass
 
-    # 1) 更新 bundles 主檔
+    # ✅ 新增哪一段：影片處理（保留舊 + 新增連結 + 新上傳）
+    kept_videos = request.form.getlist("existing_videos[]")  # 由編輯頁現有清單（hidden）帶回
+    video_urls_from_form = [
+        (u or "").strip()
+        for u in request.form.getlist("video_urls[]")
+        if (u or "").strip()
+    ]
+    allowed_video_ext = {"mp4", "webm", "ogv", "mov", "m4v"}
+    video_urls_from_upload = []
+    for vf in request.files.getlist("video_files"):
+        if not vf or not vf.filename: continue
+        ext = (vf.filename.rsplit(".", 1)[-1] or "").lower()
+        if ext not in allowed_video_ext:
+            print(f"⚠️ 略過不支援的影片格式：{vf.filename}")
+            continue
+        v_name = secure_filename(vf.filename)
+        v_unique = f"{uuid.uuid4()}_{v_name}"
+        v_path = f"bundle_videos/{v_unique}"
+        tmp_path = None
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            vf.save(tmp.name); tmp_path = tmp.name
+        try:
+            supabase.storage.from_("images").upload(v_path, tmp_path)
+            v_url = supabase.storage.from_("images").get_public_url(v_path)
+            video_urls_from_upload.append(v_url)
+        except Exception as e:
+            print("❗️影片上傳錯誤：", e)
+        finally:
+            if tmp_path:
+                try: os.unlink(tmp_path)
+                except: pass
+
+    videos = kept_videos + video_urls_from_form + video_urls_from_upload
+
+    # 1) 更新 bundles 主檔（🔸這裡「取代」你原本 update 的 dict，加入 videos）
     update_data = {
         "name": name,
         "price": price,
@@ -874,12 +1033,13 @@ def admin_update_bundle(bundle_id):
         "required_total": required_total,
         "categories": final_categories,
         "tags": final_tags,
+        "videos": videos,  # ✅
     }
     if cover_image_url:
         update_data["cover_image"] = cover_image_url
     supabase.table("bundles").update(update_data).eq("id", bundle_id).execute()
 
-    # 2) 重建 slots / slot_pool（略，保留你原本的）
+    # 2) 重建 slots / slot_pool（維持你原本）
     supabase.table("bundle_slots").delete().eq("bundle_id", bundle_id).execute()
     supabase.table("bundle_slot_pool").delete().eq("bundle_id", bundle_id).execute()
     for idx, label in enumerate(slot_labels):
@@ -902,7 +1062,7 @@ def admin_update_bundle(bundle_id):
             except Exception as e:
                 print("❗️寫入 bundle_slot_pool 失敗：", idx, pid, e)
 
-    # 3) 共用可選池
+    # 3) 共用可選池（維持你原本）
     supabase.table("bundle_pool").delete().eq("bundle_id", bundle_id).execute()
     for pid in pool_ids:
         try:
@@ -913,21 +1073,18 @@ def admin_update_bundle(bundle_id):
         except Exception as e:
             print("❗️寫入 bundle_pool 失敗：", pid, e)
 
-    # 4) 同步殼商品（intro/feature 也要同步）
+    # 4) 同步殼商品（intro/feature/spec/封面 & 影片）
     bres = (
-    supabase.table("bundles")
-    .select("shell_product_id, cover_image")
-    .eq("id", bundle_id)
-    .limit(1)
-    .execute()
+        supabase.table("bundles")
+        .select("shell_product_id, cover_image")
+        .eq("id", bundle_id).limit(1).execute()
     )
     bundle_row = (bres.data or [None])[0] or {}
-
     shell_id = bundle_row.get("shell_product_id")
     current_cover = cover_image_url or bundle_row.get("cover_image") or DEFAULT_SHELL_IMAGE
 
     if not shell_id:
-        # 補建殼商品
+        # 沒殼就補建
         try:
             shell_insert = (
                 supabase.table("products")
@@ -936,36 +1093,36 @@ def admin_update_bundle(bundle_id):
                     "price": price,
                     "discount_price": None,
                     "stock": stock,
-                    "image": (current_cover or DEFAULT_SHELL_IMAGE),   # ✅ 確保非空
+                    "image": (current_cover or DEFAULT_SHELL_IMAGE),
                     "images": [],
-                    "intro": intro,        # ✅
-                    "feature": feature,    # ✅
+                    "intro": intro,
+                    "feature": feature,
                     "spec": spec,
                     "ingredient": "",
                     "options": [],
                     "categories": final_categories,
                     "tags": final_tags,
-                    "product_type": "bundle"
+                    "product_type": "bundle",
+                    "videos": videos,  # ✅ 一併帶入
                 })
                 .execute()
             )
             shell_id = shell_insert.data[0]["id"]
-            supabase.table("bundles").update({
-                "shell_product_id": shell_id
-            }).eq("id", bundle_id).execute()
+            supabase.table("bundles").update({"shell_product_id": shell_id}).eq("id", bundle_id).execute()
         except Exception as e:
             print("❗️建立套組殼品項失敗：", e)
     else:
-        # 更新殼商品
+        # 更新既有殼商品
         shell_update = {
             "name": f"[套組優惠] {name}",
             "price": price,
             "stock": stock,
-            "intro": intro,        # ✅
-            "feature": feature,    # ✅
+            "intro": intro,
+            "feature": feature,
             "spec": spec,
             "categories": final_categories,
             "tags": final_tags,
+            "videos": videos,  # ✅ 同步影片
         }
         if current_cover:
             shell_update["image"] = current_cover
@@ -976,6 +1133,7 @@ def admin_update_bundle(bundle_id):
 
     flash("套組已更新", "success")
     return redirect("/admin0363/dashboard?tab=products")
+
 
 
 
@@ -2144,7 +2302,7 @@ def add_product():
         price_str = request.form.get('price', '0').strip()
         price = float(price_str) if price_str else 0.0
 
-        # ✅ 新增：處理優惠價欄位
+        # ✅ 優惠價
         discount_price_str = request.form.get("discount_price", "").strip()
         discount_price = float(discount_price_str) if discount_price_str else None
 
@@ -2155,8 +2313,15 @@ def add_product():
         spec = request.form.get('spec', '').strip()
         ingredient = request.form.get('ingredient', '').strip()
         categories = request.form.getlist('categories[]')
-        tags = request.form.getlist('tags')  # ✅ 取得多選標籤
+        tags = request.form.getlist('tags')  # ✅ 多選標籤
         options = request.form.getlist('options[]')
+
+        # ✅ 影片連結（表單貼的）
+        video_urls_from_form = [
+            (u or '').strip()
+            for u in request.form.getlist('video_urls[]')
+            if (u or '').strip()
+        ]
 
         # ✅ 上傳首頁主圖（單張）
         cover_image_file = request.files.get("cover_image")
@@ -2190,17 +2355,48 @@ def add_product():
                     except Exception as e:
                         print("❗️圖片上傳錯誤：", e)
 
+        # ❗️沒有主圖直接擋下（維持你原本邏輯）
         if not cover_url:
             return "請上傳商品首頁主圖", 400
 
-        # ✅ 建立商品資料（含優惠價）
+        # ✅ 上傳影片檔（多支）
+        #    - 和圖片共用同一個 bucket：images
+        #    - 存到 product_videos/ 目錄
+        allowed_video_ext = {'mp4', 'webm', 'ogv', 'mov', 'm4v'}
+        video_files = request.files.getlist("video_files")
+        video_urls_from_upload = []
+        for vf in video_files:
+            if not vf or not vf.filename:
+                continue
+            ext = (vf.filename.rsplit('.', 1)[-1] or '').lower()
+            if ext not in allowed_video_ext:
+                print(f"⚠️ 略過不支援的影片格式：{vf.filename}")
+                continue
+
+            v_name = secure_filename(vf.filename)
+            v_unique = f"{uuid.uuid4()}_{v_name}"
+            v_path = f"product_videos/{v_unique}"
+            with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                vf.save(tmp.name)
+                try:
+                    supabase.storage.from_("images").upload(v_path, tmp.name)
+                    v_url = supabase.storage.from_("images").get_public_url(v_path)
+                    video_urls_from_upload.append(v_url)
+                except Exception as e:
+                    print("❗️影片上傳錯誤：", e)
+
+        # ✅ 合併影片清單（上傳檔＋表單連結）
+        videos = video_urls_from_upload + video_urls_from_form
+
+        # ✅ 建立商品資料（含優惠價 & 影片）
         data = {
             "name": name,
             "price": price,
-            "discount_price": discount_price,  # ✅ 新增欄位
+            "discount_price": discount_price,
             "stock": stock,
-            "image": cover_url,
-            "images": image_urls,
+            "image": cover_url,      # 首頁主圖
+            "images": image_urls,    # 圖片清單
+            "videos": videos,        # ✅ 新增：影片清單（list[str]）
             "intro": intro,
             "feature": feature,
             "spec": spec,
@@ -2212,6 +2408,7 @@ def add_product():
 
         response = supabase.table("products").insert(data).execute()
 
+        # 依你原本的錯誤處理邏輯
         if hasattr(response, 'error') and response.error:
             return f"資料寫入失敗：{response.error['message']}", 500
 
@@ -2223,28 +2420,27 @@ def add_product():
         return f"新增商品時發生錯誤：{str(e)}", 500
 
 
-
-
 #修改商品
 @app.route('/edit/<product_id>', methods=['GET', 'POST'])
 def edit_product(product_id):
     if request.method == 'POST':
         try:
+            # === 基本欄位 ===
             updated = {
-                "name": request.form.get('name', '').strip(),
-                "price": float(request.form.get('price', '0').strip()),
+                "name": (request.form.get('name') or '').strip(),
+                "price": float((request.form.get('price') or '0').strip()),
                 "discount_price": float(request.form.get('discount_price').strip()) if request.form.get('discount_price') else None,
-                "stock": int(request.form.get('stock', '0').strip() or 0),
-                "intro": request.form.get('intro', '').strip(),
-                "feature": request.form.get('feature', '').strip(),
-                "spec": request.form.get('spec', '').strip(),
-                "ingredient": request.form.get('ingredient', '').strip(),
+                "stock": int((request.form.get('stock') or '0').strip() or 0),
+                "intro": (request.form.get('intro') or '').strip(),
+                "feature": (request.form.get('feature') or '').strip(),
+                "spec": (request.form.get('spec') or '').strip(),
+                "ingredient": (request.form.get('ingredient') or '').strip(),
                 "options": request.form.getlist('options[]'),
                 "categories": request.form.getlist('categories[]'),
-                "tags": request.form.getlist('tags')
+                "tags": request.form.getlist('tags'),
             }
 
-            # ✅ 主圖處理
+            # === 主圖處理（單張） ===
             cover_file = request.files.get("cover_image_file")
             if cover_file and cover_file.filename:
                 filename = secure_filename(cover_file.filename)
@@ -2259,13 +2455,14 @@ def edit_product(product_id):
                     except Exception as e:
                         print("❗️主圖上傳錯誤：", e)
             else:
+                # 沒重新上傳就沿用舊值（hidden）
                 existing_cover = request.form.get("existing_cover_image")
                 if existing_cover:
                     updated["image"] = existing_cover
 
-            # ✅ 其餘圖片處理
-            kept_images = request.form.getlist("existing_images[]")
-            image_files = request.files.getlist("image_files")
+            # === 其他圖片（多張） ===
+            kept_images = request.form.getlist("existing_images[]")  # 使用者未刪除的舊圖
+            image_files = request.files.getlist("image_files")       # 新增上傳
             image_urls = []
             for file in image_files:
                 if file and file.filename:
@@ -2285,18 +2482,60 @@ def edit_product(product_id):
             if 'image' not in updated and updated['images']:
                 updated['image'] = updated['images'][0]
 
+            # === 影片處理（新增） ===
+            # 1) 保留的舊影片（hidden）
+            kept_videos = request.form.getlist("existing_videos[]")
+
+            # 2) 新貼連結
+            video_urls_from_form = [
+                (u or '').strip()
+                for u in request.form.getlist('video_urls[]')
+                if (u or '').strip()
+            ]
+
+            # 3) 新上傳檔案（傳到同一個 images bucket 的 product_videos/）
+            allowed_video_ext = {'mp4', 'webm', 'ogv', 'mov', 'm4v'}
+            video_files = request.files.getlist("video_files")
+            video_urls_from_upload = []
+            for vf in video_files:
+                if not vf or not vf.filename:
+                    continue
+                ext = (vf.filename.rsplit('.', 1)[-1] or '').lower()
+                if ext not in allowed_video_ext:
+                    print(f"⚠️ 略過不支援的影片格式：{vf.filename}")
+                    continue
+                v_name = secure_filename(vf.filename)
+                v_unique = f"{uuid.uuid4()}_{v_name}"
+                v_path = f"product_videos/{v_unique}"
+                with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                    vf.save(tmp.name)
+                    try:
+                        supabase.storage.from_("images").upload(v_path, tmp.name)
+                        v_url = supabase.storage.from_("images").get_public_url(v_path)
+                        video_urls_from_upload.append(v_url)
+                    except Exception as e:
+                        print("❗️影片上傳錯誤：", e)
+
+            # 合併成最終 videos
+            updated['videos'] = kept_videos + video_urls_from_form + video_urls_from_upload
+
+            # === 寫回資料庫 ===
             supabase.table("products").update(updated).eq("id", product_id).execute()
             return redirect('/admin0363/dashboard?tab=products')
 
         except Exception as e:
+            print("🔥 編輯商品錯誤：", e)
+            traceback.print_exc()
             return f"編輯商品時發生錯誤：{str(e)}", 500
 
     else:
+        # GET：載入編輯頁
         res = supabase.table("products").select("*").eq("id", product_id).single().execute()
         product = res.data
         if not product:
             return "找不到商品", 404
         return render_template("edit_product.html", product=product)
+
 
 
 

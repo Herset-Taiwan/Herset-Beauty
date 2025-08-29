@@ -81,6 +81,47 @@ body.product-page .tab-btn.active {
       flex: 1;
     }
 
+
+/* 主視圖媒體共用樣式 */
+.gallery-main .media-item{
+  display: none;
+  width: 100%;
+  border-radius: 10px;
+}
+.gallery-main .media-item.active{ display: block; }
+
+/* 影片 iframe 包裝，維持 16:9 */
+.media-iframe-wrap{
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.media-iframe-wrap iframe{
+  position: absolute; left:0; top:0; width:100%; height:100%;
+}
+
+/* 影片縮圖外觀 */
+.gallery-thumbs .thumb-video{
+  width: 60px; height: 60px;
+  display:flex; align-items:center; justify-content:center;
+  border: 2px solid #ccc;
+  background:#f7f1ee;
+  cursor:pointer; border-radius:5px;
+  font-weight: 700;
+}
+
+/* 與既有的 .thumbnail.selected 同調 */
+.gallery-thumbs .thumbnail.selected,
+.gallery-thumbs .thumb-video.selected{
+  border: 2px solid #C7A7A3;
+  border-radius: 6px;
+  box-shadow: 0 0 0 3px #f5eae7;
+}
+
+
+
     .info h2 { margin-top: 0; }
  /* 商品頁縮圖樣式 */
 .thumbnail.selected {
@@ -529,29 +570,72 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
 <div class="product-container">
   <!-- 左側圖片區塊 -->
   <div class="gallery">
-    <div class="gallery-main" style="position: relative;">
-      <div class="label-group">
-        {% for tag in product['tags'] %}
-          <div class="label-badge
-                      {% if tag == '新品優惠' %}badge-sale{% endif %}
-                      {% if tag == '主打商品' %}badge-hot{% endif %}
-                      {% if tag == '限量販售' %}badge-limited{% endif %}
-                      {% if tag == '熱銷推薦' %}badge-recommend{% endif %}
-                      {% if tag == '天然成分' %}badge-natural{% endif %}">
-            {{ tag }}
-          </div>
-        {% endfor %}
-      </div>
-      <img id="main-img" src="{{ product['image'] }}" alt="product">
+  {% set gallery = [] %}
+  {% if product['image'] %}
+    {% set _ = gallery.append({"type":"image","src": product['image']}) %}
+  {% endif %}
+  {% for img in product['images'] %}
+    {% set _ = gallery.append({"type":"image","src": img}) %}
+  {% endfor %}
+  {% for v in (product.get('videos') or []) %}
+    {% set _ = gallery.append({"type":"video","src": v}) %}
+  {% endfor %}
+
+  <div class="gallery-main" style="position: relative;">
+    <div class="label-group">
+      {% for tag in product['tags'] %}
+        <div class="label-badge
+                    {% if tag == '新品優惠' %}badge-sale{% endif %}
+                    {% if tag == '主打商品' %}badge-hot{% endif %}
+                    {% if tag == '限量販售' %}badge-limited{% endif %}
+                    {% if tag == '熱銷推薦' %}badge-recommend{% endif %}
+                    {% if tag == '天然成分' %}badge-natural{% endif %}">
+          {{ tag }}
+        </div>
+      {% endfor %}
     </div>
 
-    <div class="gallery-thumbs" id="thumbs">
-  <img src="{{ product['image'] }}" class="thumbnail">
-  {% for img in product['images'] %}
-    <img src="{{ img }}" class="thumbnail">
-  {% endfor %}
-</div>
+    {% if gallery|length == 0 %}
+      <img class="media-item active" src="{{ url_for('static', filename='noimage.png') }}" alt="{{ product['name'] }}">
+    {% else %}
+      {% for m in gallery %}
+        {% set is_yt = ('youtube.com' in m.src) or ('youtu.be' in m.src) %}
+        {% if m.type == 'image' %}
+          <img class="media-item {% if loop.first %}active{% endif %}" src="{{ m.src }}" alt="{{ product['name'] }}">
+        {% elif is_yt %}
+          {# 轉成可嵌入格式 #}
+          {% set yt_id = m.src.split('v=')[-1].split('&')[0] if 'v=' in m.src else m.src.split('/')[-1] %}
+          <div class="media-item {% if loop.first %}active{% endif %} media-iframe-wrap">
+            <iframe src="https://www.youtube.com/embed/{{ yt_id }}" frameborder="0" allowfullscreen loading="lazy"></iframe>
+          </div>
+        {% else %}
+          <video class="media-item {% if loop.first %}active{% endif %}" controls preload="metadata">
+            <source src="{{ m.src }}">
+            您的瀏覽器不支援影片播放
+          </video>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
   </div>
+
+  <div class="gallery-thumbs" id="thumbs">
+    {% for m in gallery %}
+      {% set is_yt = ('youtube.com' in m.src) or ('youtu.be' in m.src) %}
+      {% if m.type == 'image' %}
+        <img data-index="{{ loop.index0 }}" src="{{ m.src }}" class="thumbnail {% if loop.first %}selected{% endif %}">
+      {% elif is_yt %}
+        <div data-index="{{ loop.index0 }}" class="thumb-video thumbnail {% if loop.first %}selected{% endif %}" title="影片">
+          ▶
+        </div>
+      {% else %}
+        <div data-index="{{ loop.index0 }}" class="thumb-video thumbnail {% if loop.first %}selected{% endif %}" title="影片">
+          ▶
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>
+
 
   <!-- 右側商品資訊區塊 -->
   <div class="info">
@@ -786,25 +870,46 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
   }
 });
 
-// 替換主圖並加上 .selected 樣式
+// 新版：縮圖切換（支援圖片 / 影片），切離時自動暫停 video/iframe
 document.addEventListener('DOMContentLoaded', () => {
-  const mainImg = document.getElementById('main-img');
-  const thumbs = document.querySelectorAll('.gallery-thumbs .thumbnail');
+  const items = Array.from(document.querySelectorAll('.gallery-main .media-item'));
+  const thumbs = Array.from(document.querySelectorAll('#thumbs .thumbnail, #thumbs .thumb-video'));
 
-  thumbs.forEach(thumb => {
-    thumb.addEventListener('click', () => {
-      mainImg.src = thumb.src;
+  function pauseMedia(el){
+    if(!el) return;
+    if(el.tagName && el.tagName.toLowerCase() === 'video'){
+      try{ el.pause(); }catch(e){}
+    }
+    // iframe（YouTube）直接重載 src 以達到暫停
+    if(el.classList && el.classList.contains('media-iframe-wrap')){
+      const iframe = el.querySelector('iframe');
+      if(iframe){
+        const src = iframe.getAttribute('src');
+        iframe.setAttribute('src', src); // 重新掛載
+      }
+    }
+  }
 
-      thumbs.forEach(t => t.classList.remove('selected'));
-      thumb.classList.add('selected');
+  function showIndex(idx){
+    items.forEach((el, i) => {
+      if(i === idx){
+        el.classList.add('active');
+      }else{
+        if(el.classList.contains('active')) pauseMedia(el);
+        el.classList.remove('active');
+      }
     });
+    thumbs.forEach((t, i) => t.classList.toggle('selected', i === idx));
+  }
+
+  thumbs.forEach((thumb, i) => {
+    thumb.addEventListener('click', () => showIndex(i));
   });
 
-  // 預設第一張選中
-  if (thumbs.length > 0) {
-    thumbs[0].classList.add('selected');
-  }
+  // 預設顯示第一個
+  if(items.length) showIndex(0);
 });
+
 
 // 單品模式：點規格
 function bindSingleOptions(){

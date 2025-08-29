@@ -102,6 +102,22 @@
   <label>套組封面圖（首頁展示）</label>
   <input type="file" name="cover_image" accept="image/*">
 
+  <!-- ✅ 套組影片（可多支） -->
+<label>套組影片（可多支）</label>
+<input type="file" name="video_files" multiple accept="video/*">
+<div class="note">建議 mp4/webm；影片較大可改貼 YouTube 連結</div>
+
+<!-- ✅ 影片連結（YouTube 或 MP4 直連） -->
+<label>影片連結</label>
+<div id="video-url-wrapper">
+  <div class="option-group">
+    <input type="text" name="video_urls[]" placeholder="例： https://youtu.be/xxxx 或 https://example.com/demo.mp4">
+    <button type="button" class="delete-option" onclick="removeVideoUrl(this)">✕</button>
+  </div>
+</div>
+<button type="button" class="add-option-btn" onclick="addVideoUrl()">＋ 新增一個影片連結</button>
+
+
   <!-- 商品介紹 / 特色 / 規格（RTE） -->
   <label>商品介紹</label>
   <textarea name="intro" class="rich" rows="12">{{ bundle.get('intro','')|safe }}</textarea>
@@ -158,7 +174,8 @@
     plugins: 'lists link table code advlist autolink charmap preview anchor searchreplace visualblocks fullscreen insertdatetime media wordcount image paste textcolor',
 
     /* ✅ 關鍵：把 forecolor/backcolor 加到工具列（或會出現在三點選單） */
-    toolbar: 'undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table image | removeformat | code',
+    toolbar: 'undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table image media | removeformat | code',
+
 
     toolbar_mode: 'sliding',
     fontsize_formats: '12px 14px 16px 18px 20px 24px 28px 32px 36px',
@@ -197,5 +214,23 @@
     });
   }
 </script>
+
+<script>
+  function addVideoUrl() {
+    const wrap = document.getElementById('video-url-wrapper');
+    const div = document.createElement('div');
+    div.className = 'option-group';
+    div.innerHTML = `
+      <input type="text" name="video_urls[]" placeholder="例： https://youtu.be/xxxx 或 https://example.com/demo.mp4">
+      <button type="button" class="delete-option" onclick="removeVideoUrl(this)">✕</button>
+    `;
+    wrap.appendChild(div);
+  }
+  function removeVideoUrl(btn) {
+    btn.parentElement.remove();
+  }
+</script>
+
+
 </body>
 </html>

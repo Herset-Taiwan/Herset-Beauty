@@ -39,6 +39,9 @@ input[type="text"], input[type="number"], textarea, select{
     .btn { background:#5E3C2C; color:#fff; border:none; border-radius:8px; padding:12px 16px; cursor:pointer; }
     .btn:disabled{ opacity:.6; cursor:not-allowed; }
     hr{ border:none; border-top:1px solid #eee; margin:20px 0; }
+
+    .image-box video { width:100px; height:100px; object-fit:cover; border:1px solid #ddd; border-radius:6px; }
+
   </style>
 </head>
 <body>
@@ -116,6 +119,22 @@ input[type="text"], input[type="number"], textarea, select{
     <div class="note">目前封面：<a href="{{ bundle['cover_image'] }}" target="_blank">查看</a></div>
   {% endif %}
 
+<!-- ✅ 套組影片（可上傳多支） -->
+<label>套組影片（可多支）</label>
+<input type="file" name="video_files" multiple accept="video/*">
+<div class="note">建議 mp4 / webm；較大可改貼 YouTube 連結</div>
+
+<!-- ✅ 影片連結（YouTube 或 MP4 直連） -->
+<label>影片連結</label>
+<div id="video-url-wrapper">
+  <div class="option-group">
+    <input type="text" name="video_urls[]" placeholder="例： https://youtu.be/xxxx 或 https://example.com/demo.mp4">
+    <button type="button" class="delete-option" onclick="removeVideoUrl(this)">✕</button>
+  </div>
+</div>
+<button type="button" class="add-option-btn" onclick="addVideoUrl()">＋ 新增一個影片連結</button>
+
+
 <!-- ✅ 商品介紹（前台顯示） -->
 <label>商品介紹</label>
 <textarea name="intro" class="rich" rows="12">{{ bundle.get('intro','')|safe }}</textarea>
@@ -133,6 +152,32 @@ input[type="text"], input[type="number"], textarea, select{
   <textarea name="description" rows="3">{{ bundle['description'] or '' }}</textarea>
 
   <hr>
+
+{% if bundle.get('videos') %}
+  <label>現有影片：</label>
+  <div class="image-preview" id="video-preview">
+    {% for v in bundle['videos'] %}
+      <div class="image-box">
+        {% set is_yt = ('youtube.com' in v) or ('youtu.be' in v) %}
+        {% if is_yt %}
+          {% set yt_id = v.split('v=')[-1].split('&')[0] if 'v=' in v else v.split('/')[-1] %}
+          <div style="width:100px;height:100px;position:relative;border:1px solid #ddd;border-radius:6px;overflow:hidden;background:#000;">
+            <iframe src="https://www.youtube.com/embed/{{ yt_id }}" frameborder="0" allowfullscreen
+                    style="position:absolute;inset:0;width:100%;height:100%"></iframe>
+          </div>
+        {% else %}
+          <video width="100" height="100" style="object-fit:cover;border-radius:6px;border:1px solid #ddd;" controls preload="metadata">
+            <source src="{{ v }}">
+          </video>
+        {% endif %}
+        <!-- 保留的舊影片用 hidden 帶回後端；按✖刪除即移除 -->
+        <input type="hidden" name="existing_videos[]" value="{{ v }}">
+        <button type="button" class="delete-img-btn" onclick="this.parentNode.remove()">✖</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
 
   <label>可選商品池（可多選，僅顯示單品）</label>
   <select id="pool" name="pool_ids[]" multiple>
@@ -178,7 +223,8 @@ input[type="text"], input[type="number"], textarea, select{
     plugins: 'lists link table code advlist autolink charmap preview anchor searchreplace visualblocks fullscreen insertdatetime media wordcount image paste textcolor',
 
     /* ✅ 關鍵：把 forecolor/backcolor 加到工具列（或會出現在三點選單） */
-    toolbar: 'undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table image | removeformat | code',
+    toolbar: 'undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table image media | removeformat | code',
+
 
     toolbar_mode: 'sliding',
     fontsize_formats: '12px 14px 16px 18px 20px 24px 28px 32px 36px',
@@ -217,6 +263,23 @@ input[type="text"], input[type="number"], textarea, select{
     });
   }
 </script>
+
+<script>
+  function addVideoUrl() {
+    const wrap = document.getElementById('video-url-wrapper');
+    const div = document.createElement('div');
+    div.className = 'option-group';
+    div.innerHTML = `
+      <input type="text" name="video_urls[]" placeholder="例： https://youtu.be/xxxx 或 https://example.com/demo.mp4">
+      <button type="button" class="delete-option" onclick="removeVideoUrl(this)">✕</button>
+    `;
+    wrap.appendChild(div);
+  }
+  function removeVideoUrl(btn) {
+    btn.parentElement.remove();
+  }
+</script>
+
 
 </body>
 </html>
