@@ -279,10 +279,11 @@ footer {
 /* ===== 商品頁TOP按鈕：美化版===== */
 :root{
   --top-btn-size: 56px;
-  --top-btn-bg: rgba(25,25,25,.75);
-  --top-btn-glow: rgba(0,0,0,.25);
-  --top-btn-highlight: rgba(255,255,255,.25);
-  --brand-grad: linear-gradient(135deg, #5B3FC4 0%, #A057D6 100%);
+  --top-btn-glow: rgba(0,0,0,.18);
+  --top-btn-highlight: rgba(255,255,255,.28);
+  /* 奶茶米色 → 玫瑰裸棕的柔霧漸層 */
+  --brand-grad: linear-gradient(135deg, #EADDD6 0%, #CDAFA1 100%);
+  --top-icon: #5A4B45;      /* 深咖字色，與全站字色一致 */
 }
 
 .btn-top{
@@ -343,7 +344,7 @@ footer {
 .btn-top .icon{
   width: 26px;
   height: 26px;
-  fill: #fff;
+  fill: var(--top-icon);
   display: block;
   margin: 0 auto;
   pointer-events: none;     /* 避免吃到點擊 */
@@ -358,11 +359,10 @@ footer {
 
 /* Hover/Active 動態 */
 .btn-top:hover{
-  /* 改為更亮的漸層，不再用單色覆蓋 */
-  background: linear-gradient(135deg, #6C4AD8 0%, #C964B9 100%);
+  background: linear-gradient(135deg, #E9D6CF 0%, #B88D75 100%);
   transform: translateY(-2px) scale(1.04);
   box-shadow:
-    0 16px 30px rgba(0,0,0,.32),
+    0 16px 30px rgba(0,0,0,.24),
     inset 0 1px 0 rgba(255,255,255,.35);
 }
 .btn-top:active{
@@ -372,8 +372,8 @@ footer {
 /* 深色模式微調（可選） */
 @media (prefers-color-scheme: dark){
   :root{
-    /* 深色下把品牌漸層微微加深，但保留色相 */
-    --brand-grad: linear-gradient(135deg, #5334BD 0%, #8F3DBF 100%);
+    --brand-grad: linear-gradient(135deg, #DCCBC2 0%, #B98F80 100%);
+    --top-icon: #3C3C3C;  /* 深色模式下改更深，仍保有對比 */
   }
 }
 
