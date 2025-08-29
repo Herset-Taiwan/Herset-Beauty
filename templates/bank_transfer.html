@@ -2,37 +2,43 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>銀行轉帳資訊</title>
+  <title>轉帳付款資訊</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body { font-family: sans-serif; padding: 30px; }
-    .box { max-width: 500px; margin: auto; border: 1px solid #ccc; padding: 30px; border-radius: 8px; background: #f9f9f9; }
-    h2 { color: #b43c57; }
-    .info { margin-bottom: 15px; }
-    label { font-weight: bold; }
+    body { font-family: 'Segoe UI', sans-serif; background:#f8f5f4; color:#333; padding:50px; text-align:center; }
+    .container { background:#fff; max-width:600px; margin:auto; padding:40px; border-radius:12px;
+                 box-shadow:0 4px 12px rgba(0,0,0,.08); text-align:left; }
+    h2 { color:#b43c57; margin-top:0; text-align:center; }
+    pre { background:#f4f4f4; padding:14px; border-radius:8px; white-space:pre-wrap; }
+    .btn { display:inline-block; padding:12px 24px; background:#777; color:#fff; border-radius:8px; text-decoration:none; }
+    .note { color:#666; font-size:14px; }
   </style>
 </head>
 <body>
-  <div class="box">
-    <h2>請使用以下資訊進行銀行轉帳</h2>
-    <div class="info">
-      <label>銀行名稱：</label> 花旗銀行（代碼：021）
-    </div>
-    <div class="info">
-      <label>帳號：</label> 123456789012
-    </div>
-    <div class="info">
-      <label>戶名：</label> HERSET BEAUTY
-    </div>
-    <div class="info">
-      <label>匯款金額：</label> NT${{ order.total_amount }}
-    </div>
-    <div class="info">
-      <label>訂單編號：</label> {{ order.MerchantTradeNo }}
-    </div>
+  <div class="container">
+    <h2>轉帳付款資訊</h2>
 
-    <hr>
-    <p>請完成轉帳後，透過 LINE 或客服通知我們，並提供匯款帳號末五碼。</p>
-    <a href="/">返回首頁</a>
+    <p>訂單編號：<strong>#{{ order.id }}</strong></p>
+
+    <p>轉帳資訊：兆豐銀行（017）<br>
+    帳號：<strong>24110300764</strong></p>
+
+    <p>匯款完成後，請利用網頁上方的「<strong>商品詢問</strong>」留言功能告知已匯款完成，並提供匯款資訊，謝謝。</p>
+
+    <h3>留言範例：</h3>
+    <pre>
+留言類型：訂單問題
+主題：已匯款
+留言內容：
+已匯款完成，帳號後5碼為：XXXXX
+訂單單號為：#{{ order.id }}
+    </pre>
+
+    <p class="note">我們收到款項並核對無誤後，會盡快為您出貨。</p>
+
+    <p style="text-align:center;margin-top:20px;">
+      <a class="btn" href="/">返回首頁</a>
+    </p>
   </div>
 </body>
 </html>
