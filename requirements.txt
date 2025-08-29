@@ -7,3 +7,12 @@ python-dotenv
 pytz
 python-dateutil
 Flask-Mail
+
+Flask>=2.3
+gunicorn>=21.2
+requests>=2.31
+python-dotenv>=1.0
+supabase>=2.4
+Flask-Mail>=0.9.1
+python-dateutil>=2.8.2
+pytz>=2024.1
