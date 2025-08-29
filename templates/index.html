@@ -120,7 +120,8 @@
   <p id="banner-desc">專為敏感肌設計的私密保養系列</p>
 </section>
 
-
+<!-- 回到最上方：浮動按鈕 -->
+<button id="backToTop" aria-label="回到最上面" title="回到最上面">↑</button>
 
 
 {% endblock %}
@@ -295,6 +296,32 @@ function showSpecPopup() {
 function closeSpecPopup() {
   document.getElementById("spec-popup").style.display = "none";
 }
+
+// 商品頁回到最上面：顯示/隱藏 + 平滑滾動
+(function(){
+  const btn = document.getElementById('backToTop');
+  if(!btn) return;
+
+  const toggleBtn = () => {
+    // 超過 400px 才顯示
+    if (window.scrollY > 400){
+      btn.classList.add('show');
+    } else {
+      btn.classList.remove('show');
+    }
+  };
+
+  // 初始判斷 + 監聽滾動
+  toggleBtn();
+  window.addEventListener('scroll', toggleBtn, { passive: true });
+
+  // 點擊回到頂端（平滑）
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+})();
+
 
 </script>
 {% endblock %}
