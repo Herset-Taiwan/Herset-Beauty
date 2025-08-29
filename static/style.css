@@ -287,8 +287,8 @@ footer {
 
 .btn-top{
   position: fixed;
-  /* 用 inset 取代 margin/right/bottom，避免在某些瀏覽器被計進版面寬度 */
-  inset: auto max(12px, env(safe-area-inset-right, 0)) 
+  /* 用 inset + safe area，避免在某些手機被當成更寬而產生橫向捲動 */
+  inset: auto max(12px, env(safe-area-inset-right, 0))
          max(12px, env(safe-area-inset-bottom, 0)) auto;
 
   width: var(--top-btn-size);
@@ -310,7 +310,7 @@ footer {
   align-items: center;
   justify-content: center;
 
-  /* 立體陰影（不會影響版面寬度） */
+  /* 陰影不會影響版面寬度 */
   box-shadow:
     0 10px 22px var(--top-btn-glow),
     inset 0 1px 0 var(--top-btn-highlight);
@@ -321,10 +321,11 @@ footer {
   transform: translateY(8px) scale(.96);
   transition: opacity .22s ease, transform .22s ease, box-shadow .22s ease, background .22s ease;
 
-  /* 告訴瀏覽器這顆只影響自身繪製，避免把陰影/濾鏡算入全頁寬 */
+  /* 告訴瀏覽器只影響自身繪製，避免把濾鏡/陰影算進全頁寬 */
   contain: layout paint;
   will-change: transform;
 }
+
 
 
 
@@ -759,7 +760,7 @@ footer {
   position: relative;
   margin: 0 auto 20px;   /* 或視覺上再調整 */
   padding-bottom: 10px;  /* 改小或設為 0 */
-  overflow: visible;
+  overflow: hidden;
 }
 
 .carousel {
