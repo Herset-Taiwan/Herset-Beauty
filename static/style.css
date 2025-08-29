@@ -287,8 +287,10 @@ footer {
 
 .btn-top{
   position: fixed;
-  right: 18px;
-  bottom: 18px;
+  /* 用 inset 取代 margin/right/bottom，避免在某些瀏覽器被計進版面寬度 */
+  inset: auto max(12px, env(safe-area-inset-right, 0)) 
+         max(12px, env(safe-area-inset-bottom, 0)) auto;
+
   width: var(--top-btn-size);
   height: var(--top-btn-size);
   border: none;
@@ -301,14 +303,14 @@ footer {
   background: var(--brand-grad);
   color: #fff;
   backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);      /* Safari */
+  -webkit-backdrop-filter: blur(6px);
 
-  /* 讓 SVG 完全置中 */
+  /* 置中 SVG */
   display: inline-flex;
   align-items: center;
   justify-content: center;
 
-  /* 立體陰影 */
+  /* 立體陰影（不會影響版面寬度） */
   box-shadow:
     0 10px 22px var(--top-btn-glow),
     inset 0 1px 0 var(--top-btn-highlight);
@@ -319,10 +321,11 @@ footer {
   transform: translateY(8px) scale(.96);
   transition: opacity .22s ease, transform .22s ease, box-shadow .22s ease, background .22s ease;
 
-  /* iOS 安全區避免卡最邊 */
-  margin-bottom: env(safe-area-inset-bottom, 0);
-  margin-right:  env(safe-area-inset-right, 0);
+  /* 告訴瀏覽器這顆只影響自身繪製，避免把陰影/濾鏡算入全頁寬 */
+  contain: layout paint;
+  will-change: transform;
 }
+
 
 
 /* 白邊光暈 */
@@ -343,7 +346,6 @@ footer {
   display: block;
   margin: 0 auto;
   pointer-events: none;     /* 避免吃到點擊 */
-  filter: drop-shadow(0 1px 0 rgba(0,0,0,.25));
 }
 
 /* 顯示時機 */
@@ -377,8 +379,12 @@ footer {
 /* 手機尺寸 */
 @media (max-width: 768px){
   :root{ --top-btn-size: 52px; }
-  .btn-top{ right: 12px; bottom: 12px; }
+  .btn-top{
+    inset: auto max(12px, env(safe-area-inset-right, 0))
+           max(12px, env(safe-area-inset-bottom, 0)) auto;
+  }
 }
+
 /* 鍵盤聚焦可視 */
 .btn-top:focus-visible{
   outline: 2px solid rgba(255,255,255,.85);
