@@ -1613,7 +1613,7 @@ def register():
     # 帳號是否已存在
     exist = supabase.table("members").select("id").eq("account", account).limit(1).execute()
     if exist.data:
-        return render_template("register.html", error="此帳號已被使用")
+        return render_template("register.html", error="此信箱已被使用")
 
     try:
         # 建議寫入 UTC（避免 tz 未定義、排序也穩定）

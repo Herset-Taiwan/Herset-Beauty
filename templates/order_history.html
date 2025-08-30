@@ -125,7 +125,7 @@ function formatOptionLines(optText){
   return parts.map(t => `<div>${esc(t)}</div>`).join('');
 } // ← 這個大括號你漏了，別忘了關閉
 
-const zhStatus = s => s==='shipped' ? '已出貨' : s==='paid' ? '已付款' : '待處理';
+const zhStatus = s => s==='shipped' ? '已出貨' : s==='paid' ? '已確認付款，待出貨' : '待處理';
 
 
   function renderList(data, boxId, pagerId, page=1){

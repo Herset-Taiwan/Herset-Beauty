@@ -915,7 +915,7 @@ const esc = s => (s ?? '').toString()
   .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
 function zhStatus(s){
-  return s==='shipped' ? '已出貨' : (s==='paid' ? '已付款' : '待處理');
+  return s==='shipped' ? '已出貨' : (s==='paid' ? '已確認付款，待出貨' : '待處理');
 }
 function splitOptions(opt){
   if(!opt) return [];
@@ -1037,12 +1037,12 @@ card.innerHTML = `
   </div>
 
   <div style="margin-top:10px;display:flex;align-items:center;gap:10px;">
-    <strong>出貨狀態：</strong> ${o.status==='shipped'?'已出貨':(o.status==='paid'?'已付款':'待處理')}
+    <strong>出貨狀態：</strong> ${o.status==='shipped'?'已出貨':(o.status==='paid'?'已確認付款，待出貨':'待處理')}
     <form method="POST" action="/admin0363/orders/update_status/${o.id}">
       <strong style="margin-left:20px;">修改狀態：</strong>
       <select name="status" onchange="this.form.submit()">
         <option value="pending" ${o.status==='pending'?'selected':''}>待處理</option>
-        <option value="paid" ${o.status==='paid'?'selected':''}>已付款</option>
+        <option value="paid" ${o.status==='paid'?'selected':''}>已確認付款，待出貨</option>
         <option value="shipped" ${o.status==='shipped'?'selected':''}>已出貨</option>
       </select>
     </form>
