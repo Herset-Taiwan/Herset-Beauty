@@ -78,12 +78,21 @@ def _lp_signature_headers(request_uri: str, serialized: str, method: str = "POST
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "please_change_me")
 
+# ✅ 最小變更：本機/測試站不設定 Domain；正式站才設定成 .herset.co（支援 www 與非 www）
 app.config.update(
-    SESSION_COOKIE_SAMESITE="Lax",    # 站內登入最穩，能避免多數被擋 Cookie 的狀況
-    SESSION_COOKIE_SECURE=True        # 正式站是 HTTPS 沒問題；若本機 http 測試，改成 False
+    SESSION_COOKIE_SAMESITE="Lax",   # 後台同站登入最穩
+    SESSION_COOKIE_SECURE=True       # 正式站 HTTPS 保持 True；本機 http 會在下方放寬
 )
+
+ENV = os.environ.get("APP_ENV", "").lower()
+if ENV == "prod":
+    # 只有正式環境（herset.co / www.herset.co）才跨子網域共享
+    app.config["SESSION_COOKIE_DOMAIN"] = ".herset.co"
+
+# 本機開發（或你需要在 http 測試）可這樣放寬
 if os.environ.get("FLASK_ENV") == "development":
-    app.config['SESSION_COOKIE_SECURE'] = False
+    app.config["SESSION_COOKIE_SECURE"] = False
+
 
 
 # ✅ Supabase 初始化
