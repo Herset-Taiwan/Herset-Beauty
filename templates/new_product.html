@@ -233,7 +233,11 @@ tinymce.init({
   toolbar: 'undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | fontsizeselect | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table image media | removeformat | code',
 
   fontsize_formats: '12px 14px 16px 18px 20px 24px 28px 32px 36px',
-  content_style: 'body{font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Noto Sans TC, Microsoft JhengHei, Arial, sans-serif; line-height:1.8;}',
+  content_style: `
+  body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Noto Sans TC,Microsoft JhengHei,Arial,sans-serif;line-height:1.8;}
+  img{max-width:100%;height:auto;}
+  video, iframe{display:block;width:100%;max-width:720px;aspect-ratio:16/9;height:auto;background:#000;border-radius:12px;margin:16px 0 20px;}
+`,
 
   /* ✅ 允許直接貼上圖片（小圖可用） */
   paste_data_images: true,

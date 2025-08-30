@@ -112,6 +112,24 @@ body.product-page .tab-btn.active {
   font-weight: 700;
 }
 
+/* 內文影片通用外觀 */
+.rich-content video,
+.rich-content iframe {
+  display: block;
+  width: 100%;
+  max-width: 720px;     /* 你要更窄或更寬都可調 */
+  aspect-ratio: 16 / 9; /* 保持 16:9 */
+  height: auto;         /* 讓瀏覽器依比例計算高度 */
+  background: #000;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.08);
+  margin: 16px 0 20px;
+}
+
+/* 內文段落寬度置中（若你的容器是滿版） */
+.rich-content { display: block; }
+.rich-content > * { margin-left: auto; margin-right: auto; }
+
 /* 與既有的 .thumbnail.selected 同調 */
 .gallery-thumbs .thumbnail.selected,
 .gallery-thumbs .thumb-video.selected{
@@ -1163,6 +1181,24 @@ function collectSequentialSelection(){
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goTop(); }
   });
 })();
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.rich-content video').forEach(function(v) {
+    v.setAttribute('controls', '');         // 顯示控制列
+    v.setAttribute('playsinline', '');      // iOS 內嵌播放
+    v.setAttribute('preload', 'metadata');  // 快速顯示長度縮圖
+    v.removeAttribute('width');             // 交給 CSS 控制
+    v.removeAttribute('height');
+  });
+
+  // 讓 YouTube 內嵌允許全屏與必要權限
+  document.querySelectorAll('.rich-content iframe[src*="youtube"]').forEach(function(iframe){
+    iframe.setAttribute('allowfullscreen', '');
+    iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+  });
+});
 </script>
 
 
