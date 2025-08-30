@@ -602,22 +602,25 @@
 {% else %}
   <p style="color: gray;">目前沒有任何商品</p>
 {% endif %}
-    </div>
 
+{# ← 新增分頁區塊，擺在 #products 容器內、結束標籤之前 #}
 {% if tab == "products" and product_total_pages > 1 %}
   <div class="pagination">
     {% if product_page > 1 %}
-      <a class="page-btn" href="?tab=products&page={{ product_page - 1 }}&page_size={{ product_page_size }}&keyword={{ request.args.get('keyword', '') }}{% for c in selected_categories %}&category={{ c }}{% endfor %}">← 上一頁</a>
+      <a class="page-btn"
+         href="?tab=products&page={{ product_page - 1 }}&page_size={{ product_page_size }}&product_keyword={{ request.args.get('product_keyword', '') }}{% for c in selected_categories %}&category={{ c }}{% endfor %}">← 上一頁</a>
     {% endif %}
 
     <span style="margin: 0 10px;">第 {{ product_page }} 頁 / 共 {{ product_total_pages }} 頁</span>
 
     {% if product_page < product_total_pages %}
-      <a class="page-btn" href="?tab=products&page={{ product_page + 1 }}&page_size={{ product_page_size }}&keyword={{ request.args.get('keyword', '') }}{% for c in selected_categories %}&category={{ c }}{% endfor %}">下一頁 →</a>
+      <a class="page-btn"
+         href="?tab=products&page={{ product_page + 1 }}&page_size={{ product_page_size }}&product_keyword={{ request.args.get('product_keyword', '') }}{% for c in selected_categories %}&category={{ c }}{% endfor %}">下一頁 →</a>
     {% endif %}
   </div>
 {% endif %}
 
+</div>  {# ← 關閉 id="products" 容器（保留） #}
 
 
 
