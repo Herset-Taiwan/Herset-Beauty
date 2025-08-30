@@ -2092,9 +2092,10 @@ def process_payment():
         return "找不到訂單", 404
 
     if method == "linepay":
-        # 👉 正確縮排，且整個 linepay 分支結束後才接續 elif bank/credit
+        # 1) 金額／幣別（TWD 需整數）
         amount, currency = _order_amount_currency(order)
 
+        # 2) 準備 request body
         body = {
             "amount": amount,
             "currency": currency,
@@ -2116,23 +2117,35 @@ def process_payment():
         }
 
         api_path = "/v3/payments/request"
-        headers = _lp_signature_headers(api_path, body, method="POST")
-
-        # 確保簽名用的字串與送出的字串一致
+        # ★ 一定要先序列化，簽名與送出都用同一份 payload
         payload = json.dumps(body, separators=(",", ":"))
+        headers = _lp_signature_headers(api_path, payload, method="POST")
 
-        r = requests.post(f"{LINE_PAY_BASE}{api_path}", headers=headers, data=payload)
+        # 3) 呼叫 LINE Pay
+        r = requests.post(f"{LINE_PAY_BASE}{api_path}", headers=headers, data=payload, timeout=15)
         data = r.json()
 
         if data.get("returnCode") == "0000":
-            payment_url = data["info"]["paymentUrl"]["web"]
-            # 記為待付款
+            info = data.get("info", {})
+            payment_url = info.get("paymentUrl", {}).get("web")
+            transaction_id = info.get("transactionId")
+
+            # 4) 記為待付款，並保存 transactionId（後續 confirm/備援都會用到）
             supabase.table("orders").update({
-    "payment_status": "pending"
-}).eq("id", order["id"]).execute()
+                "payment_method": "linepay",
+                "payment_status": "pending",
+                "lp_transaction_id": str(transaction_id) if transaction_id else None
+            }).eq("id", order["id"]).execute()
+
             return redirect(payment_url)
         else:
+            # 失敗也寫回錯誤方便追蹤
+            supabase.table("orders").update({
+                "payment_status": "failed",
+                "lp_error": json.dumps(data, ensure_ascii=False)
+            }).eq("id", order["id"]).execute()
             return f"LINE Pay 建立失敗：{data}", 400
+
 
     elif method == "bank":
         return render_template("bank_transfer.html", order=order)  # 顯示轉帳資料
@@ -2155,47 +2168,51 @@ def process_payment():
     else:
         return "未知付款方式", 400
 
-# Linepay 付款成功後 confirm（v3 簽名版）
+# Linepay 付款成功後 confirm
 @app.route("/linepay/confirm")
 def linepay_confirm():
     transaction_id = request.args.get("transactionId", "")
     order_id = request.args.get("order_id", "")
-    if not transaction_id or not order_id:
-        return "參數不足：缺少 transactionId 或 order_id", 400
+    if not order_id:
+        return "參數不足：缺少 order_id", 400
 
-    # 查訂單
     res = supabase.table("orders").select("*").eq("id", order_id).single().execute()
     order = res.data
     if not order:
         return "找不到訂單", 404
 
-    amount, currency = _order_amount_currency(order)
+    # 已付款 → 冪等短路
+    if order.get("payment_status") == "paid":
+        return redirect("/thank-you")
 
-    # === v3 確認付款：簽名 + POST ===
+    if not transaction_id:
+        transaction_id = (order.get("lp_transaction_id") or "").strip()
+    if not transaction_id:
+        return "缺少 transactionId", 400
+
+    amount, currency = _order_amount_currency(order)
     confirm_body = {"amount": amount, "currency": currency}
     confirm_path = f"/v3/payments/{transaction_id}/confirm"
-
-    # 用與簽名相同的 JSON 字串（無多餘空白）
     payload = json.dumps(confirm_body, separators=(",", ":"))
+    headers = _lp_signature_headers(confirm_path, payload, method="POST")
 
-    # 產 header（需先有 _lp_signature_headers，見下方「新增哪一段」）
-    headers = _lp_signature_headers(confirm_path, confirm_body, method="POST")
-
-    r = requests.post(f"{LINE_PAY_BASE}{confirm_path}",
-                      headers=headers,
-                      data=payload)
+    r = requests.post(f"{LINE_PAY_BASE}{confirm_path}", headers=headers, data=payload, timeout=15)
     data = r.json()
 
     if data.get("returnCode") == "0000":
         supabase.table("orders").update({
-    "payment_status": "paid",
-    "paid_trade_no": transaction_id
-}).eq("id", order_id).execute()
+            "payment_status": "paid",
+            "paid_trade_no": str(transaction_id)
+        }).eq("id", order_id).execute()
         return redirect("/thank-you")
-
     else:
-        # 你也可以把 data 記 log 方便除錯
+        supabase.table("orders").update({
+            "payment_status": "pending_confirm_failed",
+            "lp_confirm_error": json.dumps(data, ensure_ascii=False)
+        }).eq("id", order_id).execute()
         return redirect("/cart")
+
+
 
         
 #Linepay取消返回
@@ -2218,6 +2235,48 @@ def repay_order(merchant_trade_no):
     return render_template("choose_payment.html", order=order, is_repay=True)
 
 
+# （可選）後端備援查詢：檢查是否可確認，若可用 Confirm API 自動完成
+@app.route("/internal/linepay/check_and_confirm")
+def linepay_check_and_confirm():
+    order_id = request.args.get("order_id", "")
+    if not order_id:
+        return {"ok": False, "msg": "missing order_id"}, 400
+
+    # 取出 transactionId
+    res = supabase.table("orders").select("*").eq("id", order_id).single().execute()
+    order = res.data or {}
+    tx = (order.get("lp_transaction_id") or "").strip()
+    if not tx:
+        return {"ok": False, "msg": "no transactionId"}, 400
+    if order.get("payment_status") == "paid":
+        return {"ok": True, "msg": "already paid"}
+
+    # 1) Check payment request status（未使用導轉時建議；導轉遺失時也可當備援）
+    api_path = f"/v3/payments/requests/{tx}/check"
+    # GET 沒有 body，但簽名要對「查詢字串」；這裡無 query → 空字串
+    headers = _lp_signature_headers(api_path, "", method="GET")
+    r = requests.get(f"{LINE_PAY_BASE}{api_path}", headers=headers, timeout=15)
+    js = r.json()
+    # 依回應判定是否可以進行 confirm（以官方回傳碼為準）
+    # 確認條件：已完成 LINE Pay 認證，且可執行 confirm
+    if js.get("returnCode") == "0000":
+        # 2) 可以 confirm → 立即打 Confirm API
+        amount, currency = _order_amount_currency(order)
+        confirm_body = {"amount": amount, "currency": currency}
+        confirm_path = f"/v3/payments/{tx}/confirm"
+        payload = json.dumps(confirm_body, separators=(",", ":"))
+        headers2 = _lp_signature_headers(confirm_path, payload, method="POST")
+        r2 = requests.post(f"{LINE_PAY_BASE}{confirm_path}", headers=headers2, data=payload, timeout=15)
+        js2 = r2.json()
+        if js2.get("returnCode") == "0000":
+            supabase.table("orders").update({
+                "payment_status": "paid",
+                "paid_trade_no": str(tx)
+            }).eq("id", order_id).execute()
+            return {"ok": True, "msg": "paid via auto confirm"}
+        return {"ok": False, "msg": f"confirm failed: {js2}"}, 400
+
+    return {"ok": False, "msg": f"not ready: {js}"}, 400
 
 
 

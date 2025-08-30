@@ -13,7 +13,6 @@
       padding: 50px;
       text-align: center;
     }
-
     .container {
       background: #fff;
       max-width: 480px;
@@ -22,27 +21,22 @@
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
-
     h2 {
       color: #b43c57;
       margin-bottom: 30px;
     }
-
     .radio-group {
       text-align: left;
       margin-bottom: 30px;
     }
-
     .radio-option {
       margin: 12px 0;
       font-size: 16px;
     }
-
     input[type="radio"] {
       transform: scale(1.3);
       margin-right: 10px;
     }
-
     button {
       padding: 12px 30px;
       background-color: #b43c57;
@@ -53,63 +47,9 @@
       cursor: pointer;
       transition: background-color 0.2s ease;
     }
-
-    button:hover {
-      background-color: #952c44;
-    }
-  </style>
-
-  <!-- FB像素Meta Pixel Code -->
-<script>
-!function(f,b,e,v,n,t,s)
-{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-n.queue=[];t=b.createElement(e);t.async=!0;
-t.src=v;s=b.getElementsByTagName(e)[0];
-s.parentNode.insertBefore(t,s)}(window, document,'script',
-'https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', '2160093911138296');
-fbq('track', 'PageView');
-</script>
-<noscript><img height="1" width="1" style="display:none"
-src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
-/></noscript>
-<!-- End Meta Pixel Code -->
- 
-</head>
-<body>
-  <div class="container">
-  <h2>請選擇付款方式</h2>
-
-  <!-- （可留作備註）暫時版付款說明已停用；以下為正式付款表單 -->
-
-  <form method="post" action="/process_payment" style="margin-top: 10px;">
-    <div class="radio-group">
-      <div class="radio-option">
-        <label><input type="radio" name="method" value="linepay" checked> LINE Pay</label>
-        
-      <div class="radio-option">
-    <label><input type="radio" name="method" value="bank"> 轉帳付款（ATM/銀行）</label>
-  </div>
-      <!-- 預留其他方式，之後要開再解除註解 -->
-      <!--
-     
-      <div class="radio-option">
-        <label><input type="radio" name="method" value="credit"> 信用卡（綠界）</label>
-      </div>
-      -->
-    </div>
-
-    <!-- 這兩個 hidden 一定要帶，後端會用到 -->
-    <input type="hidden" name="order_id" value="{{ order.id }}">
-    <input type="hidden" name="is_repay" value="{{ 1 if is_repay else 0 }}">
-
-    <button type="submit">前往付款</button>
-  </form>
-
-  <!-- 🔙 返回首頁按鈕 -->
-  <a href="/" style="
+    button:hover { background-color: #952c44; }
+    .hint { color:#666; font-size:14px; margin-top:10px; }
+    .btn-secondary {
       display: inline-block;
       padding: 12px 30px;
       margin-top: 20px;
@@ -118,24 +58,99 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
       border-radius: 6px;
       text-decoration: none;
       font-size: 16px;
-  ">返回首頁</a>
-</div>
+    }
+  </style>
 
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    var form = document.querySelector('form[action="/process_payment"]');
-    if (!form) return;
-    var btn = form.querySelector('button[type="submit"]');
-    form.addEventListener('submit', function () {
-      if (btn) {
-        btn.disabled = true;
-        btn.textContent = '正在前往 LINE Pay...';
+  <!-- Meta Pixel -->
+  <script>
+  !function(f,b,e,v,n,t,s)
+  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+  n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];
+  s.parentNode.insertBefore(t,s)}(window, document,'script',
+  'https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', '2160093911138296');
+  fbq('track', 'PageView');
+  </script>
+  <noscript><img height="1" width="1" style="display:none"
+  src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
+  /></noscript>
+</head>
+<body>
+  <div class="container">
+    <h2>請選擇付款方式</h2>
+
+    <form id="payForm" method="post" action="/process_payment" style="margin-top: 10px;">
+      <div class="radio-group" id="radioGroup">
+        <div class="radio-option">
+          <label><input type="radio" name="method" value="linepay" checked> LINE Pay</label>
+        </div>
+        <div class="radio-option">
+          <label><input type="radio" name="method" value="bank"> 轉帳付款（ATM/銀行）</label>
+        </div>
+        <!-- 預留其他方式 -->
+        <!--
+        <div class="radio-option">
+          <label><input type="radio" name="method" value="credit"> 信用卡（綠界）</label>
+        </div>
+        -->
+      </div>
+
+      <!-- 後端必用 -->
+      <input type="hidden" name="order_id" value="{{ order.id }}">
+      <input type="hidden" name="is_repay" value="{{ 1 if is_repay else 0 }}">
+
+      <button id="submitBtn" type="submit">前往 LINE Pay 付款</button>
+      <div class="hint" id="hint">系統將建立 LINE Pay 付款連結並帶您前往。</div>
+    </form>
+
+    <a class="btn-secondary" href="/">返回首頁</a>
+  </div>
+
+  <script>
+    (function () {
+      var form = document.getElementById('payForm');
+      var radios = form.querySelectorAll('input[name="method"]');
+      var btn = document.getElementById('submitBtn');
+      var hint = document.getElementById('hint');
+
+      function updateButton() {
+        var method = form.querySelector('input[name="method"]:checked').value;
+        if (method === 'linepay') {
+          btn.textContent = '前往 LINE Pay 付款';
+          hint.textContent = '系統將建立 LINE Pay 付款連結並帶您前往。';
+        } else if (method === 'bank') {
+          btn.textContent = '查看轉帳資訊';
+          hint.textContent = '將顯示銀行帳號與匯款說明。';
+        } else {
+          btn.textContent = '前往付款';
+          hint.textContent = '';
+        }
       }
-      try { if (typeof fbq === 'function') fbq('track', 'AddPaymentInfo'); } catch (e) {}
-    });
-  });
-</script>
 
+      radios.forEach(function (r) { r.addEventListener('change', updateButton); });
+      updateButton();
 
+      form.addEventListener('submit', function () {
+        // 防止重複送出
+        btn.disabled = true;
+
+        var method = form.querySelector('input[name="method"]:checked').value;
+        if (typeof fbq === 'function') {
+          try {
+            fbq('track', 'AddPaymentInfo', { method: method });
+          } catch (e) {}
+        }
+
+        if (method === 'linepay') {
+          btn.textContent = '正在前往 LINE Pay...';
+        } else if (method === 'bank') {
+          btn.textContent = '載入轉帳資訊...';
+        }
+      });
+    })();
+  </script>
 </body>
 </html>

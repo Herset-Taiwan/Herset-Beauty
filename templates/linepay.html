@@ -2,7 +2,8 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>Line Pay 付款</title>
+  <title>LINE Pay 付款</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body {
       font-family: sans-serif;
@@ -11,15 +12,9 @@
       background-color: #fff;
       color: #444;
     }
-    img.qrcode {
-      width: 240px;
-      margin: 20px 0;
-    }
-    .note {
-      margin-top: 30px;
-      font-size: 16px;
-      color: #666;
-    }
+    img.qrcode { width: 240px; margin: 20px 0; }
+    .note { margin-top: 20px; font-size: 16px; color: #666; }
+    .muted { color:#888; font-size:13px; margin-top:8px; }
     button, .back-btn {
       margin-top: 20px;
       padding: 10px 30px;
@@ -29,34 +24,101 @@
       cursor: pointer;
       display: inline-block;
     }
-    button {
-      background-color: #06c755;
-      color: white;
-    }
+    button { background-color: #06c755; color: white; }
+    button[disabled] { opacity: .7; cursor: not-allowed; }
     .back-btn {
       background-color: #ccc;
       color: #333;
       text-decoration: none;
       margin-left: 10px;
     }
+    .status {
+      margin-top: 24px;
+      font-size: 15px;
+    }
+    .ok { color: #0a7b36; font-weight: 600; }
+    .warn { color: #b43c57; font-weight: 600; }
+    .spinner {
+      margin: 10px auto 0;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      border: 3px solid #ddd; border-top-color: #06c755;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
-  <h2>請使用 Line Pay 掃描下方 QR Code 完成付款</h2>
+  <h2>請使用 LINE Pay 掃描下方 QR Code 完成付款</h2>
 
-  <img src="{{ url_for('static', filename='linepay_qr.png') }}" alt="Line Pay QR Code" class="qrcode">
+  <img src="{{ url_for('static', filename='linepay_qr.png') }}" alt="LINE Pay QR Code" class="qrcode">
 
   <div class="note">
-    請使用手機打開 Line App 掃描上方 QR Code 進行付款。<br>
-    付款完成後，請點擊下方「我已完成付款」通知我們。
+    用手機打開 LINE App → 右上角掃描 → 完成付款。<br>
+    付款完成後可按下方按鈕通知我們，或等待系統自動偵測。
+  </div>
+  <div class="muted">若您已在 LINE 內開啟本頁，建議改用另一支手機掃描此 QR Code。</div>
+
+  <form id="doneForm" action="/linepay/complete" method="post">
+    <input type="hidden" name="order_id" value="{{ order.id }}">
+    <button id="doneBtn" type="submit">我已完成付款</button>
+    <a class="back-btn" href="/">稍後再付款，先返回首頁</a>
+  </form>
+
+  <div class="status" id="statusBox">
+    <div class="spinner" id="spin"></div>
+    <div id="statusText">正在確認付款狀態（每 4 秒更新一次）...</div>
   </div>
 
-  <form action="/linepay/complete" method="post">
-  <input type="hidden" name="order_id" value="{{ order.id }}">
-  <button type="submit">我已完成付款，"請點我"</button>
-</form>
+  <script>
+    (function () {
+      var orderId = "{{ order.id }}";
+      var polling = true;
+      var tries = 0;
+      var maxTries = 150; // 約 10 分鐘：150*4 秒
+      var statusText = document.getElementById('statusText');
+      var doneBtn = document.getElementById('doneBtn');
+      var spin = document.getElementById('spin');
+      var form = document.getElementById('doneForm');
 
+      // 防重複提交
+      form.addEventListener('submit', function () {
+        doneBtn.disabled = true;
+        doneBtn.textContent = '已送出，正在確認...';
+      });
 
-  <a class="back-btn" href="/">稍後再付款，先返回首頁</a>
+      function checkStatus() {
+        if (!polling) return;
+        tries++;
+        fetch('/api/order_status?order_id=' + encodeURIComponent(orderId), { credentials: 'same-origin' })
+          .then(function (r) { return r.json(); })
+          .then(function (json) {
+            // 你後端可回 { paid: true/false, redirect: '/orders/xxxx' }
+            if (json && json.paid) {
+              polling = false;
+              spin.style.display = 'none';
+              statusText.innerHTML = '<span class="ok">付款已完成！</span> 正在為您導向...';
+              var to = (json.redirect || '/order/' + orderId + '/paid');
+              setTimeout(function () { window.location.href = to; }, 1200);
+            } else {
+              if (tries >= maxTries) {
+                polling = false;
+                spin.style.display = 'none';
+                statusText.innerHTML = '<span class="warn">尚未確認付款</span>，您可以稍後再回來本頁查看或點擊「我已完成付款」。';
+              }
+            }
+          })
+          .catch(function () {
+            // 網路失敗不打斷，等下次輪詢
+          })
+          .finally(function () {
+            if (polling) setTimeout(checkStatus, 4000);
+          });
+      }
+
+      // 啟動輪詢
+      setTimeout(checkStatus, 2000);
+    })();
+  </script>
 </body>
 </html>
