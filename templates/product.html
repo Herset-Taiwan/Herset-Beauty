@@ -627,10 +627,14 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
             <iframe src="https://www.youtube.com/embed/{{ yt_id }}" frameborder="0" allowfullscreen loading="lazy"></iframe>
           </div>
         {% else %}
-          <video class="media-item {% if loop.first %}active{% endif %}" controls preload="metadata">
-            <source src="{{ m.src }}">
-            您的瀏覽器不支援影片播放
-          </video>
+          <!-- 取代相簿主視圖的 <video> -->
+<video class="media-item {% if loop.first %}active{% endif %}"
+       controls playsinline preload="metadata" muted
+       poster="{{ product['image'] or (product['images'][0] if product['images'] else '') }}">
+  <source src="{{ m.src }}">
+  您的瀏覽器不支援影片播放
+</video>
+
         {% endif %}
       {% endfor %}
     {% endif %}
@@ -770,9 +774,9 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
 </div>
 
 <div class="product-tab-content">
-  <div id="intro" class="active">{{ (product['intro'] or '') | safe }}</div>
-  <div id="feature">{{ (product['feature'] or '') | safe }}</div>
-  <div id="spec">{{ (product['spec'] or '') | safe }}</div>
+  <div id="intro"   class="rich-content active">{{ (product['intro'] or '') | safe }}</div>
+<div id="feature" class="rich-content">{{ (product['feature'] or '') | safe }}</div>
+<div id="spec"    class="rich-content">{{ (product['spec'] or '') | safe }}</div>
   <div id="ingredient">{{ (product['ingredient'] or '') | safe }}</div>
 </div>
 
@@ -863,9 +867,21 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
     }, 2000);
   }
 
+function pauseAllMedia(){
+  // 暫停所有 <video>
+  document.querySelectorAll('video').forEach(v => { try{ v.pause(); }catch(e){} });
+
+  // 重載所有 YouTube iframe 讓它停止播放
+  document.querySelectorAll('iframe[src*="youtube"]').forEach(ifr => {
+    const s = ifr.getAttribute('src'); if (s) ifr.setAttribute('src', s);
+  });
+}
+
   // tab 切換
   document.querySelectorAll('.product-tab-btn').forEach(button => {
   button.addEventListener('click', () => {
+    pauseAllMedia();
+    
     // 移除所有按鈕的 active 樣式
     document.querySelectorAll('.product-tab-btn').forEach(btn => btn.classList.remove('active'));
 
@@ -1200,6 +1216,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 });
 </script>
+
 
 
 </body>
