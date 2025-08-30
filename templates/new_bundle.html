@@ -175,6 +175,64 @@
 
     /* ✅ 關鍵：把 forecolor/backcolor 加到工具列（或會出現在三點選單） */
     toolbar: 'undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table image media | removeformat | code',
+    
+    /* ✅ 允許貼上與拖拉圖片，並自動上傳（你已經有就不用重複） */
+automatic_uploads: true,
+paste_data_images: true,
+
+/* ✅ 讓編輯器可以挑選「圖片 + 影片」 */
+file_picker_types: 'image media',
+file_picker_callback: function (cb, value, meta) {
+  // 圖片：照原流程挑檔即可（若你已用 images_upload_handler，就可不改）
+  if (meta.filetype === 'image') {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = function () {
+      const file = this.files[0];
+      const reader = new FileReader();
+      reader.onload = function () { cb(reader.result, { title: file.name }); };
+      reader.readAsDataURL(file);
+    };
+    input.click();
+    return;
+  }
+
+  // ✅ 影片：選檔後丟到後端 /admin0363/tinymce/upload_video，上傳成功回填 URL
+  if (meta.filetype === 'media') {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'video/*';
+    input.onchange = function () {
+      const file = this.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/admin0363/tinymce/upload_video');
+      xhr.onload = function () {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const json = JSON.parse(xhr.responseText || '{}');
+            if (json && typeof json.location === 'string') {
+              cb(json.location, { source2: json.location });
+            } else {
+              alert('上傳失敗：' + xhr.responseText);
+            }
+          } catch (e) { alert('上傳回應格式錯誤'); }
+        } else {
+          alert('上傳失敗 HTTP ' + xhr.status);
+        }
+      };
+      xhr.onerror = function () { alert('上傳連線失敗'); };
+      xhr.send(formData);
+    };
+    input.click();
+  }
+},
+
+/* （可選）貼 YouTube 連結直接預覽 */
+media_live_embeds: true,
 
 
     toolbar_mode: 'sliding',

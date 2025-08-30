@@ -1192,6 +1192,35 @@ def admin_features_hub():
     return render_template("features_hub.html")
 
 
+# ✅ TinyMCE 影片上傳端點
+@app.route('/admin0363/tinymce/upload_video', methods=['POST'])
+def tinymce_upload_video():
+    if not session.get("admin_logged_in"):
+        return jsonify({'error': 'unauthorized'}), 401
+
+    f = request.files.get('file')
+    if not f or not f.filename:
+        return jsonify({'error': 'no file'}), 400
+
+    ext = (f.filename.rsplit('.', 1)[-1] or '').lower()
+    allowed = {'mp4', 'webm', 'ogv', 'mov', 'm4v'}
+    if ext not in allowed:
+        return jsonify({'error': 'unsupported'}), 400
+
+    try:
+        fname = secure_filename(f.filename)
+        unique = f"{uuid.uuid4()}_{fname}"
+        storage_path = f"editor_videos/{unique}"  # 建議專用資料夾
+
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            f.save(tmp.name)
+            supabase.storage.from_("images").upload(storage_path, tmp.name)
+
+        url = supabase.storage.from_("images").get_public_url(storage_path)
+        return jsonify({'location': url})
+    except Exception as e:
+        print("❗️TinyMCE 影片上傳錯誤：", e)
+        return jsonify({'error': 'upload failed'}), 500
 
 
 # === 新增折扣碼（表單頁） ===

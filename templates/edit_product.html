@@ -535,24 +535,68 @@ tinymce.init({
   /* ✅ 上傳端點（需搭配 app.py 的 /admin0363/tinymce/upload） */
   images_upload_url: '/admin0363/tinymce/upload',
 
-  /* ✅ 檔案挑選：只允許圖片 */
-  file_picker_types: 'image',
-  file_picker_callback: function (cb, value, meta) {
-    if (meta.filetype !== 'image') return;
+  
+  /* ✅ 允許貼上與拖拉圖片，並自動上傳 */
+automatic_uploads: true,
+paste_data_images: true,
+
+/* ✅ 圖片上傳端點（沿用你現有的） */
+images_upload_url: '/admin0363/tinymce/upload',
+
+/* ✅ 讓編輯器可以挑選「圖片 + 影片」 */
+file_picker_types: 'image media',
+file_picker_callback: function (cb, value, meta) {
+  // 圖片：沿用你原本的選檔→base64 插入（之後會自動用 images_upload_url 換成正式網址）
+  if (meta.filetype === 'image') {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
     input.onchange = function () {
       const file = this.files[0];
       const reader = new FileReader();
-      reader.onload = function () {
-        // 先以 base64 插入，之後自動上傳並替換為正式網址
-        cb(reader.result, { title: file.name });
-      };
+      reader.onload = function () { cb(reader.result, { title: file.name }); };
       reader.readAsDataURL(file);
     };
     input.click();
+    return;
   }
+
+  // ✅ 影片：選檔後丟到後端 /admin0363/tinymce/upload_video，上傳成功回傳 URL 插入
+  if (meta.filetype === 'media') {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'video/*';
+    input.onchange = function () {
+      const file = this.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/admin0363/tinymce/upload_video');
+      xhr.onload = function () {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const json = JSON.parse(xhr.responseText);
+            if (json && typeof json.location === 'string') {
+              cb(json.location, { source2: json.location });
+            } else {
+              alert('上傳失敗：' + xhr.responseText);
+            }
+          } catch (e) { alert('上傳回應格式錯誤'); }
+        } else {
+          alert('上傳失敗 HTTP ' + xhr.status);
+        }
+      };
+      xhr.onerror = function () { alert('上傳連線失敗'); };
+      xhr.send(formData);
+    };
+    input.click();
+  }
+},
+
+/* （可選）貼 YouTube 連結即時預覽 */
+media_live_embeds: true,
+
 });
 </script>
 

@@ -224,6 +224,7 @@ tinymce.init({
   menubar: false,
   branding: false,
   promotion: false,
+  media_live_embeds: true,
 
   /* ✅ 新增 image、paste 等外掛 */
   plugins: 'lists link table code advlist autolink charmap preview anchor searchreplace visualblocks fullscreen insertdatetime media wordcount image paste',
@@ -270,24 +271,57 @@ tinymce.init({
     });
   },
 
-  /* ✅ 檔案挑選對話框（只允許圖片） */
-  file_picker_types: 'image',
-  file_picker_callback: function (cb, value, meta) {
-    if (meta.filetype !== 'image') return;
-    var input = document.createElement('input');
+  /* ✅ 讓編輯器可以挑選「圖片 + 影片」 */
+file_picker_types: 'image media',
+file_picker_callback: function (cb, value, meta) {
+  // 圖片（沿用原流程）
+  if (meta.filetype === 'image') {
+    const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
     input.onchange = function () {
-      var file = this.files[0];
-      var reader = new FileReader();
-      reader.onload = function () {
-        // 先以 base64 插入，隨後也會走 images_upload_handler 上傳取得正式網址
-        cb(reader.result, { title: file.name });
-      };
+      const file = this.files[0];
+      const reader = new FileReader();
+      reader.onload = function () { cb(reader.result, { title: file.name }); };
       reader.readAsDataURL(file);
     };
     input.click();
+    return;
   }
+
+  // ✅ 影片：選檔 → 丟到 /admin0363/tinymce/upload_video → 回傳 URL 後插入
+  if (meta.filetype === 'media') {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'video/*';
+    input.onchange = function () {
+      const file = this.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/admin0363/tinymce/upload_video');
+      xhr.onload = function () {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const json = JSON.parse(xhr.responseText || '{}');
+            if (json && typeof json.location === 'string') {
+              cb(json.location, { source2: json.location });
+            } else {
+              alert('上傳失敗：' + xhr.responseText);
+            }
+          } catch (e) { alert('上傳回應格式錯誤'); }
+        } else {
+          alert('上傳失敗 HTTP ' + xhr.status);
+        }
+      };
+      xhr.onerror = function () { alert('上傳連線失敗'); };
+      xhr.send(formData);
+    };
+    input.click();
+  }
+},
+
 });
 </script>
 

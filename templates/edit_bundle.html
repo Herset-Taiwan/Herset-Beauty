@@ -224,7 +224,47 @@ input[type="text"], input[type="number"], textarea, select{
 
     /* ✅ 關鍵：把 forecolor/backcolor 加到工具列（或會出現在三點選單） */
     toolbar: 'undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table image media | removeformat | code',
+    
+    /* ✅ 新增：讓編輯器可以挑選並上傳影片檔 */
+  file_picker_types: 'media',
+  file_picker_callback: function (cb, value, meta) {
+    if (meta.filetype !== 'media') return;
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'video/*';
+    input.onchange = function () {
+      const file = this.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
 
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/admin0363/tinymce/upload_video');
+      xhr.onload = function () {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const json = JSON.parse(xhr.responseText);
+            if (json && typeof json.location === 'string') {
+              cb(json.location, { source2: json.location });
+            } else {
+              alert('上傳失敗：' + xhr.responseText);
+            }
+          } catch (e) { alert('上傳回應格式錯誤'); }
+        } else {
+          alert('上傳失敗 HTTP ' + xhr.status);
+        }
+      };
+      xhr.onerror = function () { alert('上傳連線失敗'); };
+      xhr.send(formData);
+    };
+    input.click();
+  },
+
+  /* （可選）貼 YouTube 連結即預覽 */
+  media_live_embeds: true,
+
+  // 保留你原本的圖片上傳 handler（不用改）
+  images_upload_handler: function (blobInfo, progress) { /* ...原邏輯... */ }
+});
 
     toolbar_mode: 'sliding',
     fontsize_formats: '12px 14px 16px 18px 20px 24px 28px 32px 36px',
