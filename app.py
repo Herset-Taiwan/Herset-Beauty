@@ -16,6 +16,7 @@ from dateutil import parser
 from dotenv import load_dotenv
 from pytz import timezone as pytz_timezone
 from utils import generate_ecpay_form 
+from datetime import timedelta
 
 
 DEFAULT_SHELL_IMAGE = "/static/uploads/logo_0.png"
@@ -76,8 +77,16 @@ def _lp_signature_headers(request_uri: str, serialized: str, method: str = "POST
 
 
 app = Flask(__name__)
-app.secret_key = "your_super_secret_key"
-app.secret_key = os.urandom(24)
+# 用固定且可配置的金鑰（請在 Render 環境變數設定 SECRET_KEY）
+app.secret_key = os.environ.get("SECRET_KEY", "fallback-please-change-me")
+
+# 建議的 session cookie 設定（HTTPS 站台）
+app.config.update(
+    SESSION_COOKIE_SECURE=True,     # 你的網域是 https://herset.co
+    SESSION_COOKIE_SAMESITE="Lax",  # 同站往返（登入、加入購物車）OK
+    SESSION_COOKIE_HTTPONLY=True,   # 防 XSS
+    PERMANENT_SESSION_LIFETIME=timedelta(days=30),
+)
 
 
 
