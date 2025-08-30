@@ -25,17 +25,16 @@ TW = pytz_timezone("Asia/Taipei")
 
 load_dotenv()
 
-# === LINE Pay 設定（先用 Sandbox）===
-LINE_PAY_CHANNEL_ID = os.getenv("LINE_PAY_CHANNEL_ID", "你的ChannelId")
-LINE_PAY_CHANNEL_SECRET = os.getenv("LINE_PAY_CHANNEL_SECRET", "你的SecretKey")
-LINE_PAY_BASE = os.getenv("LINE_PAY_BASE", "https://sandbox-api-pay.line.me")  # 上線改: https://api-pay.line.me
+# === LINE Pay 設定（正式環境）===
+LINE_PAY_CHANNEL_ID = os.getenv("LINE_PAY_CHANNEL_ID")  # ← 放正式的 Channel ID
+LINE_PAY_CHANNEL_SECRET = os.getenv("LINE_PAY_CHANNEL_SECRET")  # ← 放正式的 Secret
+LINE_PAY_BASE = os.getenv("LINE_PAY_BASE", "https://api-pay.line.me")  # ← 改成正式網域
 
 LINE_PAY_REQUEST_URL = f"{LINE_PAY_BASE}/v3/payments/request"
 LINE_PAY_CONFIRM_URL = f"{LINE_PAY_BASE}/v3/payments/{{transactionId}}/confirm"
 
 # 站點外部可訪問網址（給 LINE Pay redirect 回來）
-SITE_BASE_URL = os.getenv("SITE_BASE_URL") or os.getenv("RENDER_EXTERNAL_URL") or "http://localhost:5000"
-
+SITE_BASE_URL = os.getenv("SITE_BASE_URL") or os.getenv("RENDER_EXTERNAL_URL")  # ← 必須是正式 https 網域
 
 # ---- helpers ------------------------------------------------------------
 def _clean_bundle_label(s: str) -> str:
@@ -77,8 +76,15 @@ def _lp_signature_headers(request_uri: str, serialized: str, method: str = "POST
 
 
 app = Flask(__name__)
-app.secret_key = "your_super_secret_key"  # 為了 session 運作，這個很重要
-app.secret_key = os.urandom(24)
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "please_change_me")
+
+app.config.update(
+    SESSION_COOKIE_SAMESITE="None",   # 跨站回跳必備
+    SESSION_COOKIE_SECURE=True,       # 只在 HTTPS 傳遞
+    SESSION_COOKIE_DOMAIN=".herset.co"  # 覆蓋 apex/www，依你的正式網域調整
+)
+
+
 
 # ✅ Supabase 初始化
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
