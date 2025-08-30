@@ -2367,7 +2367,7 @@ def update_order_payment(order_id):
     new_ps = request.form.get("payment_status")
     if new_ps in ("unpaid", "paid"):
         supabase.table("orders").update({"payment_status": new_ps}).eq("id", order_id).execute()
-        flash(f"訂單 #{order_id} 付款狀態已修改為：{'已確認付款，待出貨' if new_ps=='paid' else '未付款'}", "success")
+        flash(f"訂單 #{order_id} 付款狀態已修改為：{'已付款' if new_ps=='paid' else '未付款'}", "success")
     else:
         flash("付款狀態值不正確", "error")
     return redirect("/admin0363/dashboard?tab=orders")
@@ -3130,7 +3130,7 @@ def order_history():
         if o['status'] == 'pending':
             o['status_text'] = '待處理'
         elif o['status'] == 'paid':
-            o['status_text'] = '已確認付款，待出貨'
+            o['status_text'] = '已付款'
         elif o['status'] == 'shipped':
             o['status_text'] = '已出貨'
         else:
