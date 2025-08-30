@@ -2834,28 +2834,59 @@ def delete_product(product_id):
     return redirect('/admin0363/dashboard')
 
 
-# 加入購物車
+# 加入購物車（同時支援 Form 與 JSON）
 @app.route('/add_to_cart', methods=['POST'])
 def add_to_cart():
-    product_id = request.form.get('product_id')
-    qty       = int(request.form.get('qty', 1))
-    option    = (request.form.get('option') or '')
-    action    = request.form.get('action')
+    # ✅ 同時支援 Form 與 JSON
+    data = request.get_json(silent=True) or {}
+    product_id = (request.form.get('product_id')
+                  or data.get('product_id')
+                  or data.get('id'))  # 有些前端會傳 id
+    qty_raw = (request.form.get('qty')
+               or data.get('qty')
+               or 1)
+    option = (request.form.get('option')
+              or data.get('option')
+              or '')
+    action = (request.form.get('action')
+              or data.get('action'))
+
+    # 參數檢核
+    try:
+        qty = int(qty_raw)
+        if qty <= 0:
+            qty = 1
+    except Exception:
+        qty = 1
+
+    if not product_id:
+        # 前端若誤傳，維持原本風格：回 cart 或回傳 JSON
+        if action == 'checkout':
+            return redirect('/cart')
+        return jsonify(success=False, message="缺少商品編號"), 400
 
     # 1) 取商品
-    res = supabase.table('products').select('*').eq('id', product_id).single().execute()
-    if not res.data:
-        return jsonify(success=False, message="找不到商品"), 404
+    res = supabase.table('products').select('*').eq('id', str(product_id)).single().execute()
     product = res.data
+    if not product:
+        if action == 'checkout':
+            return redirect('/cart')
+        return jsonify(success=False, message="找不到商品"), 404
 
     is_bundle = (product.get('product_type') == 'bundle')
 
-    # 2) 基本價（單品）
-    orig = float(product.get('price') or 0)                # 原價
-    disc = float(product.get('discount_price') or 0)       # 單品折扣價（沒有就 0）
-    cur  = disc if (disc and disc < orig) else orig        # 結帳用單價（先用單品邏輯）
+    # 2) 單品價
+    try:
+        orig = float(product.get('price') or 0)          # 原價
+    except Exception:
+        orig = 0.0
+    try:
+        disc = float(product.get('discount_price') or 0) # 折扣價
+    except Exception:
+        disc = 0.0
+    cur = disc if (disc and disc < orig) else orig       # 結帳用單價（先用單品邏輯）
 
-    # 3) 套組價（覆蓋）
+    # 3) 套組價覆蓋
     bundle_price = None
     bundle_compare = None
     if is_bundle:
@@ -2863,7 +2894,7 @@ def add_to_cart():
             b = (
                 supabase.table('bundles')
                 .select('price, compare_at, shell_product_id')
-                .eq('shell_product_id', product_id)   # ✅ 正確欄位
+                .eq('shell_product_id', str(product_id))
                 .single()
                 .execute()
                 .data
@@ -2872,56 +2903,65 @@ def add_to_cart():
                 bp = float(b.get('price') or 0)
                 bc = float(b.get('compare_at') or 0)
                 if bp > 0:
-                    cur = bp               # 套組現價 → 計價用
+                    cur = bp
                     bundle_price = bp
                 if bc > 0:
-                    orig = bc              # 套組原價 → 顯示用
+                    orig = bc
                     bundle_compare = bc
         except Exception:
             pass
 
     # 4) 初始化購物車
-    session.setdefault('cart', [])
-    cart = session['cart']
+    cart = session.get('cart', [])
 
-    # 5) 若已有相同商品+規格，直接加量
+    # 5) 相同商品+規格，直接加量
+    matched = False
+    pid_str = str(product_id)
+    opt_str = str(option or '')
     for item in cart:
-        if item.get('product_id') == product_id and (item.get('option') or '') == option:
-            item['qty'] += qty
-            session.modified = True
-            if action == 'checkout':
-                return redirect('/cart')
-            total_qty = sum(x.get('qty', 0) for x in cart)
-            return jsonify(success=True, count=total_qty)
+        if str(item.get('product_id')) == pid_str and str(item.get('option') or '') == opt_str:
+            try:
+                item['qty'] = int(item.get('qty', 1)) + qty
+            except Exception:
+                item['qty'] = qty
+            matched = True
+            break
 
     # 6) 新增項目
-    entry = {
-        'id': product_id,
-        'product_id': product_id,
-        'name': product.get('name'),
-        'price': cur,                          # 小計用
-        'original_price': orig,                # 給頁面顯示
-        'discount_price': (disc if (disc and disc < orig) else 0),  # 單品才會有意義
-        'images': product.get('images', []),
-        'qty': qty,
-        'option': option
-    }
-    if bundle_price is not None:
-        entry['bundle_price'] = bundle_price
-    if bundle_compare is not None:
-        entry['bundle_compare'] = bundle_compare
+    if not matched:
+        entry = {
+            'id': pid_str,
+            'product_id': pid_str,
+            'name': product.get('name'),
+            'price': cur,                           # 小計用單價
+            'original_price': orig,                 # 顯示用
+            'discount_price': (disc if (disc and disc < orig) else 0),
+            'images': product.get('images', []),
+            'qty': qty,
+            'option': opt_str
+        }
+        if bundle_price is not None:
+            entry['bundle_price'] = bundle_price
+        if bundle_compare is not None:
+            entry['bundle_compare'] = bundle_compare
+        cart.append(entry)
 
-    cart.append(entry)
+    # ⚠ 關鍵：重新指派回 session，並標記 modified
     session['cart'] = cart
+    try:
+        session['cart_count'] = sum(int(x.get('qty', 1)) for x in cart)
+    except Exception:
+        session['cart_count'] = len(cart)
     session.modified = True
 
-    # 7) 立即結帳
+    # 7) 立即結帳 or 一般加入
     if action == 'checkout':
         return redirect('/cart')
 
-    # 8) 一般加入購物車回傳數量
-    total_qty = sum(x.get('qty', 0) for x in cart)
+    total_qty = session.get('cart_count', len(cart))
+    # 若前端是 fetch/axios，這會是預期的 JSON
     return jsonify(success=True, count=total_qty)
+
 
 
 
