@@ -61,6 +61,21 @@ def generate_merchant_trade_no():
     rand = random.randint(1000, 9999)
     return f"HS{now}{rand}"
 
+# ✅ 正確：第二參數是「已序列化」的 JSON 字串（POST 傳 body；GET 傳 querystring；沒有就空字串）
+def _lp_signature_headers(request_uri: str, serialized: str, method: str = "POST"):
+    nonce = str(uuid4())
+    message = (LINE_PAY_CHANNEL_SECRET + request_uri + (serialized or "") + nonce).encode("utf-8")
+    signature = base64.b64encode(
+        hmac.new(LINE_PAY_CHANNEL_SECRET.encode("utf-8"), message, hashlib.sha256).digest()
+    ).decode("utf-8")
+    return {
+        "Content-Type": "application/json",
+        "X-LINE-ChannelId": LINE_PAY_CHANNEL_ID,
+        "X-LINE-Authorization-Nonce": nonce,
+        "X-LINE-Authorization": signature,
+    }
+
+
 app = Flask(__name__)
 app.secret_key = "your_super_secret_key"  # 為了 session 運作，這個很重要
 app.secret_key = os.urandom(24)
@@ -2011,6 +2026,24 @@ def pay():
         return "付款方式錯誤", 400
     
 
+# === LINE Pay 金額/幣別 helper（缺它會造成 NameError）===
+def _order_amount_currency(order):
+    """
+    從 orders 取實際應付金額與幣別。
+    - total_amount：應為數字字串或數字；TWD 必須為整數（LINE Pay 規定）。
+    - currency：預設 TWD，統一轉大寫。
+    """
+    raw = order.get("total_amount", 0)
+    try:
+        amt = int(round(float(raw)))
+    except (ValueError, TypeError):
+        raise ValueError(f"無效的 total_amount: {raw!r}")
+
+    if amt <= 0:
+        raise ValueError("LINE Pay 金額為 0，請檢查 orders.total_amount 寫入流程")
+
+    currency = (order.get("currency") or "TWD").upper()
+    return amt, currency
 
  #line pay結帳完成回傳
 # line pay 結帳完成「伺服器到伺服器」通知（需在 LINE Pay 後台設定為 https://你的網域/linepay/notify）
