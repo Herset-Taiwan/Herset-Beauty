@@ -2013,70 +2013,75 @@ def pay():
 
 
  #line pay結帳完成回傳
+# line pay 結帳完成「伺服器到伺服器」通知（需在 LINE Pay 後台設定為 https://你的網域/linepay/notify）
 @app.route("/linepay/notify", methods=["POST"])
 def linepay_notify():
+    # 1) 取原始 body 與簽名頭
+    raw = request.get_data(as_text=True)  # 原始 JSON 字串
+    nonce = request.headers.get("X-LINE-Authorization-Nonce", "")
+    auth = request.headers.get("X-LINE-Authorization", "")
+    path = request.path  # 必須是 "/linepay/notify"
+
+    # 2) 依 v3 規格驗簽：Base64(HMAC-SHA256( channelSecret + path + body + nonce ))
+    msg = (LINE_PAY_CHANNEL_SECRET + path + raw + nonce).encode("utf-8")
+    calc = base64.b64encode(hmac.new(LINE_PAY_CHANNEL_SECRET.encode("utf-8"), msg, hashlib.sha256).digest()).decode("utf-8")
+    if not auth or not hmac.compare_digest(auth, calc):
+        app.logger.warning("[LP][notify] signature mismatch")
+        return "signature mismatch", 401
+
+    # 3) 解析 JSON
     try:
-        data = request.get_json()
-
-        # 假設 orderId 是訂單號（你可以根據真實格式調整）
-        order_id = int(data.get("orderId"))
-        status = data.get("transactionStatus")
-
-        if status == "SUCCESS":
-            supabase.table("orders").update({
-                "payment_status": "paid"
-            }).eq("id", order_id).execute()
-            print(f"✅ 已更新訂單 {order_id} 為已付款")
-
-        return "OK", 200
-
+        js = json.loads(raw)
     except Exception as e:
-        print("❌ LinePay Webhook 錯誤:", e)
-        return "FAIL", 500
+        app.logger.exception("[LP][notify] bad json")
+        return "bad json", 400
 
-def _lp_signature_headers(api_path: str, body_obj: dict | None, method: str = "POST"):
-    """
-    依 v3 規格計算 X-LINE-Authorization 與 X-LINE-Authorization-Nonce
-    POST: signature over (channelSecret + apiPath + jsonBody + nonce)
-    GET : signature over (channelSecret + apiPath + queryString + nonce)  # 若有需要才用
-    """
-    nonce = str(uuid4())
+    # 你的 request 時 orderId = f"LP-{order['id']}"，這裡把數字 id 取回來
+    order_tag = str(js.get("orderId", ""))
+    m = re.match(r"LP-(\d+)", order_tag)
+    order_id = int(m.group(1)) if m else None
 
-    payload_str = ""
-    if method.upper() == "POST":
-        # 重要：JSON 要無空白，鍵值順序照 dumps 輸出即可
-        payload_str = json.dumps(body_obj or {}, separators=(",", ":"))
-        message = LINE_PAY_CHANNEL_SECRET + api_path + payload_str + nonce
+    tx = (js.get("transactionId") or "").strip()
+    status = js.get("transactionStatus")  # 可能是 SUCCESS / AUTHORIZED 等
+
+    if not order_id or not tx:
+        return "missing orderId/transactionId", 400
+
+    # 4) 撈訂單，冪等處理
+    res = supabase.table("orders").select("*").eq("id", order_id).single().execute()
+    order = res.data
+    if not order:
+        return "order not found", 404
+    if order.get("payment_status") == "paid":
+        return "OK", 200  # 冪等
+
+    # 5) 以 Confirm API 作最終確認（最保險；就算 notify 說 SUCCESS 也再 confirm 一次）
+    amount, currency = _order_amount_currency(order)
+    confirm_body = {"amount": amount, "currency": currency}
+    confirm_path = f"/v3/payments/{tx}/confirm"
+    payload = json.dumps(confirm_body, separators=(",", ":"))
+    headers = _lp_signature_headers(confirm_path, payload, method="POST")
+
+    r = requests.post(f"{LINE_PAY_BASE}{confirm_path}", headers=headers, data=payload, timeout=15)
+    try:
+        data = r.json()
+    except ValueError:
+        data = {"http_status": r.status_code, "text": r.text[:500]}
+
+    if data.get("returnCode") == "0000":
+        supabase.table("orders").update({
+            "payment_status": "paid",
+            "paid_trade_no": str(tx),
+            "lp_transaction_id": str(tx)
+        }).eq("id", order_id).execute()
+        return "OK", 200
     else:
-        # GET 若有 queryString，請自行串在這裡
-        message = LINE_PAY_CHANNEL_SECRET + api_path + "" + nonce
-
-    mac = hmac.new(
-        LINE_PAY_CHANNEL_SECRET.encode("utf-8"),
-        msg=message.encode("utf-8"),
-        digestmod=hashlib.sha256,
-    ).digest()
-    signature = base64.b64encode(mac).decode("utf-8")
-
-    return {
-        "Content-Type": "application/json",
-        "X-LINE-ChannelId": LINE_PAY_CHANNEL_ID,
-        "X-LINE-Authorization-Nonce": nonce,
-        "X-LINE-Authorization": signature,
-    }
-
-
-def _order_amount_currency(order):
-    """
-    從訂單取得實際應付金額與幣別（checkout 已寫入 orders.total_amount）
-    """
-    amount = int(round(float(order.get("total_amount", 0))))  # ← 正確欄位
-    if amount <= 0:
-        raise ValueError("LINE Pay 金額為 0，請檢查 orders.total_amount 寫入流程")
-    currency = order.get("currency", "TWD")
-    return amount, currency
-
-
+        # 記錄錯誤，之後可用備援 /internal/linepay/check_and_confirm 重試
+        supabase.table("orders").update({
+            "payment_status": "pending_confirm_failed",
+            "lp_confirm_error": json.dumps(data, ensure_ascii=False)
+        }).eq("id", order_id).execute()
+        return "NG", 400
 
 
 # 判斷用戶選的付款方式
@@ -2123,7 +2128,10 @@ def process_payment():
 
         # 3) 呼叫 LINE Pay
         r = requests.post(f"{LINE_PAY_BASE}{api_path}", headers=headers, data=payload, timeout=15)
-        data = r.json()
+        try:
+            data = r.json()
+        except ValueError:
+            data = {"http_status": r.status_code, "text": r.text[:1000]}
 
         if data.get("returnCode") == "0000":
             info = data.get("info", {})
@@ -2197,7 +2205,10 @@ def linepay_confirm():
     headers = _lp_signature_headers(confirm_path, payload, method="POST")
 
     r = requests.post(f"{LINE_PAY_BASE}{confirm_path}", headers=headers, data=payload, timeout=15)
-    data = r.json()
+    try:
+        data = r.json()
+    except ValueError:
+        data = {"http_status": r.status_code, "text": r.text[:1000]}
 
     if data.get("returnCode") == "0000":
         supabase.table("orders").update({
