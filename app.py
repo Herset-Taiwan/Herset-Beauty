@@ -105,6 +105,14 @@ app.config['MAIL_DEFAULT_SENDER'] = 'hersetbeauty@gmail.com'
 mail = Mail(app)
 
 
+OFFICIAL_HOST = "herset.co"
+@app.before_request
+def force_official_domain():
+    # 若使用者誤進 onrender 網域，301 轉回正式網域（含原路徑與查詢字串）
+    host = request.host.split(":")[0]
+    if host.endswith("onrender.com"):
+        return redirect(f"https://{OFFICIAL_HOST}{request.full_path}", code=301)
+
 @app.template_filter('nl2br')
 def nl2br_filter(s):
     if s is None:
