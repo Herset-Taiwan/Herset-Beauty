@@ -1044,6 +1044,16 @@ card.innerHTML = `
       </select>
     </form>
   </div>
+
+  <div style="margin-top:8px;display:flex;align-items:center;gap:10px;">
+  <strong>付款狀態：</strong>
+  <form method="POST" action="/admin0363/orders/update_payment/${o.id}">
+    <select name="payment_status" onchange="this.form.submit()">
+      <option value="unpaid" ${ (o.payment_status||'')==='unpaid'?'selected':'' }>未付款</option>
+      <option value="paid"   ${ (o.payment_status||'')==='paid'  ?'selected':'' }>已付款</option>
+    </select>
+  </form>
+</div>
 `;
 
     box.appendChild(card);

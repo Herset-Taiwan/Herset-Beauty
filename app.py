@@ -2359,6 +2359,18 @@ def update_order_status(order_id):
         flash(f"訂單 #{order_id} 出貨狀態已修改")  # ← ✅ 修改訊息內容
     return redirect("/admin0363/dashboard?tab=orders")
 
+# 後台付款狀態修改（ATM/匯款人工入帳用）
+@app.route('/admin0363/orders/update_payment/<int:order_id>', methods=['POST'])
+def update_order_payment(order_id):
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
+    new_ps = request.form.get("payment_status")
+    if new_ps in ("unpaid", "paid"):
+        supabase.table("orders").update({"payment_status": new_ps}).eq("id", order_id).execute()
+        flash(f"訂單 #{order_id} 付款狀態已修改為：{'已確認付款，待出貨' if new_ps=='paid' else '未付款'}", "success")
+    else:
+        flash("付款狀態值不正確", "error")
+    return redirect("/admin0363/dashboard?tab=orders")
 
 
 # 取代整段：商品詳情（同時支援單品 & 套組）
@@ -3118,7 +3130,7 @@ def order_history():
         if o['status'] == 'pending':
             o['status_text'] = '待處理'
         elif o['status'] == 'paid':
-            o['status_text'] = '已付款'
+            o['status_text'] = '已確認付款，待出貨'
         elif o['status'] == 'shipped':
             o['status_text'] = '已出貨'
         else:
