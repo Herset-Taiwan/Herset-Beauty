@@ -79,11 +79,11 @@ app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "please_change_me")
 
 app.config.update(
-    SESSION_COOKIE_SAMESITE="None",   # 跨站回跳必備
-    SESSION_COOKIE_SECURE=True,       # 只在 HTTPS 傳遞
-    SESSION_COOKIE_DOMAIN=".herset.co"  # 覆蓋 apex/www，依你的正式網域調整
+    SESSION_COOKIE_SAMESITE="Lax",    # 站內登入最穩，能避免多數被擋 Cookie 的狀況
+    SESSION_COOKIE_SECURE=True        # 正式站是 HTTPS 沒問題；若本機 http 測試，改成 False
 )
-
+if os.environ.get("FLASK_ENV") == "development":
+    app.config['SESSION_COOKIE_SECURE'] = False
 
 
 # ✅ Supabase 初始化
