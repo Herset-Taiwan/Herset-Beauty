@@ -2324,25 +2324,33 @@ def checkout():
     # 4) 應付金額（不得為負）
     final_total = max(total + shipping_fee - discount_amount, 0)
 
+    # 4.1 使用者此次在畫面上選的「意圖付款方式」(可有可無)
+    #    ✅ 只存 intended，不在這裡寫 payment_method（避免用戶反悔）
+    intended = (request.form.get("payment_method") or request.form.get("method") or "").lower()
+    ALLOWED_METHODS = {"linepay", "ecpay", "transfer", "atm", "bank", "bank_transfer"}
+    if intended not in ALLOWED_METHODS:
+        intended = None
+
     # 5) 建立訂單
     from uuid import uuid4
     from pytz import timezone
     from datetime import datetime
     tw = timezone("Asia/Taipei")
-    tz = tw
     merchant_trade_no = generate_merchant_trade_no()
     created_at = datetime.now(tw).isoformat()
-
 
     order_data = {
         'member_id': member_id,
         'total_amount': final_total,      # 實際應付金額（含運、扣完折扣）
         'shipping_fee': shipping_fee,
-        'discount_code': discount_code,   # 需要先加欄位（見下方 SQL）
+        'discount_code': discount_code,   # 需有欄位
         'discount_amount': discount_amount,
         'status': 'pending',
         'created_at': created_at,
-        'MerchantTradeNo': merchant_trade_no
+        'MerchantTradeNo': merchant_trade_no,
+        # ✅ 只記 “意圖付款方式”，真正入帳才寫 payment_method
+        'intended_payment_method': intended
+        # 'payment_method':  不要在這裡寫
     }
     result = supabase.table('orders').insert(order_data).execute()
     order_id = result.data[0]['id']
@@ -2354,7 +2362,7 @@ def checkout():
         it['option'] = it.get('option', '')
     supabase.table('order_items').insert(items).execute()
 
-    # 7) 成功後才累計折扣使用次數（簡單版；想更嚴謹可用 RPC，見下）
+    # 7) 成功後才累計折扣使用次數（簡單版；想更嚴謹可用 RPC）
     if discount_code:
         try:
             d = supabase.table('discounts').select('used_count').eq('code', discount_code).single().execute().data or {}
@@ -2370,6 +2378,7 @@ def checkout():
     session['current_trade_no'] = merchant_trade_no
 
     return redirect("/choose-payment")
+
 
 
 
@@ -2539,6 +2548,7 @@ def linepay_notify():
             "payment_status": "paid",
             "paid_trade_no": str(tx),
             "lp_transaction_id": str(tx),
+            "payment_method": "linepay",
             "paid_at": datetime.now(TW).isoformat()
         }).eq("id", order_id).execute()
         return "OK", 200
@@ -2782,13 +2792,51 @@ def update_order_status(order_id):
 def update_order_payment(order_id):
     if not session.get("admin_logged_in"):
         return redirect("/admin0363")
-    new_ps = request.form.get("payment_status")
-    if new_ps in ("unpaid", "paid"):
-        supabase.table("orders").update({"payment_status": new_ps}).eq("id", order_id).execute()
-        flash(f"訂單 #{order_id} 付款狀態已修改為：{'已付款' if new_ps=='paid' else '未付款'}", "success")
+
+    new_ps = (request.form.get("payment_status") or "").lower()
+
+    # 從表單讀取可選的付款方式（可沒有；沒有就預設轉帳）
+    pm_raw = (request.form.get("payment_method") or request.form.get("pm") or "").lower()
+    # 正規化
+    if pm_raw in ("atm", "bank", "bank_transfer"):
+        pm_raw = "transfer"
+    elif pm_raw not in ("transfer", "linepay", "ecpay"):
+        pm_raw = None  # 未提供或不在白名單
+
+    if new_ps == "paid":
+        # 這條路通常是人工入帳，預設視為轉帳；若表單有送 linepay/ecpay 就照送的
+        final_pm = pm_raw or "transfer"
+
+        from datetime import datetime
+        try:
+            # 如果你專案裡已經有全域 TW，就用它；否則用本地時間或自行 import pytz
+            paid_at_iso = datetime.now(TW).isoformat()  # 若沒有 TW，改成 datetime.now().isoformat()
+        except NameError:
+            paid_at_iso = datetime.now().isoformat()
+
+        supabase.table("orders").update({
+            "payment_status": "paid",
+            "payment_method": final_pm,
+            "paid_at": paid_at_iso
+        }).eq("id", order_id).execute()
+
+        human = "LINE Pay 付款" if final_pm == "linepay" else ("信用卡付款" if final_pm == "ecpay" else "轉帳付款")
+        flash(f"訂單 #{order_id} 已標記為：{human}", "success")
+
+    elif new_ps == "unpaid":
+        # 退回未付款：一併清空付款方式與已付款時間
+        supabase.table("orders").update({
+            "payment_status": "unpaid",
+            "payment_method": None,
+            "paid_at": None
+        }).eq("id", order_id).execute()
+        flash(f"訂單 #{order_id} 付款狀態已修改為：未付款", "success")
+
     else:
         flash("付款狀態值不正確", "error")
+
     return redirect("/admin0363/dashboard?tab=orders")
+
 
 
 # 取代整段：商品詳情（同時支援單品 & 套組）

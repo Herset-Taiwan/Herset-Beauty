@@ -450,6 +450,11 @@
   gap: 12px;
 }
 
+/* 新增：依付款方式的徽章色（可調整） */
+  .badge.pay-linepay   { background:#06C755; color:#fff; } /* LINE green */
+  .badge.pay-transfer  { background:#0ea5e9; color:#fff; } /* Sky blue */
+  .badge.pay-ecpay     { background:#3b82f6; color:#fff; } /* Optional: 信用卡 */
+
 </style>
 
 </head>
@@ -1464,6 +1469,32 @@ document.getElementById("member-search").addEventListener("input", function () {
 });
 </script>
 
+<!-- 訂單狀態改變 -->
+<script>
+function payBadgeHTML(o){
+  // 只在已付款時顯示
+  if ((o.payment_status || '').toLowerCase() !== 'paid') return '';
+
+  const m = (o.payment_method || '').toLowerCase();
+
+  // 預設
+  let text = '已付款';
+  let cls  = 'paid';
+
+  // 依付款方式改文字與樣式
+  if (m === 'linepay' || m === 'line_pay') {
+    text = 'LINE Pay 付款';
+    cls  = 'pay-linepay';
+  } else if (m === 'bank' || m === 'transfer' || m === 'bank_transfer' || m === 'atm') {
+    text = '轉帳付款';
+    cls  = 'pay-transfer';
+  } else if (m === 'ecpay' || m === 'credit' || m === 'credit_card') {
+    text = '信用卡付款';
+    cls  = 'pay-ecpay';
+  }
+  return `<span class="badge ${cls}">${text}</span>`;
+}
+</script>
 
 
 
