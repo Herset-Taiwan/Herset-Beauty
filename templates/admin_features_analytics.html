@@ -71,45 +71,49 @@
   <input type="hidden" name="mode" value="product">
   <div class="grid2">
     <div>
-      <div class="row nowrap">
-  <label class="muted" style="align-self:center">關鍵字：</label>
-  <input type="text" name="keyword" id="p_kw" placeholder="輸入商品關鍵字（例：精華、面膜）"
-         value="{{ form.keyword or '' }}" style="width:220px">
+      <!-- 1) 關鍵字 + 自訂日期（同一排，與會員一致） -->
+      <div class="row">
+        <input
+          type="text"
+          name="keyword"
+          id="p_kw"
+          placeholder="輸入商品關鍵字（例：精華、面膜）"
+          value="{{ form.keyword or '' }}"
+          style="min-width:260px">
 
-  <label class="muted" style="align-self:center;margin-left:8px">起：</label>
-  <input class="short" type="date" name="p_start" id="p_start" value="{{ form.p_start or '' }}">
-  <label class="muted" style="align-self:center">迄：</label>
-  <input class="short" type="date" name="p_end"   id="p_end"   value="{{ form.p_end or '' }}">
+        <input type="date" name="p_start" id="p_start" value="{{ form.p_start or '' }}">
+        <input type="date" name="p_end"   id="p_end"   value="{{ form.p_end or '' }}">
 
-  <!-- 新增：全部商品 -->
-  <label class="muted" style="align-self:center; margin-left:8px;">
-    <input type="checkbox" name="all_products" id="all_products" {% if form.all_products %}checked{% endif %}>
-    全部商品
-  </label>
+        <label class="muted" style="align-self:center;">
+          <input type="checkbox" name="all_products" id="all_products" {% if form.all_products %}checked{% endif %}>
+          全部商品
+        </label>
+      </div>
 
-  <button class="btn" type="submit" style="margin-left:8px">查詢商品銷售</button>
-</div>
-
-
-      <!-- 新增：快速範圍按鈕 -->
+      <!-- 2) 快速範圍（對齊會員：放在前面，並加入「清空」） -->
       <div class="row" style="margin-top:8px" id="productQuick">
-  <span class="muted">快速範圍：</span>
-  <button class="tab-btn qbtn" type="button" data-days="7">一周</button>
-  <button class="tab-btn qbtn" type="button" data-months="1">一個月</button>
-  <button class="tab-btn qbtn" type="button" data-months="3">三個月</button>
-  <button class="tab-btn qbtn" type="button" data-months="6">半年</button>
-  <button class="tab-btn qbtn" type="button" data-months="12">一年</button>
-  <span class="muted">（結束日預設為今天；點按上方按鈕會自動帶入區間）</span>
-</div>
+        <span class="muted">快速範圍：</span>
+        <button class="tab-btn qbtn" type="button" data-days="7">一周</button>
+        <button class="tab-btn qbtn" type="button" data-months="1">一個月</button>
+        <button class="tab-btn qbtn" type="button" data-months="3">三個月</button>
+        <button class="tab-btn qbtn" type="button" data-months="6">半年</button>
+        <button class="tab-btn qbtn" type="button" data-months="12">一年</button>
+        <button class="tab-btn" id="productClearBtn" type="button" onclick="clearRange('p_start','p_end')">清空</button>
+        <span class="muted">（結束日預設為今天；點按上方按鈕會自動帶入區間）</span>
+      </div>
 
-
+      <!-- 3) 查詢按鈕（放到快速範圍後面，與會員一致） -->
+      <div class="row" style="margin-top:8px">
+        <button class="btn" type="submit">查詢商品銷售</button>
+      </div>
 
       <div class="muted" style="margin-top:6px">
-        留空日期＝不限制期間。若有日期，將以「自訂區間」統計；若留空，顯示「一週／本月」統計。
+        留空日期＝不限制期間；有日期＝依自訂區間統計（含首尾）。
       </div>
     </div>
   </div>
 </form>
+
 
 
       {% if product_result %}
@@ -162,36 +166,35 @@
   <input type="hidden" name="mode" value="member">
   <div class="grid2">
     <div>
+      <!-- 1) 關鍵字 + 自訂日期（同一排） -->
       <div class="row">
-  <!-- 關鍵字 -->
-  <input type="text" name="member_keyword" placeholder="會員關鍵字（姓名 / Email / 手機）"
-         value="{{ form.member_keyword or '' }}" style="min-width:260px">
+        <input
+          type="text"
+          name="member_keyword"
+          placeholder="會員關鍵字（姓名 / Email / 手機）"
+          value="{{ form.member_keyword or '' }}"
+          style="min-width:260px">
 
-  <!-- 起 / 迄 同一排 -->
-  <div class="date-group">
-    <span class="muted">起：</span>
-    <input type="date" name="start" id="m_start" value="{{ form.start or '' }}">
-    <span class="muted">迄：</span>
-    <input type="date" name="end" id="m_end" value="{{ form.end or '' }}">
-  </div>
+        <input type="date" name="start" id="m_start" value="{{ form.start or '' }}">
+        <input type="date" name="end"   id="m_end"   value="{{ form.end or '' }}">
+      </div>
 
-  <!-- 查詢按鈕 -->
-  <button class="btn" type="submit">查詢會員消費</button>
-</div>
+      <!-- 2) 快速範圍（移到前面） -->
+      <div class="row" style="margin-top:8px">
+        <span class="muted">快速範圍：</span>
+        <button class="tab-btn" type="button" onclick="setRangeDaysFor('m_start','m_end',7)">一周</button>
+        <button class="tab-btn" type="button" onclick="setRangeMonthsFor('m_start','m_end',1)">一個月</button>
+        <button class="tab-btn" type="button" onclick="setRangeMonthsFor('m_start','m_end',3)">三個月</button>
+        <button class="tab-btn" type="button" onclick="setRangeMonthsFor('m_start','m_end',6)">半年</button>
+        <button class="tab-btn" type="button" onclick="setRangeMonthsFor('m_start','m_end',12)">一年</button>
+        <button class="tab-btn" type="button" onclick="clearRange('m_start','m_end')">清空</button>
+        <span class="muted">（結束日自動帶入今天，開始日依所選範圍回推）</span>
+      </div>
 
-
-      <!-- 快速範圍按鈕 -->
-      <div class="row" style="margin-top:8px" id="memberQuick">
-  <span class="muted">快速範圍：</span>
-  <button class="tab-btn qbtn" type="button" data-days="7">一周</button>
-  <button class="tab-btn qbtn" type="button" data-months="1">一個月</button>
-  <button class="tab-btn qbtn" type="button" data-months="3">三個月</button>
-  <button class="tab-btn qbtn" type="button" data-months="6">半年</button>
-  <button class="tab-btn qbtn" type="button" data-months="12">一年</button>
-  <button class="tab-btn" type="button" id="memberClearBtn">清空</button>
-  <span class="muted">（結束日自動帶入今天，開始日依所選範圍回推）</span>
-</div>
-
+      <!-- 3) 查詢按鈕（移到快速範圍之後） -->
+      <div class="row" style="margin-top:8px">
+        <button class="btn" type="submit">查詢會員消費</button>
+      </div>
 
       <div class="muted" style="margin-top:6px">
         留空日期＝不限制期間；有日期＝依自訂區間統計（含首尾）。
@@ -199,6 +202,7 @@
     </div>
   </div>
 </form>
+
 
 
       {% if member_result %}
@@ -356,7 +360,8 @@
     'p_start', 'p_end',
     // 這兩個函式是你既有的
     (d) => setRangeDays(d),
-    (m) => setRangeMonths(m)
+    (m) => setRangeMonths(m),
+    'productClearBtn'
   );
 
   // 會員查詢（若你有這一區）
