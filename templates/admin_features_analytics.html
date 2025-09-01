@@ -36,16 +36,17 @@
 <body>
   <div class="wrap">
     <div class="top">
-      <div>
-        <div class="title">📊 查詢 / 報表</div>
-        <div class="muted">快速掌握商品銷售與會員消費狀況</div>
-
-      <!-- 右上角按鈕列 -->
+  <div>
+    <div class="title">📊 查詢 / 報表</div>
+    <div class="muted">快速掌握商品銷售與會員消費狀況</div>
+  </div>
+  <!-- 右上角按鈕列（要與左邊標題同層） -->
   <div class="head-right">
     <a class="back" href="/admin0363/features">← 返回功能管理</a>
     <a class="back" href="/admin0363/dashboard">返回後台</a>
   </div>
 </div>
+
 
     <div class="tabs">
       <a href="{{ url_for('admin_features_analytics', tab='product') }}" class="tab-btn {% if tab=='product' %}active{% endif %}">商品銷售查詢</a>
