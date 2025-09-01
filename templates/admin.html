@@ -997,9 +997,7 @@ card.innerHTML = `
 </div>
     <div class="order-time">${esc(o.created_local||'')}</div>
     <div class="order-chips">
-      <span class="order-chip ${ (o.payment_status||'')==='paid' ? 'pay':'unpay'}">
-        ${ (o.payment_status||'')==='paid' ? '已付款':'未付款' }
-      </span>
+      ${ payBadgeHTML(o) || `<span class="order-chip unpay">未付款</span>` }
       <span class="order-chip ${o.status==='shipped'?'ship':'pending'}">${zhStatus(o.status)}</span>
       ${o.discount_code ? `<span class="order-chip pending">折扣：${esc(o.discount_code)}</span>` : ''}
     </div>
