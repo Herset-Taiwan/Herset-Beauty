@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>查詢 / 報表 - HERSET BEAUTY</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    :root{--pink:#e91e63;--bg:#f6f7f9;--card:#fff;--border:#e5e7eb;--shadow:0 8px 20px rgba(0,0,0,.06);--radius:16px}
+    html,body{background:var(--bg);margin:0;font-family:"Segoe UI","Noto Sans TC",sans-serif}
+    .wrap{max-width:1100px;margin:32px auto 80px;padding:0 20px}
+    .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+    .title{font-size:28px;font-weight:800}
+    .back{background:#9ca3af;color:#fff;text-decoration:none;padding:8px 14px;border-radius:10px;box-shadow:var(--shadow)}
+    .tabs{display:flex;gap:10px;margin:14px 0}
+    .tab-btn{border:1px solid var(--border);background:#fff;padding:10px 14px;border-radius:10px;cursor:pointer}
+    .tab-btn.active{background:var(--pink);color:#fff;border-color:var(--pink)}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-top:14px}
+    .grid2{display:grid;grid-template-columns:1fr;gap:14px}
+    @media (min-width:900px){.grid2{grid-template-columns:1fr 1fr}}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .row input, .row select{padding:8px 10px;border:1px solid #d1d5db;border-radius:8px}
+    .btn{background:var(--pink);color:#fff;border:none;padding:10px 16px;border-radius:10px;cursor:pointer}
+    .muted{color:#6b7280;font-size:13px}
+    table{width:100%;border-collapse:collapse;margin-top:10px}
+    th,td{border-bottom:1px solid #eee;padding:10px;text-align:left}
+    .stat{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+    .badge{background:#f3f4f6;border:1px solid #e5e7eb;border-radius:999px;padding:6px 10px;font-weight:600}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <div class="title">📊 查詢 / 報表</div>
+        <div class="muted">快速掌握商品銷售與會員消費狀況</div>
+      </div>
+      <a class="back" href="/admin0363/features">← 返回功能管理</a>
+    </div>
+
+    <div class="tabs">
+      <a href="{{ url_for('admin_features_analytics', tab='product') }}" class="tab-btn {% if tab=='product' %}active{% endif %}">商品銷售查詢</a>
+      <a href="{{ url_for('admin_features_analytics', tab='member') }}" class="tab-btn {% if tab=='member' %}active{% endif %}">會員消費查詢</a>
+    </div>
+
+    {% if tab=='product' %}
+    <div class="card">
+      <form method="POST" action="{{ url_for('admin_features_analytics', tab='product') }}">
+        <input type="hidden" name="mode" value="product">
+        <div class="grid2">
+          <div>
+            <div class="row">
+              <input type="text" name="keyword" placeholder="輸入商品關鍵字（例：精華、面膜）" value="{{ form.keyword or '' }}" style="min-width:260px">
+              <select name="period">
+                <option value="rolling" {% if form.period=='rolling' %}selected{% endif %}>滾動一週 / 本月</option>
+                <option value="calendar" {% if form.period=='calendar' %}selected{% endif %}>本週(一~日) / 本月</option>
+              </select>
+              <button class="btn" type="submit">查詢商品銷售</button>
+            </div>
+            <div class="muted">「滾動一週」= 往前 7 天；「本週」= 週一到週日。</div>
+          </div>
+        </div>
+      </form>
+
+      {% if product_result %}
+        <div class="stat">
+          <div class="badge">符合商品：{{ product_result.product_count }} 件</div>
+          <div class="badge">一週銷量：{{ product_result.week_qty }}　金額：$ {{ '{:,.0f}'.format(product_result.week_amount) }}</div>
+          <div class="badge">本月銷量：{{ product_result.month_qty }}　金額：$ {{ '{:,.0f}'.format(product_result.month_amount) }}</div>
+        </div>
+        <table>
+          <thead><tr><th>商品</th><th>一週數量</th><th>一週金額</th><th>本月數量</th><th>本月金額</th></tr></thead>
+          <tbody>
+            {% for r in product_result.rows %}
+            <tr>
+              <td>{{ r.name }}</td>
+              <td>{{ r.w_qty }}</td>
+              <td>$ {{ '{:,.0f}'.format(r.w_amt) }}</td>
+              <td>{{ r.m_qty }}</td>
+              <td>$ {{ '{:,.0f}'.format(r.m_amt) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if tab=='member' %}
+    <div class="card">
+      <form method="POST" action="{{ url_for('admin_features_analytics', tab='member') }}">
+        <input type="hidden" name="mode" value="member">
+        <div class="grid2">
+          <div>
+            <div class="row">
+              <input type="text" name="member_keyword" placeholder="會員關鍵字（姓名 / Email / 手機）" value="{{ form.member_keyword or '' }}" style="min-width:260px">
+              <input type="date" name="start" value="{{ form.start or '' }}">
+              <input type="date" name="end" value="{{ form.end or '' }}">
+              <button class="btn" type="submit">查詢會員消費</button>
+            </div>
+            <div class="muted">時間區間（含首尾）。留空則查全部期間。</div>
+          </div>
+        </div>
+      </form>
+
+      {% if member_result %}
+        <div class="stat">
+          <div class="badge">符合會員：{{ member_result.member_count }} 人</div>
+          <div class="badge">總訂單數：{{ member_result.order_count }}</div>
+          <div class="badge">總金額：$ {{ '{:,.0f}'.format(member_result.total_amount) }}</div>
+          <div class="badge">平均客單：$ {{ '{:,.0f}'.format(member_result.avg_amount) }}</div>
+        </div>
+        <table>
+          <thead><tr><th>會員</th><th>訂單數</th><th>總金額</th><th>最近購買</th></tr></thead>
+          <tbody>
+            {% for r in member_result.rows %}
+            <tr>
+              <td>{{ r.member_name }}（{{ r.member_email }} / {{ r.member_phone }}）</td>
+              <td>{{ r.order_count }}</td>
+              <td>$ {{ '{:,.0f}'.format(r.total_amount) }}</td>
+              <td>{{ r.last_order_at }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</body>
+</html>

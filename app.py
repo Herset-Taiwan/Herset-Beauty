@@ -1466,6 +1466,214 @@ def admin_announcement_index():
     # 也可在這裡加上時間/狀態的標準化
     return jsonify(rows)
 
+# admin後台 搜尋報表開始
+@app.route("/admin0363/features/analytics", methods=["GET", "POST"])
+def admin_features_analytics():
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
+
+    tab = request.args.get("tab", "product")
+    form = {}
+
+    product_result = None
+    member_result  = None
+
+    if request.method == "POST":
+        mode = request.form.get("mode")
+        if mode == "product":
+            form["keyword"] = (request.form.get("keyword") or "").strip()
+            form["period"]  = (request.form.get("period") or "rolling").strip()
+            product_result = _analytics_product(form["keyword"], form["period"])
+            tab = "product"
+
+        elif mode == "member":
+            form["member_keyword"] = (request.form.get("member_keyword") or "").strip()
+            form["start"] = request.form.get("start") or ""
+            form["end"]   = request.form.get("end") or ""
+            member_result = _analytics_member(form["member_keyword"], form["start"], form["end"])
+            tab = "member"
+
+    return render_template("admin_features_analytics.html",
+                           tab=tab, form=form,
+                           product_result=product_result,
+                           member_result=member_result)
+
+def _start_of_week_calendar(dt):
+    # 以台北時區，將週一視為一週開始
+    d = dt.astimezone(TW)
+    monday = d - timedelta(days=(d.weekday()))  # 0=Mon
+    return monday.replace(hour=0, minute=0, second=0, microsecond=0)
+
+def _start_of_month(dt):
+    d = dt.astimezone(TW)
+    return d.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+def _analytics_product(keyword, period_mode):
+    now = datetime.now(TW)
+    if period_mode == "calendar":
+        week_start  = _start_of_week_calendar(now)
+        week_end    = now  # 到此刻
+    else:
+        week_start  = (now - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
+        week_end    = now
+
+    month_start = _start_of_month(now)
+    month_end   = now
+
+    # 1) 找商品
+    prod_q = supabase.table("products").select("id,name")
+    if keyword:
+        prod_q = prod_q.ilike("name", f"%{keyword}%")
+    prods = (prod_q.limit(200).execute()).data or []
+    prod_ids = [p["id"] for p in prods]
+    if not prod_ids:
+        return {
+            "product_count": 0,
+            "week_qty": 0, "week_amount": 0,
+            "month_qty": 0, "month_amount": 0,
+            "rows": []
+        }
+
+    # 2) 找期間內的訂單 id
+    # 這裡你可以視情況加上 .eq("payment_status","paid") 或 .in("status",[...])
+    wk_orders = supabase.table("orders").select("id,created_at")\
+        .gte("created_at", week_start.isoformat())\
+        .lte("created_at", week_end.isoformat())\
+        .limit(5000).execute().data or []
+
+    mo_orders = supabase.table("orders").select("id,created_at")\
+        .gte("created_at", month_start.isoformat())\
+        .lte("created_at", month_end.isoformat())\
+        .limit(10000).execute().data or []
+
+    wk_ids = [o["id"] for o in wk_orders]
+    mo_ids = [o["id"] for o in mo_orders]
+
+    # 3) 匯總 order_items（以單價*數量計金額）
+    def sum_items(order_ids):
+        if not order_ids:
+            return {}
+        items = supabase.table("order_items").select("order_id,product_id,qty,price")\
+            .in_("order_id", order_ids).in_("product_id", prod_ids)\
+            .limit(20000).execute().data or []
+        agg = {}  # {product_id: {"qty":x,"amt":y}}
+        for it in items:
+            pid = it["product_id"]
+            qty = int(it.get("qty") or 0)
+            price = float(it.get("price") or 0)
+            a = agg.setdefault(pid, {"qty":0,"amt":0.0})
+            a["qty"] += qty
+            a["amt"] += qty * price
+        return agg
+
+    wk_agg = sum_items(wk_ids)
+    mo_agg = sum_items(mo_ids)
+
+    rows = []
+    week_qty = week_amt = month_qty = month_amt = 0
+    name_map = {p["id"]: p["name"] for p in prods}
+
+    for pid in prod_ids:
+        wq = wk_agg.get(pid, {}).get("qty", 0)
+        wa = wk_agg.get(pid, {}).get("amt", 0.0)
+        mq = mo_agg.get(pid, {}).get("qty", 0)
+        ma = mo_agg.get(pid, {}).get("amt", 0.0)
+        if any([wq, wa, mq, ma]):
+            rows.append({
+                "name": name_map.get(pid, f"商品 {pid}"),
+                "w_qty": wq, "w_amt": wa,
+                "m_qty": mq, "m_amt": ma
+            })
+            week_qty  += wq
+            week_amt  += wa
+            month_qty += mq
+            month_amt += ma
+
+    return {
+        "product_count": len(prods),
+        "week_qty": week_qty, "week_amount": week_amt,
+        "month_qty": month_qty, "month_amount": month_amt,
+        "rows": rows
+    }
+
+def _analytics_member(keyword, start_date, end_date):
+    # 1) 找會員（依關鍵字比對姓名/Email/手機）
+    mem_q = supabase.table("members").select("id,name,email,phone")
+    if keyword:
+        kw = f"%{keyword}%"
+        # Supabase 沒有 OR ilike 的簡寫，這裡採用多次查詢合併或建立一個簡單的「搜尋視圖」。
+        # 先用最保守方式：分三次查詢再去重合併。
+        found = {}
+        for col in ["name", "email", "phone"]:
+            res = mem_q.ilike(col, kw).limit(1000).execute().data or []
+            for m in res:
+                found[m["id"]] = m
+        members = list(found.values())
+    else:
+        members = supabase.table("members").select("id,name,email,phone")\
+                    .limit(1000).execute().data or []
+
+    if not members:
+        return {"member_count": 0, "order_count": 0, "total_amount": 0, "avg_amount": 0, "rows": []}
+
+    mem_map = {m["id"]: m for m in members}
+    mem_ids = list(mem_map.keys())
+
+    # 2) 時間區間
+    # 若有填，包含首尾；未填則不限制
+    orders_q = supabase.table("orders").select("id,member_id,created_at,total")
+    if start_date:
+        orders_q = orders_q.gte("created_at", f"{start_date}T00:00:00")
+    if end_date:
+        orders_q = orders_q.lte("created_at", f"{end_date}T23:59:59")
+    orders_q = orders_q.in_("member_id", mem_ids).limit(20000)
+    # 這裡同樣可視需要加條件：.eq("payment_status","paid") 或 .in("status",[...])
+    orders = orders_q.execute().data or []
+
+    # 3) 彙整
+    per = {}  # {member_id: {"count":x, "sum":y, "last":datetime}}
+    for o in orders:
+        mid = o["member_id"]
+        total = float(o.get("total") or 0)
+        created = o.get("created_at")
+        cell = per.setdefault(mid, {"count":0, "sum":0.0, "last": None})
+        cell["count"] += 1
+        cell["sum"] += total
+        try:
+            dt = parser.parse(created).astimezone(TW) if created else None
+        except Exception:
+            dt = None
+        if dt and (cell["last"] is None or dt > cell["last"]):
+            cell["last"] = dt
+
+    rows = []
+    total_orders = 0
+    total_amount = 0.0
+    for mid, info in per.items():
+        m = mem_map.get(mid, {})
+        total_orders += info["count"]
+        total_amount += info["sum"]
+        rows.append({
+            "member_name": m.get("name") or "(未命名)",
+            "member_email": m.get("email") or "",
+            "member_phone": m.get("phone") or "",
+            "order_count": info["count"],
+            "total_amount": info["sum"],
+            "last_order_at": info["last"].strftime("%Y-%m-%d %H:%M") if info["last"] else "-"
+        })
+
+    avg_amount = (total_amount / total_orders) if total_orders else 0.0
+    # 依總金額排序
+    rows.sort(key=lambda r: r["total_amount"], reverse=True)
+
+    return {
+        "member_count": len(per),
+        "order_count": total_orders,
+        "total_amount": total_amount,
+        "avg_amount": avg_amount,
+        "rows": rows
+    }
+# admin後台 搜尋報表結束
 
 
 @app.route("/admin0363/mark_seen_orders", methods=["POST"])
