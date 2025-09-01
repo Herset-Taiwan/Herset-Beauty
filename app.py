@@ -1539,23 +1539,25 @@ def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False)
     prod_ids = [p["id"] for p in prods]
     name_map = {p["id"]: p["name"] for p in prods}
     if not prod_ids:
-        return {"product_count": 0, "rows": [], "range_mode": bool(p_start or p_end),
-                "range_qty": 0, "range_amount": 0, "week_qty": 0, "week_amount": 0,
-                "month_qty": 0, "month_amount": 0, "range_start": "", "range_end": ""}
+        return {
+            "product_count": 0,
+            "rows": [],
+            "range_mode": bool(p_start or p_end),
+            "range_qty": 0,
+            "range_amount": 0,
+            "week_qty": 0,
+            "week_amount": 0,
+            "month_qty": 0,
+            "month_amount": 0,
+            "range_start": "",
+            "range_end": "",
+        }
 
-    # 2) 只抓「已出貨」訂單（你的 orders.status='shipped'）
-    def shipped_orders_between(start_iso=None, end_iso=None, limit=80000):
-        q = supabase.table("orders").select("id").in_("status", SHIPPED_STATUSES)
-        if start_iso:
-            q = q.gte("created_at", start_iso)
-        if end_iso:
-            q = q.lte("created_at", end_iso)
-        return (q.limit(limit).execute().data or [])
-
-    # 3) 工具：彙總 order_items
-     def sum_items(order_ids, filter_prod_ids):
+    # 2) 工具：彙總 order_items（只用實際存在的欄位：qty / price / subtotal）
+    def sum_items(order_ids, filter_prod_ids):
         """
-        只使用實際存在的欄位：qty / subtotal（若 subtotal 為空再退回 qty*price）
+        回傳 {product_id: {"qty": 數量, "amt": 金額}}
+        金額優先採用 subtotal；若為 None 再用 qty*price。
         """
         if not order_ids:
             return {}
@@ -1578,7 +1580,6 @@ def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False)
         for it in items:
             pid = it["product_id"]
             qty = int(it.get("qty") or 0)
-            # subtotal 欄位已經在表上（你的 schema 截圖），優先使用；若為 None 再退回 qty*price
             sub = it.get("subtotal")
             if sub is None:
                 price = float(it.get("price") or 0)
@@ -1589,8 +1590,17 @@ def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False)
             a = agg.setdefault(pid, {"qty": 0, "amt": 0.0})
             a["qty"] += qty
             a["amt"] += amt
-
         return agg
+
+    # 3) 只抓「已出貨」訂單（你的 orders.status='shipped'）
+    def shipped_orders_between(start_iso=None, end_iso=None, limit=80000):
+        q = supabase.table("orders").select("id").in_("status", SHIPPED_STATUSES)
+        if start_iso:
+            q = q.gte("created_at", start_iso)
+        if end_iso:
+            q = q.lte("created_at", end_iso)
+        return (q.limit(limit).execute().data or [])
+
     # === A. 區間模式 ===
     if p_start or p_end:
         if not p_end:
@@ -1598,7 +1608,7 @@ def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False)
         if not p_start:
             p_start = p_end
         start_iso = f"{p_start}T00:00:00"
-        end_iso   = f"{p_end}T23:59:59"
+        end_iso = f"{p_end}T23:59:59"
 
         orders = shipped_orders_between(start_iso, end_iso)
         order_ids = [o["id"] for o in orders]
@@ -1610,22 +1620,28 @@ def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False)
             ra = r_agg.get(pid, {}).get("amt", 0.0)
             if rq or ra:
                 rows.append({"name": name_map.get(pid, f"商品 {pid}"), "r_qty": rq, "r_amt": ra})
-                r_qty += rq; r_amt += ra
+                r_qty += rq
+                r_amt += ra
 
         return {
             "product_count": len(prods),
             "rows": rows,
             "range_mode": True,
-            "range_qty": r_qty, "range_amount": r_amt,
-            "range_start": p_start, "range_end": p_end,
-            "week_qty": 0, "week_amount": 0, "month_qty": 0, "month_amount": 0
+            "range_qty": r_qty,
+            "range_amount": r_amt,
+            "range_start": p_start,
+            "range_end": p_end,
+            "week_qty": 0,
+            "week_amount": 0,
+            "month_qty": 0,
+            "month_amount": 0,
         }
 
     # === B. 一週 / 本月（亦只統計已出貨） ===
-    week_start  = (now - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
-    week_end    = now
+    week_start = (now - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
+    week_end = now
     month_start = _start_of_month(now)
-    month_end   = now
+    month_end = now
 
     wk_orders = shipped_orders_between(week_start.isoformat(), week_end.isoformat(), limit=80000)
     mo_orders = shipped_orders_between(month_start.isoformat(), month_end.isoformat(), limit=120000)
@@ -1644,18 +1660,28 @@ def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False)
         mq = mo_agg.get(pid, {}).get("qty", 0)
         ma = mo_agg.get(pid, {}).get("amt", 0.0)
         if any([wq, wa, mq, ma]):
-            rows.append({"name": name_map.get(pid, f"商品 {pid}"),
-                         "w_qty": wq, "w_amt": wa, "m_qty": mq, "m_amt": ma})
-            week_qty += wq; week_amt += wa; month_qty += mq; month_amt += ma
+            rows.append(
+                {"name": name_map.get(pid, f"商品 {pid}"), "w_qty": wq, "w_amt": wa, "m_qty": mq, "m_amt": ma}
+            )
+            week_qty += wq
+            week_amt += wa
+            month_qty += mq
+            month_amt += ma
 
     return {
         "product_count": len(prods),
         "rows": rows,
         "range_mode": False,
-        "week_qty": week_qty, "week_amount": week_amt,
-        "month_qty": month_qty, "month_amount": month_amt,
-        "range_qty": 0, "range_amount": 0, "range_start": "", "range_end": ""
+        "week_qty": week_qty,
+        "week_amount": week_amt,
+        "month_qty": month_qty,
+        "month_amount": month_amt,
+        "range_qty": 0,
+        "range_amount": 0,
+        "range_start": "",
+        "range_end": "",
     }
+
 
 def _analytics_member(keyword, start_date, end_date):
     """
