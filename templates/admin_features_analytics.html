@@ -31,6 +31,18 @@
     /* 讓右上角兩顆按鈕固定在右側並排 */
     .head-right{display:flex; gap:10px; align-items:center}
 
+    /* 會員搜尋日期並排 */
+    .date-group{display:flex; gap:10px; align-items:center; flex-wrap:nowrap}
+    .date-group input[type="date"]{min-width:140px}
+
+    /* 選取範圍 快速範圍高亮 */
+.qbtn.is-on{
+  background: var(--pink);
+  color:#fff;
+  border-color: var(--pink);
+}
+
+
   </style>
 </head>
 <body>
@@ -80,15 +92,17 @@
 
 
       <!-- 新增：快速範圍按鈕 -->
-      <div class="row" style="margin-top:8px">
-        <span class="muted">快速範圍：</span>
-        <button class="tab-btn" type="button" onclick="setRangeDays(7)">一周</button>
-        <button class="tab-btn" type="button" onclick="setRangeMonths(1)">一個月</button>
-        <button class="tab-btn" type="button" onclick="setRangeMonths(3)">三個月</button>
-        <button class="tab-btn" type="button" onclick="setRangeMonths(6)">半年</button>
-        <button class="tab-btn" type="button" onclick="setRangeMonths(12)">一年</button>
-        <span class="muted">（結束日預設為今天；點按上方按鈕會自動帶入區間）</span>
-      </div>
+      <div class="row" style="margin-top:8px" id="productQuick">
+  <span class="muted">快速範圍：</span>
+  <button class="tab-btn qbtn" type="button" data-days="7">一周</button>
+  <button class="tab-btn qbtn" type="button" data-months="1">一個月</button>
+  <button class="tab-btn qbtn" type="button" data-months="3">三個月</button>
+  <button class="tab-btn qbtn" type="button" data-months="6">半年</button>
+  <button class="tab-btn qbtn" type="button" data-months="12">一年</button>
+  <span class="muted">（結束日預設為今天；點按上方按鈕會自動帶入區間）</span>
+</div>
+
+
 
       <div class="muted" style="margin-top:6px">
         留空日期＝不限制期間。若有日期，將以「自訂區間」統計；若留空，顯示「一週／本月」統計。
@@ -149,27 +163,35 @@
   <div class="grid2">
     <div>
       <div class="row">
-        <input type="text" name="member_keyword" placeholder="會員關鍵字（姓名 / Email / 手機）"
-               value="{{ form.member_keyword or '' }}" style="min-width:260px">
+  <!-- 關鍵字 -->
+  <input type="text" name="member_keyword" placeholder="會員關鍵字（姓名 / Email / 手機）"
+         value="{{ form.member_keyword or '' }}" style="min-width:260px">
 
-        <!-- 自訂時間區間（加上 id 供 JS 控制） -->
-        <input type="date" name="start" id="m_start" value="{{ form.start or '' }}">
-        <input type="date" name="end"   id="m_end"   value="{{ form.end or '' }}">
+  <!-- 起 / 迄 同一排 -->
+  <div class="date-group">
+    <span class="muted">起：</span>
+    <input type="date" name="start" id="m_start" value="{{ form.start or '' }}">
+    <span class="muted">迄：</span>
+    <input type="date" name="end" id="m_end" value="{{ form.end or '' }}">
+  </div>
 
-        <button class="btn" type="submit">查詢會員消費</button>
-      </div>
+  <!-- 查詢按鈕 -->
+  <button class="btn" type="submit">查詢會員消費</button>
+</div>
+
 
       <!-- 快速範圍按鈕 -->
-      <div class="row" style="margin-top:8px">
-        <span class="muted">快速範圍：</span>
-        <button class="tab-btn" type="button" onclick="setRangeDaysFor('m_start','m_end',7)">一周</button>
-        <button class="tab-btn" type="button" onclick="setRangeMonthsFor('m_start','m_end',1)">一個月</button>
-        <button class="tab-btn" type="button" onclick="setRangeMonthsFor('m_start','m_end',3)">三個月</button>
-        <button class="tab-btn" type="button" onclick="setRangeMonthsFor('m_start','m_end',6)">半年</button>
-        <button class="tab-btn" type="button" onclick="setRangeMonthsFor('m_start','m_end',12)">一年</button>
-        <button class="tab-btn" type="button" onclick="clearRange('m_start','m_end')">清空</button>
-        <span class="muted">（結束日自動帶入今天，開始日依所選範圍回推）</span>
-      </div>
+      <div class="row" style="margin-top:8px" id="memberQuick">
+  <span class="muted">快速範圍：</span>
+  <button class="tab-btn qbtn" type="button" data-days="7">一周</button>
+  <button class="tab-btn qbtn" type="button" data-months="1">一個月</button>
+  <button class="tab-btn qbtn" type="button" data-months="3">三個月</button>
+  <button class="tab-btn qbtn" type="button" data-months="6">半年</button>
+  <button class="tab-btn qbtn" type="button" data-months="12">一年</button>
+  <button class="tab-btn" type="button" id="memberClearBtn">清空</button>
+  <span class="muted">（結束日自動帶入今天，開始日依所選範圍回推）</span>
+</div>
+
 
       <div class="muted" style="margin-top:6px">
         留空日期＝不限制期間；有日期＝依自訂區間統計（含首尾）。
@@ -277,6 +299,77 @@
     if (all){ all.addEventListener('change', toggleKeywordByAll); toggleKeywordByAll(); }
   });
 </script>
+
+<script>
+/* 高亮控制：點選快速範圍→高亮；手動改日期→取消高亮 */
+(function(){
+  let settingByQuick = false;
+
+  function clearActive(containerSel){
+    document.querySelectorAll(containerSel + ' .qbtn.is-on').forEach(b => b.classList.remove('is-on'));
+  }
+
+  function hookQuick(containerId, startId, endId, setDaysFn, setMonthsFn, clearBtnId){
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    // 點按快速範圍 → 設日期 + 高亮
+    container.querySelectorAll('.qbtn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        settingByQuick = true;
+        clearActive('#' + containerId);
+        btn.classList.add('is-on');
+        if (btn.dataset.days)   setDaysFn(parseInt(btn.dataset.days, 10));
+        if (btn.dataset.months) setMonthsFn(parseInt(btn.dataset.months, 10));
+        settingByQuick = false;
+      });
+    });
+
+    // 使用者手動改任一日期 → 取消高亮
+    [startId, endId].forEach(id => {
+      const input = document.getElementById(id);
+      if (input){
+        input.addEventListener('input', () => {
+          if (!settingByQuick) clearActive('#' + containerId);
+        });
+        input.addEventListener('change', () => {
+          if (!settingByQuick) clearActive('#' + containerId);
+        });
+      }
+    });
+
+    // （會員）清空鈕 → 清除日期與高亮
+    if (clearBtnId){
+      const c = document.getElementById(clearBtnId);
+      if (c){
+        c.addEventListener('click', () => {
+          clearActive('#' + containerId);
+          // 清空日期函式已存在
+        });
+      }
+    }
+  }
+
+  // 商品查詢
+  hookQuick(
+    'productQuick',
+    'p_start', 'p_end',
+    // 這兩個函式是你既有的
+    (d) => setRangeDays(d),
+    (m) => setRangeMonths(m)
+  );
+
+  // 會員查詢（若你有這一區）
+  hookQuick(
+    'memberQuick',
+    'm_start', 'm_end',
+    (d) => setRangeDaysFor('m_start', 'm_end', d),
+    (m) => setRangeMonthsFor('m_start', 'm_end', m),
+    'memberClearBtn'
+  );
+})();
+</script>
+
 
 </body>
 </html>
