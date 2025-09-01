@@ -45,62 +45,117 @@
     {% if tab=='product' %}
     <div class="card">
       <form method="POST" action="{{ url_for('admin_features_analytics', tab='product') }}">
-        <input type="hidden" name="mode" value="product">
-        <div class="grid2">
-          <div>
-            <div class="row">
-              <input type="text" name="keyword" placeholder="輸入商品關鍵字（例：精華、面膜）" value="{{ form.keyword or '' }}" style="min-width:260px">
-              <select name="period">
-                <option value="rolling" {% if form.period=='rolling' %}selected{% endif %}>滾動一週 / 本月</option>
-                <option value="calendar" {% if form.period=='calendar' %}selected{% endif %}>本週(一~日) / 本月</option>
-              </select>
-              <button class="btn" type="submit">查詢商品銷售</button>
-            </div>
-            <div class="muted">「滾動一週」= 往前 7 天；「本週」= 週一到週日。</div>
-          </div>
-        </div>
-      </form>
+  <input type="hidden" name="mode" value="product">
+  <div class="grid2">
+    <div>
+      <div class="row">
+        <input type="text" name="keyword" placeholder="輸入商品關鍵字（例：精華、面膜）"
+               value="{{ form.keyword or '' }}" style="min-width:260px">
+
+        <!-- 新增：自訂時間區間 -->
+        <input type="date" name="p_start" id="p_start" value="{{ form.p_start or '' }}">
+        <input type="date" name="p_end"   id="p_end"   value="{{ form.p_end or '' }}">
+
+        <button class="btn" type="submit">查詢商品銷售</button>
+      </div>
+
+      <!-- 新增：快速範圍按鈕 -->
+      <div class="row" style="margin-top:8px">
+        <span class="muted">快速範圍：</span>
+        <button class="tab-btn" type="button" onclick="setRangeDays(7)">一周</button>
+        <button class="tab-btn" type="button" onclick="setRangeMonths(1)">一個月</button>
+        <button class="tab-btn" type="button" onclick="setRangeMonths(3)">三個月</button>
+        <button class="tab-btn" type="button" onclick="setRangeMonths(6)">半年</button>
+        <button class="tab-btn" type="button" onclick="setRangeMonths(12)">一年</button>
+        <span class="muted">（結束日預設為今天；點按上方按鈕會自動帶入區間）</span>
+      </div>
+
+      <div class="muted" style="margin-top:6px">
+        留空日期＝不限制期間。若有日期，將以「自訂區間」統計；若留空，顯示「一週／本月」統計。
+      </div>
+    </div>
+  </div>
+</form>
+
 
       {% if product_result %}
-        <div class="stat">
-          <div class="badge">符合商品：{{ product_result.product_count }} 件</div>
-          <div class="badge">一週銷量：{{ product_result.week_qty }}　金額：$ {{ '{:,.0f}'.format(product_result.week_amount) }}</div>
-          <div class="badge">本月銷量：{{ product_result.month_qty }}　金額：$ {{ '{:,.0f}'.format(product_result.month_amount) }}</div>
-        </div>
-        <table>
-          <thead><tr><th>商品</th><th>一週數量</th><th>一週金額</th><th>本月數量</th><th>本月金額</th></tr></thead>
-          <tbody>
-            {% for r in product_result.rows %}
-            <tr>
-              <td>{{ r.name }}</td>
-              <td>{{ r.w_qty }}</td>
-              <td>$ {{ '{:,.0f}'.format(r.w_amt) }}</td>
-              <td>{{ r.m_qty }}</td>
-              <td>$ {{ '{:,.0f}'.format(r.m_amt) }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      {% endif %}
-    </div>
+  <div class="stat">
+    <div class="badge">符合商品：{{ product_result.product_count }} 件</div>
+
+    {% if product_result.range_mode %}
+      <div class="badge">區間：{{ product_result.range_start }} ~ {{ product_result.range_end }}</div>
+      <div class="badge">區間銷量：{{ product_result.range_qty }}　金額：$ {{ '{:,.0f}'.format(product_result.range_amount) }}</div>
+    {% else %}
+      <div class="badge">一週銷量：{{ product_result.week_qty }}　金額：$ {{ '{:,.0f}'.format(product_result.week_amount) }}</div>
+      <div class="badge">本月銷量：{{ product_result.month_qty }}　金額：$ {{ '{:,.0f}'.format(product_result.month_amount) }}</div>
     {% endif %}
+  </div>
+
+  <table>
+    <thead>
+      {% if product_result.range_mode %}
+        <tr><th>商品</th><th>區間數量</th><th>區間金額</th></tr>
+      {% else %}
+        <tr><th>商品</th><th>一週數量</th><th>一週金額</th><th>本月數量</th><th>本月金額</th></tr>
+      {% endif %}
+    </thead>
+    <tbody>
+      {% for r in product_result.rows %}
+      <tr>
+        {% if product_result.range_mode %}
+          <td>{{ r.name }}</td>
+          <td>{{ r.r_qty }}</td>
+          <td>$ {{ '{:,.0f}'.format(r.r_amt) }}</td>
+        {% else %}
+          <td>{{ r.name }}</td>
+          <td>{{ r.w_qty }}</td>
+          <td>$ {{ '{:,.0f}'.format(r.w_amt) }}</td>
+          <td>{{ r.m_qty }}</td>
+          <td>$ {{ '{:,.0f}'.format(r.m_amt) }}</td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endif %}
+
 
     {% if tab=='member' %}
     <div class="card">
       <form method="POST" action="{{ url_for('admin_features_analytics', tab='member') }}">
-        <input type="hidden" name="mode" value="member">
-        <div class="grid2">
-          <div>
-            <div class="row">
-              <input type="text" name="member_keyword" placeholder="會員關鍵字（姓名 / Email / 手機）" value="{{ form.member_keyword or '' }}" style="min-width:260px">
-              <input type="date" name="start" value="{{ form.start or '' }}">
-              <input type="date" name="end" value="{{ form.end or '' }}">
-              <button class="btn" type="submit">查詢會員消費</button>
-            </div>
-            <div class="muted">時間區間（含首尾）。留空則查全部期間。</div>
-          </div>
-        </div>
-      </form>
+  <input type="hidden" name="mode" value="member">
+  <div class="grid2">
+    <div>
+      <div class="row">
+        <input type="text" name="member_keyword" placeholder="會員關鍵字（姓名 / Email / 手機）"
+               value="{{ form.member_keyword or '' }}" style="min-width:260px">
+
+        <!-- 自訂時間區間（加上 id 供 JS 控制） -->
+        <input type="date" name="start" id="m_start" value="{{ form.start or '' }}">
+        <input type="date" name="end"   id="m_end"   value="{{ form.end or '' }}">
+
+        <button class="btn" type="submit">查詢會員消費</button>
+      </div>
+
+      <!-- 快速範圍按鈕 -->
+      <div class="row" style="margin-top:8px">
+        <span class="muted">快速範圍：</span>
+        <button class="tab-btn" type="button" onclick="setRangeDaysFor('m_start','m_end',7)">一周</button>
+        <button class="tab-btn" type="button" onclick="setRangeMonthsFor('m_start','m_end',1)">一個月</button>
+        <button class="tab-btn" type="button" onclick="setRangeMonthsFor('m_start','m_end',3)">三個月</button>
+        <button class="tab-btn" type="button" onclick="setRangeMonthsFor('m_start','m_end',6)">半年</button>
+        <button class="tab-btn" type="button" onclick="setRangeMonthsFor('m_start','m_end',12)">一年</button>
+        <button class="tab-btn" type="button" onclick="clearRange('m_start','m_end')">清空</button>
+        <span class="muted">（結束日自動帶入今天，開始日依所選範圍回推）</span>
+      </div>
+
+      <div class="muted" style="margin-top:6px">
+        留空日期＝不限制期間；有日期＝依自訂區間統計（含首尾）。
+      </div>
+    </div>
+  </div>
+</form>
+
 
       {% if member_result %}
         <div class="stat">
@@ -126,5 +181,67 @@
     </div>
     {% endif %}
   </div>
+
+<script>
+  function fmtDate(d){
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const e = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${e}`;
+  }
+  function setEndToday(){
+    const today = new Date();
+    document.getElementById('p_end').value = fmtDate(today);
+    return today;
+  }
+  function setRangeDays(days){
+    const end = setEndToday();
+    const start = new Date(end);
+    start.setDate(start.getDate() - (days - 1));  // 含今天
+    document.getElementById('p_start').value = fmtDate(start);
+  }
+  function setRangeMonths(m){
+    const end = setEndToday();
+    const start = new Date(end);
+    // 例如 1個月：往前推1個月，再 +1天 讓區間含今天共整月期（可依需求微調）
+    start.setMonth(start.getMonth() - m);
+    start.setDate(start.getDate() + 1);
+    document.getElementById('p_start').value = fmtDate(start);
+  }
+</script>
+<script>
+  // --- 共用工具 ---
+  function fmtDate(d){
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const e = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${e}`;
+  }
+  function setEndTodayFor(endId){
+    const today = new Date();
+    document.getElementById(endId).value = fmtDate(today);
+    return today;
+  }
+  function setRangeDaysFor(startId, endId, days){
+    const end = setEndTodayFor(endId);
+    const start = new Date(end);
+    start.setDate(start.getDate() - (days - 1)); // 含今天
+    document.getElementById(startId).value = fmtDate(start);
+  }
+  function setRangeMonthsFor(startId, endId, m){
+    const end = setEndTodayFor(endId);
+    const start = new Date(end);
+    // 往前推 m 個「月」；如需改成對齊到整月月初，可依需求微調
+    start.setMonth(start.getMonth() - m);
+    start.setDate(start.getDate() + 1);
+    document.getElementById(startId).value = fmtDate(start);
+  }
+  function clearRange(startId, endId){
+    document.getElementById(startId).value = '';
+    document.getElementById(endId).value   = '';
+  }
+</script>
+
+
 </body>
 </html>
