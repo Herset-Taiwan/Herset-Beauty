@@ -1481,20 +1481,23 @@ def admin_features_analytics():
     if request.method == "POST":
         mode = request.form.get("mode")
         if mode == "product":
-            form["keyword"] = (request.form.get("keyword") or "").strip()
+            form["keyword"]   = (request.form.get("keyword") or "").strip()
 
             # 新增：自訂日期
-            form["p_start"] = request.form.get("p_start") or ""
-            form["p_end"]   = request.form.get("p_end") or ""
+            form["p_start"]   = request.form.get("p_start") or ""
+            form["p_end"]     = request.form.get("p_end") or ""
+            form["all_products"] = True if request.form.get("all_products") in ("on","true","1") else False
 
             # period 仍保留供未填日期時使用（原邏輯）
             form["period"]  = (request.form.get("period") or "rolling").strip() if request.form.get("period") else "rolling"
+            form["period"]    = "rolling"
 
             product_result = _analytics_product(
                 form["keyword"],
                 form["period"],
                 form["p_start"],
-                form["p_end"]
+                form["p_end"],
+                form["all_products"]
             )
             tab = "product"
 
@@ -1520,19 +1523,24 @@ def _start_of_month(dt):
     d = dt.astimezone(TW)
     return d.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
-def _analytics_product(keyword, period_mode, p_start, p_end):
+# 建議集中定義「已出貨」狀態（依你的實際欄位名稱調整）
+SHIPPED_STATUSES = ["已完成出貨", "已出貨", "shipped", "Shipped"]
+
+def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False):
     """
-    商品銷售查詢：
-    - 若 p_start / p_end 有值 → 走「自訂區間」模式（range_mode=True）
-    - 若都沒填 → 保持原本「一週 / 本月」統計（range_mode=False）
+    商品銷售查詢（僅統計「已出貨」訂單）：
+    - 若提供 p_start/p_end → 區間模式
+    - 否則 → 一週 / 本月
+    - all_products=True 時忽略 keyword，取全部商品
     """
     now = datetime.now(TW)
 
-    # 1) 先找商品
+    # 1) 商品清單
     prod_q = supabase.table("products").select("id,name")
-    if keyword:
+    if not all_products and keyword:
         prod_q = prod_q.ilike("name", f"%{keyword}%")
-    prods = (prod_q.limit(200).execute()).data or []
+    # 若打勾「全部商品」，就不加 ilike 篩選
+    prods = (prod_q.limit(1000).execute()).data or []
     prod_ids = [p["id"] for p in prods]
     name_map = {p["id"]: p["name"] for p in prods}
     if not prod_ids:
@@ -1540,12 +1548,13 @@ def _analytics_product(keyword, period_mode, p_start, p_end):
                 "range_qty": 0, "range_amount": 0, "week_qty": 0, "week_amount": 0,
                 "month_qty": 0, "month_amount": 0, "range_start": "", "range_end": ""}
 
+    # 2) 工具：彙總 order_items
     def sum_items(order_ids, filter_prod_ids):
         if not order_ids:
             return {}
         items = supabase.table("order_items").select("order_id,product_id,qty,price") \
             .in_("order_id", order_ids).in_("product_id", filter_prod_ids) \
-            .limit(20000).execute().data or []
+            .limit(50000).execute().data or []
         agg = {}
         for it in items:
             pid = it["product_id"]
@@ -1556,26 +1565,28 @@ def _analytics_product(keyword, period_mode, p_start, p_end):
             a["amt"] += qty * price
         return agg
 
-    # === 模式 A：自訂區間 ===
+    # 3) 只抓「已出貨」訂單
+    def shipped_orders_between(start_iso, end_iso, limit=50000):
+        q = supabase.table("orders").select("id") \
+            .gte("created_at", start_iso).lte("created_at", end_iso)
+        # 依你的實際 schema 調整：若有 shipment_status 欄位可改用 eq
+        q = q.in_("status", SHIPPED_STATUSES)
+        return (q.limit(limit).execute().data or [])
+
+    # === A. 區間模式 ===
     if p_start or p_end:
-        # 邊界處理：只有一邊 → 另一邊用今天
         if not p_end:
             p_end = now.strftime("%Y-%m-%d")
         if not p_start:
             p_start = p_end
-
         start_iso = f"{p_start}T00:00:00"
         end_iso   = f"{p_end}T23:59:59"
 
-        orders = supabase.table("orders").select("id") \
-            .gte("created_at", start_iso).lte("created_at", end_iso) \
-            .limit(20000).execute().data or []
+        orders = shipped_orders_between(start_iso, end_iso)
         order_ids = [o["id"] for o in orders]
-
         r_agg = sum_items(order_ids, prod_ids)
 
-        rows = []
-        r_qty = r_amt = 0
+        rows, r_qty, r_amt = [], 0, 0.0
         for pid in prod_ids:
             rq = r_agg.get(pid, {}).get("qty", 0)
             ra = r_agg.get(pid, {}).get("amt", 0.0)
@@ -1589,16 +1600,10 @@ def _analytics_product(keyword, period_mode, p_start, p_end):
             "range_mode": True,
             "range_qty": r_qty, "range_amount": r_amt,
             "range_start": p_start, "range_end": p_end,
-            # 以下欄位保留（未顯示）
             "week_qty": 0, "week_amount": 0, "month_qty": 0, "month_amount": 0
         }
 
-    # === 模式 B：原本一週 / 本月 ===
-    def _start_of_week_calendar(dt):
-        d = dt.astimezone(TW)
-        monday = d - timedelta(days=(d.weekday()))
-        return monday.replace(hour=0, minute=0, second=0, microsecond=0)
-
+    # === B. 一週 / 本月（亦只統計已出貨） ===
     def _start_of_month(dt):
         d = dt.astimezone(TW)
         return d.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -1608,15 +1613,8 @@ def _analytics_product(keyword, period_mode, p_start, p_end):
     month_start = _start_of_month(now)
     month_end   = now
 
-    wk_orders = supabase.table("orders").select("id") \
-        .gte("created_at", week_start.isoformat()) \
-        .lte("created_at", week_end.isoformat()) \
-        .limit(5000).execute().data or []
-
-    mo_orders = supabase.table("orders").select("id") \
-        .gte("created_at", month_start.isoformat()) \
-        .lte("created_at", month_end.isoformat()) \
-        .limit(10000).execute().data or []
+    wk_orders = shipped_orders_between(week_start.isoformat(), week_end.isoformat(), limit=50000)
+    mo_orders = shipped_orders_between(month_start.isoformat(), month_end.isoformat(), limit=100000)
 
     wk_ids = [o["id"] for o in wk_orders]
     mo_ids = [o["id"] for o in mo_orders]
@@ -1644,6 +1642,7 @@ def _analytics_product(keyword, period_mode, p_start, p_end):
         "month_qty": month_qty, "month_amount": month_amt,
         "range_qty": 0, "range_amount": 0, "range_start": "", "range_end": ""
     }
+
 
 
 def _analytics_member(keyword, start_date, end_date):

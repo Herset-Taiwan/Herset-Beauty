@@ -25,6 +25,10 @@
     th,td{border-bottom:1px solid #eee;padding:10px;text-align:left}
     .stat{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
     .badge{background:#f3f4f6;border:1px solid #e5e7eb;border-radius:999px;padding:6px 10px;font-weight:600}
+    
+    .row.nowrap{flex-wrap:nowrap}
+    .row .short{width:150px}
+
   </style>
 </head>
 <body>
@@ -48,16 +52,25 @@
   <input type="hidden" name="mode" value="product">
   <div class="grid2">
     <div>
-      <div class="row">
-        <input type="text" name="keyword" placeholder="輸入商品關鍵字（例：精華、面膜）"
-               value="{{ form.keyword or '' }}" style="min-width:260px">
+      <div class="row nowrap">
+  <label class="muted" style="align-self:center">關鍵字：</label>
+  <input type="text" name="keyword" id="p_kw" placeholder="輸入商品關鍵字（例：精華、面膜）"
+         value="{{ form.keyword or '' }}" style="width:220px">
 
-        <!-- 新增：自訂時間區間 -->
-        <input type="date" name="p_start" id="p_start" value="{{ form.p_start or '' }}">
-        <input type="date" name="p_end"   id="p_end"   value="{{ form.p_end or '' }}">
+  <label class="muted" style="align-self:center;margin-left:8px">起：</label>
+  <input class="short" type="date" name="p_start" id="p_start" value="{{ form.p_start or '' }}">
+  <label class="muted" style="align-self:center">迄：</label>
+  <input class="short" type="date" name="p_end"   id="p_end"   value="{{ form.p_end or '' }}">
 
-        <button class="btn" type="submit">查詢商品銷售</button>
-      </div>
+  <!-- 新增：全部商品 -->
+  <label class="muted" style="align-self:center; margin-left:8px;">
+    <input type="checkbox" name="all_products" id="all_products" {% if form.all_products %}checked{% endif %}>
+    全部商品
+  </label>
+
+  <button class="btn" type="submit" style="margin-left:8px">查詢商品銷售</button>
+</div>
+
 
       <!-- 新增：快速範圍按鈕 -->
       <div class="row" style="margin-top:8px">
@@ -243,6 +256,19 @@
   }
 </script>
 
+<script>
+  function toggleKeywordByAll(){
+    const all = document.getElementById('all_products');
+    const kw  = document.getElementById('p_kw');
+    if (!all || !kw) return;
+    kw.disabled = all.checked;
+    if (all.checked) kw.value = '';
+  }
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const all = document.getElementById('all_products');
+    if (all){ all.addEventListener('change', toggleKeywordByAll); toggleKeywordByAll(); }
+  });
+</script>
 
 </body>
 </html>
