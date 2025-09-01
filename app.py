@@ -1687,51 +1687,6 @@ def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False)
     }
 
 
-    # === B. 一週 / 本月（亦只統計已出貨） ===
-    week_start = (now - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
-    week_end = now
-    month_start = _start_of_month(now)
-    month_end = now
-
-    wk_orders = shipped_orders_between(week_start.isoformat(), week_end.isoformat(), limit=80000)
-    mo_orders = shipped_orders_between(month_start.isoformat(), month_end.isoformat(), limit=120000)
-
-    wk_ids = [o["id"] for o in wk_orders]
-    mo_ids = [o["id"] for o in mo_orders]
-
-    wk_agg = sum_items(wk_ids, prod_ids)
-    mo_agg = sum_items(mo_ids, prod_ids)
-
-    rows = []
-    week_qty = week_amt = month_qty = month_amt = 0
-    for pid in prod_ids:
-        wq = wk_agg.get(pid, {}).get("qty", 0)
-        wa = wk_agg.get(pid, {}).get("amt", 0.0)
-        mq = mo_agg.get(pid, {}).get("qty", 0)
-        ma = mo_agg.get(pid, {}).get("amt", 0.0)
-        if any([wq, wa, mq, ma]):
-            rows.append(
-                {"name": name_map.get(pid, f"商品 {pid}"), "w_qty": wq, "w_amt": wa, "m_qty": mq, "m_amt": ma}
-            )
-            week_qty += wq
-            week_amt += wa
-            month_qty += mq
-            month_amt += ma
-
-    return {
-        "product_count": len(prods),
-        "rows": rows,
-        "range_mode": False,
-        "week_qty": week_qty,
-        "week_amount": week_amt,
-        "month_qty": month_qty,
-        "month_amount": month_amt,
-        "range_qty": 0,
-        "range_amount": 0,
-        "range_start": "",
-        "range_end": "",
-    }
-
 
 def _analytics_member(keyword, start_date, end_date):
     """
