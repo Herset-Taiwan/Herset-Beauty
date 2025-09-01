@@ -1528,16 +1528,20 @@ def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False)
     - 有 p_start/p_end → 自訂區間
     - 否則 → 一週 / 本月
     - all_products=True 時忽略 keyword，取全部商品
+    注意：order_items.product_id 是 text，這裡將 products.id 一律轉成字串再比對。
     """
     now = datetime.now(TW)
 
-    # 1) 商品清單
+    # 1) 商品清單（把 id 轉成字串以符合 order_items.product_id=text）
     prod_q = supabase.table("products").select("id,name")
     if not all_products and keyword:
         prod_q = prod_q.ilike("name", f"%{keyword}%")
     prods = (prod_q.limit(1000).execute()).data or []
-    prod_ids = [p["id"] for p in prods]
-    name_map = {p["id"]: p["name"] for p in prods}
+
+    # 轉型：id -> str
+    prod_ids = [str(p["id"]) for p in prods]
+    name_map = {str(p["id"]): p["name"] for p in prods}
+
     if not prod_ids:
         return {
             "product_count": 0,
@@ -1556,7 +1560,7 @@ def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False)
     # 2) 工具：彙總 order_items（只用實際存在的欄位：qty / price / subtotal）
     def sum_items(order_ids, filter_prod_ids):
         """
-        回傳 {product_id: {"qty": 數量, "amt": 金額}}
+        回傳 {product_id(str): {"qty": 數量, "amt": 金額}}
         金額優先採用 subtotal；若為 None 再用 qty*price。
         """
         if not order_ids:
@@ -1567,7 +1571,7 @@ def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False)
                 supabase.table("order_items")
                 .select("order_id,product_id,qty,price,subtotal")
                 .in_("order_id", order_ids)
-                .in_("product_id", filter_prod_ids)
+                .in_("product_id", filter_prod_ids)  # filter_prod_ids 為字串陣列
                 .limit(50000)
                 .execute()
                 .data
@@ -1578,7 +1582,7 @@ def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False)
 
         agg = {}
         for it in items:
-            pid = it["product_id"]
+            pid = str(it["product_id"])  # 再保險一次確保是字串 key
             qty = int(it.get("qty") or 0)
             sub = it.get("subtotal")
             if sub is None:
@@ -1615,7 +1619,7 @@ def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False)
         r_agg = sum_items(order_ids, prod_ids)
 
         rows, r_qty, r_amt = [], 0, 0.0
-        for pid in prod_ids:
+        for pid in prod_ids:  # 這裡的 pid 是字串
             rq = r_agg.get(pid, {}).get("qty", 0)
             ra = r_agg.get(pid, {}).get("amt", 0.0)
             if rq or ra:
@@ -1636,6 +1640,52 @@ def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False)
             "month_qty": 0,
             "month_amount": 0,
         }
+
+    # === B. 一週 / 本月（亦只統計已出貨） ===
+    week_start = (now - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
+    week_end = now
+    month_start = _start_of_month(now)
+    month_end = now
+
+    wk_orders = shipped_orders_between(week_start.isoformat(), week_end.isoformat(), limit=80000)
+    mo_orders = shipped_orders_between(month_start.isoformat(), month_end.isoformat(), limit=120000)
+
+    wk_ids = [o["id"] for o in wk_orders]
+    mo_ids = [o["id"] for o in mo_orders]
+
+    wk_agg = sum_items(wk_ids, prod_ids)
+    mo_agg = sum_items(mo_ids, prod_ids)
+
+    rows = []
+    week_qty = week_amt = month_qty = month_amt = 0
+    for pid in prod_ids:  # 這裡的 pid 是字串
+        wq = wk_agg.get(pid, {}).get("qty", 0)
+        wa = wk_agg.get(pid, {}).get("amt", 0.0)
+        mq = mo_agg.get(pid, {}).get("qty", 0)
+        ma = mo_agg.get(pid, {}).get("amt", 0.0)
+        if any([wq, wa, mq, ma]):
+            rows.append(
+                {"name": name_map.get(pid, f"商品 {pid}"), "w_qty": wq, "w_amt": wa, "m_qty": mq, "m_amt": ma}
+            )
+            week_qty += wq
+            week_amt += wa
+            month_qty += mq
+            month_amt += ma
+
+    return {
+        "product_count": len(prods),
+        "rows": rows,
+        "range_mode": False,
+        "week_qty": week_qty,
+        "week_amount": week_amt,
+        "month_qty": month_qty,
+        "month_amount": month_amt,
+        "range_qty": 0,
+        "range_amount": 0,
+        "range_start": "",
+        "range_end": "",
+    }
+
 
     # === B. 一週 / 本月（亦只統計已出貨） ===
     week_start = (now - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
@@ -1787,7 +1837,7 @@ def _analytics_member(keyword, start_date, end_date):
         "avg_amount": avg_amount,
         "rows": rows
     }
-# admin後台 搜尋報表結束
+# admin後台 搜尋報表 結束
 
 
 
