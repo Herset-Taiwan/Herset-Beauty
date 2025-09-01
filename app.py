@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 from pytz import timezone as pytz_timezone
 from utils import generate_ecpay_form 
 from datetime import timedelta
+import secrets
 
 
 DEFAULT_SHELL_IMAGE = "/static/uploads/logo_0.png"
@@ -55,7 +56,7 @@ def to_utc_iso_from_tw(local_str: str):
     dt_tw = TW.localize(dt)
     return dt_tw.astimezone(dt_timezone.utc).isoformat()
 
-
+ALNUM = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZ"  # 避免易混淆字母可再縮減
 def generate_merchant_trade_no(prefix="HS", rand_len=8):
     """
     產生像 HS2509019XQ4MZ7P 的編號：
