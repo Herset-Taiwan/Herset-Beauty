@@ -1486,7 +1486,7 @@ def admin_features_analytics():
             form["p_start"]      = request.form.get("p_start") or ""
             form["p_end"]        = request.form.get("p_end") or ""
             form["all_products"] = True if request.form.get("all_products") in ("on","true","1") else False
-            form["period"]       = "rolling"  # 未填日期時備用（仍提供一週/本月）
+            form["period"]       = "rolling"  # 未填日期時備用（一週/本月）
 
             product_result = _analytics_product(
                 form["keyword"],
@@ -1519,8 +1519,8 @@ def _start_of_month(dt):
     d = dt.astimezone(TW)
     return d.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
-# 「已出貨」狀態（可依實際系統再擴充）
-SHIPPED_STATUSES = ["已完成出貨", "已出貨", "出貨完成", "shipped", "Shipped"]
+# 出貨狀態（依你的資料庫為主）
+SHIPPED_STATUSES = ["shipped", "Shipped", "已出貨", "已完成出貨", "出貨完成"]
 
 def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False):
     """
@@ -1543,78 +1543,38 @@ def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False)
                 "range_qty": 0, "range_amount": 0, "week_qty": 0, "week_amount": 0,
                 "month_qty": 0, "month_amount": 0, "range_start": "", "range_end": ""}
 
-    # 2) 工具：彙總 order_items
+    # 2) 只抓「已出貨」訂單（你的 orders.status='shipped'）
+    def shipped_orders_between(start_iso=None, end_iso=None, limit=80000):
+        q = supabase.table("orders").select("id").in_("status", SHIPPED_STATUSES)
+        if start_iso:
+            q = q.gte("created_at", start_iso)
+        if end_iso:
+            q = q.lte("created_at", end_iso)
+        return (q.limit(limit).execute().data or [])
+
+    # 3) 工具：彙總 order_items
     def sum_items(order_ids, filter_prod_ids):
         if not order_ids:
             return {}
+        # 3-1 首選：qty/price
         items = supabase.table("order_items").select("order_id,product_id,qty,price") \
             .in_("order_id", order_ids).in_("product_id", filter_prod_ids) \
             .limit(50000).execute().data or []
+        # 3-2 若沒有資料，再嘗試 quantity/unit_price 欄位命名
+        if not items:
+            items = supabase.table("order_items").select("order_id,product_id,quantity,unit_price") \
+                .in_("order_id", order_ids).in_("product_id", filter_prod_ids) \
+                .limit(50000).execute().data or []
+
         agg = {}
         for it in items:
-            pid = it["product_id"]
-            qty = int(it.get("qty") or 0)
-            price = float(it.get("price") or 0)
+            pid   = it["product_id"]
+            qty   = int(it.get("qty") or it.get("quantity") or 0)
+            price = float(it.get("price") or it.get("unit_price") or 0)
             a = agg.setdefault(pid, {"qty": 0, "amt": 0.0})
             a["qty"] += qty
             a["amt"] += qty * price
         return agg
-
-    # 3) 只抓「已出貨」訂單（智慧偵測多種欄位）
-    def shipped_orders_between(start_iso, end_iso, hard_limit=80000):
-        """
-        取得「已出貨」訂單 ID（相容多種 schema）：
-        1) 優先用 shipped_at 在 [start, end]
-        2) 依次嘗試 shipment_status / fulfillment_status / status(in SHIPPED_STATUSES) / shipped=True
-        3) 都沒有時，回退用 created_at + 上述狀態；最後只用 shipped_at 或 created_at 的時間條件
-        """
-        ids = set()
-
-        def try_query(select_cols, filters, limit=hard_limit):
-            try:
-                q = supabase.table("orders").select(select_cols)
-                for f in filters:
-                    q = f(q)
-                return (q.limit(limit).execute().data or [])
-            except Exception:
-                return []
-
-        # A. 以 shipped_at 做時間條件（最佳）
-        rows = try_query("id", [lambda q: q.gte("shipped_at", start_iso), lambda q: q.lte("shipped_at", end_iso)])
-        ids.update([r["id"] for r in rows])
-
-        # shipped_at 範圍 + 各種狀態欄位
-        for cond in [
-            lambda q: q.eq("shipment_status", "shipped"),
-            lambda q: q.eq("fulfillment_status", "shipped"),
-            lambda q: q.in_("status", SHIPPED_STATUSES),
-            lambda q: q.eq("shipped", True),
-        ]:
-            rows = try_query("id", [lambda q: q.gte("shipped_at", start_iso),
-                                    lambda q: q.lte("shipped_at", end_iso), cond])
-            ids.update([r["id"] for r in rows])
-
-        # B. 若沒有 shipped_at 或仍為空 → 用 created_at + 各類狀態嘗試
-        if not ids:
-            for cond in [
-                lambda q: q.eq("shipment_status", "shipped"),
-                lambda q: q.eq("fulfillment_status", "shipped"),
-                lambda q: q.in_("status", SHIPPED_STATUSES),
-                lambda q: q.eq("shipped", True),
-            ]:
-                rows = try_query("id", [lambda q: q.gte("created_at", start_iso),
-                                        lambda q: q.lte("created_at", end_iso), cond])
-                ids.update([r["id"] for r in rows])
-
-        # C. 最後回退：只有時間條件
-        if not ids:
-            rows = try_query("id", [lambda q: q.gte("shipped_at", start_iso), lambda q: q.lte("shipped_at", end_iso)])
-            ids.update([r["id"] for r in rows])
-            if not ids:
-                rows = try_query("id", [lambda q: q.gte("created_at", start_iso), lambda q: q.lte("created_at", end_iso)])
-                ids.update([r["id"] for r in rows])
-
-        return [{"id": oid} for oid in ids]
 
     # === A. 區間模式 ===
     if p_start or p_end:
@@ -1647,13 +1607,13 @@ def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False)
         }
 
     # === B. 一週 / 本月（亦只統計已出貨） ===
-    week_start = (now - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
-    week_end   = now
+    week_start  = (now - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
+    week_end    = now
     month_start = _start_of_month(now)
     month_end   = now
 
-    wk_orders = shipped_orders_between(week_start.isoformat(), week_end.isoformat(), hard_limit=80000)
-    mo_orders = shipped_orders_between(month_start.isoformat(), month_end.isoformat(), hard_limit=120000)
+    wk_orders = shipped_orders_between(week_start.isoformat(), week_end.isoformat(), limit=80000)
+    mo_orders = shipped_orders_between(month_start.isoformat(), month_end.isoformat(), limit=120000)
 
     wk_ids = [o["id"] for o in wk_orders]
     mo_ids = [o["id"] for o in mo_orders]
@@ -1687,7 +1647,7 @@ def _analytics_member(keyword, start_date, end_date):
     會員消費查詢（不依賴 orders.total）
     - 以 members + 關鍵字(姓名/Email/手機) 找到目標會員
     - 以時間區間篩選 orders（如需僅統計已付款/已出貨，請在 orders_q 加上 .eq(...)或 .in_(...)）
-    - 以 order_items 匯總訂單金額 (sum(qty * price))
+    - 以 order_items 匯總訂單金額 (sum(qty * price) 或 sum(quantity * unit_price))
     - 彙總到會員層級：訂單數、總金額、最近購買時間
     """
     # 1) 找會員
@@ -1716,10 +1676,9 @@ def _analytics_member(keyword, start_date, end_date):
         orders_q = orders_q.gte("created_at", f"{start_date}T00:00:00")
     if end_date:
         orders_q = orders_q.lte("created_at", f"{end_date}T23:59:59")
-
-    # 如需只統計已付款/已出貨，可打開類似下面這行（視你的實際欄位）
-    # orders_q = orders_q.in_("status", ["已確認付款，待出貨", "已完成出貨"])
-    # 或：orders_q = orders_q.eq("payment_status", "paid")
+    # 如需僅統計已出貨/已付款，可打開：
+    # orders_q = orders_q.in_("status", SHIPPED_STATUSES)
+    # orders_q = orders_q.eq("payment_status", "paid")
 
     orders = orders_q.limit(20000).execute().data or []
     if not orders:
@@ -1728,14 +1687,17 @@ def _analytics_member(keyword, start_date, end_date):
     order_ids = [o["id"] for o in orders]
     order_created_at = {o["id"]: o.get("created_at") for o in orders}
 
-    # 3) 以 order_items 匯總每張訂單金額（qty * price）
+    # 3) 以 order_items 匯總每張訂單金額
     items = supabase.table("order_items").select("order_id,qty,price")\
                      .in_("order_id", order_ids).limit(50000).execute().data or []
+    if not items:
+        items = supabase.table("order_items").select("order_id,quantity,unit_price")\
+                         .in_("order_id", order_ids).limit(50000).execute().data or []
     order_amount = {}
     for it in items:
         oid = it["order_id"]
-        qty = int(it.get("qty") or 0)
-        price = float(it.get("price") or 0)
+        qty = int(it.get("qty") or it.get("quantity") or 0)
+        price = float(it.get("price") or it.get("unit_price") or 0)
         order_amount[oid] = order_amount.get(oid, 0.0) + qty * price
 
     # 4) 彙總到會員層級
@@ -1785,6 +1747,7 @@ def _analytics_member(keyword, start_date, end_date):
         "rows": rows
     }
 # admin後台 搜尋報表結束
+
 
 
 
