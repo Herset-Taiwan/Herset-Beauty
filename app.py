@@ -1553,29 +1553,44 @@ def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False)
         return (q.limit(limit).execute().data or [])
 
     # 3) 工具：彙總 order_items
-    def sum_items(order_ids, filter_prod_ids):
+     def sum_items(order_ids, filter_prod_ids):
+        """
+        只使用實際存在的欄位：qty / subtotal（若 subtotal 為空再退回 qty*price）
+        """
         if not order_ids:
             return {}
-        # 3-1 首選：qty/price
-        items = supabase.table("order_items").select("order_id,product_id,qty,price") \
-            .in_("order_id", order_ids).in_("product_id", filter_prod_ids) \
-            .limit(50000).execute().data or []
-        # 3-2 若沒有資料，再嘗試 quantity/unit_price 欄位命名
-        if not items:
-            items = supabase.table("order_items").select("order_id,product_id,quantity,unit_price") \
-                .in_("order_id", order_ids).in_("product_id", filter_prod_ids) \
-                .limit(50000).execute().data or []
+
+        try:
+            items = (
+                supabase.table("order_items")
+                .select("order_id,product_id,qty,price,subtotal")
+                .in_("order_id", order_ids)
+                .in_("product_id", filter_prod_ids)
+                .limit(50000)
+                .execute()
+                .data
+                or []
+            )
+        except Exception:
+            items = []
 
         agg = {}
         for it in items:
-            pid   = it["product_id"]
-            qty   = int(it.get("qty") or it.get("quantity") or 0)
-            price = float(it.get("price") or it.get("unit_price") or 0)
+            pid = it["product_id"]
+            qty = int(it.get("qty") or 0)
+            # subtotal 欄位已經在表上（你的 schema 截圖），優先使用；若為 None 再退回 qty*price
+            sub = it.get("subtotal")
+            if sub is None:
+                price = float(it.get("price") or 0)
+                amt = qty * price
+            else:
+                amt = float(sub or 0)
+
             a = agg.setdefault(pid, {"qty": 0, "amt": 0.0})
             a["qty"] += qty
-            a["amt"] += qty * price
-        return agg
+            a["amt"] += amt
 
+        return agg
     # === A. 區間模式 ===
     if p_start or p_end:
         if not p_end:
