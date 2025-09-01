@@ -56,10 +56,29 @@ def to_utc_iso_from_tw(local_str: str):
     return dt_tw.astimezone(dt_timezone.utc).isoformat()
 
 
-def generate_merchant_trade_no():
-    now = datetime.now().strftime("%Y%m%d%H%M%S")
-    rand = random.randint(1000, 9999)
-    return f"HS{now}{rand}"
+def generate_merchant_trade_no(prefix="HS", rand_len=8):
+    """
+    產生像 HS2509019XQ4MZ7P 的編號：
+    - HS   : 自訂前綴
+    - YYMMDD: 台北時間日期
+    - 隨機英數: 長度 rand_len（預設 8）
+    全長 2 + 6 + 8 = 16（< 20，符合綠界限制）
+    會簡單查 DB 避免碰撞，極少機率重生一次。
+    """
+    date = datetime.now(TW).strftime("%y%m%d")
+    rand = ''.join(secrets.choice(ALNUM) for _ in range(rand_len))
+    trade_no = f"{prefix}{date}{rand}"
+
+    # 確認不重複（極小機率才會再生一次）
+    try:
+        exists = (supabase.table("orders")
+                  .select("id").eq("MerchantTradeNo", trade_no)
+                  .limit(1).execute().data)
+        if exists:
+            return generate_merchant_trade_no(prefix, rand_len)
+    except Exception:
+        pass
+    return trade_no
 
 # ✅ 正確：第二參數是「已序列化」的 JSON 字串（POST 傳 body；GET 傳 querystring；沒有就空字串）
 def _lp_signature_headers(request_uri: str, serialized: str, method: str = "POST"):
@@ -2310,7 +2329,7 @@ def checkout():
     from datetime import datetime
     tw = timezone("Asia/Taipei")
     tz = tw
-    merchant_trade_no = "HS" + uuid4().hex[:12]
+    merchant_trade_no = generate_merchant_trade_no()
     created_at = datetime.now(tw).isoformat()
 
 
@@ -2559,7 +2578,7 @@ def process_payment():
 
     elif method == "credit":
         # 產生新的 MerchantTradeNo，避免與原本的衝突
-        new_trade_no = "HS" + uuid4().hex[:12]
+        new_trade_no = generate_merchant_trade_no()
         supabase.table("ecpay_repay_map").insert({
             "original_trade_no": order["MerchantTradeNo"],
             "new_trade_no": new_trade_no,
