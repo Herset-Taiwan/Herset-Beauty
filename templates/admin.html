@@ -929,11 +929,19 @@ function filterOrders(){
 
   currentPage = 1;
   filteredOrders = (allOrders||[]).filter(o=>{
-    const kw = o.id.toString().includes(keyword)
-        || (o.member?.account||'').toLowerCase().includes(keyword)
-        || (o.member?.name||'').toLowerCase().includes(keyword)
-        || (o.member?.phone||'').toLowerCase().includes(keyword)
-        || (o.member?.address||'').toLowerCase().includes(keyword);
+    const kw = 
+        // ✅ 可搜商店編號 & 綠界單號
+        (o.order_no || '').toLowerCase().includes(keyword) ||
+        (o.MerchantTradeNo || '').toLowerCase().includes(keyword) ||
+        // ✅ 仍保留以 id 搜索（管理用）
+        String(o.id).includes(keyword) ||
+        // ✅ 會員資訊
+        (o.member?.account||'').toLowerCase().includes(keyword) ||
+        (o.member?.name||'').toLowerCase().includes(keyword) ||
+        (o.member?.phone||'').toLowerCase().includes(keyword) ||
+        (o.member?.address||'').toLowerCase().includes(keyword) ||
+        // ✅ 時間字串也可搜（例如 2025-09-01）
+        (o.created_local || '').toLowerCase().includes(keyword);
 
     const st = status==='all'
             || (status==='unshipped' && o.status!=='shipped')
@@ -943,6 +951,7 @@ function filterOrders(){
 
   renderOrderPage(pageSz);
 }
+
 
 function renderOrderPage(pageSize){
   const box = document.getElementById("order-list");
@@ -978,7 +987,9 @@ function renderOrderPage(pageSize){
 card.className = 'order-card';
 card.innerHTML = `
   <div class="order-head">
-    <div class="order-id">訂單 #${o.id}</div>
+    <div class="order-id">
+  訂單 ${esc(o.order_no || o.MerchantTradeNo || ('#' + o.id))}
+</div>
     <div class="order-time">${esc(o.created_local||'')}</div>
     <div class="order-chips">
       <span class="order-chip ${ (o.payment_status||'')==='paid' ? 'pay':'unpay'}">
@@ -1084,6 +1095,7 @@ card.innerHTML = `
 
 function printOrder(orderId) {
   const order = allOrders.find(o => o.id === orderId);
+  const displayNo = order.order_no || order.MerchantTradeNo || ('ON' + String(order.id).padStart(10,'0'));
   if (!order) return alert("找不到訂單");
 
   // 把 option 斷成多段（只給套組用）
@@ -1175,7 +1187,7 @@ function printOrder(orderId) {
     <html lang="zh-Hant">
     <head>
       <meta charset="UTF-8">
-      <title>出貨單 - #${order.id}</title>
+      <title>出貨單 - ${esc(displayNo)}</title>
       <style>
         body { font-family:"Segoe UI","Noto Sans TC",sans-serif; padding:40px; color:#333; }
         h1 { text-align:center; color:#e91e63; margin-bottom:30px; }
@@ -1195,7 +1207,7 @@ function printOrder(orderId) {
 
       <div class="info">
         <p><strong>賣場名稱：</strong>Herset</p>
-        <p><strong>訂單編號：</strong>ON${String(order.id).padStart(10,'0')}</p>
+        <p><strong>訂單編號：</strong>${esc(displayNo)}</p>
         <p><strong>訂單日期：</strong>${(order.created_local || '').split(' ')[0]}</p>
         <p><strong>物流廠商：</strong>宅配</p>
         <p><strong>收件人姓名：</strong>${order.member?.name || ''}</p>

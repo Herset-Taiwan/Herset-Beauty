@@ -156,7 +156,7 @@ const zhStatus = s => s==='shipped' ? '已出貨' : s==='paid' ? '已確認付�
       card.className = 'order';
       card.innerHTML = `
         <div class="head">
-          <div class="id">訂單 #${o.id}</div>
+          <div class="id">訂單 ${esc(o.order_no || o.MerchantTradeNo || ('#' + o.id))}</div>
           <div class="time">${o.created_local || ''}</div>
           <div class="chips">
             <span class="chip ${paid?'pay':'unpay'}">${paid?'已付款':'未付款'}</span>
