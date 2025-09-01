@@ -1481,16 +1481,12 @@ def admin_features_analytics():
     if request.method == "POST":
         mode = request.form.get("mode")
         if mode == "product":
-            form["keyword"]   = (request.form.get("keyword") or "").strip()
-
-            # 新增：自訂日期
-            form["p_start"]   = request.form.get("p_start") or ""
-            form["p_end"]     = request.form.get("p_end") or ""
+            # 表單
+            form["keyword"]      = (request.form.get("keyword") or "").strip()
+            form["p_start"]      = request.form.get("p_start") or ""
+            form["p_end"]        = request.form.get("p_end") or ""
             form["all_products"] = True if request.form.get("all_products") in ("on","true","1") else False
-
-            # period 仍保留供未填日期時使用（原邏輯）
-            form["period"]  = (request.form.get("period") or "rolling").strip() if request.form.get("period") else "rolling"
-            form["period"]    = "rolling"
+            form["period"]       = "rolling"  # 未填日期時備用（仍提供一週/本月）
 
             product_result = _analytics_product(
                 form["keyword"],
@@ -1523,13 +1519,13 @@ def _start_of_month(dt):
     d = dt.astimezone(TW)
     return d.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
-# 建議集中定義「已出貨」狀態（依你的實際欄位名稱調整）
-SHIPPED_STATUSES = ["已完成出貨", "已出貨", "shipped", "Shipped"]
+# 「已出貨」狀態（可依實際系統再擴充）
+SHIPPED_STATUSES = ["已完成出貨", "已出貨", "出貨完成", "shipped", "Shipped"]
 
 def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False):
     """
     商品銷售查詢（僅統計「已出貨」訂單）：
-    - 若提供 p_start/p_end → 區間模式
+    - 有 p_start/p_end → 自訂區間
     - 否則 → 一週 / 本月
     - all_products=True 時忽略 keyword，取全部商品
     """
@@ -1539,7 +1535,6 @@ def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False)
     prod_q = supabase.table("products").select("id,name")
     if not all_products and keyword:
         prod_q = prod_q.ilike("name", f"%{keyword}%")
-    # 若打勾「全部商品」，就不加 ilike 篩選
     prods = (prod_q.limit(1000).execute()).data or []
     prod_ids = [p["id"] for p in prods]
     name_map = {p["id"]: p["name"] for p in prods}
@@ -1565,13 +1560,61 @@ def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False)
             a["amt"] += qty * price
         return agg
 
-    # 3) 只抓「已出貨」訂單
-    def shipped_orders_between(start_iso, end_iso, limit=50000):
-        q = supabase.table("orders").select("id") \
-            .gte("created_at", start_iso).lte("created_at", end_iso)
-        # 依你的實際 schema 調整：若有 shipment_status 欄位可改用 eq
-        q = q.in_("status", SHIPPED_STATUSES)
-        return (q.limit(limit).execute().data or [])
+    # 3) 只抓「已出貨」訂單（智慧偵測多種欄位）
+    def shipped_orders_between(start_iso, end_iso, hard_limit=80000):
+        """
+        取得「已出貨」訂單 ID（相容多種 schema）：
+        1) 優先用 shipped_at 在 [start, end]
+        2) 依次嘗試 shipment_status / fulfillment_status / status(in SHIPPED_STATUSES) / shipped=True
+        3) 都沒有時，回退用 created_at + 上述狀態；最後只用 shipped_at 或 created_at 的時間條件
+        """
+        ids = set()
+
+        def try_query(select_cols, filters, limit=hard_limit):
+            try:
+                q = supabase.table("orders").select(select_cols)
+                for f in filters:
+                    q = f(q)
+                return (q.limit(limit).execute().data or [])
+            except Exception:
+                return []
+
+        # A. 以 shipped_at 做時間條件（最佳）
+        rows = try_query("id", [lambda q: q.gte("shipped_at", start_iso), lambda q: q.lte("shipped_at", end_iso)])
+        ids.update([r["id"] for r in rows])
+
+        # shipped_at 範圍 + 各種狀態欄位
+        for cond in [
+            lambda q: q.eq("shipment_status", "shipped"),
+            lambda q: q.eq("fulfillment_status", "shipped"),
+            lambda q: q.in_("status", SHIPPED_STATUSES),
+            lambda q: q.eq("shipped", True),
+        ]:
+            rows = try_query("id", [lambda q: q.gte("shipped_at", start_iso),
+                                    lambda q: q.lte("shipped_at", end_iso), cond])
+            ids.update([r["id"] for r in rows])
+
+        # B. 若沒有 shipped_at 或仍為空 → 用 created_at + 各類狀態嘗試
+        if not ids:
+            for cond in [
+                lambda q: q.eq("shipment_status", "shipped"),
+                lambda q: q.eq("fulfillment_status", "shipped"),
+                lambda q: q.in_("status", SHIPPED_STATUSES),
+                lambda q: q.eq("shipped", True),
+            ]:
+                rows = try_query("id", [lambda q: q.gte("created_at", start_iso),
+                                        lambda q: q.lte("created_at", end_iso), cond])
+                ids.update([r["id"] for r in rows])
+
+        # C. 最後回退：只有時間條件
+        if not ids:
+            rows = try_query("id", [lambda q: q.gte("shipped_at", start_iso), lambda q: q.lte("shipped_at", end_iso)])
+            ids.update([r["id"] for r in rows])
+            if not ids:
+                rows = try_query("id", [lambda q: q.gte("created_at", start_iso), lambda q: q.lte("created_at", end_iso)])
+                ids.update([r["id"] for r in rows])
+
+        return [{"id": oid} for oid in ids]
 
     # === A. 區間模式 ===
     if p_start or p_end:
@@ -1604,17 +1647,13 @@ def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False)
         }
 
     # === B. 一週 / 本月（亦只統計已出貨） ===
-    def _start_of_month(dt):
-        d = dt.astimezone(TW)
-        return d.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-
     week_start = (now - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
     week_end   = now
     month_start = _start_of_month(now)
     month_end   = now
 
-    wk_orders = shipped_orders_between(week_start.isoformat(), week_end.isoformat(), limit=50000)
-    mo_orders = shipped_orders_between(month_start.isoformat(), month_end.isoformat(), limit=100000)
+    wk_orders = shipped_orders_between(week_start.isoformat(), week_end.isoformat(), hard_limit=80000)
+    mo_orders = shipped_orders_between(month_start.isoformat(), month_end.isoformat(), hard_limit=120000)
 
     wk_ids = [o["id"] for o in wk_orders]
     mo_ids = [o["id"] for o in mo_orders]
@@ -1642,8 +1681,6 @@ def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False)
         "month_qty": month_qty, "month_amount": month_amt,
         "range_qty": 0, "range_amount": 0, "range_start": "", "range_end": ""
     }
-
-
 
 def _analytics_member(keyword, start_date, end_date):
     """
@@ -1689,21 +1726,12 @@ def _analytics_member(keyword, start_date, end_date):
         return {"member_count": 0, "order_count": 0, "total_amount": 0, "avg_amount": 0, "rows": []}
 
     order_ids = [o["id"] for o in orders]
-    # 做個快速索引：訂單 -> 會員
-    order_to_member = {o["id"]: o["member_id"] for o in orders}
     order_created_at = {o["id"]: o.get("created_at") for o in orders}
 
     # 3) 以 order_items 匯總每張訂單金額（qty * price）
-    # 若你有運費/折扣需併入，這裡可以額外合併其它表或欄位。
-    if order_ids:
-        items = supabase.table("order_items")\
-                        .select("order_id,qty,price")\
-                        .in_("order_id", order_ids)\
-                        .limit(50000).execute().data or []
-    else:
-        items = []
-
-    order_amount = {}  # {order_id: sum_amount}
+    items = supabase.table("order_items").select("order_id,qty,price")\
+                     .in_("order_id", order_ids).limit(50000).execute().data or []
+    order_amount = {}
     for it in items:
         oid = it["order_id"]
         qty = int(it.get("qty") or 0)
@@ -1719,8 +1747,8 @@ def _analytics_member(keyword, start_date, end_date):
         created = order_created_at.get(oid)
 
         cell = per.setdefault(mid, {"count": 0, "sum": 0.0, "last": None})
-        cell["count"] += 1               # 訂單數
-        cell["sum"] += amt               # 金額加總
+        cell["count"] += 1
+        cell["sum"] += amt
 
         try:
             dt = parser.parse(created).astimezone(TW) if created else None
@@ -1756,8 +1784,8 @@ def _analytics_member(keyword, start_date, end_date):
         "avg_amount": avg_amount,
         "rows": rows
     }
-
 # admin後台 搜尋報表結束
+
 
 
 @app.route("/admin0363/mark_seen_orders", methods=["POST"])
