@@ -2435,71 +2435,121 @@ def _order_amount_currency(order):
 # line pay 結帳完成「伺服器到伺服器」通知（需在 LINE Pay 後台設定為 https://你的網域/linepay/notify）
 @app.route("/linepay/notify", methods=["POST"])
 def linepay_notify():
-    # 1) 取原始 body 與簽名頭
-    raw = request.get_data(as_text=True)  # 原始 JSON 字串
+    """
+    LINE Pay v3 notify：
+    - 先驗簽 (X-LINE-Authorization / Nonce)
+    - 優先用 transactionId 對單（orders.lp_transaction_id）
+    - 找不到再依序用 orderId 比對：
+        1) orders.order_no
+        2) orders.MerchantTradeNo
+        3) 舊制 "LP-<id>" 解析出數字 id
+    - 冪等：已 paid 直接回 OK
+    - 以 /v3/payments/{tx}/confirm 最終確認，成功才標記 paid
+    """
+    # 1) 原始資料與驗簽
+    raw = request.get_data(as_text=True)
     nonce = request.headers.get("X-LINE-Authorization-Nonce", "")
-    auth = request.headers.get("X-LINE-Authorization", "")
-    path = request.path  # 必須是 "/linepay/notify"
+    auth  = request.headers.get("X-LINE-Authorization", "")
+    path  = request.path  # 必須為 "/linepay/notify"
 
-    # 2) 依 v3 規格驗簽：Base64(HMAC-SHA256( channelSecret + path + body + nonce ))
-    msg = (LINE_PAY_CHANNEL_SECRET + path + raw + nonce).encode("utf-8")
-    calc = base64.b64encode(hmac.new(LINE_PAY_CHANNEL_SECRET.encode("utf-8"), msg, hashlib.sha256).digest()).decode("utf-8")
+    msg  = (LINE_PAY_CHANNEL_SECRET + path + raw + nonce).encode("utf-8")
+    calc = base64.b64encode(
+        hmac.new(LINE_PAY_CHANNEL_SECRET.encode("utf-8"), msg, hashlib.sha256).digest()
+    ).decode("utf-8")
     if not auth or not hmac.compare_digest(auth, calc):
         app.logger.warning("[LP][notify] signature mismatch")
         return "signature mismatch", 401
 
-    # 3) 解析 JSON
+    # 2) 解析 JSON
     try:
         js = json.loads(raw)
-    except Exception as e:
+    except Exception:
         app.logger.exception("[LP][notify] bad json")
         return "bad json", 400
 
-    # 你的 request 時 orderId = f"LP-{order['id']}"，這裡把數字 id 取回來
-    order_tag = str(js.get("orderId", ""))
-    m = re.match(r"LP-(\d+)", order_tag)
-    order_id = int(m.group(1)) if m else None
+    order_tag = str(js.get("orderId") or "")
+    tx        = (js.get("transactionId") or "").strip()
+    status    = js.get("transactionStatus")  # 可能為 SUCCESS/AUTHORIZED 等（僅參考）
 
-    tx = (js.get("transactionId") or "").strip()
-    status = js.get("transactionStatus")  # 可能是 SUCCESS / AUTHORIZED 等
+    if not tx:
+        return "missing transactionId", 400
 
-    if not order_id or not tx:
-        return "missing orderId/transactionId", 400
+    # 3) 對單：transactionId → order
+    order = None
+    try:
+        res = supabase.table("orders").select("*").eq("lp_transaction_id", tx).single().execute()
+        order = res.data
+    except Exception:
+        order = None
 
-    # 4) 撈訂單，冪等處理
-    res = supabase.table("orders").select("*").eq("id", order_id).single().execute()
-    order = res.data
+    # 3-1) 相容：用 orderId 直接比對 order_no
+    if not order and order_tag:
+        try:
+            res = supabase.table("orders").select("*").eq("order_no", order_tag).single().execute()
+            order = res.data
+        except Exception:
+            order = None
+
+    # 3-2) 相容：用 orderId 比對 MerchantTradeNo
+    if not order and order_tag:
+        try:
+            res = supabase.table("orders").select("*").eq("MerchantTradeNo", order_tag).single().execute()
+            order = res.data
+        except Exception:
+            order = None
+
+    # 3-3) 最後相容：舊制 LP-<id>
+    if not order and order_tag:
+        m = re.match(r"LP-(\d+)$", order_tag)
+        if m:
+            legacy_id = int(m.group(1))
+            try:
+                res = supabase.table("orders").select("*").eq("id", legacy_id).single().execute()
+                order = res.data
+            except Exception:
+                order = None
+
     if not order:
+        app.logger.warning("[LP][notify] order not found; orderId=%s, tx=%s", order_tag, tx)
         return "order not found", 404
-    if order.get("payment_status") == "paid":
-        return "OK", 200  # 冪等
 
-    # 5) 以 Confirm API 作最終確認（最保險；就算 notify 說 SUCCESS 也再 confirm 一次）
+    order_id = order["id"]
+
+    # 4) 冪等處理：已付款就直接回 OK
+    if (order.get("payment_status") or "").lower() == "paid":
+        return "OK", 200
+
+    # 5) 以 Confirm API 最終確認
     amount, currency = _order_amount_currency(order)
     confirm_body = {"amount": amount, "currency": currency}
     confirm_path = f"/v3/payments/{tx}/confirm"
     payload = json.dumps(confirm_body, separators=(",", ":"))
     headers = _lp_signature_headers(confirm_path, payload, method="POST")
 
-    r = requests.post(f"{LINE_PAY_BASE}{confirm_path}", headers=headers, data=payload, timeout=15)
     try:
+        r = requests.post(f"{LINE_PAY_BASE}{confirm_path}", headers=headers, data=payload, timeout=15)
         data = r.json()
-    except ValueError:
-        data = {"http_status": r.status_code, "text": r.text[:500]}
+    except Exception as e:
+        app.logger.exception("[LP][notify] confirm request error")
+        data = {"http_status": getattr(r, "status_code", None), "error": str(e)}
 
     if data.get("returnCode") == "0000":
+        # 成功：標記付款完成（也一併寫入 lp_transaction_id，便於之後用 tx 查單）
         supabase.table("orders").update({
             "payment_status": "paid",
             "paid_trade_no": str(tx),
-            "lp_transaction_id": str(tx)
+            "lp_transaction_id": str(tx),
+            "paid_at": datetime.now(TW).isoformat()
         }).eq("id", order_id).execute()
         return "OK", 200
     else:
-        # 記錄錯誤，之後可用備援 /internal/linepay/check_and_confirm 重試
+        # 失敗：記錄錯誤詳細以便之後人工或排程重試
         supabase.table("orders").update({
             "payment_status": "pending_confirm_failed",
-            "lp_confirm_error": json.dumps(data, ensure_ascii=False)
+            "lp_transaction_id": str(tx),
+            "lp_confirm_error": json.dumps(data, ensure_ascii=False)[:8000]
         }).eq("id", order_id).execute()
+        app.logger.warning("[LP][notify] confirm failed: %s", data)
         return "NG", 400
 
 
@@ -2523,13 +2573,13 @@ def process_payment():
         body = {
             "amount": amount,
             "currency": currency,
-            "orderId": f"LP-{order['id']}",
+            "orderId": str(order.get("order_no") or order.get("MerchantTradeNo") or f"LP-{order['id']}"),
             "packages": [{
                 "id": "pkg-1",
                 "amount": amount,
                 "name": "HERSET 訂單",
                 "products": [{
-                    "name": f"訂單 {order['id']} 總額",
+    "name": f"訂單 {order.get('order_no') or order.get('MerchantTradeNo') or ('#' + str(order['id']))} 總額",
                     "quantity": 1,
                     "price": amount
                 }]
