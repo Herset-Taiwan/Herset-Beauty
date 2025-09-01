@@ -40,12 +40,12 @@
         <div class="title">📊 查詢 / 報表</div>
         <div class="muted">快速掌握商品銷售與會員消費狀況</div>
 
-      <!-- ✅ 按鈕放右邊 -->
-   </div>
-      <a class="back" href="/admin0363/features">← 返回功能管理</a>
-      <a class="back" href="/admin0363/dashboard">← 返回後台</a>
-    </div>
+      <!-- 右上角按鈕列 -->
+  <div class="head-right">
+    <a class="back" href="/admin0363/features">← 返回功能管理</a>
+    <a class="back" href="/admin0363/dashboard">返回後台</a>
   </div>
+</div>
 
     <div class="tabs">
       <a href="{{ url_for('admin_features_analytics', tab='product') }}" class="tab-btn {% if tab=='product' %}active{% endif %}">商品銷售查詢</a>
@@ -99,16 +99,17 @@
 
       {% if product_result %}
   <div class="stat">
-    <div class="badge">符合商品：{{ product_result.product_count }} 件</div>
+  <div class="badge">符合商品：{{ product_result.product_count }} 件</div>
+  <div class="badge">有銷售商品：{{ product_result.row_count }} 件</div>
+  {% if product_result.range_mode %}
+    <div class="badge">區間：{{ product_result.range_start }} ~ {{ product_result.range_end }}</div>
+    <div class="badge">區間銷量：{{ product_result.range_qty }}　金額：$ {{ '{:,.0f}'.format(product_result.range_amount) }}</div>
+  {% else %}
+    <div class="badge">一週銷量：{{ product_result.week_qty }}　金額：$ {{ '{:,.0f}'.format(product_result.week_amount) }}</div>
+    <div class="badge">本月銷量：{{ product_result.month_qty }}　金額：$ {{ '{:,.0f}'.format(product_result.month_amount) }}</div>
+  {% endif %}
+</div>
 
-    {% if product_result.range_mode %}
-      <div class="badge">區間：{{ product_result.range_start }} ~ {{ product_result.range_end }}</div>
-      <div class="badge">區間銷量：{{ product_result.range_qty }}　金額：$ {{ '{:,.0f}'.format(product_result.range_amount) }}</div>
-    {% else %}
-      <div class="badge">一週銷量：{{ product_result.week_qty }}　金額：$ {{ '{:,.0f}'.format(product_result.week_amount) }}</div>
-      <div class="badge">本月銷量：{{ product_result.month_qty }}　金額：$ {{ '{:,.0f}'.format(product_result.month_amount) }}</div>
-    {% endif %}
-  </div>
 
   <table>
     <thead>

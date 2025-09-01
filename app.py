@@ -1642,7 +1642,8 @@ def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False)
         product_count = len(prods) if used_pid_filter else len(agg)
 
         return {
-            "product_count": product_count,
+            "product_count": product_count,   # 篩選後商品數（可能含本期 0 銷售）
+            "row_count": len(rows),           # 本期有銷售的商品數（等於下方列數）
             "rows": rows,
             "range_mode": True,
             "range_qty": r_qty,
@@ -1696,7 +1697,8 @@ def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False)
     product_count = len(prods) if (wk_used_pid and mo_used_pid) else len(pid_set)
 
     return {
-        "product_count": product_count,
+         "product_count": product_count,   # 篩選後商品數
+        "row_count": len(rows),           # 本期有銷售的商品數
         "rows": rows,
         "range_mode": False,
         "week_qty": week_qty, "week_amount": week_amt,
