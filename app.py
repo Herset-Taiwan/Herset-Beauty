@@ -1528,7 +1528,10 @@ def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False)
     - 有 p_start/p_end → 自訂區間
     - 否則 → 一週 / 本月
     - all_products=True 時忽略 keyword，取全部商品
-    注意：order_items.product_id 是 text，這裡將 products.id 一律轉成字串再比對。
+    智慧備援：
+      1) 先用 product_id IN products.id（轉字串）比對
+      2) 若 0 筆且有 keyword → 用 product_name ILIKE 關鍵字
+      3) 若仍 0 或勾「全部商品」→ 不套商品條件（只靠 order_id）
     """
     now = datetime.now(TW)
 
@@ -1538,51 +1541,62 @@ def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False)
         prod_q = prod_q.ilike("name", f"%{keyword}%")
     prods = (prod_q.limit(1000).execute()).data or []
 
-    # 轉型：id -> str
-    prod_ids = [str(p["id"]) for p in prods]
-    name_map = {str(p["id"]): p["name"] for p in prods}
+    prod_ids = [str(p["id"]) for p in prods]               # 轉字串
+    name_map = {str(p["id"]): p["name"] for p in prods}    # 轉字串 key
 
-    if not prod_ids:
-        return {
-            "product_count": 0,
-            "rows": [],
-            "range_mode": bool(p_start or p_end),
-            "range_qty": 0,
-            "range_amount": 0,
-            "week_qty": 0,
-            "week_amount": 0,
-            "month_qty": 0,
-            "month_amount": 0,
-            "range_start": "",
-            "range_end": "",
-        }
+    # 2) 只抓「已出貨」訂單
+    def shipped_orders_between(start_iso=None, end_iso=None, limit=80000):
+        q = supabase.table("orders").select("id").in_("status", SHIPPED_STATUSES)
+        if start_iso:
+            q = q.gte("created_at", start_iso)
+        if end_iso:
+            q = q.lte("created_at", end_iso)
+        return (q.limit(limit).execute().data or [])
 
-    # 2) 工具：彙總 order_items（只用實際存在的欄位：qty / price / subtotal）
-    def sum_items(order_ids, filter_prod_ids):
-        """
-        回傳 {product_id(str): {"qty": 數量, "amt": 金額}}
-        金額優先採用 subtotal；若為 None 再用 qty*price。
-        """
-        if not order_ids:
-            return {}
+    # 3) 取品項（先 product_id 篩，撈不到再用 name，最後不套商品條件）
+    def fetch_items(order_ids, filter_prod_ids, kw, all_flag):
+        base = (
+            supabase.table("order_items")
+            .select("order_id,product_id,product_name,qty,price,subtotal")
+            .in_("order_id", order_ids)
+            .limit(50000)
+        )
+        used_product_filter = False
+        items = []
 
+        # 3-1 用 product_id IN (...) 試一次
         try:
-            items = (
-                supabase.table("order_items")
-                .select("order_id,product_id,qty,price,subtotal")
-                .in_("order_id", order_ids)
-                .in_("product_id", filter_prod_ids)  # filter_prod_ids 為字串陣列
-                .limit(50000)
-                .execute()
-                .data
-                or []
-            )
+            if filter_prod_ids:
+                items = base.in_("product_id", filter_prod_ids).execute().data or []
+                used_product_filter = True
         except Exception:
             items = []
+            used_product_filter = False
 
-        agg = {}
+        # 3-2 若 0 筆且有關鍵字且未勾全部商品 → 用 product_name 關鍵字
+        if not items and (kw or "").strip() and not all_flag:
+            try:
+                items = base.ilike("product_name", f"%{kw}%").execute().data or []
+                used_product_filter = False
+            except Exception:
+                items = []
+
+        # 3-3 還是不行（或勾全部商品）→ 不套商品條件
+        if not items:
+            try:
+                items = base.execute().data or []
+                used_product_filter = False
+            except Exception:
+                items = []
+
+        return items, used_product_filter
+
+    # 4) 匯總工具（優先 subtotal；否則 qty*price）
+    def aggregate(items):
+        agg = {}         # {pid: {"name": 名稱, "qty": 數量, "amt": 金額}}
         for it in items:
-            pid = str(it["product_id"])  # 再保險一次確保是字串 key
+            pid = str(it.get("product_id"))  # key 一律字串
+            pname = (it.get("product_name") or name_map.get(pid) or f"商品 {pid}").strip()
             qty = int(it.get("qty") or 0)
             sub = it.get("subtotal")
             if sub is None:
@@ -1591,19 +1605,10 @@ def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False)
             else:
                 amt = float(sub or 0)
 
-            a = agg.setdefault(pid, {"qty": 0, "amt": 0.0})
-            a["qty"] += qty
-            a["amt"] += amt
+            cell = agg.setdefault(pid, {"name": pname, "qty": 0, "amt": 0.0})
+            cell["qty"] += qty
+            cell["amt"] += amt
         return agg
-
-    # 3) 只抓「已出貨」訂單（你的 orders.status='shipped'）
-    def shipped_orders_between(start_iso=None, end_iso=None, limit=80000):
-        q = supabase.table("orders").select("id").in_("status", SHIPPED_STATUSES)
-        if start_iso:
-            q = q.gte("created_at", start_iso)
-        if end_iso:
-            q = q.lte("created_at", end_iso)
-        return (q.limit(limit).execute().data or [])
 
     # === A. 區間模式 ===
     if p_start or p_end:
@@ -1616,19 +1621,28 @@ def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False)
 
         orders = shipped_orders_between(start_iso, end_iso)
         order_ids = [o["id"] for o in orders]
-        r_agg = sum_items(order_ids, prod_ids)
 
+        items, used_pid_filter = fetch_items(order_ids, prod_ids, keyword, all_products)
+        agg = aggregate(items)
+
+        # rows
         rows, r_qty, r_amt = [], 0, 0.0
-        for pid in prod_ids:  # 這裡的 pid 是字串
-            rq = r_agg.get(pid, {}).get("qty", 0)
-            ra = r_agg.get(pid, {}).get("amt", 0.0)
-            if rq or ra:
-                rows.append({"name": name_map.get(pid, f"商品 {pid}"), "r_qty": rq, "r_amt": ra})
-                r_qty += rq
-                r_amt += ra
+        # 若有用 product_id 篩 → 以 products 順序輸出；否則以匯總到的品項為準
+        pids_to_show = prod_ids if used_pid_filter else list(agg.keys())
+        for pid in pids_to_show:
+            q = agg.get(pid, {}).get("qty", 0)
+            a = agg.get(pid, {}).get("amt", 0.0)
+            if q or a:
+                rows.append({"name": agg.get(pid, {}).get("name", name_map.get(pid, f"商品 {pid}")),
+                             "r_qty": q, "r_amt": a})
+                r_qty += q
+                r_amt += a
+
+        # 商品數量顯示：若有用 product_id 篩就用 products 數；否則用匯總到的品項數
+        product_count = len(prods) if used_pid_filter else len(agg)
 
         return {
-            "product_count": len(prods),
+            "product_count": product_count,
             "rows": rows,
             "range_mode": True,
             "range_qty": r_qty,
@@ -1641,7 +1655,7 @@ def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False)
             "month_amount": 0,
         }
 
-    # === B. 一週 / 本月（亦只統計已出貨） ===
+    # === B. 一週 / 本月 ===
     week_start = (now - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
     week_end = now
     month_start = _start_of_month(now)
@@ -1649,42 +1663,47 @@ def _analytics_product(keyword, period_mode, p_start, p_end, all_products=False)
 
     wk_orders = shipped_orders_between(week_start.isoformat(), week_end.isoformat(), limit=80000)
     mo_orders = shipped_orders_between(month_start.isoformat(), month_end.isoformat(), limit=120000)
-
     wk_ids = [o["id"] for o in wk_orders]
     mo_ids = [o["id"] for o in mo_orders]
 
-    wk_agg = sum_items(wk_ids, prod_ids)
-    mo_agg = sum_items(mo_ids, prod_ids)
+    # 兩次各自撈、各自備援
+    wk_items, wk_used_pid = fetch_items(wk_ids, prod_ids, keyword, all_products)
+    mo_items, mo_used_pid = fetch_items(mo_ids, prod_ids, keyword, all_products)
+    wk_agg = aggregate(wk_items)
+    mo_agg = aggregate(mo_items)
 
+    # rows
     rows = []
     week_qty = week_amt = month_qty = month_amt = 0
-    for pid in prod_ids:  # 這裡的 pid 是字串
+    # 若任何一個時段不是用 product_id 篩 → 以其匯總 key 為準做聯集
+    if wk_used_pid and mo_used_pid:
+        pid_set = set(prod_ids)
+    else:
+        pid_set = set(list(wk_agg.keys()) + list(mo_agg.keys()))
+
+    for pid in pid_set:
         wq = wk_agg.get(pid, {}).get("qty", 0)
         wa = wk_agg.get(pid, {}).get("amt", 0.0)
         mq = mo_agg.get(pid, {}).get("qty", 0)
         ma = mo_agg.get(pid, {}).get("amt", 0.0)
         if any([wq, wa, mq, ma]):
-            rows.append(
-                {"name": name_map.get(pid, f"商品 {pid}"), "w_qty": wq, "w_amt": wa, "m_qty": mq, "m_amt": ma}
-            )
-            week_qty += wq
-            week_amt += wa
-            month_qty += mq
-            month_amt += ma
+            rows.append({
+                "name": wk_agg.get(pid, {}).get("name") or mo_agg.get(pid, {}).get("name") or name_map.get(pid, f"商品 {pid}"),
+                "w_qty": wq, "w_amt": wa, "m_qty": mq, "m_amt": ma
+            })
+            week_qty += wq; week_amt += wa; month_qty += mq; month_amt += ma
+
+    product_count = len(prods) if (wk_used_pid and mo_used_pid) else len(pid_set)
 
     return {
-        "product_count": len(prods),
+        "product_count": product_count,
         "rows": rows,
         "range_mode": False,
-        "week_qty": week_qty,
-        "week_amount": week_amt,
-        "month_qty": month_qty,
-        "month_amount": month_amt,
-        "range_qty": 0,
-        "range_amount": 0,
-        "range_start": "",
-        "range_end": "",
+        "week_qty": week_qty, "week_amount": week_amt,
+        "month_qty": month_qty, "month_amount": month_amt,
+        "range_qty": 0, "range_amount": 0, "range_start": "", "range_end": ""
     }
+
 
 
 
@@ -1793,8 +1812,6 @@ def _analytics_member(keyword, start_date, end_date):
         "rows": rows
     }
 # admin後台 搜尋報表 結束
-
-
 
 
 @app.route("/admin0363/mark_seen_orders", methods=["POST"])
