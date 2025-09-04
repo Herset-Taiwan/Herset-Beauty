@@ -21,6 +21,7 @@ from datetime import timedelta
 import secrets
 from authlib.integrations.flask_client import OAuth
 from flask import abort
+import re, secrets
 
 
 
@@ -100,62 +101,79 @@ def _lp_signature_headers(request_uri: str, serialized: str, method: str = "POST
     }
 
 #用第三方資料找或建會員的 helper
-def upsert_member_from_oauth(provider, sub, email, name=None, avatar_url=None):
+def _sanitize_username(s: str) -> str:
+    """把姓名或 email local-part 轉成合規 username（僅 a-zA-Z0-9_.-，長度<=30）"""
+    s = (s or "").strip()
+    s = re.sub(r"\s+", "_", s)                 # 空白轉底線
+    s = re.sub(r"[^a-zA-Z0-9_.-]", "", s)     # 只留允許字元
+    return s[:30]
+
+def _pick_username(provider: str, sub: str, email: str | None, name: str | None) -> str:
+    candidates = []
+    if name:
+        candidates.append(_sanitize_username(name))
+    if email and "@" in email:
+        candidates.append(_sanitize_username(email.split("@", 1)[0]))
+    # 保底
+    candidates.append(f"{provider}_{(sub or '')[:8]}")
+
+    # 從候選逐一檢查是否已存在，存在就加序號
+    for base in candidates:
+        if not base:
+            continue
+        username = base
+        i = 1
+        while True:
+            q = supabase.table("members").select("id").eq("username", username).limit(1).execute()
+            if not q.data:     # 沒撞名就用它
+                return username
+            i += 1
+            suffix = str(i)
+            username = (base[: (30 - len(suffix))] + suffix)
+    # 理論上不會走到這
+    return f"{provider}_{secrets.token_hex(4)}"
+
+def upsert_member_from_oauth(*, provider: str, sub: str, email: str | None, name: str | None, avatar_url: str | None):
     """
-    以 email 優先對應既有會員；找不到再用 (provider, sub)；仍無則建立新會員。
-    回傳 members 表完整資料 dict。
+    以 OAuth 登入資料建立/回傳會員。
+    假設你的 members 表允許 email 為 NULL（例如 Facebook 可能沒給）。
     """
-    # 1) 用 email 找（若第三方有提供）
+    # 先用 email 尋找既有會員（如果你有 oauth_sub 欄位，也可先以它比對）
+    existing = None
     if email:
-        res = supabase.table("members").select("*").eq("email", email).limit(1).execute()
-        if res.data:
-            member = res.data[0]
-            updates = {"oauth_provider": provider, "oauth_sub": sub}
-            if name and not member.get("name"):
+        r = supabase.table("members").select("*").eq("email", email).limit(1).execute()
+        if r.data:
+            existing = r.data[0]
+
+    if existing:
+        # 這裡只做最小更新；如有 avatar/name 欄位可一併更新
+        try:
+            updates = {}
+            if name and not existing.get("name"):
                 updates["name"] = name
-            if avatar_url and not member.get("avatar_url"):
-                updates["avatar_url"] = avatar_url
             if updates:
-                supabase.table("members").update(updates).eq("id", member["id"]).execute()
-            return member
+                supabase.table("members").update(updates).eq("id", existing["id"]).execute()
+                existing.update(updates)
+        except Exception:
+            pass
+        return existing
 
-    # 2) 用 (provider, sub) 找
-    res = (
-        supabase.table("members")
-        .select("*")
-        .eq("oauth_provider", provider)
-        .eq("oauth_sub", sub)
-        .limit(1)
-        .execute()
-    )
-    if res.data:
-        return res.data[0]
+    # 新建：先取得可用 username
+    username = _pick_username(provider, sub or "", email, name)
 
-    # 3) 都沒有 → 建立新會員（password 可留空）
     payload = {
-        "name": name or "",
-        "email": email,  # 可能為 None；若 schema 限制 NOT NULL 請改成 "" 或調整
-        "oauth_provider": provider,
-        "oauth_sub": sub,
-        "avatar_url": avatar_url or None,
+        "username": username,               # ★ 必填，避免 NOT NULL 失敗
+        "email": email,
+        "name": name or username,
+        # 如果你的表有下列欄位，可一起寫入（沒有就刪掉）
+        # "oauth_provider": provider,
+        # "oauth_sub": sub,
+        # "avatar_url": avatar_url,
     }
+
     created = supabase.table("members").insert(payload).execute()
     return created.data[0]
 
-
-
-app = Flask(__name__)
-# 用固定且可配置的金鑰（請在 Render 環境變數設定 SECRET_KEY）
-app.secret_key = os.environ.get("SECRET_KEY", "fallback-please-change-me")
-
-# 建議的 session cookie 設定（HTTPS 站台）
-app.config.update(
-    SESSION_COOKIE_SECURE=True,     # 你的網域是 https://herset.co
-    SESSION_COOKIE_SAMESITE="Lax",  # 同站往返（登入、加入購物車）OK
-    SESSION_COOKIE_HTTPONLY=True,   # 防 XSS
-    PERMANENT_SESSION_LIFETIME=timedelta(days=30),
-
-)
 
 
 
