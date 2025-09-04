@@ -153,6 +153,7 @@ app.config.update(
     SESSION_COOKIE_SAMESITE="Lax",  # 同站往返（登入、加入購物車）OK
     SESSION_COOKIE_HTTPONLY=True,   # 防 XSS
     PERMANENT_SESSION_LIFETIME=timedelta(days=30),
+    
 )
 
 
@@ -2022,7 +2023,12 @@ def login():
 @app.route("/login/google")
 def login_google():
     redirect_uri = f"{OAUTH_REDIRECT_BASE}/login/google/callback"
-    return oauth.google.authorize_redirect(redirect_uri)
+    # 產生並保存 nonce（用於 OIDC 驗證）
+    nonce = secrets.token_urlsafe(32)
+    session["google_oidc_nonce"] = nonce
+    # 將 nonce 一起送去 Google
+    return oauth.google.authorize_redirect(redirect_uri, nonce=nonce)
+
 
 @app.route("/login/facebook")
 def login_facebook():
@@ -2035,32 +2041,45 @@ def login_facebook():
 def login_google_callback():
     try:
         token = oauth.google.authorize_access_token()
-        userinfo = oauth.google.parse_id_token(token)
-        sub = userinfo.get("sub")
+
+        # 取出剛才存的 nonce（用完就移除）
+        nonce = session.pop("google_oidc_nonce", None)
+
+        # 驗證並解析 ID Token（這版需要 nonce）
+        userinfo = oauth.google.parse_id_token(token, nonce=nonce)
+
+        # 若保險起見，也可在解析失敗時改走 userinfo API（備援）
+        if not userinfo:
+            resp = oauth.google.get("userinfo")
+            userinfo = resp.json()
+
+        sub = userinfo.get("sub") or userinfo.get("id")
         email = userinfo.get("email")
         name = userinfo.get("name")
         picture = userinfo.get("picture")
+
         if not sub:
-            abort(400, "Google 回傳缺少 sub")
+            abort(400, "Google 回傳資料缺少 sub")
 
-        member = upsert_member_from_oauth("google", sub, email, name, picture)
+        member = upsert_member_from_oauth(
+            provider="google", sub=sub, email=email, name=name, avatar_url=picture
+        )
 
-        # 寫入你現有 session 欄位（和帳密登入一致）
-        session['member_id'] = member["id"]
-        session['user'] = {
-            'account': member.get('account') or (email or "google_user"),
-            'email': member.get('email')
+        session["member_id"] = member["id"]
+        session["user"] = {
+            "account": member.get("account") or (email or "google_user"),
+            "email": member.get("email"),
         }
-        # 是否缺基本資料（比照你原本在 /login 的寫法）
-        if not member.get('name') or not member.get('phone') or not member.get('address'):
-            session['incomplete_profile'] = True
+        if not member.get("name") or not member.get("phone") or not member.get("address"):
+            session["incomplete_profile"] = True
         else:
-            session.pop('incomplete_profile', None)
+            session.pop("incomplete_profile", None)
 
         next_url = request.args.get("next") or url_for("index")
         return redirect(next_url)
     except Exception as e:
         return f"Google 登入失敗：{e}", 400
+
 
 
 # === Facebook 回呼 ===
