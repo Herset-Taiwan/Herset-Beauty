@@ -6,7 +6,7 @@ from uuid import uuid4, UUID
 from datetime import datetime, timezone as dt_timezone
 
 # --- third party
-from flask import Flask, render_template, request, redirect, session, url_for, jsonify, flash, send_from_directory, Response
+from flask import Flask, render_template, request, redirect, session, url_for, jsonify, flash, send_from_directory, Response  # ← 沒有 Markup
 from markupsafe import Markup
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -22,7 +22,7 @@ import secrets
 from authlib.integrations.flask_client import OAuth
 from flask import abort
 import re, secrets
-
+from flask import current_app
 
 
 DEFAULT_SHELL_IMAGE = "/static/uploads/logo_0.png"
@@ -31,6 +31,19 @@ TW = pytz_timezone("Asia/Taipei")
 
 
 load_dotenv()
+
+# --- after load_dotenv() ---
+app = Flask(__name__, static_folder="static", template_folder="templates")
+
+# 建議放到環境變數；先給一個後備值避免部署當下報錯
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret")
+
+# （可選）cookie 安全性建議
+app.config.update(
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=True,        # 你的站是 https，開這個 OK
+)
+
 
 # === LINE Pay 設定（正式環境）===
 LINE_PAY_CHANNEL_ID = os.getenv("LINE_PAY_CHANNEL_ID")  # ← 放正式的 Channel ID
