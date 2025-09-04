@@ -2041,45 +2041,62 @@ def login_facebook():
 @app.route("/login/google/callback")
 def login_google_callback():
     try:
+        # 1) 交換授權碼
         token = oauth.google.authorize_access_token()
+    except Exception as e:
+        return f"Google 登入失敗：授權交換失敗：{e}", 400
 
-        # 取出剛才存的 nonce（用完就移除）
-        nonce = session.pop("google_oidc_nonce", None)
+    # 2) 取出剛才存的 nonce（可能不存在；不存在就用 fallback 流程）
+    nonce = session.pop("google_oidc_nonce", None)
 
-        # 驗證並解析 ID Token（這版需要 nonce）
-        userinfo = oauth.google.parse_id_token(token, nonce=nonce)
+    userinfo = None
 
-        # 若保險起見，也可在解析失敗時改走 userinfo API（備援）
-        if not userinfo:
+    # 3) 優先用 ID Token（若有 id_token 且驗證成功，最完整）
+    try:
+        if token and token.get("id_token"):
+            userinfo = oauth.google.parse_id_token(token, nonce=nonce)
+    except Exception as e:
+        # 解析失敗時，記一條 log，但不要中斷
+        try:
+            current_app.logger.warning(f"parse_id_token failed: {e}; fallback to userinfo endpoint")
+        except Exception:
+            pass
+
+    # 4) 退回 userinfo API（較寬鬆，不需要 nonce）
+    if not userinfo:
+        try:
+            # Google OIDC 的 userinfo 端點（Authlib 會根據 metadata 解析為 "userinfo"）
             resp = oauth.google.get("userinfo")
             userinfo = resp.json()
+        except Exception as e:
+            return f"Google 登入失敗：無法取得使用者資料：{e}", 400
 
-        sub = userinfo.get("sub") or userinfo.get("id")
-        email = userinfo.get("email")
-        name = userinfo.get("name")
-        picture = userinfo.get("picture")
+    # 5) 正規化欄位
+    sub = userinfo.get("sub") or userinfo.get("id")
+    email = userinfo.get("email")
+    name = userinfo.get("name")
+    picture = userinfo.get("picture")
 
-        if not sub:
-            abort(400, "Google 回傳資料缺少 sub")
+    if not sub:
+        return "Google 登入失敗：回傳資料缺少 sub", 400
 
-        member = upsert_member_from_oauth(
-            provider="google", sub=sub, email=email, name=name, avatar_url=picture
-        )
+    # 6) upsert 會員並建立 session（沿用你原邏輯）
+    member = upsert_member_from_oauth(
+        provider="google", sub=sub, email=email, name=name, avatar_url=picture
+    )
 
-        session["member_id"] = member["id"]
-        session["user"] = {
-            "account": member.get("account") or (email or "google_user"),
-            "email": member.get("email"),
-        }
-        if not member.get("name") or not member.get("phone") or not member.get("address"):
-            session["incomplete_profile"] = True
-        else:
-            session.pop("incomplete_profile", None)
+    session['member_id'] = member["id"]
+    session['user'] = {
+        'account': member.get('account') or (email or "google_user"),
+        'email': member.get('email')
+    }
+    if not member.get('name') or not member.get('phone') or not member.get('address'):
+        session['incomplete_profile'] = True
+    else:
+        session.pop('incomplete_profile', None)
 
-        next_url = request.args.get("next") or url_for("index")
-        return redirect(next_url)
-    except Exception as e:
-        return f"Google 登入失敗：{e}", 400
+    next_url = request.args.get("next") or url_for("index")
+    return redirect(next_url)
 
 
 
