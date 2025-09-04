@@ -18,6 +18,9 @@ from pytz import timezone as pytz_timezone
 from utils import generate_ecpay_form 
 from datetime import timedelta
 import secrets
+from authlib.integrations.flask_client import OAuth
+from flask import abort
+
 
 
 DEFAULT_SHELL_IMAGE = "/static/uploads/logo_0.png"
@@ -95,6 +98,50 @@ def _lp_signature_headers(request_uri: str, serialized: str, method: str = "POST
         "X-LINE-Authorization": signature,
     }
 
+#用第三方資料找或建會員的 helper
+def upsert_member_from_oauth(provider, sub, email, name=None, avatar_url=None):
+    """
+    以 email 優先對應既有會員；找不到再用 (provider, sub)；仍無則建立新會員。
+    回傳 members 表完整資料 dict。
+    """
+    # 1) 用 email 找（若第三方有提供）
+    if email:
+        res = supabase.table("members").select("*").eq("email", email).limit(1).execute()
+        if res.data:
+            member = res.data[0]
+            updates = {"oauth_provider": provider, "oauth_sub": sub}
+            if name and not member.get("name"):
+                updates["name"] = name
+            if avatar_url and not member.get("avatar_url"):
+                updates["avatar_url"] = avatar_url
+            if updates:
+                supabase.table("members").update(updates).eq("id", member["id"]).execute()
+            return member
+
+    # 2) 用 (provider, sub) 找
+    res = (
+        supabase.table("members")
+        .select("*")
+        .eq("oauth_provider", provider)
+        .eq("oauth_sub", sub)
+        .limit(1)
+        .execute()
+    )
+    if res.data:
+        return res.data[0]
+
+    # 3) 都沒有 → 建立新會員（password 可留空）
+    payload = {
+        "name": name or "",
+        "email": email,  # 可能為 None；若 schema 限制 NOT NULL 請改成 "" 或調整
+        "oauth_provider": provider,
+        "oauth_sub": sub,
+        "avatar_url": avatar_url or None,
+    }
+    created = supabase.table("members").insert(payload).execute()
+    return created.data[0]
+
+
 
 app = Flask(__name__)
 # 用固定且可配置的金鑰（請在 Render 環境變數設定 SECRET_KEY）
@@ -110,10 +157,10 @@ app.config.update(
 
 
 
-# ✅ Supabase 初始化
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+# ✅ Supabase 初始化（同時支援 SUPABASE_ANON_KEY / SUPABASE_KEY）
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY") or os.getenv("SUPABASE_KEY")
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 # ✅ 郵件設定
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -123,6 +170,35 @@ app.config['MAIL_USERNAME'] = 'hersetbeauty@gmail.com'
 app.config['MAIL_PASSWORD'] = 'xlwn swew zqkk fdkt'
 app.config['MAIL_DEFAULT_SENDER'] = 'hersetbeauty@gmail.com'
 mail = Mail(app)
+
+# === OAuth 設定 ===
+APP_ENV = os.getenv("APP_ENV", "production")
+OAUTH_REDIRECT_BASE = os.getenv(
+    "OAUTH_REDIRECT_BASE",
+    "https://herset.co" if APP_ENV == "production" else "http://127.0.0.1:5000"
+)
+
+oauth = OAuth(app)
+
+# Google：OpenID Connect
+oauth.register(
+    name="google",
+    client_id=os.getenv("GOOGLE_CLIENT_ID"),
+    client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+    server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+    client_kwargs={"scope": "openid email profile"},
+)
+
+# Facebook：Graph API v20
+oauth.register(
+    name="facebook",
+    client_id=os.getenv("FACEBOOK_CLIENT_ID"),
+    client_secret=os.getenv("FACEBOOK_CLIENT_SECRET"),
+    access_token_url="https://graph.facebook.com/v20.0/oauth/access_token",
+    authorize_url="https://www.facebook.com/v20.0/dialog/oauth",
+    api_base_url="https://graph.facebook.com/v20.0/",
+    client_kwargs={"scope": "public_profile email"},
+)
 
 
 OFFICIAL_HOST = "herset.co"
@@ -1942,6 +2018,83 @@ def login():
 
     return render_template("login.html")
 
+# === 第三方登入：導向同意頁開始 ===
+@app.route("/login/google")
+def login_google():
+    redirect_uri = f"{OAUTH_REDIRECT_BASE}/login/google/callback"
+    return oauth.google.authorize_redirect(redirect_uri)
+
+@app.route("/login/facebook")
+def login_facebook():
+    redirect_uri = f"{OAUTH_REDIRECT_BASE}/login/facebook/callback"
+    return oauth.facebook.authorize_redirect(redirect_uri)
+
+
+# === Google 回呼 ===
+@app.route("/login/google/callback")
+def login_google_callback():
+    try:
+        token = oauth.google.authorize_access_token()
+        userinfo = oauth.google.parse_id_token(token)
+        sub = userinfo.get("sub")
+        email = userinfo.get("email")
+        name = userinfo.get("name")
+        picture = userinfo.get("picture")
+        if not sub:
+            abort(400, "Google 回傳缺少 sub")
+
+        member = upsert_member_from_oauth("google", sub, email, name, picture)
+
+        # 寫入你現有 session 欄位（和帳密登入一致）
+        session['member_id'] = member["id"]
+        session['user'] = {
+            'account': member.get('account') or (email or "google_user"),
+            'email': member.get('email')
+        }
+        # 是否缺基本資料（比照你原本在 /login 的寫法）
+        if not member.get('name') or not member.get('phone') or not member.get('address'):
+            session['incomplete_profile'] = True
+        else:
+            session.pop('incomplete_profile', None)
+
+        next_url = request.args.get("next") or url_for("index")
+        return redirect(next_url)
+    except Exception as e:
+        return f"Google 登入失敗：{e}", 400
+
+
+# === Facebook 回呼 ===
+@app.route("/login/facebook/callback")
+def login_facebook_callback():
+    try:
+        token = oauth.facebook.authorize_access_token()
+        resp = oauth.facebook.get("me?fields=id,name,email,picture.type(large)")
+        data = resp.json()
+        sub = data.get("id")
+        name = data.get("name")
+        email = data.get("email")  # 有時可能為 None
+        picture = (data.get("picture", {}).get("data") or {}).get("url")
+        if not sub:
+            abort(400, "Facebook 回傳缺少 id")
+
+        member = upsert_member_from_oauth("facebook", sub, email, name, picture)
+
+        session['member_id'] = member["id"]
+        session['user'] = {
+            'account': member.get('account') or (email or "facebook_user"),
+            'email': member.get('email')
+        }
+        if not member.get('name') or not member.get('phone') or not member.get('address'):
+            session['incomplete_profile'] = True
+        else:
+            session.pop('incomplete_profile', None)
+
+        next_url = request.args.get("next") or url_for("index")
+        return redirect(next_url)
+    except Exception as e:
+        return f"Facebook 登入失敗：{e}", 400
+
+# === 第三方登入：導向同意頁結束 ===
 
 @app.route('/get_profile')
 def get_profile():
