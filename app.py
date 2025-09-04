@@ -6,7 +6,8 @@ from uuid import uuid4, UUID
 from datetime import datetime, timezone as dt_timezone
 
 # --- third party
-from flask import Flask, render_template, request, redirect, session, url_for, jsonify, flash, send_from_directory, Response, Markup
+from flask import Flask, render_template, request, redirect, session, url_for, jsonify, flash, send_from_directory, Response
+from markupsafe import Markup
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from supabase import create_client, Client
@@ -153,7 +154,7 @@ app.config.update(
     SESSION_COOKIE_SAMESITE="Lax",  # 同站往返（登入、加入購物車）OK
     SESSION_COOKIE_HTTPONLY=True,   # 防 XSS
     PERMANENT_SESSION_LIFETIME=timedelta(days=30),
-    
+
 )
 
 
