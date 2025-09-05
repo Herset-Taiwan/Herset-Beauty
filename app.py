@@ -48,11 +48,11 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret")
 from datetime import timedelta
 
 app.config.update(
-    SESSION_COOKIE_NAME="herset_session",
-    SESSION_COOKIE_DOMAIN=None,           # ← 不寫死網域（host-only），避免 www / 子網域不一致
-    SESSION_COOKIE_SAMESITE="Lax",        # ← 頂層導覽回呼會帶 Cookie，最穩定
-    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_NAME="session",
+    SESSION_COOKIE_SECURE=True,        # 走 HTTPS
+    SESSION_COOKIE_SAMESITE="Lax",     # 核心：讓頂層導覽回來會帶 cookie
     SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_DOMAIN=None,        # 核心：不指定 domain，交給瀏覽器按當前主機寫
     PERMANENT_SESSION_LIFETIME=timedelta(days=30),
 )
 
@@ -259,25 +259,27 @@ line = oauth.register(
 
 OFFICIAL_HOST = "herset.co"
 
+EXEMPT_PREFIXES = (
+    "/login/google",   # 包含 /login/google 以及 /login/google/callback
+    "/login/facebook", # 包含 /login/facebook 以及 /login/facebook/callback
+    "/login/line",     # 包含 /login/line 以及 /login/line/callback
+)
+
+
 @app.before_request
 def force_official_domain():
-    # ★ OAuth 回呼白名單（不要在這些路徑做任何 301/302/重寫）
-    if (
-        request.path.startswith("/login/line/callback")
-        or request.path.startswith("/login/google/callback")   # ← 新增這行
-    ):
-        return None
+    p = request.path or ""
+    if p.startswith(EXEMPT_PREFIXES):
+        return  # 這些路徑完全不要動，不要做任何 301/302
 
     host = request.host.split(":")[0]
 
-    # 如果你的服務會跑在 onrender.com 之類的別名，強制導回官方網域（非回呼才導）
+    # 如果在 onrender.com 之類的別名 → 永遠導回官方域名
     if host.endswith("onrender.com"):
         return redirect(f"https://{OFFICIAL_HOST}{request.full_path}", code=301)
 
-    # 強制官方主機與 HTTPS（非回呼才導）
-    if host != OFFICIAL_HOST:
-        return redirect(f"https://{OFFICIAL_HOST}{request.full_path}", code=301)
-    if host == OFFICIAL_HOST and not request.is_secure:
+    # 其他情況 → 強制使用官方域名 + HTTPS
+    if host != OFFICIAL_HOST or not request.is_secure:
         return redirect(f"https://{OFFICIAL_HOST}{request.full_path}", code=301)
 
 
