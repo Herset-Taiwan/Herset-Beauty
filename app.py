@@ -45,9 +45,12 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret")
 
 # （可選）cookie 安全性建議
 app.config.update(
-    SESSION_COOKIE_SAMESITE="None",   # ← 跨站 OIDC/OAuth 最穩
-    SESSION_COOKIE_SECURE=True,       # ← 只允許在 HTTPS 下送出
-    SESSION_COOKIE_HTTPONLY=True,     # ← 防 XSS
+    SESSION_COOKIE_NAME="herset_session",     # 自訂 cookie 名稱，避免碰撞
+    SESSION_COOKIE_DOMAIN=".herset.co",       # 明確指定網域（含子網域也有效）
+    SESSION_COOKIE_SAMESITE="Lax",            # 頂層導覽足夠，較穩定
+    SESSION_COOKIE_SECURE=True,               # 僅限 HTTPS
+    SESSION_COOKIE_HTTPONLY=True,
+    PERMANENT_SESSION_LIFETIME=timedelta(days=30),  # 永久 session 的有效期
 )
 
 
@@ -2294,6 +2297,7 @@ def login_line_callback():
         avatar_url=picture
     )
 
+     # ✅ 寫入 session
     session["member_id"] = member["id"]
     session["user"] = {
         "account": member.get("account") or (member.get("email") or "line_user"),
@@ -2303,14 +2307,27 @@ def login_line_callback():
         session["incomplete_profile"] = True
     else:
         session.pop("incomplete_profile", None)
-    session.modified = True  # 明確標記有變更
 
-    # 6) 回首頁或購物車，避免回到 /login
+    # ✅ 讓瀏覽器把 cookie 存起來（永久 + 回應一次帶 Set-Cookie）
+    session.permanent = True
+
+    # ✅ 避免回到 /login
     next_url = session.pop("oauth_next", url_for("index", _external=True, _scheme="https"))
-    if not next_url or "/login" in next_url:
+    if (not next_url) or ("/login" in next_url):
         next_url = url_for("index", _external=True, _scheme="https")
-    return redirect(next_url)
 
+    from flask import make_response, redirect as _redirect
+    resp = _redirect(next_url)
+    return resp
+
+#除錯端點
+@app.get("/whoami")
+def whoami():
+    return jsonify({
+        "member_id": session.get("member_id"),
+        "user": session.get("user"),
+        "has_cookie": bool(request.cookies.get(app.config.get("SESSION_COOKIE_NAME", "session")))
+    })
 
 
 @app.route('/get_profile')
