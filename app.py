@@ -2106,10 +2106,10 @@ def login_google():
 @app.get("/login/line")
 def login_line():
     session["oauth_next"] = request.args.get("next") or request.referrer or url_for("index")
-    # 用官方網域組回呼，避免落在 onrender.com 造成跨網域 Cookie 遺失
-    redirect_path = url_for("login_line_callback")  # 只拿相對路徑
+    redirect_path = url_for("login_line_callback")   # 只拿相對路徑
     redirect_uri = f"{OAUTH_REDIRECT_BASE}{redirect_path}"
     return oauth.line.authorize_redirect(redirect_uri)
+
 
 
 # 啟動登入：把 next 存起來，取消或成功都可以導回
@@ -2263,13 +2263,15 @@ def login_line_callback():
     if request.args.get("error"):
         return redirect(url_for("index"))
 
-    # 1) 交換 access token
+    # 1) 交換 access token（Authlib 會自動驗證 state）
     try:
         token = oauth.line.authorize_access_token()
+        if not token or not isinstance(token, dict):
+            return redirect(url_for("index"))
     except Exception:
         return redirect(url_for("index"))
 
-    # 2) 取 LINE profile
+    # 2) 取 LINE Profile
     sub = name = picture = email = None
     try:
         prof = oauth.line.get("https://api.line.me/v2/profile", token=token).json()
@@ -2277,9 +2279,10 @@ def login_line_callback():
         name = prof.get("displayName")
         picture = prof.get("pictureUrl")
     except Exception:
+        # 保留 sub=None → 後面會視為失敗
         pass
 
-    # 3) 有 id_token 時 verify 取 email（可選）
+    # 3) 若有 id_token → verify 以取 email（需在 LINE 後台開啟 email scope）
     try:
         id_token = token.get("id_token")
         client_id = os.getenv("LINE_CHANNEL_ID") or os.getenv("LINE_CLIENT_ID")
@@ -2299,21 +2302,26 @@ def login_line_callback():
     if not sub:
         return redirect(url_for("index"))
 
-    # 5) upsert 會員 + 寫 session
+    # 5) upsert 會員 + ✅ 正確寫入 session
     member = upsert_member_from_oauth(
         provider="line", sub=sub, email=email, name=name, avatar_url=picture
     )
+
+    # 核心：把登入態放進 session（與你 Google / 自家帳號格式對齊）
     session["member_id"] = member["id"]
     session["user"] = {
         "account": member.get("account") or (member.get("email") or "line_user"),
         "email": member.get("email"),
+        "name": member.get("name") or name,
+        "provider": "line",
+        "avatar_url": member.get("avatar_url") or picture,
     }
     session["account"] = session["user"]["account"]
     session["incomplete_profile"] = not all([
         member.get("name"), member.get("phone"), member.get("address")
     ])
     session.permanent = True
-    session.modified = True
+    session.modified = True  # 明確標記變更，確保 Set-Cookie
 
     # 6) 僅允許站內相對路徑，避免跨網域丟 Cookie
     next_url = session.pop("oauth_next", None) or url_for("index")
