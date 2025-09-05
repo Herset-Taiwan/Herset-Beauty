@@ -261,13 +261,20 @@ OFFICIAL_HOST = "herset.co"
 
 @app.before_request
 def force_official_domain():
-    # ★ OAuth callback 白名單，避免再轉址而丟 Cookie
-    if request.path.startswith("/login/") and request.path.endswith("/callback"):
+    # ★ OAuth 回呼白名單（不要在這些路徑做任何 301/302/重寫）
+    if (
+        request.path.startswith("/login/line/callback")
+        or request.path.startswith("/login/google/callback")   # ← 新增這行
+    ):
         return None
 
     host = request.host.split(":")[0]
+
+    # 如果你的服務會跑在 onrender.com 之類的別名，強制導回官方網域（非回呼才導）
     if host.endswith("onrender.com"):
         return redirect(f"https://{OFFICIAL_HOST}{request.full_path}", code=301)
+
+    # 強制官方主機與 HTTPS（非回呼才導）
     if host != OFFICIAL_HOST:
         return redirect(f"https://{OFFICIAL_HOST}{request.full_path}", code=301)
     if host == OFFICIAL_HOST and not request.is_secure:
@@ -2087,12 +2094,12 @@ def login():
 # === 第三方登入：導向同意頁開始 ===
 @app.route("/login/google")
 def login_google():
-    redirect_uri = f"{OAUTH_REDIRECT_BASE}/login/google/callback"
-    # 產生並保存 nonce（用於 OIDC 驗證）
-    nonce = secrets.token_urlsafe(32)
-    session["google_oidc_nonce"] = nonce
-    # 將 nonce 一起送去 Google
-    return oauth.google.authorize_redirect(redirect_uri, nonce=nonce)
+    # 你可以支援 ?next=xxx
+    next_url = request.args.get("next") or url_for("index")
+    session["oauth_next"] = next_url
+    # 發起授權時把絕對的 callback 帶上去（要與後台註冊一致）
+    redirect_uri = url_for("login_google_callback", _external=True, _scheme="https")
+    return oauth.google.authorize_redirect(redirect_uri)
 
 
 # 啟動登入：把 next 存起來，取消或成功都可以導回
@@ -2131,65 +2138,78 @@ def facebook_callback():
 
 
 # === Google 回呼 ===
-@app.route("/login/google/callback")
+@app.route("/login/google/callback", methods=["GET", "POST"])
 def login_google_callback():
+    # 使用者取消授權 → 回首頁
+    if request.args.get("error"):
+        return redirect(url_for("index"))
+
+    # 1) 交換 access token（Authlib）
     try:
-        # 1) 交換授權碼
         token = oauth.google.authorize_access_token()
-    except Exception as e:
-        return f"Google 登入失敗：授權交換失敗：{e}", 400
+    except Exception:
+        return redirect(url_for("index"))
 
-    # 2) 取出剛才存的 nonce（可能不存在；不存在就用 fallback 流程）
-    nonce = session.pop("google_oidc_nonce", None)
-
-    userinfo = None
-
-    # 3) 優先用 ID Token（若有 id_token 且驗證成功，最完整）
+    # 2) 以 Google API 取使用者資料
+    sub = name = email = picture = None
     try:
-        if token and token.get("id_token"):
-            userinfo = oauth.google.parse_id_token(token, nonce=nonce)
-    except Exception as e:
-        # 解析失敗時，記一條 log，但不要中斷
-        try:
-            current_app.logger.warning(f"parse_id_token failed: {e}; fallback to userinfo endpoint")
-        except Exception:
-            pass
+        # OpenID 標準端點
+        userinfo = oauth.google.parse_id_token(token)
+        if userinfo:
+            sub = userinfo.get("sub")
+            name = userinfo.get("name")
+            email = userinfo.get("email")
+            picture = userinfo.get("picture")
+        # 部分情況 parse_id_token 取不到，就用 /userinfo
+        if not sub:
+            resp = oauth.google.get("https://openidconnect.googleapis.com/v1/userinfo", token=token)
+            if resp.ok:
+                data = resp.json()
+                sub = data.get("sub")
+                name = data.get("name")
+                email = data.get("email")
+                picture = data.get("picture")
+    except Exception:
+        pass
 
-    # 4) 退回 userinfo API（較寬鬆，不需要 nonce）
-    if not userinfo:
-        try:
-            # Google OIDC 的 userinfo 端點（Authlib 會根據 metadata 解析為 "userinfo"）
-            resp = oauth.google.get("userinfo")
-            userinfo = resp.json()
-        except Exception as e:
-            return f"Google 登入失敗：無法取得使用者資料：{e}", 400
-
-    # 5) 正規化欄位
-    sub = userinfo.get("sub") or userinfo.get("id")
-    email = userinfo.get("email")
-    name = userinfo.get("name")
-    picture = userinfo.get("picture")
-
+    # 3) 缺 sub 視為失敗
     if not sub:
-        return "Google 登入失敗：回傳資料缺少 sub", 400
+        return redirect(url_for("index"))
 
-    # 6) upsert 會員並建立 session（沿用你原邏輯）
+    # 4) upsert 會員＋寫入 session
     member = upsert_member_from_oauth(
-        provider="google", sub=sub, email=email, name=name, avatar_url=picture
+        provider="google",
+        sub=sub,
+        email=email,
+        name=name,
+        avatar_url=picture,
     )
-
-    session['member_id'] = member["id"]
-    session['user'] = {
-        'account': member.get('account') or (email or "google_user"),
-        'email': member.get('email')
+    session["member_id"] = member["id"]
+    session["user"] = {
+        "account": member.get("account") or (member.get("email") or "google_user"),
+        "email": member.get("email"),
     }
-    if not member.get('name') or not member.get('phone') or not member.get('address'):
-        session['incomplete_profile'] = True
-    else:
-        session.pop('incomplete_profile', None)
+    session["incomplete_profile"] = not all([
+        member.get("name"), member.get("phone"), member.get("address")
+    ])
+    session.permanent = True
+    session.modified = True
 
-    next_url = request.args.get("next") or url_for("index")
-    return redirect(next_url)
+    # 5) 僅允許站內相對路徑（避免跨網域導致 Cookie 不帶）
+    next_url = session.pop("oauth_next", None) or url_for("index")
+    try:
+        from urllib.parse import urlparse
+        p = urlparse(next_url)
+        if p.netloc or "/login" in p.path:
+            next_url = url_for("index")
+    except Exception:
+        next_url = url_for("index")
+
+    # 6) 相對路徑 302 + 禁快取
+    resp = redirect(next_url, code=302)
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
+
 
 
 
