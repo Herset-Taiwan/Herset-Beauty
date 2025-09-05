@@ -932,3 +932,31 @@ footer ul li a:visited {
   background: white;
   padding: 4px;
 }
+
+/* ===== Facebook的隱私權 頁面風格 (Privacy / Terms / Delete Account) 開始 ===== */
+.policy {
+  --accent: #c8a26e;          /* 想換品牌色，只改這行即可 */
+  --text: #1f2937;
+  --muted: #6b7280;
+  --card: #ffffff;
+}
+.policy .hero{max-width:900px;margin:56px auto 24px;padding:0 16px}
+.policy .hero h1{font-size:32px;letter-spacing:.02em;margin:0 0 8px}
+.policy .badge{display:flex;gap:16px;color:var(--muted);font-size:12px}
+.policy .grid{max-width:1100px;margin:0 auto;gap:32px;padding:0 16px}
+.policy .card{background:var(--card);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.06);padding:28px}
+.policy h2{font-size:20px;margin:28px 0 12px;position:relative;padding-left:14px}
+.policy h2::before{content:"";position:absolute;left:0;top:.45em;width:6px;height:1.1em;border-radius:3px;background:var(--accent)}
+.policy p,.policy li{color:var(--text);line-height:1.9}
+.policy ul{list-style:disc;padding-left:1.25rem}
+.policy .toc{display:none}
+.policy .callout{background:rgba(200,162,110,.08);border:1px solid rgba(200,162,110,.25);border-radius:12px;padding:14px 16px;color:#4b5563;margin:14px 0}
+.policy .btn{display:inline-block;background:var(--accent);color:#fff;padding:10px 16px;border-radius:999px;text-decoration:none;font-weight:600;transition:transform .05s}
+.policy .btn:hover{transform:translateY(-1px)}
+@media (min-width:1100px){
+  .policy .grid{display:grid;grid-template-columns:250px 1fr}
+  .policy .toc{display:block;position:sticky;top:92px;border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:18px;background:#fff;height:max-content}
+  .policy .toc a{display:block;color:var(--muted);text-decoration:none;padding:6px 0}
+  .policy .toc a:hover{color:var(--text)}
+}
+/* ===== Facebook的隱私權 頁面風格 (Privacy / Terms / Delete Account)結束 ===== */
