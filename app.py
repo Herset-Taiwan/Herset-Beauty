@@ -2145,7 +2145,10 @@ def login_facebook_callback():
         if not sub:
             abort(400, "Facebook 回傳缺少 id")
 
-        member = upsert_member_from_oauth("facebook", sub, email, name, picture)
+        member = upsert_member_from_oauth(
+    provider="facebook", sub=sub, email=email, name=name, avatar_url=picture
+)
+
 
         session['member_id'] = member["id"]
         session['user'] = {
@@ -2251,6 +2254,21 @@ def logout():
 @app.route('/about')
 def about():
     return render_template('about.html')
+
+
+#FB隱私權
+@app.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
+
+@app.route('/terms')
+def terms():
+    return render_template('terms.html')
+
+@app.route('/delete-account')
+def delete_account():
+    return render_template('delete_account.html')
+
 
 
 @app.route('/cart', methods=['GET', 'POST'])
