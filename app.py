@@ -49,24 +49,12 @@ from datetime import timedelta
 
 app.config.update(
     SESSION_COOKIE_NAME="herset_session",
-
-    # 重要：不要寫死網域，讓瀏覽器以「當前主機」發 Cookie（避免 www.herset.co / herset.co 不一致）
-    SESSION_COOKIE_DOMAIN=None,
-
-    # OAuth 完成後是「頂層導覽」，SameSite=Lax 會帶 Cookie（更穩定）
-    # 若你同時有 iframe 或跨站請求需要帶 Cookie，才改回 "None"
-    SESSION_COOKIE_SAMESITE="Lax",
-
-    # 你站是 https，保留 Secure
+    SESSION_COOKIE_DOMAIN=None,           # ← 不寫死網域
+    SESSION_COOKIE_SAMESITE="Lax",        # ← 頂層導覽會帶 Cookie，最穩
     SESSION_COOKIE_SECURE=True,
-
     SESSION_COOKIE_HTTPONLY=True,
-
-    # 保留 30 天；另外我們會在 before_request 設 permanent=True
     PERMANENT_SESSION_LIFETIME=timedelta(days=30),
 )
-
-
 
 
 # === LINE Pay 設定（正式環境）===
@@ -273,7 +261,7 @@ OFFICIAL_HOST = "herset.co"
 
 @app.before_request
 def force_official_domain():
-    # ★ 新增：OAuth callback 白名單，避免再轉址而丟 Cookie
+    # ★ OAuth callback 白名單，避免再轉址而丟 Cookie
     if request.path.startswith("/login/") and request.path.endswith("/callback"):
         return None
 
@@ -2272,10 +2260,9 @@ def login_line_callback():
     try:
         token = oauth.line.authorize_access_token()
     except Exception:
-        # 交換失敗直接回首頁
         return redirect(url_for("index"))
 
-    # 2) 以 access token 讀取 Profile（最穩）
+    # 2) 取 LINE profile
     sub = name = picture = email = None
     try:
         prof = oauth.line.get("https://api.line.me/v2/profile", token=token).json()
@@ -2285,7 +2272,7 @@ def login_line_callback():
     except Exception:
         pass
 
-    # 3) 有 id_token 才嘗試 verify 取 email（可選）
+    # 3) 有 id_token 時 verify 取 email（可選）
     try:
         id_token = token.get("id_token")
         client_id = os.getenv("LINE_CHANNEL_ID") or os.getenv("LINE_CLIENT_ID")
@@ -2298,56 +2285,39 @@ def login_line_callback():
             if vr.ok:
                 claims = vr.json()
                 email = claims.get("email") or email
-                # 若需要也可補 name/picture：
-                # name = name or claims.get("name")
-                # picture = picture or claims.get("picture")
     except Exception:
         pass
 
-    # 4) 沒有 sub（userId）就視為登入失敗
+    # 4) 缺 sub 視為失敗
     if not sub:
         return redirect(url_for("index"))
 
-    # 5) upsert 會員，寫入 session
+    # 5) upsert 會員 + 寫 session
     member = upsert_member_from_oauth(
-        provider="line",
-        sub=sub,
-        email=email,
-        name=name,
-        avatar_url=picture
+        provider="line", sub=sub, email=email, name=name, avatar_url=picture
     )
-
-    # ✅ 寫入 session（關鍵）
     session["member_id"] = member["id"]
     session["user"] = {
         "account": member.get("account") or (member.get("email") or "line_user"),
         "email": member.get("email"),
     }
     session["incomplete_profile"] = not all([
-        member.get("name"),
-        member.get("phone"),
-        member.get("address"),
+        member.get("name"), member.get("phone"), member.get("address")
     ])
-
-    # 告訴 Flask 這次 session 有更新，並設為永久
     session.permanent = True
     session.modified = True
 
-    # 6) 安全處理 next_url：僅允許站內相對路徑，避免跨網域導致 Cookie 不帶
-    next_url = session.pop("oauth_next", None)
-    if not next_url:
-        next_url = url_for("index")
-
+    # 6) 僅允許站內相對路徑，避免跨網域丟 Cookie
+    next_url = session.pop("oauth_next", None) or url_for("index")
     try:
         from urllib.parse import urlparse
         p = urlparse(next_url)
-        # 若包含網域（外部連結）或回到 /login，統一改回首頁
         if p.netloc or "/login" in p.path:
             next_url = url_for("index")
     except Exception:
         next_url = url_for("index")
 
-    # 7) 以相對路徑 redirect（避免切換 host 造成 Cookie 丟失）
+    # 7) 相對路徑 302 + 禁快取
     resp = redirect(next_url, code=302)
     resp.headers["Cache-Control"] = "no-store"
     return resp
@@ -2355,7 +2325,6 @@ def login_line_callback():
 
 @app.before_request
 def _force_permanent_session():
-    # 所有請求都把 session 視為永久，搭配 PERMANENT_SESSION_LIFETIME 生效
     session.permanent = True
 
 #除錯端點
