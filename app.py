@@ -267,19 +267,21 @@ EXEMPT_PREFIXES = (
 
 
 @app.before_request
-def force_official_domain():
-    p = request.path or ""
+def _force_official_domain():
+    p = (request.path or "")
+    # 1) OAuth 全流程一律不做任何 301/302/改網址
     if p.startswith(EXEMPT_PREFIXES):
-        return  # 這些路徑完全不要動，不要做任何 301/302
+        return
 
     host = request.host.split(":")[0]
+    OFFICIAL_HOST = "herset.co"           # 你的正式網域
 
-    # 如果在 onrender.com 之類的別名 → 永遠導回官方域名
-    if host.endswith("onrender.com"):
+    # 2) 非正式網域 => 301 到正式網域（但不會影響 OAuth 上面那些路徑）
+    if host != OFFICIAL_HOST:
         return redirect(f"https://{OFFICIAL_HOST}{request.full_path}", code=301)
 
-    # 其他情況 → 強制使用官方域名 + HTTPS
-    if host != OFFICIAL_HOST or not request.is_secure:
+    # 3) 強制 HTTPS（同樣不會影響 OAuth 上面那些路徑）
+    if not request.is_secure:
         return redirect(f"https://{OFFICIAL_HOST}{request.full_path}", code=301)
 
 
