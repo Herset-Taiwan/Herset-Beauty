@@ -48,12 +48,10 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret")
 from datetime import timedelta
 
 app.config.update(
-    SESSION_COOKIE_NAME="session",
-    SESSION_COOKIE_SECURE=True,        # 走 HTTPS
-    SESSION_COOKIE_SAMESITE="Lax",     # 核心：讓頂層導覽回來會帶 cookie
+    SESSION_COOKIE_NAME="herset_session",
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_DOMAIN=None,        # 核心：不指定 domain，交給瀏覽器按當前主機寫
-    PERMANENT_SESSION_LIFETIME=timedelta(days=30),
+    SESSION_COOKIE_SECURE=True,      # 部署在 HTTPS 才能設 True，herset.co 是 HTTPS → OK
+    SESSION_COOKIE_SAMESITE="None",  # OAuth 回跳建議 None，避免被 Chrome 擋
 )
 
 
@@ -268,21 +266,25 @@ EXEMPT_PREFIXES = (
 
 @app.before_request
 def _force_official_domain():
-    p = (request.path or "")
+    p = request.path or ""
+
     # 1) OAuth 全流程一律不做任何 301/302/改網址
     if p.startswith(EXEMPT_PREFIXES):
-        return
+        return None   # ← 明確回傳 None
 
-    host = request.host.split(":")[0]
-    OFFICIAL_HOST = "herset.co"           # 你的正式網域
+    OFFICIAL_HOST = "herset.co"
+    host = (request.host or "").split(":")[0]
 
-    # 2) 非正式網域 => 301 到正式網域（但不會影響 OAuth 上面那些路徑）
-    if host != OFFICIAL_HOST:
+    # 2) 非正式網域 => 301 到正式網域（但不會影響 /login*）
+    if host and host != OFFICIAL_HOST:
         return redirect(f"https://{OFFICIAL_HOST}{request.full_path}", code=301)
 
-    # 3) 強制 HTTPS（同樣不會影響 OAuth 上面那些路徑）
+    # 3) 強制 HTTPS（同樣不會影響 /login*）
     if not request.is_secure:
         return redirect(f"https://{OFFICIAL_HOST}{request.full_path}", code=301)
+
+    # 其餘：放行
+    return None
 
 
 
@@ -2254,24 +2256,21 @@ def _line_redirect_uri():
     # 產生與 LINE 後台一致的 Callback URL
     return url_for('login_line_callback', _external=True)
 
-
-
-
 @app.route("/login/line/callback")
 def login_line_callback():
-    # 使用者取消授權 → 回首頁
     if request.args.get("error"):
         return redirect(url_for("index"))
 
-    # 1) 交換 access token（Authlib 會自動驗證 state）
+    # 1) 交換 access token
     try:
         token = oauth.line.authorize_access_token()
         if not token or not isinstance(token, dict):
             return redirect(url_for("index"))
-    except Exception:
+    except Exception as e:
+        app.logger.exception("[LINE] authorize_access_token failed")
         return redirect(url_for("index"))
 
-    # 2) 取 LINE Profile
+    # 2) 取 profile
     sub = name = picture = email = None
     try:
         prof = oauth.line.get("https://api.line.me/v2/profile", token=token).json()
@@ -2279,10 +2278,9 @@ def login_line_callback():
         name = prof.get("displayName")
         picture = prof.get("pictureUrl")
     except Exception:
-        # 保留 sub=None → 後面會視為失敗
-        pass
+        app.logger.exception("[LINE] get profile failed")
 
-    # 3) 若有 id_token → verify 以取 email（需在 LINE 後台開啟 email scope）
+    # 3) 有 id_token 就 verify 取 email（需在 LINE 開啟 email scope）
     try:
         id_token = token.get("id_token")
         client_id = os.getenv("LINE_CHANNEL_ID") or os.getenv("LINE_CLIENT_ID")
@@ -2296,18 +2294,16 @@ def login_line_callback():
                 claims = vr.json()
                 email = claims.get("email") or email
     except Exception:
-        pass
+        app.logger.exception("[LINE] verify id_token failed")
 
-    # 4) 缺 sub 視為失敗
     if not sub:
         return redirect(url_for("index"))
 
-    # 5) upsert 會員 + ✅ 正確寫入 session
+    # 4) upsert + 寫 session
     member = upsert_member_from_oauth(
         provider="line", sub=sub, email=email, name=name, avatar_url=picture
     )
 
-    # 核心：把登入態放進 session（與你 Google / 自家帳號格式對齊）
     session["member_id"] = member["id"]
     session["user"] = {
         "account": member.get("account") or (member.get("email") or "line_user"),
@@ -2321,20 +2317,22 @@ def login_line_callback():
         member.get("name"), member.get("phone"), member.get("address")
     ])
     session.permanent = True
-    session.modified = True  # 明確標記變更，確保 Set-Cookie
+    session.modified = True
 
-    # 6) 僅允許站內相對路徑，避免跨網域丟 Cookie
+    # 🔎 方便你在 Render/伺服器 logs 直接看到有沒有寫進去
+    app.logger.info("[LINE] session user set: %s", session.get("user"))
+
+    # 5) 安全的 next_url
     next_url = session.pop("oauth_next", None) or url_for("index")
     try:
         from urllib.parse import urlparse
         p = urlparse(next_url)
-        # 安全防護：如果帶有網域（跨站）或又導向 /login，就改成首頁
         if p.netloc or "/login" in p.path:
             next_url = url_for("index")
     except Exception:
         next_url = url_for("index")
 
-    # 7) 302 導回 + 禁快取（避免瀏覽器快取干擾登入狀態）
+    # 6) 回首頁 + 禁快取
     resp = redirect(next_url, code=302)
     resp.headers["Cache-Control"] = "no-store"
     return resp
