@@ -46,13 +46,15 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret")
 
 # ✅ 重新設定 Cookie 政策（host-only domain、避免跨網域掉 Cookie）
 from datetime import timedelta
-
+from werkzeug.middleware.proxy_fix import ProxyFix
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 app.config.update(
     SESSION_COOKIE_NAME="herset_session",
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SECURE=True,      # 部署在 HTTPS 才能設 True，herset.co 是 HTTPS → OK
-    SESSION_COOKIE_SAMESITE="None",  # OAuth 回跳建議 None，避免被 Chrome 擋
+    SESSION_COOKIE_SECURE=True,      # 你的站是 HTTPS → True
+    SESSION_COOKIE_SAMESITE="None",  # OAuth 回跳必備，避免 Chrome 擋
 )
+
 
 
 # === LINE Pay 設定（正式環境）===
@@ -267,23 +269,18 @@ EXEMPT_PREFIXES = (
 @app.before_request
 def _force_official_domain():
     p = request.path or ""
-
-    # 1) OAuth 全流程一律不做任何 301/302/改網址
     if p.startswith(EXEMPT_PREFIXES):
-        return None   # ← 明確回傳 None
+        return None
 
     OFFICIAL_HOST = "herset.co"
     host = (request.host or "").split(":")[0]
 
-    # 2) 非正式網域 => 301 到正式網域（但不會影響 /login*）
     if host and host != OFFICIAL_HOST:
         return redirect(f"https://{OFFICIAL_HOST}{request.full_path}", code=301)
 
-    # 3) 強制 HTTPS（同樣不會影響 /login*）
     if not request.is_secure:
         return redirect(f"https://{OFFICIAL_HOST}{request.full_path}", code=301)
 
-    # 其餘：放行
     return None
 
 
@@ -2106,12 +2103,27 @@ def login_google():
     redirect_uri = f"{OAUTH_REDIRECT_BASE}{redirect_path}"
     return oauth.google.authorize_redirect(redirect_uri)
 
-@app.get("/login/line")
+@app.route("/login/line")
 def login_line():
-    session["oauth_next"] = request.args.get("next") or request.referrer or url_for("index")
-    redirect_path = url_for("login_line_callback")   # 只拿相對路徑
-    redirect_uri = f"{OAUTH_REDIRECT_BASE}{redirect_path}"
-    return oauth.line.authorize_redirect(redirect_uri)
+    # 記住登入後要回去的頁面（站內相對路徑即可）
+    next_url = (request.args.get("next") or "").strip() or url_for("index")
+
+    # 安全：避免把外站塞進來（只允許相對路徑且不指向 /login）
+    try:
+        from urllib.parse import urlparse
+        p = urlparse(next_url)
+        if p.netloc or "/login" in p.path:
+            next_url = url_for("index")
+    except Exception:
+        next_url = url_for("index")
+
+    # 放進 session（要在 authorize_redirect 之前）
+    session["oauth_next"] = next_url
+    session.permanent = True
+    session.modified = True  # 確保 Set-Cookie
+
+    # 交給 Authlib 產生 redirect 與 state（它會把 state 放進 session）
+    return oauth.line.authorize_redirect(redirect_uri=LINE_REDIRECT_URI)
 
 
 
@@ -2259,10 +2271,11 @@ def _line_redirect_uri():
 
 @app.route("/login/line/callback")
 def login_line_callback():
+    # 使用者取消授權 → 回首頁
     if request.args.get("error"):
         return redirect(url_for("index"))
 
-    # 1) 交換 access token
+    # 1) 交換 access token（Authlib 會驗證 state，這裡若 session 丟失就會拋 mismatching_state）
     try:
         token = oauth.line.authorize_access_token()
         if not token or not isinstance(token, dict):
@@ -2271,7 +2284,7 @@ def login_line_callback():
         app.logger.exception("[LINE] authorize_access_token failed")
         return redirect(url_for("index"))
 
-    # 2) 取 profile
+    # 2) 取 LINE Profile
     sub = name = picture = email = None
     try:
         prof = oauth.line.get("https://api.line.me/v2/profile", token=token).json()
@@ -2281,7 +2294,7 @@ def login_line_callback():
     except Exception:
         app.logger.exception("[LINE] get profile failed")
 
-    # 3) 有 id_token 就 verify 取 email（需在 LINE 開啟 email scope）
+    # 3) 若有 id_token → verify 取 email
     try:
         id_token = token.get("id_token")
         client_id = os.getenv("LINE_CHANNEL_ID") or os.getenv("LINE_CLIENT_ID")
@@ -2319,11 +2332,9 @@ def login_line_callback():
     ])
     session.permanent = True
     session.modified = True
-
-    # 🔎 方便你在 Render/伺服器 logs 直接看到有沒有寫進去
     app.logger.info("[LINE] session user set: %s", session.get("user"))
 
-    # 5) 安全的 next_url
+    # 5) 安全 next_url
     next_url = session.pop("oauth_next", None) or url_for("index")
     try:
         from urllib.parse import urlparse
