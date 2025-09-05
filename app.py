@@ -2217,96 +2217,71 @@ def _line_redirect_uri():
 
 @app.route("/login/line")
 def login_line():
-    # 保存導回頁（與你原先 Google/FB 一致）
-    next_url = request.args.get("next", "")
+    # 記住要回去的頁面
+    next_url = request.args.get("next") or request.referrer or url_for("index")
     session["oauth_next"] = next_url
 
-    # CSRF 防護
-    state = secrets.token_urlsafe(16)
+    # OIDC Nonce（安全）
     nonce = secrets.token_urlsafe(16)
-    session["line_state"] = state
-    session["line_nonce"] = nonce
+    session["line_oidc_nonce"] = nonce
 
-    auth_url = "https://access.line.me/oauth2/v2.1/authorize"
-    params = {
-        "response_type": "code",
-        "client_id": LINE_CLIENT_ID,
-        "redirect_uri": _line_redirect_uri(),
-        "state": state,
-        "scope": "openid profile email",   # 需要 email 請先在 LINE 後台審核通過
-        "nonce": nonce,
-        "prompt": "consent",
-        "ui_locales": "zh-TW",
-    }
-    return redirect(f"{auth_url}?{urlencode(params)}")
+    redirect_uri = url_for("login_line_callback", _external=True)
+    # 交給 Authlib 去導向 LINE，同時帶上 nonce / 提示/語系
+    return oauth.line.authorize_redirect(
+        redirect_uri,
+        nonce=nonce,
+        prompt="consent",
+        ui_locales="zh-TW",
+    )
 
 @app.route("/login/line/callback")
 def login_line_callback():
-    # 使用者按取消或錯誤，直接回首頁（或你的登入頁）
+    # 使用者取消或出錯 → 回到原頁或首頁
     if request.args.get("error"):
-        # 也可加上 flash 訊息：使用者取消了 LINE 登入
-        return redirect(url_for("index"))
+        return redirect(session.pop("oauth_next", url_for("index")))
 
-    # 驗證 state
-    state = request.args.get("state")
-    if not state or state != session.get("line_state"):
-        abort(400, "Invalid state")
+    # 交換 token
+    token = oauth.line.authorize_access_token()
 
-    code = request.args.get("code")
-    token_url = "https://api.line.me/oauth2/v2.1/token"
-    data = {
-        "grant_type": "authorization_code",
-        "code": code,
-        "redirect_uri": _line_redirect_uri(),
-        "client_id": LINE_CLIENT_ID,
-        "client_secret": LINE_CLIENT_SECRET,
-    }
-    headers = {"Content-Type": "application/x-www-form-urlencoded"}
-    token_res = requests.post(token_url, data=data, headers=headers)
-    if token_res.status_code != 200:
-        abort(400, f"LINE token error: {token_res.text}")
+    # 解析並驗證 id_token（對上剛才存的 nonce）
+    nonce = session.pop("line_oidc_nonce", None)
+    userinfo = oauth.line.parse_id_token(token, nonce=nonce)
 
-    token_json = token_res.json()
-    access_token = token_json.get("access_token")
-    id_token = token_json.get("id_token")
+    sub = userinfo.get("sub")
+    email = userinfo.get("email")
+    name = userinfo.get("name")
+    picture = userinfo.get("picture")
 
-    # （建議）驗證 id_token
-    verify = requests.post(
-        "https://api.line.me/oauth2/v2.1/verify",
-        data={"id_token": id_token, "client_id": LINE_CLIENT_ID},
-        headers={"Content-Type": "application/x-www-form-urlencoded"}
+    # 若 OIDC 沒給到頭像/名稱，補打一槍 Profile API
+    if not name or not picture:
+        try:
+            resp = oauth.line.get("https://api.line.me/v2/profile", token=token)
+            prof = resp.json()
+            name = name or prof.get("displayName")
+            picture = picture or prof.get("pictureUrl")
+        except Exception:
+            pass
+
+    if not sub:
+        # 理論上不會發生；保底處理
+        return redirect(session.pop("oauth_next", url_for("index")))
+
+    # 與你 Google/Facebook 相同的會員 upsert
+    member = upsert_member_from_oauth(
+        provider="line", sub=sub, email=email, name=name, avatar_url=picture
     )
-    if verify.status_code != 200:
-        abort(400, f"LINE verify error: {verify.text}")
-    id_info = verify.json()
-    sub   = id_info.get("sub")        # 使用者唯一 ID
-    email = id_info.get("email")      # 需 scope 有 email 且通過審核
-    name  = id_info.get("name")       # 可能沒值
 
-    # 取公開檔案（名稱、頭像）
-    profile = requests.get(
-        "https://api.line.me/v2/profile",
-        headers={"Authorization": f"Bearer {access_token}"}
-    ).json()
-    display_name = profile.get("displayName") or name or "LINE 使用者"
-    picture_url  = profile.get("pictureUrl")
-
-    # TODO：把使用者寫入/更新你的會員系統
-    # 你可以沿用 Google/FB 的工具函式，例如：
-    # user = upsert_social_user(provider='line', provider_id=sub,
-    #                           email=email, name=display_name, avatar=picture_url)
-    # login_user(user)
-
-    # Demo：如果你用 session 簡單登入，可依你的專案改寫
+    session["member_id"] = member["id"]
     session["user"] = {
-        "provider": "line",
-        "id": sub,
-        "name": display_name,
-        "email": email,
-        "avatar": picture_url
+        "account": member.get("account") or (email or "line_user"),
+        "email": member.get("email"),
     }
+    if not member.get("name") or not member.get("phone") or not member.get("address"):
+        session["incomplete_profile"] = True
+    else:
+        session.pop("incomplete_profile", None)
 
-    next_url = session.pop("oauth_next", "") or url_for("index")
+    next_url = session.pop("oauth_next", url_for("index"))
     return redirect(next_url)
 
 
