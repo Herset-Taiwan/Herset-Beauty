@@ -36,13 +36,18 @@ load_dotenv()
 # --- after load_dotenv() ---
 app = Flask(__name__, static_folder="static", template_folder="templates")
 
+from werkzeug.middleware.proxy_fix import ProxyFix
+
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
 # 建議放到環境變數；先給一個後備值避免部署當下報錯
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret")
 
 # （可選）cookie 安全性建議
 app.config.update(
-    SESSION_COOKIE_SAMESITE="Lax",
-    SESSION_COOKIE_SECURE=True,        # 你的站是 https，開這個 OK
+    SESSION_COOKIE_SAMESITE="None",   # ← 跨站 OIDC/OAuth 最穩
+    SESSION_COOKIE_SECURE=True,       # ← 只允許在 HTTPS 下送出
+    SESSION_COOKIE_HTTPONLY=True,     # ← 防 XSS
 )
 
 
@@ -249,9 +254,15 @@ line = oauth.register(
 OFFICIAL_HOST = "herset.co"
 @app.before_request
 def force_official_domain():
-    # 若使用者誤進 onrender 網域，301 轉回正式網域（含原路徑與查詢字串）
     host = request.host.split(":")[0]
+    # 若跑到 onrender.com → 301 到正式網域（保留路徑與查詢字串）
     if host.endswith("onrender.com"):
+        return redirect(f"https://{OFFICIAL_HOST}{request.full_path}", code=301)
+
+    # 在 Proxy 後面，request.is_secure 不準，改看 X-Forwarded-Proto
+    proto = request.headers.get("X-Forwarded-Proto", "http")
+    if host != OFFICIAL_HOST or proto != "https":
+        # 一律 301 到 https://herset.co/原路徑?查詢
         return redirect(f"https://{OFFICIAL_HOST}{request.full_path}", code=301)
 
 @app.template_filter('nl2br')
@@ -2221,12 +2232,12 @@ def login_line():
     raw_next = (request.args.get("next") or "").strip().lower()
     session["oauth_next"] = url_for("cart") if raw_next in ("cart", "/cart") else url_for("index")
 
-    redirect_uri = url_for("login_line_callback", _external=True)
+    redirect_uri = url_for("login_line_callback", _external=True, _scheme="https")
     return oauth.line.authorize_redirect(
         redirect_uri,
         prompt="consent",
         ui_locales="zh-TW",
-    )
+)
 
 
 @app.route("/login/line/callback")
@@ -2295,10 +2306,10 @@ def login_line_callback():
     session.modified = True  # 明確標記有變更
 
     # 6) 回首頁或購物車，避免回到 /login
-    next_url = session.pop("oauth_next", url_for("index"))
-    if not next_url or "/login" in next_url:
-        next_url = url_for("index")
-    return redirect(next_url)
+    next_url = session.pop("oauth_next", url_for("index", _external=True, _scheme="https"))
+if not next_url or "/login" in next_url:
+    next_url = url_for("index", _external=True, _scheme="https")
+return redirect(next_url)
 
 
 
