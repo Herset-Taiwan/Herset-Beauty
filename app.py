@@ -2307,9 +2307,9 @@ def login_line_callback():
 
     # 6) 回首頁或購物車，避免回到 /login
     next_url = session.pop("oauth_next", url_for("index", _external=True, _scheme="https"))
-if not next_url or "/login" in next_url:
-    next_url = url_for("index", _external=True, _scheme="https")
-return redirect(next_url)
+    if not next_url or "/login" in next_url:
+        next_url = url_for("index", _external=True, _scheme="https")
+    return redirect(next_url)
 
 
 
