@@ -1,31 +1,243 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>資料刪除指示｜HERSET</title>
+  <meta name="description" content="如何要求 HERSET 刪除您的帳號與個人資料：刪除範圍、申請方式、處理時程與第三方服務說明。" />
+  <style>
+    /* ===== HERSET：政策頁面統一風格（內嵌版） ===== */
+    :root{
+      --accent:#c8a26e; /* 品牌主色：想換色只改這行 */
+      --text:#1f2937;
+      --muted:#6b7280;
+      --card:#ffffff;
+      --bg:#f7f7f8;
+    }
+    html,body{height:100%}
+    body{
+      margin:0;
+      color:var(--text);
+      background:var(--bg);
+      font:16px/1.7 -apple-system,BlinkMacSystemFont,"Noto Sans TC","PingFang TC",
+            "Microsoft JhengHei","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    }
+    a{color:var(--accent);text-underline-offset:2px}
+    .policy .hero{max-width:900px;margin:56px auto 24px;padding:0 16px}
+    .policy .hero h1{font-size:32px;letter-spacing:.02em;margin:0 0 8px}
+    .policy .badge{display:flex;gap:16px;flex-wrap:wrap;color:var(--muted);font-size:12px}
+    .policy .grid{max-width:1100px;margin:0 auto;gap:32px;padding:0 16px}
+    .policy .card{background:var(--card);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.06);padding:28px}
+    .policy h2{font-size:20px;margin:28px 0 12px;position:relative;padding-left:14px}
+    .policy h2::before{content:"";position:absolute;left:0;top:.45em;width:6px;height:1.1em;border-radius:3px;background:var(--accent)}
+    .policy p,.policy li{color:var(--text);line-height:1.9}
+    .policy ul{list-style:disc;padding-left:1.25rem}
+    .policy .toc{display:none}
+    .policy .callout{background:rgba(200,162,110,.08);border:1px solid rgba(200,162,110,.25);
+      border-radius:12px;padding:14px 16px;color:#4b5563;margin:14px 0}
+    .policy .btn{display:inline-block;background:var(--accent);color:#fff;padding:10px 16px;
+      border-radius:999px;text-decoration:none;font-weight:600;transition:transform .05s}
+    .policy .btn:hover{transform:translateY(-1px)}
+    .policy .btn-secondary{background:#1118270f;color:#111827;border:1px solid #e5e7eb}
+    .policy .btn-wrap{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+    footer.small{max-width:900px;margin:28px auto 60px;padding:0 16px;color:var(--muted);font-size:12px}
+    @media (min-width:1100px){
+      .policy .grid{display:grid;grid-template-columns:250px 1fr}
+      .policy .toc{display:block;position:sticky;top:92px;border:1px solid rgba(0,0,0,.08);
+        border-radius:12px;padding:18px;background:#fff;height:max-content}
+      .policy .toc strong{display:block;margin-bottom:8px}
+      .policy .toc a{display:block;color:var(--muted);text-decoration:none;padding:6px 0}
+      .policy .toc a:hover{color:var(--text)}
+    }
+
+    /* 表單樣式（產生 mailto） */
+    .form{display:grid;grid-template-columns:1fr;gap:12px;margin-top:10px}
+    .field label{display:block;font-size:13px;color:var(--muted);margin:0 0 6px}
+    .input,.textarea,select{
+      width:100%;box-sizing:border-box;border:1px solid #e5e7eb;border-radius:10px;
+      background:#fff;padding:10px 12px;font-size:15px;outline:none;
+    }
+    .textarea{min-height:96px;resize:vertical}
+    .tip{font-size:12px;color:var(--muted)}
+    .hr{height:1px;background:#eee;margin:24px 0}
+  </style>
+</head>
+<body>
 <main class="policy">
+  <!-- 頂部 -->
   <section class="hero">
     <h1>資料刪除指示</h1>
-    <div class="badge"><span>如何申請刪除帳號與個人資料</span></div>
+    <div class="badge">
+      <span>生效日：2025-09-01</span>
+      <span>最後更新：2025-09-01</span>
+    </div>
+    <div class="btn-wrap">
+      <a class="btn" href="/">回到首頁</a>
+      <a class="btn btn-secondary" href="/privacy">隱私權政策</a>
+      <a class="btn btn-secondary" href="/terms">服務條款</a>
+    </div>
+    <div class="callout" role="note">
+      本頁說明如何向 HERSET 提出帳號與個人資料刪除申請。若您是以 Google / Facebook 登入，也可先到該平台撤銷 HERSET 的存取權限，再依下列方式提交刪除需求。
+    </div>
   </section>
 
+  <!-- 內容 -->
   <div class="grid">
+    <!-- 左側目錄 -->
+    <nav class="toc card" aria-label="頁內導覽">
+      <strong>頁內導覽</strong>
+      <a href="#scope">一、刪除範圍</a>
+      <a href="#how">二、申請方式</a>
+      <a href="#verify">三、身分驗證與時程</a>
+      <a href="#retain">四、依法仍須保留之資料</a>
+      <a href="#third">五、第三方服務</a>
+      <a href="#facebook">六、Facebook 使用者指引</a>
+      <a href="#contact">七、聯絡我們</a>
+    </nav>
+
+    <!-- 右側內容 -->
     <article class="card">
-      <p>若您希望刪除在 HERSET 的帳號與個人資料，請參考以下方式提出申請：</p>
-
-      <h2 id="email">一、Email 申請（建議）</h2>
-      <p>請寄信至 <a href="mailto:hello.herset@gmail.com?subject=%E5%B8%B3%E8%99%9F%E8%B3%87%E6%96%99%E5%88%AA%E9%99%A4%E7%94%B3%E8%AB%8B">hello.herset@gmail.com</a>，信件主旨建議：「帳號資料刪除申請」。</p>
-      <div class="callout">
-        信件內請附：<br>
-        1) 您的登入方式（一般 / Google / Facebook）<br>
-        2) 可識別身分的 Email 或電話<br>
-        3) 若有訂單，請提供最近一筆訂單編號（加速核對）
-      </div>
-      <a class="btn" href="mailto:hello.herset@gmail.com?subject=%E5%B8%B3%E8%B3%9C%E8%B3%87%E6%96%99%E5%88%AA%E9%99%A4%E7%94%B3%E8%AB%8B">立即寄信申請</a>
-
-      <h2 id="scope" style="margin-top:28px;">二、處理時程與範圍</h2>
+      <h2 id="scope">一、刪除範圍</h2>
+      <p>在完成刪除後，我們會移除與您帳號直接可識別之資料。例如：</p>
       <ul>
-        <li>一般將於 15 個工作日內完成並以 Email 回覆。</li>
-        <li>基於法令、稅務或帳務稽核之必要，部分訂單或金流紀錄可能需依法保留一定期間。</li>
+        <li>帳號基本資料（姓名、暱稱、電子郵件、第三方登入識別碼、頭像連結）。</li>
+        <li>登入權杖（OAuth Token）、通知 Token、偏好設定與一般帳號設定。</li>
+        <li>站內互動紀錄僅保留匿名或彙整型統計資料。</li>
+      </ul>
+      <p class="tip">注意：若涉及交易（例如金流、出貨或發票），依法規要求部分資料需留存（見下節）。</p>
+
+      <h2 id="how">二、申請方式</h2>
+
+      <p><strong>方式 A｜登入後自助刪除</strong>（若你的服務已提供 UI）：</p>
+      <ul>
+        <li>登入 HERSET → 前往「<em>帳戶設定 &gt; 隱私</em>」→ 點選「刪除帳號」。</li>
+        <li>確認注意事項並送出，即會啟動刪除流程。</li>
       </ul>
 
-      <h2 id="contact">三、其他問題</h2>
-      <p>若您有任何疑問，歡迎來信 <a href="mailto:hello.herset@gmail.com">hello.herset@gmail.com</a> 與我們聯繫。</p>
+      <div class="hr"></div>
+
+      <p><strong>方式 B｜Email 申請</strong>（建議用註冊信箱發信）：</p>
+      <ol>
+        <li>請使用註冊於 HERSET 的電子郵件寄信至：<a href="mailto:hello.herset@gmail.com">hello.herset@gmail.com</a>。</li>
+        <li>信件主旨建議：<em>「資料刪除請求－HERSET」</em>；內容請提供下列資訊，以利驗證：</li>
+      </ol>
+      <ul>
+        <li>註冊電子郵件、姓名（或顯示名稱）。</li>
+        <li>最近一次登入方式（Google / Facebook / Email）。</li>
+        <li>若曾下單：最近一筆訂單編號與收件電話後四碼（僅用於比對）。</li>
+      </ul>
+
+      <!-- 小表單：幫使用者組好 mailto 內容 -->
+      <div class="callout">
+        <strong>快速產生 Email 內容</strong>
+        <form class="form" onsubmit="return buildMailto(event)">
+          <div class="field">
+            <label for="f_email">您的註冊 Email</label>
+            <input id="f_email" class="input" type="email" required placeholder="name@example.com">
+          </div>
+          <div class="field">
+            <label for="f_name">您的姓名／顯示名稱</label>
+            <input id="f_name" class="input" type="text" required placeholder="王小明">
+          </div>
+          <div class="field">
+            <label for="f_login">最近登入方式</label>
+            <select id="f_login" class="input">
+              <option>Google</option>
+              <option>Facebook</option>
+              <option>Email / 其他</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="f_note">補充說明（選填）</label>
+            <textarea id="f_note" class="textarea" placeholder="若有訂單，請附上最近一筆訂單編號與收件電話後四碼，僅用於身分驗證。"></textarea>
+          </div>
+          <div>
+            <button class="btn" type="submit">產生 Email 並開啟郵件程式</button>
+            <p class="tip">按下後將開啟你的預設郵件程式，收件人與內容會自動帶入。</p>
+          </div>
+        </form>
+      </div>
+
+      <h2 id="verify">三、身分驗證與時程</h2>
+      <ul>
+        <li>我們會以<strong>註冊電子郵件</strong>與你聯繫，必要時可能請你提供額外資訊用於比對（例如最近訂單資訊）。</li>
+        <li>一般情況下會在<strong>7 個工作日內</strong>完成處理；最遲不超過 <strong>30 天</strong>（遇到備份排程、法遵或例外情形除外）。</li>
+        <li>刪除完成後，我們會寄發確認通知至你的註冊信箱。</li>
+      </ul>
+
+      <h2 id="retain">四、依法仍須保留之資料</h2>
+      <p>基於法令或合法權益（例如防詐、會計與稅務憑證、爭議處理），以下資料可能在法定期間內持續留存：</p>
+      <ul>
+        <li>交易紀錄與發票憑證（依法最長可留存 5–7 年，依地方法規調整）。</li>
+        <li>系統安全與稽核用存取紀錄（以最短必要期間留存）。</li>
+        <li>備援與災難復原用之備份檔會依既定週期自動覆寫。</li>
+        <li>經匿名化或彙整後之統計資料（不再能識別你的個人身分）。</li>
+      </ul>
+
+      <h2 id="third">五、第三方服務</h2>
+      <p>你可能同時與下列第三方互動，刪除 HERSET 帳號不代表第三方也一併刪除資料，請依各方政策處理：</p>
+      <ul>
+        <li><strong>金流/付款</strong>（如 LINE Pay、信用卡收單單位等）：交易與退款紀錄依其法規留存。</li>
+        <li><strong>社群登入</strong>：你可於該平台撤銷 HERSET 的存取權限。<br>
+          ‒ Google：<a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">https://myaccount.google.com/permissions</a><br>
+          ‒ Facebook：<a href="https://www.facebook.com/settings?tab=applications" target="_blank" rel="noopener">https://www.facebook.com/settings?tab=applications</a>
+        </li>
+        <li><strong>物流與寄送</strong>：配送與簽收資料依物流商規範處理。</li>
+      </ul>
+
+      <h2 id="facebook">六、Facebook 使用者指引</h2>
+      <ol>
+        <li>前往 Facebook 的「設定與隱私 &gt; 設定 &gt; 商業整合」頁面，移除「HERSET」的連動存取。</li>
+        <li>接著依本頁「申請方式」提交刪除請求（建議使用你的 Facebook 主要 Email）。</li>
+      </ol>
+      <p class="tip">以上流程通常即可滿足 Facebook 的資料刪除要求。</p>
+
+      <h2 id="contact">七、聯絡我們</h2>
+      <div class="callout">
+        若有任何疑問，請來信：<a href="mailto:hello.herset@gmail.com">hello.herset@gmail.com</a><br>
+        我們將盡快協助你完成資料刪除與權益行使。
+      </div>
+
+      <div class="btn-wrap">
+        <a class="btn" href="/">回到首頁</a>
+        <a class="btn btn-secondary" href="/privacy">隱私權政策</a>
+        <a class="btn btn-secondary" href="/terms">服務條款</a>
+      </div>
     </article>
   </div>
 </main>
+
+<footer class="small">
+  © 2025 HERSET. 版權所有。
+</footer>
+
+<script>
+  // 產生 mailto 內容（純前端，不會送到伺服器）
+  function buildMailto(e){
+    e.preventDefault();
+    const email = document.getElementById('f_email').value.trim();
+    const name  = document.getElementById('f_name').value.trim();
+    const login = document.getElementById('f_login').value;
+    const note  = document.getElementById('f_note').value.trim();
+
+    const to = 'hello.herset@gmail.com';
+    const subject = '資料刪除請求－HERSET';
+    const lines = [
+      '您好，這是一封資料刪除申請：',
+      '',
+      '■ 註冊 Email：' + email,
+      '■ 姓名／顯示名稱：' + name,
+      '■ 最近登入方式：' + login,
+      note ? ('■ 補充說明：' + note) : '',
+      '',
+      '我已知悉刪除後將無法復原，且依法仍須保留之資料將依法規保存。',
+    ].filter(Boolean);
+
+    const body = encodeURIComponent(lines.join('\n'));
+    const href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${body}`;
+    window.location.href = href;
+    return false;
+  }
+</script>
+</body>
+</html>

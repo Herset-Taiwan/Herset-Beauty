@@ -1,47 +1,225 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>服務條款｜HERSET</title>
+  <meta name="description" content="HERSET 服務條款：訂單、付款、配送、退換貨、使用者行為、智慧財產權與責任限制等約定。" />
+  <style>
+    /* ===== HERSET：條款頁面風格（內嵌版） ===== */
+    :root{
+      --accent:#c8a26e; /* 品牌色 */
+      --text:#1f2937;
+      --muted:#6b7280;
+      --card:#ffffff;
+      --bg:#f7f7f8;
+    }
+    html,body{height:100%}
+    body{
+      margin:0;
+      color:var(--text);
+      background:var(--bg);
+      font:16px/1.7 -apple-system,BlinkMacSystemFont,"Noto Sans TC","PingFang TC",
+            "Microsoft JhengHei","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    }
+    a{color:var(--accent);text-underline-offset:2px}
+    .policy .hero{max-width:900px;margin:56px auto 24px;padding:0 16px}
+    .policy .hero h1{font-size:32px;letter-spacing:.02em;margin:0 0 8px}
+    .policy .badge{display:flex;gap:16px;flex-wrap:wrap;color:var(--muted);font-size:12px}
+    .policy .grid{max-width:1100px;margin:0 auto;gap:32px;padding:0 16px}
+    .policy .card{background:var(--card);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.06);padding:28px}
+    .policy h2{font-size:20px;margin:28px 0 12px;position:relative;padding-left:14px}
+    .policy h2::before{content:"";position:absolute;left:0;top:.45em;width:6px;height:1.1em;border-radius:3px;background:var(--accent)}
+    .policy p,.policy li{color:var(--text);line-height:1.9}
+    .policy ul{list-style:disc;padding-left:1.25rem}
+    .policy .toc{display:none}
+    .policy .callout{background:rgba(200,162,110,.08);border:1px solid rgba(200,162,110,.25);
+      border-radius:12px;padding:14px 16px;color:#4b5563;margin:14px 0}
+    .policy .btn{display:inline-block;background:var(--accent);color:#fff;padding:10px 16px;
+      border-radius:999px;text-decoration:none;font-weight:600;transition:transform .05s}
+    .policy .btn:hover{transform:translateY(-1px)}
+    .policy .btn-secondary{background:#1118270f;color:#111827;border:1px solid #e5e7eb}
+    .policy .btn-wrap{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+    footer.small{max-width:900px;margin:28px auto 60px;padding:0 16px;color:var(--muted);font-size:12px}
+    @media (min-width:1100px){
+      .policy .grid{display:grid;grid-template-columns:250px 1fr}
+      .policy .toc{display:block;position:sticky;top:92px;border:1px solid rgba(0,0,0,.08);
+        border-radius:12px;padding:18px;background:#fff;height:max-content}
+      .policy .toc strong{display:block;margin-bottom:8px}
+      .policy .toc a{display:block;color:var(--muted);text-decoration:none;padding:6px 0}
+      .policy .toc a:hover{color:var(--text)}
+    }
+    /* ===== END ===== */
+  </style>
+</head>
+<body>
 <main class="policy">
+  <!-- 頂部 -->
   <section class="hero">
     <h1>服務條款</h1>
     <div class="badge">
+      <span>生效日：2025-09-01</span>
       <span>最後更新：2025-09-01</span>
+    </div>
+    <div class="btn-wrap">
+      <a class="btn" href="/">回到首頁</a>
+      <a class="btn btn-secondary" href="/privacy">隱私權政策</a>
+      <a class="btn btn-secondary" href="/delete-account">資料刪除指示</a>
+    </div>
+    <div class="callout" role="note">
+      本頁為一般性條款範本，請依你的實際流程（運費/到貨天數/退貨條件/發票等）調整內容。
     </div>
   </section>
 
+  <!-- 內容 -->
   <div class="grid">
-    <nav class="toc card">
+    <!-- 左側目錄 -->
+    <nav class="toc card" aria-label="頁內導覽">
       <strong>頁內導覽</strong>
-      <a href="#use">使用條件</a>
-      <a href="#order">訂單與付款</a>
-      <a href="#ship">出貨與運費</a>
-      <a href="#return">退換貨</a>
-      <a href="#ip">智慧財產權</a>
-      <a href="#limit">責任限制</a>
-      <a href="#law">準據法與爭議處理</a>
+      <a href="#agree">一、同意條款</a>
+      <a href="#eligibility">二、資格與帳戶</a>
+      <a href="#product">三、商品與內容</a>
+      <a href="#price">四、價格、稅費與付款</a>
+      <a href="#order">五、下單與成立</a>
+      <a href="#shipping">六、配送與風險</a>
+      <a href="#return">七、退換貨與退款</a>
+      <a href="#coupon">八、折扣碼／活動</a>
+      <a href="#thirdpay">九、第三方付款</a>
+      <a href="#ip">十、智慧財產權</a>
+      <a href="#conduct">十一、使用者義務</a>
+      <a href="#disclaimer">十二、免責聲明</a>
+      <a href="#liability">十三、責任限制</a>
+      <a href="#force">十四、不可抗力</a>
+      <a href="#modify">十五、服務變更</a>
+      <a href="#law">十六、準據法與爭議</a>
+      <a href="#contact">十七、聯絡我們</a>
     </nav>
 
+    <!-- 右側內容 -->
     <article class="card">
-      <h2 id="use">一、使用條件</h2>
-      <p>您使用本網站即表示同意遵守本服務條款與隱私權政策；本網站得視需要調整條款並公告於此頁。</p>
+      <h2 id="agree">一、同意條款</h2>
+      <p>
+        歡迎使用 HERSET（以下稱「本網站」）。當您使用本網站之任何功能或提交訂單，即表示您已閱讀、理解並同意受本服務條款與
+        <a href="/privacy">隱私權政策</a>之拘束。若您不同意，請勿使用本服務。
+      </p>
 
-      <h2 id="order">二、訂單與付款</h2>
+      <h2 id="eligibility">二、資格與帳戶</h2>
       <ul>
-        <li>完成付款或金流授權後，訂單始成立。</li>
-        <li>若因存貨、系統錯誤或其他不可抗力因素致無法出貨，將通知您取消或協助改單與退款。</li>
+        <li>您保證提供之註冊與訂購資料真實、最新且完整，並維持帳戶密碼安全。透過第三方登入（如 Google、Facebook）所產生之帳戶同此規範。</li>
+        <li>未滿 20 歲者應取得法定代理人之同意後始得使用或購買。</li>
+        <li>若您違反條款或有不當使用之情事，本網站得暫停或終止提供服務並取消訂單。</li>
       </ul>
 
-      <h2 id="ship">三、出貨與運費</h2>
-      <p>出貨時程、運費門檻與配送方式以結帳頁面資訊為準。物流延遲屬第三方因素，將協助追蹤處理。</p>
+      <h2 id="product">三、商品與內容</h2>
+      <ul>
+        <li>商品圖文與規格僅供參考，實際顏色可能因螢幕設定或拍攝光線而有差異；請以實品為準。</li>
+        <li>若屬組合/套組商品，實際內容以商品頁標示與訂單明細為準。</li>
+        <li>本網站保留對商品資訊之修正與下架權利；如影響既有訂單，將個別通知並協助後續處理。</li>
+      </ul>
 
-      <h2 id="return">四、退換貨</h2>
-      <p>依消保法規範提供鑑賞期（非試用期）；基於個人清潔與保健商品性質，<strong>已拆封/使用或非完整包裝之商品不在鑑賞期內</strong>。詳細標準以購物須知或活動頁標示為準。</p>
+      <h2 id="price">四、價格、稅費與付款</h2>
+      <ul>
+        <li>商品價格以下單時頁面顯示為準；如因系統或輸入錯誤致顯示明顯不合理之價格，本網站得拒絕或取消該訂單。</li>
+        <li>您同意依選擇之付款方式完成付款；如需開立統一發票，將依相關法規處理。</li>
+        <li>如涉及跨境交易，可能產生匯差、國際交易手續費或關稅等，請依發卡/金流或海關規定辦理。</li>
+      </ul>
 
-      <h2 id="ip">五、智慧財產權</h2>
-      <p>本網站之文字、圖片、影片與商標等，均受著作權與關聯權利保護；未經授權不得使用。</p>
+      <h2 id="order">五、下單與成立</h2>
+      <ul>
+        <li>您完成結帳並取得訂單編號，僅表示系統已受理，不代表本網站已承諾出貨；本網站保留是否接受訂單之權利。</li>
+        <li>以下情形得取消訂單：庫存不足、付款未完成、資料不完整或異常、疑似不當交易或違反條款等。</li>
+        <li>若為預購或客製商品，出貨時間以頁面或通知為準；逾期或無法供貨時，得提供更換、延期或退款方案。</li>
+      </ul>
 
-      <h2 id="limit">六、責任限制</h2>
-      <p>本網站對於因不可抗力、第三方服務、或您違反條款所致之損害，不負賠償責任。</p>
+      <h2 id="shipping">六、配送與風險</h2>
+      <ul>
+        <li>配送方式、運費與到貨天數以結帳頁或公告為準；遇節慶、天候或物流量大時，可能延遲。</li>
+        <li>商品自寄出起即移轉風險於您；若包裹遺失、損毀或地址錯誤，請儘速與客服與物流單位協助處理。</li>
+        <li>若因您提供之地址或聯絡資訊錯誤致未能投遞，本網站得向您收取再次配送之費用。</li>
+      </ul>
 
-      <h2 id="law">七、準據法與爭議處理</h2>
-      <p>本條款以中華民國法律為準據法；如有爭議，以臺灣台北地方法院為第一審管轄法院。</p>
+      <h2 id="return">七、退換貨與退款</h2>
+      <p>
+        我們依消費者保護相關法令提供合理之鑑賞／退貨服務（不等同試用）。請於收到商品 <strong>七日內</strong>（含例假日）提出申請，
+        並保持商品全新完整（含包裝、贈品、發票、配件與吊牌）。下列情形通常不適用退貨：個人衛生或拆封即不可回復之商品、
+        明顯使用痕跡或污損、超過鑑賞期、客製化、特別標示不接受退貨之品項等。實際規則以本網站公告為準。
+      </p>
+      <ul>
+        <li>如為商品瑕疵或出貨錯誤，請在七日內聯繫客服，我們將協助換貨或退款（含來回運費）。</li>
+        <li>退款作業時間依付款方式與金流作業為準；部分款項可能以原路退回或轉為購物金。</li>
+        <li>若訂單使用折扣碼、滿額贈或套組優惠，辦理退貨時將依活動規則重新計算差額。</li>
+      </ul>
+
+      <h2 id="coupon">八、折扣碼／活動</h2>
+      <ul>
+        <li>折扣碼有使用期限與門檻限制，且不得與其他優惠併用（除非另有說明）。</li>
+        <li>若因退貨、取消或其他原因未達活動門檻，贈品須退回或補足差額。</li>
+        <li>本網站保留變更或終止活動之權利，並以公告或頁面說明為準。</li>
+      </ul>
+
+      <h2 id="thirdpay">九、第三方付款</h2>
+      <p>
+        本網站可能提供 LINE Pay、信用卡（綠界 ECPay）或銀行轉帳等方式。您使用第三方金流時，亦同意遵守該服務提供者的使用條款與隱私權政策。
+        因第三方系統故障、維護或安全事件造成之損失，將依該第三方之規定處理；本網站將盡力協助您了解處置流程。
+      </p>
+
+      <h2 id="ip">十、智慧財產權</h2>
+      <p>
+        本網站所有內容（包含但不限於文字、圖片、影片、商標、版面設計與程式碼）之著作權與智慧財產權，除另有標示外，均由 HERSET 或合法權利人所有。
+        未經書面同意，不得任意重製、改作、散布、公開傳輸或做為商業用途。
+      </p>
+
+      <h2 id="conduct">十一、使用者義務</h2>
+      <ul>
+        <li>不得以任何方式干擾網站運作、嘗試未授權存取、散布惡意程式或從事違法行為。</li>
+        <li>不得以不當方式利用退款、活動或漏洞牟利；一經查獲，本網站得取消訂單、凍結帳戶或追究法律責任。</li>
+        <li>不得上傳侵權或違反善良風俗之內容；若因您之行為致第三人主張權利，您應自行負責並賠償本網站因此所受損害。</li>
+      </ul>
+
+      <h2 id="disclaimer">十二、免責聲明</h2>
+      <p>
+        本網站提供之資訊與服務以「現況」提供，不保證特定用途或不間斷、無錯誤。對於因不可歸責於本網站之事由（例如：用戶端裝置問題、
+        第三方服務中斷、物流延遲、天災或公權力等）所致之損害，本網站不負擔保責任。
+      </p>
+
+      <h2 id="liability">十三、責任限制</h2>
+      <p>
+        在法律允許的最大範圍內，本網站對您因使用或無法使用服務所生之間接、附隨、特別或衍生性損害不負責。
+        若因可歸責於本網站之事由確需負賠償責任，總額以您就爭議交易實際支付之金額為上限。
+      </p>
+
+      <h2 id="force">十四、不可抗力</h2>
+      <p>
+        因天災、疫情、政府命令、停電、戰爭、罷工、第三方系統故障等不可抗力事件，致本網站無法履行或延遲履行義務者，得暫停或延期提供服務，並不構成違約。
+      </p>
+
+      <h2 id="modify">十五、服務變更</h2>
+      <p>
+        本網站得視需要調整服務內容、價格、活動與條款，並以網站公告為準；重大變更將以合適方式提醒您。變更後您仍繼續使用，視為接受修改內容。
+      </p>
+
+      <h2 id="law">十六、準據法與爭議</h2>
+      <p>
+        本條款之解釋與爭議，均以中華民國法律為準據法。若因本服務發生爭議，雙方應先本於誠信協商；協商不成時，以臺灣臺北地方法院為第一審管轄法院。
+      </p>
+
+      <h2 id="contact">十七、聯絡我們</h2>
+      <div class="callout">
+        客服信箱：<a href="mailto:hello.herset@gmail.com">hello.herset@gmail.com</a><br>
+        資料權利與刪除：請參考 <a href="/privacy">隱私權政策</a> 與 <a href="/delete-account">資料刪除指示</a>。
+      </div>
+
+      <div class="btn-wrap">
+        <a class="btn" href="/">回到首頁</a>
+        <a class="btn btn-secondary" href="/privacy">隱私權政策</a>
+        <a class="btn btn-secondary" href="/delete-account">資料刪除指示</a>
+      </div>
     </article>
   </div>
 </main>
+
+<footer class="small">
+  © 2025 HERSET. 版權所有。
+</footer>
+</body>
+</html>

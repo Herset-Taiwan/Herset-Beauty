@@ -1,60 +1,180 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>隱私權政策｜HERSET</title>
+  <meta name="description" content="HERSET 隱私權政策：說明我們如何蒐集、使用與保護您的個人資料，以及您可行使的權利。" />
+  <style>
+    /* ===== HERSET：隱私權頁面風格（內嵌版） ===== */
+    :root{
+      --accent: #c8a26e; /* 品牌色 */
+      --text: #1f2937;
+      --muted: #6b7280;
+      --card: #ffffff;
+      --bg: #f7f7f8;
+    }
+    html,body{height:100%}
+    body{
+      margin:0;
+      color:var(--text);
+      background:var(--bg);
+      font:16px/1.7 -apple-system, BlinkMacSystemFont, "Noto Sans TC", "PingFang TC",
+            "Microsoft JhengHei", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    a{color:var(--accent);text-underline-offset:2px}
+    .policy .hero{max-width:900px;margin:56px auto 24px;padding:0 16px}
+    .policy .hero h1{font-size:32px;letter-spacing:.02em;margin:0 0 8px}
+    .policy .badge{display:flex;gap:16px;flex-wrap:wrap;color:var(--muted);font-size:12px}
+    .policy .grid{max-width:1100px;margin:0 auto;gap:32px;padding:0 16px}
+    .policy .card{background:var(--card);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.06);padding:28px}
+    .policy h2{font-size:20px;margin:28px 0 12px;position:relative;padding-left:14px}
+    .policy h2::before{content:"";position:absolute;left:0;top:.45em;width:6px;height:1.1em;border-radius:3px;background:var(--accent)}
+    .policy p,.policy li{color:var(--text);line-height:1.9}
+    .policy ul{list-style:disc;padding-left:1.25rem}
+    .policy .toc{display:none}
+    .policy .callout{background:rgba(200,162,110,.08);border:1px solid rgba(200,162,110,.25);
+      border-radius:12px;padding:14px 16px;color:#4b5563;margin:14px 0}
+    .policy .btn{display:inline-block;background:var(--accent);color:#fff;padding:10px 16px;
+      border-radius:999px;text-decoration:none;font-weight:600;transition:transform .05s}
+    .policy .btn:hover{transform:translateY(-1px)}
+    .policy .btn-secondary{background:#1118270f;color:#111827;border:1px solid #e5e7eb}
+    .policy .btn-wrap{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+    footer.small{max-width:900px;margin:28px auto 60px;padding:0 16px;color:var(--muted);font-size:12px}
+    @media (min-width:1100px){
+      .policy .grid{display:grid;grid-template-columns:250px 1fr}
+      .policy .toc{display:block;position:sticky;top:92px;border:1px solid rgba(0,0,0,.08);
+        border-radius:12px;padding:18px;background:#fff;height:max-content}
+      .policy .toc strong{display:block;margin-bottom:8px}
+      .policy .toc a{display:block;color:var(--muted);text-decoration:none;padding:6px 0}
+      .policy .toc a:hover{color:var(--text)}
+    }
+    /* ===== END ===== */
+  </style>
+</head>
+<body>
 <main class="policy">
+  <!-- 頂部 -->
   <section class="hero">
     <h1>隱私權政策</h1>
     <div class="badge">
       <span>生效日：2025-09-01</span>
       <span>最後更新：2025-09-01</span>
     </div>
+    <div class="btn-wrap">
+      <a class="btn" href="/">回到首頁</a>
+      <a class="btn btn-secondary" href="/terms">服務條款</a>
+      <a class="btn btn-secondary" href="/delete-account">資料刪除指示</a>
+    </div>
   </section>
 
+  <!-- 內容區 -->
   <div class="grid">
-    <nav class="toc card">
+    <!-- 左側目錄（可刪） -->
+    <nav class="toc card" aria-label="頁內導覽">
       <strong>頁內導覽</strong>
+      <a href="#intro">總則</a>
       <a href="#collect">我們蒐集哪些資料</a>
       <a href="#source">資料來源</a>
       <a href="#use">資料使用目的</a>
-      <a href="#cookie">Cookie 與追蹤</a>
-      <a href="#share">第三方分享</a>
+      <a href="#cookie">Cookie 與追蹤技術</a>
+      <a href="#share">第三方或國際傳輸</a>
+      <a href="#retain">保存期間</a>
+      <a href="#protect">資訊安全</a>
       <a href="#rights">您的權利</a>
+      <a href="#minor">未成年人</a>
+      <a href="#changes">政策變更</a>
       <a href="#contact">聯絡我們</a>
     </nav>
 
+    <!-- 右側內容 -->
     <article class="card">
-      <p>HERSET（以下稱「本網站」）重視您的個人資料保護。本政策說明我們如何蒐集、使用與保護您的個人資料，以及您可行使的權利。</p>
+      <p id="intro">
+        HERSET（以下稱「本網站」）重視您的個人資料保護。本政策說明我們如何蒐集、使用與保護您的個人資料，
+        以及您於相關法令（例：中華民國個人資料保護法）下可以行使的權利。若您不同意本政策之任何內容，請停止使用本網站之服務。
+      </p>
 
       <h2 id="collect">一、我們蒐集哪些資料</h2>
       <ul>
-        <li>帳號資料：帳號、姓名、電子郵件、電話、寄送地址。</li>
-        <li>交易資料：訂單明細、付款與金流資訊（僅保存必要資訊，不保存信用卡完整資料）。</li>
-        <li>裝置與網站資料：IP、瀏覽器、造訪紀錄、Cookie 偏好等。</li>
-        <li>第三方登入資料：您授權的 Google／Facebook 基本公開資料（例如 email、名字、頭像）。</li>
+        <li><strong>帳號資料</strong>：帳號、姓名、電子郵件、電話、寄送地址等。</li>
+        <li><strong>交易與服務資料</strong>：訂單明細、付款與金流資訊（僅保存必要資訊，不保存完整信用卡資料）、
+          出貨與退換貨紀錄、對話紀錄與客服處理紀錄等。</li>
+        <li><strong>裝置與網站使用資訊</strong>：IP、瀏覽器與裝置資訊、瀏覽與點擊紀錄、Cookie 與偏好設定等。</li>
+        <li><strong>第三方登入資料</strong>：您經由 Google / Facebook 等第三方登入授權提供的基本公開資料（例如 email、名字、頭像）。</li>
       </ul>
 
       <h2 id="source">二、資料來源</h2>
-      <p>來源包含：您在本站註冊、下單、聯絡客服或參與活動時主動提供；或透過網站技術（Cookie、分析服務）與第三方登入取得。</p>
+      <p>
+        我們可能於您註冊、下單、聯絡客服、參與活動時由您主動提供，或透過網站技術（Cookie、分析服務）與第三方登入服務在您同意或授權範圍內取得。
+      </p>
 
       <h2 id="use">三、資料使用目的</h2>
       <ul>
-        <li>提供與維護服務（建立訂單、金流與物流處理、售後服務）。</li>
-        <li>帳號與身分驗證、異常偵測、資安防護。</li>
-        <li>行銷或活動推廣（可隨時取消）。</li>
-        <li>法令遵循、會計稽核與權利義務之行使。</li>
+        <li>提供、維護與改善服務（建立訂單、金流與物流處理、售後服務、客服支援）。</li>
+        <li>身分驗證、資安防護、詐騙偵測與權利義務之行使（帳務、稽核、法令遵循）。</li>
+        <li>行銷或活動訊息之推廣（您可隨時取消訂閱）。</li>
+        <li>統計與分析，以優化產品與使用者體驗（採匿名或去識別化方式彙整）。</li>
       </ul>
 
       <h2 id="cookie">四、Cookie 與追蹤技術</h2>
-      <p>我們使用必要性 Cookie 以提供基本功能，並可能使用分析或效能 Cookie 優化體驗。您可於瀏覽器調整 Cookie 設定；停用部分 Cookie 可能影響部分功能。</p>
+      <p>
+        我們使用必要性 Cookie 以提供基本功能，並可能使用分析或效能 Cookie 以優化體驗。您可於瀏覽器調整 Cookie 設定；
+        若停用部分 Cookie，可能影響網站功能。第三方工具（例如 Google Analytics / Facebook SDK）可能在您裝置儲存 Cookie，
+        其使用行為將受該第三方之隱私政策約束。
+      </p>
 
-      <h2 id="share">五、第三方分享</h2>
-      <p>在達成上述目的所必須之範圍內，可能與支付/物流/雲端/分析/行銷等服務商共享；並要求第三方依契約妥善保護資料。</p>
+      <h2 id="share">五、第三方或國際傳輸</h2>
+      <p>
+        在達成前述目的之必要範圍內，我們可能與支付、物流、雲端、分析或行銷等供應商共享資料，並以契約要求其遵守保密及資訊安全義務。
+        資料可能傳輸至境外之伺服器或服務供應商，處理方式均會採取合理之安全措施。
+      </p>
 
-      <h2 id="rights">六、您的權利</h2>
-      <p>您可依個資法就您的個人資料行使：查詢或請求閱覽、請求製給複本、補充或更正、停止蒐集處理利用、刪除等權利。更多說明請參考下方聯絡方式。</p>
+      <h2 id="retain">六、保存期間</h2>
+      <p>
+        我們僅於達成蒐集目的所需期間內、或法令規定之保存年限、或為行使或防禦法律上權利所必須之期間內保存您的個人資料；期滿後將刪除或匿名化處理。
+      </p>
 
-      <h2 id="contact">七、聯絡我們</h2>
+      <h2 id="protect">七、資訊安全</h2>
+      <p>
+        我們採取合理且合適之技術與管理措施（存取權限控管、加密傳輸、稽核紀錄等）保護個人資料，惟網路傳輸或儲存無法保證絕對安全，
+        如因不可抗力或第三人違法行為造成之損害，將依相關法令處理。
+      </p>
+
+      <h2 id="rights">八、您的權利</h2>
+      <p>
+        依個資法，您得就您的個人資料行使以下權利：查詢或請求閱覽、請求製給複本、補充或更正、停止蒐集/處理/利用、刪除等。
+        若欲行使權利，請透過本文末之聯絡方式提出申請；我們可能為驗證您的身分而請求提供必要資訊。
+      </p>
+
+      <h2 id="minor">九、未成年人</h2>
+      <p>
+        未滿 20 歲之未成年人應在法定代理人同意下使用本網站並提供個人資料。若您為法定代理人並欲撤回或刪除未成年人之資料，請與我們聯繫。
+      </p>
+
+      <h2 id="changes">十、政策變更</h2>
+      <p>
+        我們可能視需要修改本政策，並於網站公告更新版本與生效日期。重大變更時，將以合適方式（例如頁面公告）提醒您。
+      </p>
+
+      <h2 id="contact">十一、聯絡我們</h2>
       <div class="callout">
-        客服信箱：<a href="mailto:hello.herset@gmail.com">hello.herset@gmail.com</a><br>
-        資料刪除方式：請參考 <a href="/delete-account">資料刪除指示頁</a>。
+        如有個人資料相關問題、或欲行使法定權利，請聯絡：<br>
+        信箱：<a href="mailto:hello.herset@gmail.com">hello.herset@gmail.com</a><br>
+        資料刪除方式：請參考 <a href="/delete-account">資料刪除指示頁</a>。<br>
+        其他條款：請參考 <a href="/terms">服務條款</a>。
+      </div>
+
+      <div class="btn-wrap">
+        <a class="btn" href="/">回到首頁</a>
+        <a class="btn btn-secondary" href="/terms">服務條款</a>
+        <a class="btn btn-secondary" href="/delete-account">資料刪除指示</a>
       </div>
     </article>
   </div>
 </main>
+
+<footer class="small">
+  © 2025 HERSET. 版權所有。
+</footer>
+</body>
+</html>
