@@ -2217,49 +2217,44 @@ def _line_redirect_uri():
 
 @app.route("/login/line")
 def login_line():
-    # 記住要回去的頁面
-    next_url = request.args.get("next") or request.referrer or url_for("index")
-    session["oauth_next"] = next_url
+    # 只接受白名單的 next；目前你只需要 cart
+    raw_next = (request.args.get("next") or "").strip().lower()
+    if raw_next in ("cart", "/cart"):
+        session["oauth_next"] = url_for("cart")
+    else:
+        session["oauth_next"] = url_for("index")  # 預設回首頁，不用 referrer
 
     redirect_uri = url_for("login_line_callback", _external=True)
-
-    # 不帶 nonce，讓 Authlib 不會在 callback 自動 parse id_token
     return oauth.line.authorize_redirect(
         redirect_uri,
         prompt="consent",
         ui_locales="zh-TW",
-        # scope 由註冊時的 client_kwargs 控制，這裡不用再帶
     )
+
 
 @app.route("/login/line/callback")
 def login_line_callback():
-    # 使用者取消或出錯 → 回首頁/來源頁
     if request.args.get("error"):
-        return redirect(session.pop("oauth_next", url_for("index")))
+        # 使用者取消 → 回首頁
+        return redirect(url_for("index"))
 
     try:
-        # 只做 token 交換，不讓 Authlib 幫忙 parse id_token
-        token = oauth.line.authorize_access_token()
+        token = oauth.line.authorize_access_token()  # 只做 token 交換
     except Exception:
-        return redirect(session.pop("oauth_next", url_for("index")))
+        return redirect(url_for("index"))
 
+    # 驗證/解碼 id_token（可拿 email）
     sub = email = name = picture = None
-
-    # A) 用 LINE 官方 Verify 端點驗證/解碼 id_token（拿 email、sub、name、picture）
     try:
         id_token = token.get("id_token")
         if id_token:
             verify_res = requests.post(
                 "https://api.line.me/oauth2/v2.1/verify",
-                data={
-                    "id_token": id_token,
-                    "client_id": os.getenv("LINE_CHANNEL_ID"),  # 一定要對上你的 Channel ID
-                },
+                data={"id_token": id_token, "client_id": os.getenv("LINE_CHANNEL_ID")},
                 timeout=8,
             )
             if verify_res.ok:
                 claims = verify_res.json()
-                # 常見可得的欄位：sub、email（要 scope 有 email）、name、picture、amr 等
                 sub = claims.get("sub")
                 email = claims.get("email")
                 name = claims.get("name")
@@ -2267,7 +2262,7 @@ def login_line_callback():
     except Exception:
         pass
 
-    # B) 若還缺資料，補打一槍 Profile API
+    # 不足就用 Profile API 補
     if not (sub and name):
         try:
             prof = oauth.line.get("https://api.line.me/v2/profile", token=token).json()
@@ -2278,14 +2273,12 @@ def login_line_callback():
             pass
 
     if not sub:
-        # 還是取不到唯一識別，直接回首頁
-        return redirect(session.pop("oauth_next", url_for("index")))
+        return redirect(url_for("index"))
 
-    # 與 Google/Facebook 相同的 upsert（你專案裡已經有）
+    # 建/取會員並寫 session（你原本的 helper）
     member = upsert_member_from_oauth(
         provider="line", sub=sub, email=email, name=name, avatar_url=picture
     )
-
     session["member_id"] = member["id"]
     session["user"] = {
         "account": member.get("account") or (email or "line_user"),
@@ -2296,8 +2289,12 @@ def login_line_callback():
     else:
         session.pop("incomplete_profile", None)
 
+    # 只回首頁或購物車，避免回到 /login
     next_url = session.pop("oauth_next", url_for("index"))
+    if not next_url or "/login" in next_url:
+        next_url = url_for("index")
     return redirect(next_url)
+
 
 
 
