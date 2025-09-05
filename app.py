@@ -49,10 +49,10 @@ from datetime import timedelta
 from werkzeug.middleware.proxy_fix import ProxyFix
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 app.config.update(
-    SESSION_COOKIE_NAME="herset_session",
-    SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SECURE=True,      # 你的站是 HTTPS → True
-    SESSION_COOKIE_SAMESITE="None",  # OAuth 回跳必備，避免 Chrome 擋
+    SESSION_COOKIE_SAMESITE="Lax",   # 預設 Lax 可在頂層導覽時帶 cookie
+    SESSION_COOKIE_SECURE=True,      # 僅在 HTTPS 下傳送
+    SESSION_COOKIE_HTTPONLY=True,    # JS 不能讀，較安全
+    PREFERRED_URL_SCHEME="https",    # url_for 生成 https
 )
 
 
@@ -272,9 +272,7 @@ def _force_official_domain():
     if p.startswith(EXEMPT_PREFIXES):
         return None
 
-    OFFICIAL_HOST = "herset.co"
     host = (request.host or "").split(":")[0]
-
     if host and host != OFFICIAL_HOST:
         return redirect(f"https://{OFFICIAL_HOST}{request.full_path}", code=301)
 
@@ -282,7 +280,6 @@ def _force_official_domain():
         return redirect(f"https://{OFFICIAL_HOST}{request.full_path}", code=301)
 
     return None
-
 
 
 @app.template_filter('nl2br')
@@ -2094,32 +2091,8 @@ def login():
     return render_template("login.html")
 
 # === 第三方登入：導向同意頁開始 ===
-@app.get("/login/google")
-def login_google():
-    session["oauth_next"] = request.args.get("next") or request.referrer or url_for("index")
-    redirect_path = url_for("login_google_callback")
-    redirect_uri = f"{OAUTH_REDIRECT_BASE}{redirect_path}"
-    return oauth.google.authorize_redirect(redirect_uri)
 
-@app.route("/login/line")
-def login_line():
-    # 只允許站內相對路徑
-    next_url = (request.args.get("next") or "").strip() or url_for("index")
-    try:
-        from urllib.parse import urlparse
-        p = urlparse(next_url)
-        if p.netloc or "/login" in p.path:
-            next_url = url_for("index")
-    except Exception:
-        next_url = url_for("index")
 
-    # 存進 session（要在 authorize_redirect 前）
-    session["oauth_next"] = next_url
-    session.permanent = True
-    session.modified = True
-
-    # 交給 Authlib 產生 redirect + state（它會把 state 寫進 session）
-    return oauth.line.authorize_redirect(redirect_uri=_line_redirect_uri())
 
 
 
@@ -2159,53 +2132,71 @@ def facebook_callback():
 
 
 
-# === Google 回呼 ===
-@app.route("/login/google/callback", methods=["GET", "POST"])
+# ========= Google OAuth =========
+
+def _google_redirect_uri():
+    return url_for("login_google_callback", _external=True)
+
+@app.route("/login/google")
+def login_google():
+    next_url = request.args.get("next") or ""
+    if next_url and (":" in next_url or "//" in next_url):
+        next_url = ""
+    session["oauth_next"] = next_url
+    session.permanent = True
+    session.modified = True
+    return oauth.google.authorize_redirect(redirect_uri=_google_redirect_uri())
+
+@app.route("/login/google/callback")
 def login_google_callback():
-    # 1) 交換授權碼（Authlib 會自動驗證 state）
+    if request.args.get("error"):
+        return redirect(url_for("index"))
+
     try:
         token = oauth.google.authorize_access_token()
-    except Exception as e:
-        return f"Google 登入失敗：授權交換失敗：{e}", 400
-
-    # 2) 嘗試以 ID Token 解析；失敗就退而求其次打 userinfo
-    userinfo = None
-    try:
-        if token and token.get("id_token"):
-            nonce = session.pop("google_oidc_nonce", None)
-            userinfo = oauth.google.parse_id_token(token, nonce=nonce)
+        if not token or not isinstance(token, dict):
+            raise RuntimeError("empty token")
     except Exception:
-        pass
-    if not userinfo:
-        try:
-            resp = oauth.google.get("userinfo")
-            if resp.ok:
-                userinfo = resp.json()
-        except Exception:
-            userinfo = None
+        current_app.logger.exception("[GOOGLE] authorize_access_token failed")
+        session.pop("oauth_state_google", None)
+        return redirect(url_for("index"))
 
-    if not userinfo:
-        return redirect(url_for("login"))
+    # 取 OIDC claims
+    try:
+        userinfo = token.get("userinfo") or {}
+        if not userinfo:
+            userinfo = oauth.google.get("userinfo").json()
+    except Exception:
+        current_app.logger.exception("[GOOGLE] get userinfo failed")
+        userinfo = {}
 
-    # 3) upsert 會員 + 寫 session
+    sub   = userinfo.get("sub")
+    email = userinfo.get("email")
+    name  = userinfo.get("name")
+    picture = userinfo.get("picture")
+
+    if not sub:
+        return redirect(url_for("index"))
+
     member = upsert_member_from_oauth(
-        provider="google",
-        sub=userinfo.get("sub"),
-        email=userinfo.get("email"),
-        name=userinfo.get("name") or userinfo.get("email"),
-        avatar_url=(userinfo.get("picture") or None),
+        provider="google", sub=sub, email=email, name=name, avatar_url=picture
     )
     session["member_id"] = member["id"]
     session["user"] = {
         "account": member.get("account") or (member.get("email") or "google_user"),
         "email": member.get("email"),
+        "name": member.get("name") or name,
+        "provider": "google",
+        "avatar_url": member.get("avatar_url") or picture,
     }
     session["account"] = session["user"]["account"]
-    session["incomplete_profile"] = not all([member.get("name"), member.get("phone"), member.get("address")])
+    session["incomplete_profile"] = not all([
+        member.get("name"), member.get("phone"), member.get("address")
+    ])
     session.permanent = True
     session.modified = True
+    current_app.logger.info("[GOOGLE] session user set: %s", session.get("user"))
 
-    # 4) 僅允許站內相對路徑，避免跨站導回造成 Cookie 不帶
     next_url = session.pop("oauth_next", None) or url_for("index")
     try:
         from urllib.parse import urlparse
@@ -2259,30 +2250,49 @@ def login_facebook_callback():
 # === 第三方登入：導向同意頁結束 ===
 
 # ----- LINE provider 註冊 -----
+# ========= LINE OAuth =========
 
-# 觸發登入（導去 LINE 授權）
 def _line_redirect_uri():
-    return url_for('login_line_callback', _external=True, _scheme="https")
+    # 一律用實際請求主機產生 _external 絕對網址 → 要和 LINE 後台 Callback URL 完整一致
+    return url_for("login_line_callback", _external=True)
+
+@app.route("/login/line")
+def login_line():
+    # 允許 next 站內回跳，但只接受相對路徑
+    next_url = request.args.get("next") or ""
+    if next_url and (":" in next_url or "//" in next_url):
+        next_url = ""
+    session["oauth_next"] = next_url
+    session.permanent = True
+    session.modified = True
+
+    # 明確指定 redirect_uri（避免預設推斷不同而造成 400/CSRF）
+    return oauth.line.authorize_redirect(redirect_uri=_line_redirect_uri())
 
 @app.route("/login/line/callback")
 def login_line_callback():
-    # 使用者取消授權 → 回首頁
-        # 🐛 一次性偵錯：看回呼是不是 https
-    app.logger.warning("[LINE DBG] callback url=%s is_secure=%s", request.url, request.is_secure)
+    # 偵錯：觀察回來時是否為 HTTPS 與 Host
+    current_app.logger.warning(
+        "[LINE DBG] callback url=%s is_secure=%s host=%s",
+        request.url, request.is_secure, request.host
+    )
 
+    # 使用者取消授權 → 回首頁
     if request.args.get("error"):
         return redirect(url_for("index"))
 
-    # 1) 交換 access token（Authlib 會驗證 state，這裡若 session 丟失就會拋 mismatching_state）
+    # 1) 交換 access token（Authlib 會驗證 state）
     try:
         token = oauth.line.authorize_access_token()
         if not token or not isinstance(token, dict):
-            return redirect(url_for("index"))
-    except Exception as e:
-        app.logger.exception("[LINE] authorize_access_token failed")
+            raise RuntimeError("empty token")
+    except Exception:
+        current_app.logger.exception("[LINE] authorize_access_token failed")
+        # 清掉殘留 state，避免下次又撞
+        session.pop("oauth_state_line", None)
         return redirect(url_for("index"))
 
-    # 2) 取 LINE Profile
+    # 2) 取 profile
     sub = name = picture = email = None
     try:
         prof = oauth.line.get("https://api.line.me/v2/profile", token=token).json()
@@ -2290,7 +2300,7 @@ def login_line_callback():
         name = prof.get("displayName")
         picture = prof.get("pictureUrl")
     except Exception:
-        app.logger.exception("[LINE] get profile failed")
+        current_app.logger.exception("[LINE] get profile failed")
 
     # 3) 若有 id_token → verify 取 email
     try:
@@ -2306,7 +2316,7 @@ def login_line_callback():
                 claims = vr.json()
                 email = claims.get("email") or email
     except Exception:
-        app.logger.exception("[LINE] verify id_token failed")
+        current_app.logger.exception("[LINE] verify id_token failed")
 
     if not sub:
         return redirect(url_for("index"))
@@ -2315,7 +2325,6 @@ def login_line_callback():
     member = upsert_member_from_oauth(
         provider="line", sub=sub, email=email, name=name, avatar_url=picture
     )
-
     session["member_id"] = member["id"]
     session["user"] = {
         "account": member.get("account") or (member.get("email") or "line_user"),
@@ -2330,7 +2339,7 @@ def login_line_callback():
     ])
     session.permanent = True
     session.modified = True
-    app.logger.info("[LINE] session user set: %s", session.get("user"))
+    current_app.logger.info("[LINE] session user set: %s", session.get("user"))
 
     # 5) 安全 next_url
     next_url = session.pop("oauth_next", None) or url_for("index")
@@ -2346,6 +2355,10 @@ def login_line_callback():
     resp = redirect(next_url, code=302)
     resp.headers["Cache-Control"] = "no-store"
     return resp
+
+# 觸發登入（導去 LINE 授權）
+def _line_redirect_uri():
+    return url_for('login_line_callback', _external=True, _scheme="https")
 
 
 @app.before_request
