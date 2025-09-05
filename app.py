@@ -46,12 +46,13 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret")
 # （可選）cookie 安全性建議
 app.config.update(
     SESSION_COOKIE_NAME="herset_session",
-    # SESSION_COOKIE_DOMAIN 不設定 → 由 Flask 自行以目前 host 設定
-    SESSION_COOKIE_SAMESITE="None",   # ← OAuth/OIDC 流程最穩
-    SESSION_COOKIE_SECURE=True,       # 只在 HTTPS 下傳
+    SESSION_COOKIE_DOMAIN=".herset.co",   # ★ 新增：明確指定網域
+    SESSION_COOKIE_SAMESITE="None",
+    SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_HTTPONLY=True,
     PERMANENT_SESSION_LIFETIME=timedelta(days=30),
 )
+
 
 
 # === LINE Pay 設定（正式環境）===
@@ -258,19 +259,18 @@ OFFICIAL_HOST = "herset.co"
 
 @app.before_request
 def force_official_domain():
-    host = request.host.split(":")[0]
+    # ★ 新增：OAuth callback 白名單，避免再轉址而丟 Cookie
+    if request.path.startswith("/login/") and request.path.endswith("/callback"):
+        return None
 
-    # 只把 onrender.com 之類的非正式網域導回
+    host = request.host.split(":")[0]
     if host.endswith("onrender.com"):
         return redirect(f"https://{OFFICIAL_HOST}{request.full_path}", code=301)
-
-    # 若已在正式網域，僅在不安全連線時導回 https
+    if host != OFFICIAL_HOST:
+        return redirect(f"https://{OFFICIAL_HOST}{request.full_path}", code=301)
     if host == OFFICIAL_HOST and not request.is_secure:
         return redirect(f"https://{OFFICIAL_HOST}{request.full_path}", code=301)
 
-    # 其他 host（例如 www 子網域）→ 視需求要不要也導回 OFFICIAL_HOST
-    if host != OFFICIAL_HOST:
-        return redirect(f"https://{OFFICIAL_HOST}{request.full_path}", code=301)
 
 
 @app.template_filter('nl2br')
@@ -2322,7 +2322,8 @@ def login_line_callback():
     resp = _redirect(next_url)
     # 有些代理會對 302 做奇怪快取，保險起見加上：
     resp.headers["Cache-Control"] = "no-store"
-    return resp
+    return redirect(next_url)
+
 
 #除錯端點
 @app.get("/whoami")
