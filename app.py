@@ -2314,7 +2314,7 @@ def login_line_callback():
     session.modified = True
 
     # 6) 僅允許站內相對路徑，避免跨網域丟 Cookie
-     next_url = session.pop("oauth_next", None) or url_for("index")
+    next_url = session.pop("oauth_next", None) or url_for("index")
     try:
         from urllib.parse import urlparse
         p = urlparse(next_url)
