@@ -2141,38 +2141,50 @@ def _google_redirect_uri():
 
 @app.route("/login/google")
 def login_google():
+    # 紀錄回跳頁（相對路徑才允許）
     next_url = request.args.get("next") or url_for("index")
+    try:
+        from urllib.parse import urlparse
+        p = urlparse(next_url)
+        if p.netloc or "/login" in p.path:
+            next_url = url_for("index")
+    except Exception:
+        next_url = url_for("index")
     session["oauth_next"] = next_url
+
     redirect_uri = url_for("login_google_callback", _external=True)
     return oauth.google.authorize_redirect(redirect_uri)
 
 @app.route("/login/google/callback")
 def login_google_callback():
-    # 拿 token + userinfo（Authlib 這邊用 OIDC metadata，會驗 id_token；Google 沒問題）
+    # 1) 交換 access token（不解析 id_token、不用 nonce）
     try:
         token = oauth.google.authorize_access_token()
+        if not token or not isinstance(token, dict):
+            return redirect(url_for("index"))
     except Exception:
         current_app.logger.exception("[GOOGLE] authorize_access_token failed")
         return redirect(url_for("index"))
 
+    # 2) 直接打絕對的 userinfo_endpoint 取得使用者資料
+    sub = email = name = picture = None
     try:
-        userinfo = oauth.google.parse_id_token(token)
+        meta = oauth.google.load_server_metadata()
+        userinfo_url = meta.get("userinfo_endpoint") or "https://openidconnect.googleapis.com/v1/userinfo"
+        resp = oauth.google.get(userinfo_url, token=token)
+        data = resp.json() if resp else {}
+        sub = data.get("sub")
+        email = data.get("email")
+        name = data.get("name") or data.get("given_name")
+        picture = data.get("picture")
     except Exception:
-        # 保底：用 userinfo endpoint
-        try:
-            userinfo = oauth.google.get("userinfo").json()
-        except Exception:
-            current_app.logger.exception("[GOOGLE] get userinfo failed")
-            return redirect(url_for("index"))
+        current_app.logger.exception("[GOOGLE] get userinfo failed")
 
-    sub = str(userinfo.get("sub") or "")
-    email = userinfo.get("email")
-    name = userinfo.get("name")
-    picture = userinfo.get("picture")
-
-    if not sub:
+    # 3) 沒拿到最基本識別（sub 或 email）就回首頁
+    if not (sub or email):
         return redirect(url_for("index"))
 
+    # 4) upsert 會員 + 寫 session（與 LINE 同樣結構）
     member = upsert_member_from_oauth(
         provider="google", sub=sub, email=email, name=name, avatar_url=picture
     )
@@ -2192,6 +2204,7 @@ def login_google_callback():
     session.permanent = True
     session.modified = True
 
+    # 5) 安全 next_url（只允許站內相對路徑，且避開 /login）
     next_url = session.pop("oauth_next", None) or url_for("index")
     try:
         from urllib.parse import urlparse
@@ -2201,6 +2214,7 @@ def login_google_callback():
     except Exception:
         next_url = url_for("index")
 
+    # 6) 回跳並禁快取，避免瀏覽器快取干擾登入狀態
     resp = redirect(next_url, code=302)
     resp.headers["Cache-Control"] = "no-store"
     return resp
