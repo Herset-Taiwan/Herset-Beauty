@@ -49,8 +49,8 @@ from datetime import timedelta
 
 app.config.update(
     SESSION_COOKIE_NAME="herset_session",
-    SESSION_COOKIE_DOMAIN=None,           # ← 不寫死網域
-    SESSION_COOKIE_SAMESITE="Lax",        # ← 頂層導覽會帶 Cookie，最穩
+    SESSION_COOKIE_DOMAIN=".herset.co",   # 明確指定同一網域（含子網域）
+    SESSION_COOKIE_SAMESITE="None",       # 跨站回呼一定會帶 Cookie
     SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_HTTPONLY=True,
     PERMANENT_SESSION_LIFETIME=timedelta(days=30),
@@ -2138,64 +2138,50 @@ def facebook_callback():
 
 
 # === Google 回呼 ===
-@app.route("/login/google/callback", methods=["GET", "POST"])
+@app.route("/login/google/callback", methods=["GET","POST"])
 def login_google_callback():
-    # 使用者取消授權 → 回首頁
-    if request.args.get("error"):
-        return redirect(url_for("index"))
-
-    # 1) 交換 access token（Authlib）
+    # 1) 交換授權碼（Authlib 會自動驗證 state）
     try:
         token = oauth.google.authorize_access_token()
-    except Exception:
-        return redirect(url_for("index"))
+    except Exception as e:
+        return f"Google 登入失敗：授權交換失敗：{e}", 400
 
-    # 2) 以 Google API 取使用者資料
-    sub = name = email = picture = None
+    # 2) 嘗試以 ID Token 解析使用者（有就最完整）
+    userinfo = None
     try:
-        # OpenID 標準端點
-        userinfo = oauth.google.parse_id_token(token)
-        if userinfo:
-            sub = userinfo.get("sub")
-            name = userinfo.get("name")
-            email = userinfo.get("email")
-            picture = userinfo.get("picture")
-        # 部分情況 parse_id_token 取不到，就用 /userinfo
-        if not sub:
-            resp = oauth.google.get("https://openidconnect.googleapis.com/v1/userinfo", token=token)
-            if resp.ok:
-                data = resp.json()
-                sub = data.get("sub")
-                name = data.get("name")
-                email = data.get("email")
-                picture = data.get("picture")
+        if token and token.get("id_token"):
+            nonce = session.pop("google_oidc_nonce", None)
+            userinfo = oauth.google.parse_id_token(token, nonce=nonce)
     except Exception:
         pass
+    # 3) 退而求其次打 userinfo endpoint
+    if not userinfo:
+        try:
+            resp = oauth.google.get("userinfo")
+            if resp.ok:
+                userinfo = resp.json()
+        except Exception:
+            userinfo = None
 
-    # 3) 缺 sub 視為失敗
-    if not sub:
-        return redirect(url_for("index"))
+    if not userinfo:
+        return redirect(url_for("login"))
 
-    # 4) upsert 會員＋寫入 session
+    # 4) upsert 會員並寫入 session
     member = upsert_member_from_oauth(
         provider="google",
-        sub=sub,
-        email=email,
-        name=name,
-        avatar_url=picture,
+        sub=userinfo.get("sub"),
+        email=userinfo.get("email"),
+        name=userinfo.get("name") or userinfo.get("email"),
+        avatar_url=(userinfo.get("picture") or None),
     )
     session["member_id"] = member["id"]
-    session["user"] = {
-        "account": member.get("account") or (member.get("email") or "google_user"),
-        "email": member.get("email"),
-    }
-    session["incomplete_profile"] = not all([
-        member.get("name"), member.get("phone"), member.get("address")
-    ])
+    session["user"] = {"account": member.get("account") or (member.get("email") or "google_user"),
+                       "email": member.get("email")}
+    session["incomplete_profile"] = not all([member.get("name"), member.get("phone"), member.get("address")])
     session.permanent = True
     session.modified = True
 
-    # 5) 僅允許站內相對路徑（避免跨網域導致 Cookie 不帶）
+    # 5) 只允許站內相對路徑，避免跨網域導致 Cookie 不帶
     next_url = session.pop("oauth_next", None) or url_for("index")
     try:
         from urllib.parse import urlparse
@@ -2205,10 +2191,10 @@ def login_google_callback():
     except Exception:
         next_url = url_for("index")
 
-    # 6) 相對路徑 302 + 禁快取
     resp = redirect(next_url, code=302)
     resp.headers["Cache-Control"] = "no-store"
     return resp
+
 
 
 
