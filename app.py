@@ -321,8 +321,6 @@ def index():
     cart = session.get('cart', [])
     cart_count = sum(item.get('qty', 0) for item in cart)
     return render_template("index.html", products=products, cart_count=cart_count)
-    dbg_user=session.get("user")
-
 
 
 # ✅ SEO相關
@@ -2105,10 +2103,8 @@ def login_google():
 
 @app.route("/login/line")
 def login_line():
-    # 記住登入後要回去的頁面（站內相對路徑即可）
+    # 只允許站內相對路徑
     next_url = (request.args.get("next") or "").strip() or url_for("index")
-
-    # 安全：避免把外站塞進來（只允許相對路徑且不指向 /login）
     try:
         from urllib.parse import urlparse
         p = urlparse(next_url)
@@ -2117,13 +2113,13 @@ def login_line():
     except Exception:
         next_url = url_for("index")
 
-    # 放進 session（要在 authorize_redirect 之前）
+    # 存進 session（要在 authorize_redirect 前）
     session["oauth_next"] = next_url
     session.permanent = True
-    session.modified = True  # 確保 Set-Cookie
+    session.modified = True
 
-    # 交給 Authlib 產生 redirect 與 state（它會把 state 放進 session）
-    return oauth.line.authorize_redirect(redirect_uri=LINE_REDIRECT_URI)
+    # 交給 Authlib 產生 redirect + state（它會把 state 寫進 session）
+    return oauth.line.authorize_redirect(redirect_uri=_line_redirect_uri())
 
 
 
@@ -2266,8 +2262,7 @@ def login_facebook_callback():
 
 # 觸發登入（導去 LINE 授權）
 def _line_redirect_uri():
-    # 產生與 LINE 後台一致的 Callback URL
-    return url_for('login_line_callback', _external=True)
+    return url_for('login_line_callback', _external=True, _scheme="https")
 
 @app.route("/login/line/callback")
 def login_line_callback():
@@ -3358,6 +3353,7 @@ def product_detail(product_id):
         slot_allowed=slot_allowed,
         total_mode=total_mode,
         required_total=required_total
+        dbg_user=session.get("user")
     )
 
 
