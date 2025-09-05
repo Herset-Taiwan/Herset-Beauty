@@ -244,7 +244,7 @@ oauth.register(
     api_base_url="https://graph.facebook.com/v20.0/",
     client_kwargs={"scope": "public_profile email"},
 )
-# Line 
+# Line 〔取代整段註冊，不用 OIDC metadata，避免 Authlib 解析 id_token〕
 oauth.register(
     name="line",
     client_id=os.environ["LINE_CHANNEL_ID"],
@@ -253,9 +253,8 @@ oauth.register(
     access_token_url="https://api.line.me/oauth2/v2.1/token",
     api_base_url="https://api.line.me/",
     client_kwargs={
-        # 還是要 scope=openid profile email 才拿得到 email（我們用 /verify 取 email，不靠 OIDC 解析）
-        "scope": "openid profile email",
-        # LINE 要求用 POST 傳 client_secret
+        # 若你沒申請到 email，拿掉 email，保守用 profile 即可；要 email 也可保留
+        "scope": "profile",   # 或 "profile openid email"；但不使用 metadata 就不會自動驗 id_token
         "token_endpoint_auth_method": "client_secret_post",
     },
 )
@@ -2142,40 +2141,33 @@ def _google_redirect_uri():
 
 @app.route("/login/google")
 def login_google():
-    next_url = request.args.get("next") or ""
-    if next_url and (":" in next_url or "//" in next_url):
-        next_url = ""
+    next_url = request.args.get("next") or url_for("index")
     session["oauth_next"] = next_url
-    session.permanent = True
-    session.modified = True
-    return oauth.google.authorize_redirect(redirect_uri=_google_redirect_uri())
+    redirect_uri = url_for("login_google_callback", _external=True)
+    return oauth.google.authorize_redirect(redirect_uri)
 
 @app.route("/login/google/callback")
 def login_google_callback():
-    if request.args.get("error"):
-        return redirect(url_for("index"))
-
+    # 拿 token + userinfo（Authlib 這邊用 OIDC metadata，會驗 id_token；Google 沒問題）
     try:
         token = oauth.google.authorize_access_token()
-        if not token or not isinstance(token, dict):
-            raise RuntimeError("empty token")
     except Exception:
         current_app.logger.exception("[GOOGLE] authorize_access_token failed")
-        session.pop("oauth_state_google", None)
         return redirect(url_for("index"))
 
-    # 取 OIDC claims
     try:
-        userinfo = token.get("userinfo") or {}
-        if not userinfo:
-            userinfo = oauth.google.get("userinfo").json()
+        userinfo = oauth.google.parse_id_token(token)
     except Exception:
-        current_app.logger.exception("[GOOGLE] get userinfo failed")
-        userinfo = {}
+        # 保底：用 userinfo endpoint
+        try:
+            userinfo = oauth.google.get("userinfo").json()
+        except Exception:
+            current_app.logger.exception("[GOOGLE] get userinfo failed")
+            return redirect(url_for("index"))
 
-    sub   = userinfo.get("sub")
+    sub = str(userinfo.get("sub") or "")
     email = userinfo.get("email")
-    name  = userinfo.get("name")
+    name = userinfo.get("name")
     picture = userinfo.get("picture")
 
     if not sub:
@@ -2184,6 +2176,7 @@ def login_google_callback():
     member = upsert_member_from_oauth(
         provider="google", sub=sub, email=email, name=name, avatar_url=picture
     )
+
     session["member_id"] = member["id"]
     session["user"] = {
         "account": member.get("account") or (member.get("email") or "google_user"),
@@ -2198,7 +2191,6 @@ def login_google_callback():
     ])
     session.permanent = True
     session.modified = True
-    current_app.logger.info("[GOOGLE] session user set: %s", session.get("user"))
 
     next_url = session.pop("oauth_next", None) or url_for("index")
     try:
@@ -2260,41 +2252,30 @@ def _line_redirect_uri():
 
 @app.route("/login/line")
 def login_line():
-    # 允許 next 站內回跳，但只接受相對路徑
-    next_url = request.args.get("next") or ""
-    if next_url and (":" in next_url or "//" in next_url):
-        next_url = ""
+    next_url = request.args.get("next") or url_for("index")
     session["oauth_next"] = next_url
-    session.permanent = True
-    session.modified = True
+    # 一律用實際 callback 絕對網址，需與 LINE 後台設定完全一致
+    redirect_uri = url_for("login_line_callback", _external=True)
+    return oauth.line.authorize_redirect(redirect_uri=redirect_uri)
 
-    # 明確指定 redirect_uri（避免預設推斷不同而造成 400/CSRF）
-    return oauth.line.authorize_redirect(redirect_uri=_line_redirect_uri())
-
+# 回呼〔取代整個 /login/line/callback 〕
 @app.route("/login/line/callback")
 def login_line_callback():
-    # 偵錯：觀察回來時是否為 HTTPS 與 Host
-    current_app.logger.warning(
-        "[LINE DBG] callback url=%s is_secure=%s host=%s",
-        request.url, request.is_secure, request.host
-    )
-
     # 使用者取消授權 → 回首頁
     if request.args.get("error"):
         return redirect(url_for("index"))
 
-    # 1) 交換 access token（Authlib 會驗證 state）
+    # 1) 交換 access token（此時不會自動驗 id_token）
     try:
         token = oauth.line.authorize_access_token()
         if not token or not isinstance(token, dict):
-            raise RuntimeError("empty token")
+            current_app.logger.error("[LINE] empty token or invalid token type: %r", token)
+            return redirect(url_for("index"))
     except Exception:
         current_app.logger.exception("[LINE] authorize_access_token failed")
-        # 清掉殘留 state，避免下次又撞
-        session.pop("oauth_state_line", None)
         return redirect(url_for("index"))
 
-    # 2) 取 profile
+    # 2) 取 LINE Profile
     sub = name = picture = email = None
     try:
         prof = oauth.line.get("https://api.line.me/v2/profile", token=token).json()
@@ -2304,7 +2285,7 @@ def login_line_callback():
     except Exception:
         current_app.logger.exception("[LINE] get profile failed")
 
-    # 3) 若有 id_token → verify 取 email
+    # 3) 可選：若 token 內仍然有 id_token，嘗試用 verify 端點換 email（失敗就略過）
     try:
         id_token = token.get("id_token")
         client_id = os.getenv("LINE_CHANNEL_ID") or os.getenv("LINE_CLIENT_ID")
@@ -2320,10 +2301,11 @@ def login_line_callback():
     except Exception:
         current_app.logger.exception("[LINE] verify id_token failed")
 
+    # 4) 缺 sub 視為失敗
     if not sub:
         return redirect(url_for("index"))
 
-    # 4) upsert + 寫 session
+    # 5) upsert + 寫 session
     member = upsert_member_from_oauth(
         provider="line", sub=sub, email=email, name=name, avatar_url=picture
     )
@@ -2343,7 +2325,7 @@ def login_line_callback():
     session.modified = True
     current_app.logger.info("[LINE] session user set: %s", session.get("user"))
 
-    # 5) 安全 next_url
+    # 6) 安全 next_url（只允許站內）
     next_url = session.pop("oauth_next", None) or url_for("index")
     try:
         from urllib.parse import urlparse
@@ -2353,7 +2335,7 @@ def login_line_callback():
     except Exception:
         next_url = url_for("index")
 
-    # 6) 回首頁 + 禁快取
+    # 7) 回首頁 + 禁快取
     resp = redirect(next_url, code=302)
     resp.headers["Cache-Control"] = "no-store"
     return resp
