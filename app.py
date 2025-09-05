@@ -245,15 +245,18 @@ oauth.register(
     client_kwargs={"scope": "public_profile email"},
 )
 # Line 
-line = oauth.register(
+oauth.register(
     name="line",
     client_id=os.environ["LINE_CHANNEL_ID"],
     client_secret=os.environ["LINE_CHANNEL_SECRET"],
-    # 使用 OIDC 的 metadata，自動帶出 authorize / token / jwks 等端點
-    server_metadata_url="https://access.line.me/.well-known/openid-configuration",
+    authorize_url="https://access.line.me/oauth2/v2.1/authorize",
+    access_token_url="https://api.line.me/oauth2/v2.1/token",
+    api_base_url="https://api.line.me/",
     client_kwargs={
-        "scope": "openid profile email",              # 需要基本資料 + email（若你有申請）
-        "token_endpoint_auth_method": "client_secret_post"  # LINE 要求用 POST 傳 client_secret
+        # 還是要 scope=openid profile email 才拿得到 email（我們用 /verify 取 email，不靠 OIDC 解析）
+        "scope": "openid profile email",
+        # LINE 要求用 POST 傳 client_secret
+        "token_endpoint_auth_method": "client_secret_post",
     },
 )
 
@@ -2253,8 +2256,7 @@ def login_facebook_callback():
 # ========= LINE OAuth =========
 
 def _line_redirect_uri():
-    # 一律用實際請求主機產生 _external 絕對網址 → 要和 LINE 後台 Callback URL 完整一致
-    return url_for("login_line_callback", _external=True)
+    return url_for('login_line_callback', _external=True, _scheme="https")
 
 @app.route("/login/line")
 def login_line():
