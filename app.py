@@ -3352,7 +3352,7 @@ def product_detail(product_id):
         pool_products=pool_products,
         slot_allowed=slot_allowed,
         total_mode=total_mode,
-        required_total=required_total
+        required_total=required_total,
         dbg_user=session.get("user")
     )
 
