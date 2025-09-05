@@ -2416,10 +2416,29 @@ def register():
 
 
 
-@app.route('/logout')
+@app.route("/logout")
 def logout():
+    # 1) 把伺服器端的 session 清空
     session.clear()
-    return redirect('/')
+
+    # 2) 發一個「過期的空 cookie」覆蓋舊的壞 cookie（不同 secret_key 簽名的殘留）
+    cookie_name = app.config.get("SESSION_COOKIE_NAME", "herset_session")
+    samesite = app.config.get("SESSION_COOKIE_SAMESITE", "Lax")
+    resp = redirect(url_for("index"))  # 用站內相對路徑回首頁
+    resp.set_cookie(
+        cookie_name,
+        value="",
+        expires=0,        # 立刻過期
+        path="/",
+        secure=True,
+        httponly=True,
+        samesite=samesite
+    )
+
+    # 3) 保險：避免代理/瀏覽器快取這個 302
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
+
 
 @app.route('/about')
 def about():
