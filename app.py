@@ -161,41 +161,52 @@ def _pick_username(provider: str, sub: str, email: str | None, name: str | None)
 def upsert_member_from_oauth(*, provider: str, sub: str, email: str | None, name: str | None, avatar_url: str | None):
     """
     以 OAuth 登入資料建立/回傳會員。
-    假設你的 members 表允許 email 為 NULL（例如 Facebook 可能沒給）。
+    比對順序：
+      1) 先用 (oauth_provider, oauth_sub) 找既有會員（最穩定）
+      2) 再用 email 找（有些提供者可能沒給 email）
+      找到後若缺欄位會順手補齊，找不到才建立新會員。
     """
-    # 先用 email 尋找既有會員（如果你有 oauth_sub 欄位，也可先以它比對）
+    # --- 1) 先用 provider+sub 找（最可靠） ---
     existing = None
-    if email:
+    if provider and sub:
+        r = supabase.table("members").select("*") \
+            .eq("oauth_provider", provider).eq("oauth_sub", sub) \
+            .limit(1).execute()
+        if r.data:
+            existing = r.data[0]
+
+    # --- 2) 找不到再以 email 尋找（可能為 None） ---
+    if not existing and email:
         r = supabase.table("members").select("*").eq("email", email).limit(1).execute()
         if r.data:
             existing = r.data[0]
 
+    # --- 3) 找到就最小更新（補上缺的 oauth_* / name / avatar_url） ---
     if existing:
-        # 這裡只做最小更新；如有 avatar/name 欄位可一併更新
-        try:
-            updates = {}
-            if name and not existing.get("name"):
-                updates["name"] = name
-            if updates:
-                supabase.table("members").update(updates).eq("id", existing["id"]).execute()
-                existing.update(updates)
-        except Exception:
-            pass
+        updates = {}
+        if not existing.get("oauth_provider") and provider:
+            updates["oauth_provider"] = provider
+        if not existing.get("oauth_sub") and sub:
+            updates["oauth_sub"] = sub
+        if name and not existing.get("name"):
+            updates["name"] = name
+        if avatar_url and not existing.get("avatar_url"):
+            updates["avatar_url"] = avatar_url
+        if updates:
+            supabase.table("members").update(updates).eq("id", existing["id"]).execute()
+            existing.update(updates)
         return existing
 
-    # 新建：先取得可用 username
+    # --- 4) 建立新會員 ---
     username = _pick_username(provider, sub or "", email, name)
-
     payload = {
-        "username": username,               # ★ 必填，避免 NOT NULL 失敗
+        "username": username,
         "email": email,
         "name": name or username,
-        # 如果你的表有下列欄位，可一起寫入（沒有就刪掉）
-        # "oauth_provider": provider,
-        # "oauth_sub": sub,
-        # "avatar_url": avatar_url,
+        "oauth_provider": provider,
+        "oauth_sub": sub,
+        "avatar_url": avatar_url,
     }
-
     created = supabase.table("members").insert(payload).execute()
     return created.data[0]
 
