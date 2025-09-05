@@ -49,8 +49,8 @@ from datetime import timedelta
 
 app.config.update(
     SESSION_COOKIE_NAME="herset_session",
-    SESSION_COOKIE_DOMAIN=".herset.co",   # 明確指定同一網域（含子網域）
-    SESSION_COOKIE_SAMESITE="None",       # 跨站回呼一定會帶 Cookie
+    SESSION_COOKIE_DOMAIN=None,           # ← 不寫死網域（host-only），避免 www / 子網域不一致
+    SESSION_COOKIE_SAMESITE="Lax",        # ← 頂層導覽回呼會帶 Cookie，最穩定
     SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_HTTPONLY=True,
     PERMANENT_SESSION_LIFETIME=timedelta(days=30),
@@ -2092,15 +2092,17 @@ def login():
     return render_template("login.html")
 
 # === 第三方登入：導向同意頁開始 ===
-@app.route("/login/google")
+@app.get("/login/google")
 def login_google():
-    # 你可以支援 ?next=xxx
-    next_url = request.args.get("next") or url_for("index")
-    session["oauth_next"] = next_url
-    # 發起授權時把絕對的 callback 帶上去（要與後台註冊一致）
-    redirect_uri = url_for("login_google_callback", _external=True, _scheme="https")
+    session["oauth_next"] = request.args.get("next") or request.referrer or url_for("index")
+    redirect_uri = url_for("login_google_callback", _external=True)
     return oauth.google.authorize_redirect(redirect_uri)
 
+@app.get("/login/line")
+def login_line():
+    session["oauth_next"] = request.args.get("next") or request.referrer or url_for("index")
+    redirect_uri = url_for("login_line_callback", _external=True)
+    return oauth.line.authorize_redirect(redirect_uri)
 
 # 啟動登入：把 next 存起來，取消或成功都可以導回
 @app.get("/login/facebook")
@@ -2138,7 +2140,7 @@ def facebook_callback():
 
 
 # === Google 回呼 ===
-@app.route("/login/google/callback", methods=["GET","POST"])
+@app.route("/login/google/callback", methods=["GET", "POST"])
 def login_google_callback():
     # 1) 交換授權碼（Authlib 會自動驗證 state）
     try:
@@ -2146,7 +2148,7 @@ def login_google_callback():
     except Exception as e:
         return f"Google 登入失敗：授權交換失敗：{e}", 400
 
-    # 2) 嘗試以 ID Token 解析使用者（有就最完整）
+    # 2) 嘗試以 ID Token 解析；失敗就退而求其次打 userinfo
     userinfo = None
     try:
         if token and token.get("id_token"):
@@ -2154,7 +2156,6 @@ def login_google_callback():
             userinfo = oauth.google.parse_id_token(token, nonce=nonce)
     except Exception:
         pass
-    # 3) 退而求其次打 userinfo endpoint
     if not userinfo:
         try:
             resp = oauth.google.get("userinfo")
@@ -2166,7 +2167,7 @@ def login_google_callback():
     if not userinfo:
         return redirect(url_for("login"))
 
-    # 4) upsert 會員並寫入 session
+    # 3) upsert 會員 + 寫 session
     member = upsert_member_from_oauth(
         provider="google",
         sub=userinfo.get("sub"),
@@ -2175,13 +2176,15 @@ def login_google_callback():
         avatar_url=(userinfo.get("picture") or None),
     )
     session["member_id"] = member["id"]
-    session["user"] = {"account": member.get("account") or (member.get("email") or "google_user"),
-                       "email": member.get("email")}
+    session["user"] = {
+        "account": member.get("account") or (member.get("email") or "google_user"),
+        "email": member.get("email"),
+    }
     session["incomplete_profile"] = not all([member.get("name"), member.get("phone"), member.get("address")])
     session.permanent = True
     session.modified = True
 
-    # 5) 只允許站內相對路徑，避免跨網域導致 Cookie 不帶
+    # 4) 僅允許站內相對路徑，避免跨站導回造成 Cookie 不帶
     next_url = session.pop("oauth_next", None) or url_for("index")
     try:
         from urllib.parse import urlparse
@@ -2194,7 +2197,6 @@ def login_google_callback():
     resp = redirect(next_url, code=302)
     resp.headers["Cache-Control"] = "no-store"
     return resp
-
 
 
 
@@ -2242,18 +2244,7 @@ def _line_redirect_uri():
     # 產生與 LINE 後台一致的 Callback URL
     return url_for('login_line_callback', _external=True)
 
-@app.route("/login/line")
-def login_line():
-    # 只接受 cart 作為合法 next
-    raw_next = (request.args.get("next") or "").strip().lower()
-    session["oauth_next"] = url_for("cart") if raw_next in ("cart", "/cart") else url_for("index")
 
-    redirect_uri = url_for("login_line_callback", _external=True, _scheme="https")
-    return oauth.line.authorize_redirect(
-        redirect_uri,
-        prompt="consent",
-        ui_locales="zh-TW",
-)
 
 
 @app.route("/login/line/callback")
@@ -2422,28 +2413,14 @@ def register():
 
 
 
-@app.route("/logout")
+@app.route('/logout')
 def logout():
-    # 1) 把伺服器端的 session 清空
     session.clear()
-
-    # 2) 發一個「過期的空 cookie」覆蓋舊的壞 cookie（不同 secret_key 簽名的殘留）
-    cookie_name = app.config.get("SESSION_COOKIE_NAME", "herset_session")
-    samesite = app.config.get("SESSION_COOKIE_SAMESITE", "Lax")
-    resp = redirect(url_for("index"))  # 用站內相對路徑回首頁
-    resp.set_cookie(
-        cookie_name,
-        value="",
-        expires=0,        # 立刻過期
-        path="/",
-        secure=True,
-        httponly=True,
-        samesite=samesite
-    )
-
-    # 3) 保險：避免代理/瀏覽器快取這個 302
-    resp.headers["Cache-Control"] = "no-store"
+    resp = redirect(url_for('index'))
+    # host-only cookie：不必寫 domain；若你曾經發過不同 cookie，可保險刪一次
+    resp.delete_cookie(app.config.get("SESSION_COOKIE_NAME", "herset_session"))
     return resp
+
 
 
 @app.route('/about')
