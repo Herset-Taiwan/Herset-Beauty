@@ -2189,6 +2189,7 @@ def login_google_callback():
         "account": member.get("account") or (member.get("email") or "google_user"),
         "email": member.get("email"),
     }
+    session["account"] = session["user"]["account"]
     session["incomplete_profile"] = not all([member.get("name"), member.get("phone"), member.get("address")])
     session.permanent = True
     session.modified = True
@@ -2307,6 +2308,7 @@ def login_line_callback():
         "account": member.get("account") or (member.get("email") or "line_user"),
         "email": member.get("email"),
     }
+    session["account"] = session["user"]["account"]
     session["incomplete_profile"] = not all([
         member.get("name"), member.get("phone"), member.get("address")
     ])
