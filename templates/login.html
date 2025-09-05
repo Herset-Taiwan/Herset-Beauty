@@ -146,6 +146,13 @@
       color: #fff;
     }
     .btn-facebook:hover { background: #2b87ff; }
+
+    /* LINE 按鈕 */
+.btn-line{
+  background:#06C755;  /* LINE 品牌綠 */
+  color:#fff;
+}
+.btn-line:hover{ background:#17d463; }
     /* === 新增結束 === */
   </style>
 
@@ -192,6 +199,11 @@
          href="{{ url_for('login_facebook', next=(next or request.args.get('next') or '')) }}">
         使用 Facebook 登入
       </a>
+
+      <a class="btn-social btn-line"
+   href="{{ url_for('login_line', next=(next or request.args.get('next') or '')) }}">
+  使用 LINE 登入
+</a>
     </div>
     <!-- === 新增結束 === -->
 

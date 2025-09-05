@@ -23,6 +23,7 @@ from authlib.integrations.flask_client import OAuth
 from flask import abort
 import re, secrets
 from flask import current_app
+from flask import Flask, redirect, url_for, request, session, current_app
 
 
 DEFAULT_SHELL_IMAGE = "/static/uploads/logo_0.png"
@@ -232,7 +233,18 @@ oauth.register(
     api_base_url="https://graph.facebook.com/v20.0/",
     client_kwargs={"scope": "public_profile email"},
 )
-
+# Line 
+line = oauth.register(
+    name="line",
+    client_id=os.environ["LINE_CHANNEL_ID"],
+    client_secret=os.environ["LINE_CHANNEL_SECRET"],
+    # 使用 OIDC 的 metadata，自動帶出 authorize / token / jwks 等端點
+    server_metadata_url="https://access.line.me/.well-known/openid-configuration",
+    client_kwargs={
+        "scope": "openid profile email",              # 需要基本資料 + email（若你有申請）
+        "token_endpoint_auth_method": "client_secret_post"  # LINE 要求用 POST 傳 client_secret
+    },
+)
 
 OFFICIAL_HOST = "herset.co"
 @app.before_request
@@ -2195,6 +2207,108 @@ def login_facebook_callback():
         return f"Facebook 登入失敗：{e}", 400
 
 # === 第三方登入：導向同意頁結束 ===
+
+# ----- LINE provider 註冊 -----
+
+# 觸發登入（導去 LINE 授權）
+def _line_redirect_uri():
+    # 產生與 LINE 後台一致的 Callback URL
+    return url_for('login_line_callback', _external=True)
+
+@app.route("/login/line")
+def login_line():
+    # 保存導回頁（與你原先 Google/FB 一致）
+    next_url = request.args.get("next", "")
+    session["oauth_next"] = next_url
+
+    # CSRF 防護
+    state = secrets.token_urlsafe(16)
+    nonce = secrets.token_urlsafe(16)
+    session["line_state"] = state
+    session["line_nonce"] = nonce
+
+    auth_url = "https://access.line.me/oauth2/v2.1/authorize"
+    params = {
+        "response_type": "code",
+        "client_id": LINE_CLIENT_ID,
+        "redirect_uri": _line_redirect_uri(),
+        "state": state,
+        "scope": "openid profile email",   # 需要 email 請先在 LINE 後台審核通過
+        "nonce": nonce,
+        "prompt": "consent",
+        "ui_locales": "zh-TW",
+    }
+    return redirect(f"{auth_url}?{urlencode(params)}")
+
+@app.route("/login/line/callback")
+def login_line_callback():
+    # 使用者按取消或錯誤，直接回首頁（或你的登入頁）
+    if request.args.get("error"):
+        # 也可加上 flash 訊息：使用者取消了 LINE 登入
+        return redirect(url_for("index"))
+
+    # 驗證 state
+    state = request.args.get("state")
+    if not state or state != session.get("line_state"):
+        abort(400, "Invalid state")
+
+    code = request.args.get("code")
+    token_url = "https://api.line.me/oauth2/v2.1/token"
+    data = {
+        "grant_type": "authorization_code",
+        "code": code,
+        "redirect_uri": _line_redirect_uri(),
+        "client_id": LINE_CLIENT_ID,
+        "client_secret": LINE_CLIENT_SECRET,
+    }
+    headers = {"Content-Type": "application/x-www-form-urlencoded"}
+    token_res = requests.post(token_url, data=data, headers=headers)
+    if token_res.status_code != 200:
+        abort(400, f"LINE token error: {token_res.text}")
+
+    token_json = token_res.json()
+    access_token = token_json.get("access_token")
+    id_token = token_json.get("id_token")
+
+    # （建議）驗證 id_token
+    verify = requests.post(
+        "https://api.line.me/oauth2/v2.1/verify",
+        data={"id_token": id_token, "client_id": LINE_CLIENT_ID},
+        headers={"Content-Type": "application/x-www-form-urlencoded"}
+    )
+    if verify.status_code != 200:
+        abort(400, f"LINE verify error: {verify.text}")
+    id_info = verify.json()
+    sub   = id_info.get("sub")        # 使用者唯一 ID
+    email = id_info.get("email")      # 需 scope 有 email 且通過審核
+    name  = id_info.get("name")       # 可能沒值
+
+    # 取公開檔案（名稱、頭像）
+    profile = requests.get(
+        "https://api.line.me/v2/profile",
+        headers={"Authorization": f"Bearer {access_token}"}
+    ).json()
+    display_name = profile.get("displayName") or name or "LINE 使用者"
+    picture_url  = profile.get("pictureUrl")
+
+    # TODO：把使用者寫入/更新你的會員系統
+    # 你可以沿用 Google/FB 的工具函式，例如：
+    # user = upsert_social_user(provider='line', provider_id=sub,
+    #                           email=email, name=display_name, avatar=picture_url)
+    # login_user(user)
+
+    # Demo：如果你用 session 簡單登入，可依你的專案改寫
+    session["user"] = {
+        "provider": "line",
+        "id": sub,
+        "name": display_name,
+        "email": email,
+        "avatar": picture_url
+    }
+
+    next_url = session.pop("oauth_next", "") or url_for("index")
+    return redirect(next_url)
+
 
 @app.route('/get_profile')
 def get_profile():
