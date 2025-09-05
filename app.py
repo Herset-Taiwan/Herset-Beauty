@@ -2221,52 +2221,67 @@ def login_line():
     next_url = request.args.get("next") or request.referrer or url_for("index")
     session["oauth_next"] = next_url
 
-    # OIDC Nonce（安全）
-    nonce = secrets.token_urlsafe(16)
-    session["line_oidc_nonce"] = nonce
-
     redirect_uri = url_for("login_line_callback", _external=True)
-    # 交給 Authlib 去導向 LINE，同時帶上 nonce / 提示/語系
+
+    # 不帶 nonce，讓 Authlib 不會在 callback 自動 parse id_token
     return oauth.line.authorize_redirect(
         redirect_uri,
-        nonce=nonce,
         prompt="consent",
         ui_locales="zh-TW",
+        # scope 由註冊時的 client_kwargs 控制，這裡不用再帶
     )
 
 @app.route("/login/line/callback")
 def login_line_callback():
-    # 使用者取消或出錯 → 回到原頁或首頁
+    # 使用者取消或出錯 → 回首頁/來源頁
     if request.args.get("error"):
         return redirect(session.pop("oauth_next", url_for("index")))
 
-    # 交換 token
-    token = oauth.line.authorize_access_token()
+    try:
+        # 只做 token 交換，不讓 Authlib 幫忙 parse id_token
+        token = oauth.line.authorize_access_token()
+    except Exception:
+        return redirect(session.pop("oauth_next", url_for("index")))
 
-    # 解析並驗證 id_token（對上剛才存的 nonce）
-    nonce = session.pop("line_oidc_nonce", None)
-    userinfo = oauth.line.parse_id_token(token, nonce=nonce)
+    sub = email = name = picture = None
 
-    sub = userinfo.get("sub")
-    email = userinfo.get("email")
-    name = userinfo.get("name")
-    picture = userinfo.get("picture")
+    # A) 用 LINE 官方 Verify 端點驗證/解碼 id_token（拿 email、sub、name、picture）
+    try:
+        id_token = token.get("id_token")
+        if id_token:
+            verify_res = requests.post(
+                "https://api.line.me/oauth2/v2.1/verify",
+                data={
+                    "id_token": id_token,
+                    "client_id": os.getenv("LINE_CHANNEL_ID"),  # 一定要對上你的 Channel ID
+                },
+                timeout=8,
+            )
+            if verify_res.ok:
+                claims = verify_res.json()
+                # 常見可得的欄位：sub、email（要 scope 有 email）、name、picture、amr 等
+                sub = claims.get("sub")
+                email = claims.get("email")
+                name = claims.get("name")
+                picture = claims.get("picture")
+    except Exception:
+        pass
 
-    # 若 OIDC 沒給到頭像/名稱，補打一槍 Profile API
-    if not name or not picture:
+    # B) 若還缺資料，補打一槍 Profile API
+    if not (sub and name):
         try:
-            resp = oauth.line.get("https://api.line.me/v2/profile", token=token)
-            prof = resp.json()
+            prof = oauth.line.get("https://api.line.me/v2/profile", token=token).json()
+            sub = sub or prof.get("userId")
             name = name or prof.get("displayName")
             picture = picture or prof.get("pictureUrl")
         except Exception:
             pass
 
     if not sub:
-        # 理論上不會發生；保底處理
+        # 還是取不到唯一識別，直接回首頁
         return redirect(session.pop("oauth_next", url_for("index")))
 
-    # 與你 Google/Facebook 相同的會員 upsert
+    # 與 Google/Facebook 相同的 upsert（你專案裡已經有）
     member = upsert_member_from_oauth(
         provider="line", sub=sub, email=email, name=name, avatar_url=picture
     )
@@ -2283,6 +2298,7 @@ def login_line_callback():
 
     next_url = session.pop("oauth_next", url_for("index"))
     return redirect(next_url)
+
 
 
 @app.route('/get_profile')
