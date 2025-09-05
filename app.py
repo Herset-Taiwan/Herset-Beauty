@@ -2217,12 +2217,9 @@ def _line_redirect_uri():
 
 @app.route("/login/line")
 def login_line():
-    # 只接受白名單的 next；目前你只需要 cart
+    # 只接受 cart 作為合法 next
     raw_next = (request.args.get("next") or "").strip().lower()
-    if raw_next in ("cart", "/cart"):
-        session["oauth_next"] = url_for("cart")
-    else:
-        session["oauth_next"] = url_for("index")  # 預設回首頁，不用 referrer
+    session["oauth_next"] = url_for("cart") if raw_next in ("cart", "/cart") else url_for("index")
 
     redirect_uri = url_for("login_line_callback", _external=True)
     return oauth.line.authorize_redirect(
@@ -2234,67 +2231,74 @@ def login_line():
 
 @app.route("/login/line/callback")
 def login_line_callback():
+    # 使用者取消授權 → 回首頁
     if request.args.get("error"):
-        # 使用者取消 → 回首頁
         return redirect(url_for("index"))
 
+    # 1) 交換 access token
     try:
-        token = oauth.line.authorize_access_token()  # 只做 token 交換
+        token = oauth.line.authorize_access_token()
     except Exception:
+        # 交換失敗直接回首頁
         return redirect(url_for("index"))
 
-    # 驗證/解碼 id_token（可拿 email）
-    sub = email = name = picture = None
+    # 2) 以 access token 讀取 Profile（最穩）
+    sub = name = picture = email = None
     try:
-        id_token = token.get("id_token")
-        if id_token:
-            verify_res = requests.post(
-                "https://api.line.me/oauth2/v2.1/verify",
-                data={"id_token": id_token, "client_id": os.getenv("LINE_CHANNEL_ID")},
-                timeout=8,
-            )
-            if verify_res.ok:
-                claims = verify_res.json()
-                sub = claims.get("sub")
-                email = claims.get("email")
-                name = claims.get("name")
-                picture = claims.get("picture")
+        prof = oauth.line.get("https://api.line.me/v2/profile", token=token).json()
+        sub = prof.get("userId")
+        name = prof.get("displayName")
+        picture = prof.get("pictureUrl")
     except Exception:
         pass
 
-    # 不足就用 Profile API 補
-    if not (sub and name):
-        try:
-            prof = oauth.line.get("https://api.line.me/v2/profile", token=token).json()
-            sub = sub or prof.get("userId")
-            name = name or prof.get("displayName")
-            picture = picture or prof.get("pictureUrl")
-        except Exception:
-            pass
+    # 3) 有 id_token 才嘗試向官方 verify 拿 email（可選）
+    try:
+        id_token = token.get("id_token")
+        client_id = os.getenv("LINE_CHANNEL_ID") or os.getenv("LINE_CLIENT_ID")
+        if id_token and client_id:
+            vr = requests.post(
+                "https://api.line.me/oauth2/v2.1/verify",
+                data={"id_token": id_token, "client_id": client_id},
+                timeout=6,
+            )
+            if vr.ok:
+                claims = vr.json()
+                email = claims.get("email") or email
+                # name/picture 若空也可補：name = name or claims.get("name")
+    except Exception:
+        pass
 
+    # 4) 沒有 sub（userId）就視為登入失敗
     if not sub:
+        # 你也可以 flash 提示再導回 /login
         return redirect(url_for("index"))
 
-    # 建/取會員並寫 session（你原本的 helper）
+    # 5) upsert 會員，寫入 session（這邊沿用你的 helper）
     member = upsert_member_from_oauth(
-        provider="line", sub=sub, email=email, name=name, avatar_url=picture
+        provider="line",
+        sub=sub,
+        email=email,
+        name=name,
+        avatar_url=picture
     )
+
     session["member_id"] = member["id"]
     session["user"] = {
-        "account": member.get("account") or (email or "line_user"),
+        "account": member.get("account") or (member.get("email") or "line_user"),
         "email": member.get("email"),
     }
     if not member.get("name") or not member.get("phone") or not member.get("address"):
         session["incomplete_profile"] = True
     else:
         session.pop("incomplete_profile", None)
+    session.modified = True  # 明確標記有變更
 
-    # 只回首頁或購物車，避免回到 /login
+    # 6) 回首頁或購物車，避免回到 /login
     next_url = session.pop("oauth_next", url_for("index"))
     if not next_url or "/login" in next_url:
         next_url = url_for("index")
     return redirect(next_url)
-
 
 
 
