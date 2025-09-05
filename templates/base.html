@@ -670,9 +670,17 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 </script>
 
-
-
-
 {% block script %}{% endblock %}
+
+{% if dbg_user %}
+  <div style="position:fixed;right:8px;bottom:6px;font-size:12px;opacity:.45;z-index:9999;pointer-events:none;">
+    DBG:user={{ dbg_user.get('account') or dbg_user.get('email') or 'N/A' }}
+  </div>
+{% else %}
+  <div style="position:fixed;right:8px;bottom:6px;font-size:12px;opacity:.45;z-index:9999;pointer-events:none;">
+    DBG:user=None
+  </div>
+{% endif %}
+
 </body>
 </html>
