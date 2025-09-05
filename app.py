@@ -2099,23 +2099,28 @@ def login():
 @app.get("/login/google")
 def login_google():
     session["oauth_next"] = request.args.get("next") or request.referrer or url_for("index")
-    redirect_uri = url_for("login_google_callback", _external=True)
+    redirect_path = url_for("login_google_callback")
+    redirect_uri = f"{OAUTH_REDIRECT_BASE}{redirect_path}"
     return oauth.google.authorize_redirect(redirect_uri)
 
 @app.get("/login/line")
 def login_line():
     session["oauth_next"] = request.args.get("next") or request.referrer or url_for("index")
-    redirect_uri = url_for("login_line_callback", _external=True)
+    # 用官方網域組回呼，避免落在 onrender.com 造成跨網域 Cookie 遺失
+    redirect_path = url_for("login_line_callback")  # 只拿相對路徑
+    redirect_uri = f"{OAUTH_REDIRECT_BASE}{redirect_path}"
     return oauth.line.authorize_redirect(redirect_uri)
+
 
 # 啟動登入：把 next 存起來，取消或成功都可以導回
 @app.get("/login/facebook")
 def login_facebook():
     next_url = request.args.get("next") or request.referrer or url_for("index")
     session["oauth_next"] = next_url
-    redirect_uri = url_for("facebook_callback", _external=True)
-    # 你原本的導向 Facebook 授權邏輯
-    return oauth.facebook.authorize_redirect(redirect_uri)  # 或你自己的 redirect 程式
+    redirect_path = url_for("facebook_callback")
+    redirect_uri = f"{OAUTH_REDIRECT_BASE}{redirect_path}"
+    return oauth.facebook.authorize_redirect(redirect_uri)
+
 
 # Facebook callback
 @app.get("/login/facebook/callback")
@@ -2309,16 +2314,17 @@ def login_line_callback():
     session.modified = True
 
     # 6) 僅允許站內相對路徑，避免跨網域丟 Cookie
-    next_url = session.pop("oauth_next", None) or url_for("index")
+     next_url = session.pop("oauth_next", None) or url_for("index")
     try:
         from urllib.parse import urlparse
         p = urlparse(next_url)
+        # 安全防護：如果帶有網域（跨站）或又導向 /login，就改成首頁
         if p.netloc or "/login" in p.path:
             next_url = url_for("index")
     except Exception:
         next_url = url_for("index")
 
-    # 7) 相對路徑 302 + 禁快取
+    # 7) 302 導回 + 禁快取（避免瀏覽器快取干擾登入狀態）
     resp = redirect(next_url, code=302)
     resp.headers["Cache-Control"] = "no-store"
     return resp
