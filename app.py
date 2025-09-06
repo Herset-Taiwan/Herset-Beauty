@@ -161,33 +161,28 @@ def _pick_username(provider: str, sub: str, email: str | None, name: str | None)
 def upsert_member_from_oauth(*, provider: str, sub: str, email: str | None, name: str | None, avatar_url: str | None):
     """
     以 OAuth 登入資料建立/回傳會員。
-    比對順序：
-      1) 先用 (oauth_provider, oauth_sub) 找既有會員（最穩定）
-      2) 再用 email 找（有些提供者可能沒給 email）
-      找到後若缺欄位會順手補齊，找不到才建立新會員。
+    判斷原則：
+      1) 先用 (oauth_provider, oauth_sub) 找到原本的 OAuth 帳號
+      2) 再用 email 找（可能為 None）
+    以「第一次寫入」為主：既有帳號出現時，不回填/覆蓋 signup_method 與 oauth_*。
     """
-    # --- 1) 先用 provider+sub 找（最可靠） ---
     existing = None
     if provider and sub:
-        r = supabase.table("members").select("*") \
-            .eq("oauth_provider", provider).eq("oauth_sub", sub) \
-            .limit(1).execute()
+        r = (supabase.table("members").select("*")
+             .eq("oauth_provider", provider).eq("oauth_sub", sub)
+             .limit(1).execute())
         if r.data:
             existing = r.data[0]
 
-    # --- 2) 找不到再以 email 尋找（可能為 None） ---
     if not existing and email:
         r = supabase.table("members").select("*").eq("email", email).limit(1).execute()
         if r.data:
             existing = r.data[0]
 
-    # --- 3) 找到就最小更新（補上缺的 oauth_* / name / avatar_url） ---
     if existing:
         updates = {}
-        if not existing.get("oauth_provider") and provider:
-            updates["oauth_provider"] = provider
-        if not existing.get("oauth_sub") and sub:
-            updates["oauth_sub"] = sub
+        # ✅ 不覆蓋 signup_method（以第一次為準）
+        # ✅ 也不把平台帳號回填成 oauth_provider/oauth_sub（避免標籤變動）
         if name and not existing.get("name"):
             updates["name"] = name
         if avatar_url and not existing.get("avatar_url"):
@@ -197,7 +192,7 @@ def upsert_member_from_oauth(*, provider: str, sub: str, email: str | None, name
             existing.update(updates)
         return existing
 
-    # --- 4) 建立新會員 ---
+    # 建立新會員（這是「第一次寫入」）
     username = _pick_username(provider, sub or "", email, name)
     payload = {
         "username": username,
@@ -206,9 +201,11 @@ def upsert_member_from_oauth(*, provider: str, sub: str, email: str | None, name
         "oauth_provider": provider,
         "oauth_sub": sub,
         "avatar_url": avatar_url,
+        "signup_method": provider or "platform",   # ✅ 第一次即定案
     }
     created = supabase.table("members").insert(payload).execute()
     return created.data[0]
+
 
 
 
@@ -492,8 +489,8 @@ def admin_dashboard():
 
     # ✅ 會員
     members = supabase.table("members").select(
-        "id, account, username, name, phone, email, address, note, created_at"
-    ).execute().data or []
+    "id, account, username, name, phone, email, address, note, created_at, oauth_provider, signup_method"
+).execute().data or []
     member_total_count = len(members)   # 新增：會員總數
     for m in members:
         try:
@@ -504,7 +501,9 @@ def admin_dashboard():
             m["created_at"] = m.get("created_at", "—")
     member_dict = {m["id"]: m for m in members}
     # 未回覆留言數（is_replied = False）
-
+for m in members:
+    # 若舊資料尚未回填 signup_method，這裡做保底（不寫回資料庫，只供顯示）
+    m["signup_method"] = m.get("signup_method") or (m.get("oauth_provider") or "platform")
 
     member_keyword = request.args.get("member_keyword", "").lower()
     if member_keyword:

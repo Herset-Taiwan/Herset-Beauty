@@ -455,6 +455,16 @@
   .badge.pay-transfer  { background:#0ea5e9; color:#fff; } /* Sky blue */
   .badge.pay-ecpay     { background:#3b82f6; color:#fff; } /* Optional: 信用卡 */
 
+
+  /* === 會員註冊方式徽章 === */
+.badge.method { position:absolute; top:12px; right:12px; }
+.badge.method.platform { background:#64748b; }   /* 平台註冊（灰藍） */
+.badge.method.line     { background:#06C755; }   /* LINE 綠 */
+.badge.method.google   { background:#4285F4; }   /* Google 藍 */
+.badge.method.facebook { background:#1877F2; }   /* FB 藍 */
+.badge.method.apple    { background:#111827; }   /* Apple 黑 */
+
+
 </style>
 
 </head>
@@ -660,6 +670,23 @@
       <div id="member-list">
   {% for m in members %}
   <div class="member-row" data-info="{{ m['account'] }} {{ m['name'] or m['username'] }} {{ m['phone'] }} {{ m['email'] }}">
+        {# 依據 signup_method 決定顯示文字與色系 #}
+    {% set method = (m.get('signup_method') or (m.get('oauth_provider') or 'platform')) %}
+    {% if method == 'platform' %}
+      {% set method_text = '平台註冊' %}
+    {% elif method == 'line' %}
+      {% set method_text = 'Line註冊' %}
+    {% elif method == 'google' %}
+      {% set method_text = 'Google註冊' %}
+    {% elif method == 'facebook' %}
+      {% set method_text = 'Facebook註冊' %}
+    {% elif method == 'apple' %}
+      {% set method_text = 'Apple註冊' %}
+    {% else %}
+      {% set method_text = method|capitalize ~ ' 註冊' %}
+    {% endif %}
+    <span class="badge method {{ method }}">{{ method_text }}</span>
+
     <div class="info">
       <strong>帳號：</strong>{{ m['account'] }}<br>
       <strong>信箱：</strong>{{ m['email'] or '—' }}<br><br>
