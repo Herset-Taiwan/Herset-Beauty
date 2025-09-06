@@ -424,6 +424,7 @@ def admin_login():
     return render_template("admin_login.html")
 
 # admin 後台
+# admin 後台
 @app.route("/admin0363/dashboard")
 def admin_dashboard():
     if not session.get("admin_logged_in"):
@@ -433,12 +434,11 @@ def admin_dashboard():
     from dateutil import parser
     import json
 
-    tw = timezone("Asia/Taipei")
-    tz = tw
+    tz = timezone("Asia/Taipei")
     tab = request.args.get("tab", "products")
     selected_categories = request.args.getlist("category[]")
 
-    # ✅ 商品：搜尋 + 分頁
+    # === 商品：搜尋 + 分頁 ===
     product_keyword = request.args.get("product_keyword", "").lower()
     product_page = int(request.args.get("page", 1))
     product_page_size = int(request.args.get("page_size", 10))
@@ -448,62 +448,47 @@ def admin_dashboard():
     product_query = supabase.table("products").select("*")
     if selected_categories:
         filters = [f"categories.cs.{json.dumps([cat])}" for cat in selected_categories]
-        product_query = product_query.or_(','.join(filters))
+        product_query = product_query.or_(",".join(filters))
 
     all_products = product_query.execute().data or []
     if product_keyword:
-        all_products = [
-            p for p in all_products
-            if product_keyword in p.get("name", "").lower()
-        ]
-    # 🔥 新增：計算「目前篩選後」的分類數量與合計
+        all_products = [p for p in all_products if product_keyword in (p.get("name") or "").lower()]
+
+    # 分類數量與合計
     category_counts = {}
     for p in all_products:
-        cats = p.get("categories") or []
-        for c in cats:
+        for c in (p.get("categories") or []):
             category_counts[c] = category_counts.get(c, 0) + 1
 
     if selected_categories:
-        # 逐一列出使用者有選的分類數量
         selected_category_counts = {c: category_counts.get(c, 0) for c in selected_categories}
-        # 合計 = 目前篩選後的商品數（不會重複計）
         product_total_count = len(all_products)
     else:
         selected_category_counts = {}
         product_total_count = len(all_products)
+
     product_total_pages = max(1, (product_total_count + product_page_size - 1) // product_page_size)
     products = all_products[product_start:product_end]
 
-            # 取得所有 bundles，建立 (shell_product_id -> bundle_id) 對照
+    # 取得所有 bundles 的對照，回填到 products
     bundle_map_rows = supabase.table("bundles").select("id, shell_product_id").execute().data or []
     shell_to_bundle = {b["shell_product_id"]: b["id"] for b in bundle_map_rows if b.get("shell_product_id")}
-
-    # 把對照寫回 products（讓模板能拿到 p['bundle_id']）
     for p in products:
         if p.get("product_type") == "bundle":
             p["bundle_id"] = shell_to_bundle.get(p.get("id"))
 
-
-
-
-
-    # ✅ 會員
+    # === 會員 ===
     members = supabase.table("members").select(
-    "id, account, username, name, phone, email, address, note, created_at, oauth_provider, signup_method"
-).execute().data or []
-    member_total_count = len(members)   # 新增：會員總數
+        "id, account, username, name, phone, email, address, note, created_at"
+    ).execute().data or []
+    member_total_count = len(members)
     for m in members:
         try:
             if m.get("created_at"):
                 utc_dt = parser.parse(m["created_at"])
                 m["created_at"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
-        except:
+        except Exception:
             m["created_at"] = m.get("created_at", "—")
-    member_dict = {m["id"]: m for m in members}
-    # 未回覆留言數（is_replied = False）
-for m in members:
-    # 若舊資料尚未回填 signup_method，這裡做保底（不寫回資料庫，只供顯示）
-    m["signup_method"] = m.get("signup_method") or (m.get("oauth_provider") or "platform")
 
     member_keyword = request.args.get("member_keyword", "").lower()
     if member_keyword:
@@ -515,19 +500,17 @@ for m in members:
             or member_keyword in (m.get("phone") or "").lower()
             or member_keyword in (m.get("email") or "").lower()
         ]
-        # 🔥 會員分頁（預設每頁 5 筆）
+
+    # 會員分頁（固定在 if 外）
     member_page = int(request.args.get("member_page", 1))
     member_page_size = int(request.args.get("member_page_size", 5))
-
-    member_total_count_filtered = len(members)  # 目前篩選後的總筆數
+    member_total_count_filtered = len(members)
     member_total_pages = max(1, (member_total_count_filtered + member_page_size - 1) // member_page_size)
-
     member_start = (member_page - 1) * member_page_size
     member_end = member_start + member_page_size
     members = members[member_start:member_end]
 
-
-    # ✅ 訂單
+    # === 訂單 ===
     order_page = int(request.args.get("order_page", 1))
     order_page_size = int(request.args.get("order_page_size", 20))
     order_start = (order_page - 1) * order_page_size
@@ -536,11 +519,11 @@ for m in members:
     order_total_res = supabase.table("orders").select("id", count="exact").execute()
     order_total_count = order_total_res.count or 0
 
-    orders_raw = supabase.table("orders") \
-        .select("*") \
-        .order("created_at", desc=True) \
-        .range(order_start, order_end) \
-        .execute().data or []
+    orders_raw = (supabase.table("orders")
+                  .select("*")
+                  .order("created_at", desc=True)
+                  .range(order_start, order_end)
+                  .execute().data or [])
 
     order_ids = [o["id"] for o in orders_raw]
     member_ids = list({o["member_id"] for o in orders_raw if o.get("member_id")})
@@ -566,35 +549,34 @@ for m in members:
             "account": member["account"] if member else "guest",
             "name": member.get("name") if member else "訪客",
             "phone": member.get("phone") if member else "—",
-            "address": member.get("address") if member else "—"
+            "address": member.get("address") if member else "—",
         }
         o["is_new"] = bool(o.get("status") != "shipped" and not session.get("seen_orders"))
         try:
             utc_dt = parser.parse(o["created_at"])
             o["created_local"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
-        except:
+        except Exception:
             o["created_local"] = o["created_at"]
         orders.append(o)
-        # 未出貨訂單數
     unshipped_count = sum(1 for o in orders if (o.get("status") != "shipped"))
 
-    # ✅ 留言 + 分頁
+    # === 留言 + 分頁 ===
     reply_status = request.args.get("reply_status", "all")
     msg_type = request.args.get("type", "")
     msg_keyword = request.args.get("keyword", "").lower()
     msg_page = int(request.args.get("msg_page", 1))
     msg_page_size = int(request.args.get("msg_page_size", 10))
 
-    all_messages = supabase.table("messages") \
-        .select("*") \
-        .order("created_at", desc=True) \
-        .execute().data or []
+    all_messages = (supabase.table("messages")
+                    .select("*")
+                    .order("created_at", desc=True)
+                    .execute().data or [])
 
-    member_ids = list({m['member_id'] for m in all_messages})
+    member_ids2 = list({m['member_id'] for m in all_messages})
     name_map = {}
-    if member_ids:
-        members_res = supabase.table("members").select("id, name").in_("id", member_ids).execute().data or []
-        name_map = {m['id']: m['name'] for m in members_res}
+    if member_ids2:
+        members_res2 = supabase.table("members").select("id, name").in_("id", member_ids2).execute().data or []
+        name_map = {m['id']: m['name'] for m in members_res2}
 
     for m in all_messages:
         m["member_name"] = name_map.get(m.get("member_id"), "未知")
@@ -602,9 +584,8 @@ for m in members:
         try:
             utc_dt = parser.parse(m["created_at"])
             m["local_created_at"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M")
-        except:
+        except Exception:
             m["local_created_at"] = m["created_at"]
-            #  未回覆留言數（依全部留言計算）
     unreplied_count = sum(1 for m in all_messages if not m.get("is_replied"))
 
     filtered_messages = []
@@ -614,9 +595,8 @@ for m in members:
             (reply_status == "replied" and m.get("is_replied")) or
             (reply_status == "unreplied" and not m.get("is_replied"))
         )
-        match_type = not msg_type or m.get("type") == msg_type
-        match_name = not msg_keyword or msg_keyword in (m.get("member_name") or "").lower()
-
+        match_type = (not msg_type) or (m.get("type") == msg_type)
+        match_name = (not msg_keyword) or (msg_keyword in (m.get("member_name") or "").lower())
         if match_status and match_type and match_name:
             filtered_messages.append(m)
 
@@ -626,15 +606,16 @@ for m in members:
     msg_end = msg_start + msg_page_size
     paged_messages = filtered_messages[msg_start:msg_end]
 
-    # ✅ 提示狀態
+    # === 提示狀態 ===
     new_order_alert = any(o.get("status") != "shipped" for o in orders)
     new_message_alert = any(not m.get("is_replied") for m in all_messages)
     show_order_alert = new_order_alert and not session.get("seen_orders")
     show_message_alert = new_message_alert and not session.get("seen_messages")
 
-    # ✅ 回傳前再標記為已讀
+    # === Render ===
     question_types = ["商品問題", "訂單問題", "其他"]
-    response = render_template("admin.html",
+    response = render_template(
+        "admin.html",
         tab=tab,
         selected_categories=selected_categories,
         products=products,
@@ -652,21 +633,23 @@ for m in members:
         order_page=order_page,
         order_total_count=order_total_count,
         question_types=question_types,
-        # 🔥 新增傳入模板的變數（動態顯示用）
-    product_total_count=product_total_count,
-    selected_category_counts=selected_category_counts,
-    category_counts=category_counts,
-    unshipped_count=unshipped_count,
-    unreplied_count=unreplied_count,
-     # 會員分頁用
-    member_page=member_page,
-    member_total_pages=member_total_pages,
-    member_page_size=member_page_size,
+        # 顯示用統計
+        product_total_count=product_total_count,
+        selected_category_counts=selected_category_counts,
+        category_counts=category_counts,
+        unshipped_count=unshipped_count,
+        unreplied_count=unreplied_count,
+        # 會員分頁用
+        member_page=member_page,
+        member_total_pages=member_total_pages,
+        member_page_size=member_page_size,
     )
 
+    # 進此頁後視為已讀
     session["seen_orders"] = True
     session["seen_messages"] = True
     return response
+
 
 # ================================
 #  後台：新增套組（顯示頁）
