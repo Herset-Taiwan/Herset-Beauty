@@ -3190,15 +3190,49 @@ def linepay_confirm():
             "lp_confirm_error": json.dumps(data, ensure_ascii=False)
         }).eq("id", order_id).execute()
         return redirect("/cart")
-
-
-
-        
+     
 #Linepay取消返回
 @app.route("/payment_cancel")
 def linepay_cancel():
     order_id = request.args.get("order_id", "")
     return redirect(f"/order/cancel/{order_id}" if order_id else "/")
+
+# 會員刪除自己的訂單（僅限「未付款 且 待處理」）
+@app.post('/order/delete/<int:order_id>')
+def member_delete_order(order_id):
+    if 'member_id' not in session:
+        return redirect('/login?next=order-history')
+
+    # 讀取訂單基本資訊
+    try:
+        res = (supabase.table('orders')
+               .select('id, member_id, status, payment_status')
+               .eq('id', order_id).single().execute())
+        o = res.data or None
+    except Exception:
+        o = None
+
+    if not o:
+        flash("找不到訂單", "error")
+        return redirect('/order-history')
+
+    # 權限：只能刪自己的訂單
+    if str(o.get('member_id')) != str(session['member_id']):
+        flash("沒有權限刪除此訂單", "error")
+        return redirect('/order-history')
+
+    # 條件：未付款 + 待處理
+    if o.get('payment_status') == 'paid' or o.get('status') not in (None, 'pending'):
+        flash("只能刪除「未付款」且「待處理」的訂單", "error")
+        return redirect('/order-history')
+
+    # 先刪項目再刪主檔
+    supabase.table('order_items').delete().eq('order_id', order_id).execute()
+    supabase.table('orders').delete().eq('id', order_id).execute()
+
+    flash("訂單已刪除", "success")
+    return redirect('/order-history')
+
 
 # 歷史訂單重新付款
 @app.route("/repay/<merchant_trade_no>")
