@@ -2719,6 +2719,21 @@ def checkout():
         return redirect('/cart')
 
     member_id = session['member_id']
+        # === 會員資料完整性檢查（必填：姓名、電話、地址） ===
+    prof_res = (
+        supabase.table("members")
+        .select("name, phone, address")
+        .eq("id", member_id)
+        .single()
+        .execute()
+    )
+    prof = prof_res.data or {}
+    if not (prof.get("name") and prof.get("phone") and prof.get("address")):
+        # 記一個旗標給前端（你的程式本來就有在用這個 flag）
+        session['incomplete_profile'] = True
+        flash("請先完整填寫會員資料（姓名、電話、地址）再進行結帳")
+        return redirect('/cart')
+
 
     # 1) 組商品明細 + 算小計（以加入購物車時記錄的價格為主）
     total = 0.0
