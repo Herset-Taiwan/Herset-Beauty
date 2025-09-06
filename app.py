@@ -478,9 +478,11 @@ def admin_dashboard():
             p["bundle_id"] = shell_to_bundle.get(p.get("id"))
 
     # === 會員 ===
-    members = supabase.table("members").select(
-        "id, account, username, name, phone, email, address, note, created_at"
-    ).execute().data or []
+    members = (supabase.table("members")
+           .select("id, account, username, name, phone, email, address, note, created_at, oauth_provider")
+           .order("created_at", desc=True)
+           .execute().data) or []
+
     member_total_count = len(members)
     for m in members:
         try:
