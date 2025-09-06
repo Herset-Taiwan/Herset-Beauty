@@ -2629,6 +2629,17 @@ def cart():
 
     # 應付金額（不得為負）
     final_total = max(total + shipping_fee - discount_deduct, 0)
+    # 會員顯示名稱（優先 name，否則 username、account、email）
+    member_name = None
+    if session.get("member_id"):
+        mres = (supabase.table("members")
+                .select("name, username, account, email")
+                .eq("id", session["member_id"])
+                .single()
+                .execute())
+        m = mres.data or {}
+        member_name = (m.get("name") or m.get("username") or m.get("account") or m.get("email"))
+
 
     return render_template(
         "cart.html",
@@ -2639,6 +2650,7 @@ def cart():
         free_shipping_diff=free_shipping_diff,
         discount=discount,
         discount_deduct=discount_deduct,
+        member_name=member_name,
     )
 
 # 以台灣時間解讀開始/到期；購物車驗證也用台灣時間
@@ -3026,6 +3038,23 @@ def linepay_notify():
 # 判斷用戶選的付款方式
 @app.route("/process_payment", methods=["POST"])
 def process_payment():
+
+    # === 會員資料完整性檢查（必填：姓名、電話、地址） ===
+    prof_res = (
+        supabase.table("members")
+        .select("name, phone, address")
+        .eq("id", member_id)
+        .single()
+        .execute()
+    )
+    prof = prof_res.data or {}
+    if not (prof.get("name") and prof.get("phone") and prof.get("address")):
+        # 記一個旗標給前端（你的程式本來就有在用這個 flag）
+        session['incomplete_profile'] = True
+        flash("請先完整填寫會員資料（姓名、電話、地址）再進行結帳")
+        return redirect('/cart')
+
+
     order_id = request.form.get("order_id")
     method = request.form.get("method")
     is_repay = request.form.get("is_repay") == "1"

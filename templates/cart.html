@@ -101,15 +101,21 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
     <h2>🛒 我的購物車</h2>
 
     <div class="member-info">
-      {% if session.member_id %}
-        <div class="left">您好：會員 <span class="account">{{ session.user['account'] }}</span></div>
-      {% else %}
-        <div class="left">您尚未登入會員，請先登入會員才可結帳。</div>
-        <div class="right">
-          <a class="login-btn" href="/login?next=cart">登入會員</a>
-        </div>
-      {% endif %}
+  {% if session.member_id %}
+    {% set display_name = (session.user.get('name') 
+                           or session.user.get('username') 
+                           or session.user.get('account') 
+                           or session.user.get('email') 
+                           or '會員') %}
+    <div class="left">您好：<span class="account">{{ display_name }}</span></div>
+  {% else %}
+    <div class="left">您尚未登入會員，請先登入會員才可結帳。</div>
+    <div class="right">
+      <a class="login-btn" href="/login?next=cart">登入會員</a>
     </div>
+  {% endif %}
+</div>
+
 
     {% with messages = get_flashed_messages() %}
       {% if messages %}
