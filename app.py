@@ -3226,8 +3226,7 @@ def member_delete_order(order_id):
         flash("只能刪除「未付款」且「待處理」的訂單", "error")
         return redirect('/order-history')
 
-    # 先刪項目再刪主檔
-    supabase.table('order_items').delete().eq('order_id', order_id).execute()
+    # 只刪主檔；order_items 由外鍵 ON DELETE CASCADE 自動連動刪除
     supabase.table('orders').delete().eq('id', order_id).execute()
 
     flash("訂單已刪除", "success")
@@ -3571,13 +3570,19 @@ def search_members():
     )
 
 
+# 後台：刪除訂單（最高權限｜硬刪除｜已啟用 ON DELETE CASCADE）
+@app.post('/admin0363/orders/delete/<int:order_id>')
+def admin_delete_order(order_id):
+    # 僅允許已登入的管理員
+    if not session.get('admin_logged_in'):
+        return redirect('/admin0363')
 
-#刪除訂單
-@app.route('/admin0363/orders/delete/<int:order_id>', methods=['POST'])
-def delete_order(order_id):
-    supabase.table("orders").delete().eq("id", order_id).execute()
-    supabase.table("order_items").delete().eq("order_id", order_id).execute()
-    return redirect('/admin0363/dashboard')
+    # 只需刪主表；order_items 會由外鍵自動連動刪除
+    supabase.table('orders').delete().eq('id', order_id).execute()
+
+    flash('訂單已從資料庫刪除', 'success')
+    return redirect('/admin0363/dashboard?tab=orders')
+
 
 
 
