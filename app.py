@@ -2714,16 +2714,18 @@ def cart():
 
 
     return render_template(
-        "cart.html",
-        products=products,
-        total=total,
-        shipping_fee=shipping_fee,
-        final_total=final_total,
-        free_shipping_diff=free_shipping_diff,
-        discount=discount,
-        discount_deduct=discount_deduct,
-        member_name=member_name,
-    )
+    "cart.html",
+    products=products,
+    total=total,
+    shipping_fee=shipping_fee,
+    final_total=final_total,
+    free_shipping_threshold=free_shipping_threshold,  # ← 新增這行
+    free_shipping_diff=free_shipping_diff,
+    discount=discount,
+    discount_deduct=discount_deduct,
+    member_name=member_name,
+)
+
 
 # 以台灣時間解讀開始/到期；購物車驗證也用台灣時間
 def _parse_tw_local(ts: str):

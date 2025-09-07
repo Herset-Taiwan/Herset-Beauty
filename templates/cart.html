@@ -231,11 +231,14 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
         {% endif %}
 
         運費：
-        {% if shipping_fee == 0 %}
-  免運費（已達 ${{ '%.0f' % free_shipping_threshold }} 免運門檻）
+        {% set threshold = free_shipping_threshold | default(0, true) %}
+{% set remain    = free_shipping_diff       | default(0, true) %}
+{% if shipping_fee == 0 %}
+  免運費（已達 ${{ "{:,.0f}".format(threshold) }} 免運門檻）
 {% else %}
-  ${{ '%.0f' % shipping_fee }}（還差 ${{ '%.0f' % free_shipping_diff }} 可享免運）
+  ${{ "{:,.0f}".format(shipping_fee) }}（還差 ${{ "{:,.0f}".format(remain) }} 可享免運）
 {% endif %}
+
 
         <strong>應付總金額：${{ '%.0f' % final_total }}</strong>
       </div>
