@@ -222,35 +222,31 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
       </form>
 
       <div class="total">
-        商品總金額：${{ '%.0f' % total }}<br>
+  <div>商品總金額：${{ "{:,.0f}".format(total) }}</div>
 
-        {# 折扣列（若有） #}
-        {% if discount_deduct and discount_deduct > 0 %}
-          折扣碼 <span class="badge">{{ discount.code }}</span> 折抵：
-          <span style="color:#e91e63;">－ ${{ '%.0f' % discount_deduct }}</span><br>
-        {% endif %}
+  {# 折扣列（若有） #}
+  {% if discount_deduct and discount_deduct > 0 %}
+    <div>
+      折扣碼 <span class="badge">{{ discount.code }}</span> 折抵：
+      <span style="color:#e91e63;">－ ${{ "{:,.0f}".format(discount_deduct) }}</span>
+    </div>
+  {% endif %}
 
-        {# 運費 #}
-<div>商品總金額：${{ "{:,.0f}".format(total) }}</div>
-{% if discount_deduct and discount_deduct > 0 %}
-  <div>折扣碼 <span class="badge">{{ discount.code }}</span> 折抵：
-    <span style="color:#e91e63;">－ ${{ "{:,.0f}".format(discount_deduct) }}</span>
-  </div>
-{% endif %}
-<div>
+  {# 運費（在應付總金額上方） #}
   {% set threshold = free_shipping_threshold | default(0, true) %}
   {% set remain    = free_shipping_diff       | default(0, true) %}
-  運費：
-  {% if shipping_fee == 0 %}
-    免運費（已達 ${{ "{:,.0f}".format(threshold) }} 免運門檻）
-  {% else %}
-    ${{ "{:,.0f}".format(shipping_fee) }}（還差 ${{ "{:,.0f}".format(remain) }} 可享免運）
-  {% endif %}
+  <div>
+    運費：
+    {% if shipping_fee == 0 %}
+      免運費（已達 ${{ "{:,.0f}".format(threshold) }} 免運門檻）
+    {% else %}
+      ${{ "{:,.0f}".format(shipping_fee) }}（還差 ${{ "{:,.0f}".format(remain) }} 可享免運）
+    {% endif %}
+  </div>
+
+  <div><strong>應付總金額：${{ "{:,.0f}".format(final_total) }}</strong></div>
 </div>
-<div><strong>應付總金額：${{ "{:,.0f}".format(final_total) }}</strong></div>
 
-
-      </div>
 
       <form method="POST" action="/checkout">
         <button type="submit" class="checkout-btn">結帳</button>
