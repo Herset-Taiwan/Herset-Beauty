@@ -1396,10 +1396,10 @@ def admin_features_settings():
     if not session.get("admin_logged_in"):
         return redirect("/admin0363")
     threshold, ship_fee = get_shipping_rules()
-    return render_template("features_hub.html",
-                           tab="features",
+    return render_template("features_settings.html",
                            free_shipping_threshold=threshold,
                            shipping_fee=ship_fee)
+
 
 # admin功能管理 → 網站綜合設定（儲存）
 @app.post("/admin0363/features/settings")
