@@ -111,6 +111,12 @@ def generate_merchant_trade_no(prefix="HS", rand_len=8):
         pass
     return trade_no
 
+def _money(v) -> int:
+    try:
+        return int(Decimal(str(v or 0)).quantize(Decimal('1'), rounding=ROUND_HALF_UP))
+    except Exception:
+        return int(round(float(v or 0)))
+
 # ✅ 正確：第二參數是「已序列化」的 JSON 字串（POST 傳 body；GET 傳 querystring；沒有就空字串）
 def _lp_signature_headers(request_uri: str, serialized: str, method: str = "POST"):
     nonce = str(uuid4())
@@ -2870,6 +2876,17 @@ def checkout():
 
     # 4) 應付金額（不得為負）
     final_total = max(total + shipping_fee - discount_amount, 0)
+    # ---- 將所有入庫金額統一轉 int（四捨五入到元）----
+    total_i           = _money(total)
+    shipping_fee_i    = _money(shipping_fee)
+    discount_amount_i = _money(discount_amount)
+    final_total_i     = max(total_i + shipping_fee_i - discount_amount_i, 0)
+
+    # 同步把每個品項的單價與小計轉成整數，避免 order_items 的欄位也是浮點
+    for it in items:  # 你的迴圈變數名可能是 cart_items/products/items，照你的程式替換即可
+        it['price']    = _money(it.get('price'))
+        it['subtotal'] = _money(it.get('subtotal'))
+
 
     # 4.1 使用者此次在畫面上選的「意圖付款方式」(可有可無)
     #    ✅ 只存 intended，不在這裡寫 payment_method（避免用戶反悔）
@@ -2888,10 +2905,10 @@ def checkout():
 
     order_data = {
         'member_id': member_id,
-        'total_amount': final_total,      # 實際應付金額（含運、扣完折扣）
-        'shipping_fee': shipping_fee,
+        'total_amount':   final_total_i,      # ✅ 用整數
+        'shipping_fee':   shipping_fee_i,     # ✅ 用整數
         'discount_code': discount_code,   # 需有欄位
-        'discount_amount': discount_amount,
+        'discount_amount': discount_amount_i, # ✅ 用整數
         'status': 'pending',
         'created_at': created_at,
         'MerchantTradeNo': merchant_trade_no,
