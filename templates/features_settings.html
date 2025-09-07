@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>網站綜合設定 - HERSET BEAUTY</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    :root{--pink:#e91e63;--bg:#f6f7f9;--border:#e5e7eb}
+    body{font-family:"Segoe UI","Noto Sans TC",sans-serif;background:var(--bg);margin:0}
+    .wrap{max-width:900px;margin:32px auto 60px;padding:0 20px}
+    .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+    .title{font-size:26px;font-weight:800}
+    .back{background:#9ca3af;color:#fff;text-decoration:none;padding:8px 14px;border-radius:10px}
+    .card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px}
+    .row{display:flex;align-items:center;gap:12px;margin:12px 0;flex-wrap:wrap}
+    .row label{min-width:160px;color:#374151}
+    .row input{width:200px;padding:8px;border:1px solid #cfd4dc;border-radius:8px}
+    .actions{margin-top:10px}
+    .btn{background:var(--pink);color:#fff;border:none;padding:10px 18px;border-radius:10px;font-weight:800;cursor:pointer}
+    .note{color:#6b7280;margin-top:10px}
+    .flash-ok{color:#16a34a;margin-bottom:8px}
+    .flash-err{color:#dc2626;margin-bottom:8px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="title">網站綜合設定</div>
+      <a class="back" href="/admin0363/features">← 返回功能管理</a>
+    </div>
+
+    <div class="card">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for cat, msg in messages %}
+            <div class="{{ 'flash-ok' if cat=='success' else 'flash-err' }}">{{ msg }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form method="post" action="/admin0363/features/settings">
+        <div class="row">
+          <label>免運門檻（元）</label>
+          <input type="number" step="1" min="0" name="free_shipping_threshold"
+                 value="{{ free_shipping_threshold|default(2000) }}" required>
+        </div>
+        <div class="row">
+          <label>運費（元）</label>
+          <input type="number" step="1" min="0" name="shipping_fee"
+                 value="{{ shipping_fee|default(80) }}" required>
+        </div>
+        <div class="actions">
+          <button class="btn" type="submit">儲存設定</button>
+        </div>
+      </form>
+
+      <div class="note">＊免運判斷依「未折扣的小計」計算，符合門檻則運費為 0；否則使用所設定之運費。</div>
+    </div>
+  </div>
+</body>
+</html>

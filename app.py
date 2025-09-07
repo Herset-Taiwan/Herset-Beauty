@@ -1390,6 +1390,44 @@ def admin_features_hub():
     return render_template("features_hub.html")
 
 
+# 功能管理 → 網站綜合設定（表單頁）
+@app.get("/admin0363/features/settings")
+def admin_features_settings():
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
+    threshold, ship_fee = get_shipping_rules()
+    return render_template("features_hub.html",
+                           tab="features",
+                           free_shipping_threshold=threshold,
+                           shipping_fee=ship_fee)
+
+# admin功能管理 → 網站綜合設定（儲存）
+@app.post("/admin0363/features/settings")
+def admin_features_settings_save():
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
+
+    # 簡單防呆：負數視為 0
+    try:
+        threshold = max(0.0, float(request.form.get("free_shipping_threshold") or 0))
+    except Exception:
+        threshold = 0.0
+    try:
+        ship_fee = max(0.0, float(request.form.get("shipping_fee") or 0))
+    except Exception:
+        ship_fee = 0.0
+
+    ok1 = set_setting_num("free_shipping_threshold", threshold)
+    ok2 = set_setting_num("shipping_fee", ship_fee)
+
+    if ok1 and ok2:
+        flash("網站綜合設定已儲存", "success")
+    else:
+        flash("儲存失敗，請稍後再試", "error")
+
+    return redirect("/admin0363/features/settings")
+
+
 # ✅ TinyMCE 影片上傳端點
 @app.route('/admin0363/tinymce/upload_video', methods=['POST'])
 def tinymce_upload_video():
@@ -1630,6 +1668,38 @@ def admin_announcement_index():
             .execute().data or [])
     # 也可在這裡加上時間/狀態的標準化
     return jsonify(rows)
+
+# === admin設定免運門檻 ===
+def get_setting_num(key, default_val):
+    """從 site_settings 讀取數值型設定，取不到就回傳 default_val"""
+    try:
+        r = supabase.table("site_settings").select("value").eq("key", key).single().execute()
+        v = r.data.get("value") if r and r.data else None
+        if v is None or str(v).strip() == "":
+            return float(default_val)
+        return float(v)
+    except Exception:
+        return float(default_val)
+
+def set_setting_num(key, num):
+    """寫入/覆寫數值型設定"""
+    try:
+        supabase.table("site_settings").upsert({
+            "key": key,
+            "value": str(num)
+        }).execute()
+        return True
+    except Exception:
+        return False
+
+def get_shipping_rules():
+    """取得免運門檻與運費（皆為 float）"""
+    threshold = get_setting_num("free_shipping_threshold", 2000)
+    ship_fee  = get_setting_num("shipping_fee", 80)
+    return threshold, ship_fee
+
+
+
 
 # admin後台 搜尋報表開始
 @app.route("/admin0363/features/analytics", methods=["GET", "POST"])
@@ -2610,9 +2680,11 @@ def cart():
         products.append(product_out)
         total += product_out['subtotal']
 
-    # 運費計算（維持你原規則）
-    shipping_fee = 0 if total >= 2000 else 80
-    free_shipping_diff = 0 if total >= 2000 else (2000 - total)
+    # 運費計算（讀 site_settings）
+    free_shipping_threshold, default_shipping_fee = get_shipping_rules()
+    shipping_fee = 0.0 if total >= free_shipping_threshold else float(default_shipping_fee)
+    free_shipping_diff = 0.0 if total >= free_shipping_threshold else (free_shipping_threshold - total)
+
 
     # ---- 折扣碼（若 session 有暫存，依目前 subtotal 再次檢核並計算折抵）----
     discount = session.get('cart_discount')
@@ -2777,8 +2849,9 @@ def checkout():
             'option': item.get('option', '')
         })
 
-    # 2) 運費（依小計判斷免運；不受折扣影響）
-    shipping_fee = 0 if total >= 2000 else 80
+    # 2) 運費 讀 site_settings
+    free_shipping_threshold, default_shipping_fee = get_shipping_rules()
+    shipping_fee = 0.0 if total >= free_shipping_threshold else float(default_shipping_fee)
 
     # 3) 折扣碼（再次驗證後套用，不讓無效碼寫入訂單）
     discount = session.get('cart_discount')
