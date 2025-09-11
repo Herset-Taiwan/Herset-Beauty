@@ -4448,7 +4448,7 @@ def admin_send_message():
         return redirect("/admin0363/dashboard?tab=messages")
 
     # 3) 產生 payload（沿用你前台徽章規則）
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = datetime.now(dt_timezone.utc).isoformat()
     payload = {
         # 若你的 messages.id 是 uuid 預設，可改為不傳 id 讓 DB 自生；或保留這行
         "id": str(uuid4()),
