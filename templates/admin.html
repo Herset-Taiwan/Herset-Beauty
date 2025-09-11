@@ -782,17 +782,19 @@
   <form method="POST" action="/admin0363/messages/send">
     <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
       <label>收件會員：</label>
-<input id="member-search" type="text" placeholder="輸入姓名 / Email / 帳號（至少 2 字）"
-       list="member-suggest" autocomplete="off" style="min-width:260px; padding:6px 8px;">
-<datalist id="member-suggest"></datalist>
-<input type="hidden" name="member_id" id="member-id" required>
+<input id="msg-recipient-input" type="text"
+       placeholder="輸入姓名 / Email / 帳號（至少 2 字）"
+       list="msg-recipient-suggest" autocomplete="off"
+       style="min-width:260px; padding:6px 8px;">
+<datalist id="msg-recipient-suggest"></datalist>
+<input type="hidden" name="member_id" id="msg-recipient-id" required>
 
-
-<button type="button" id="member-clear"
+<button type="button" id="msg-recipient-clear"
   style="margin-left:8px; padding:6px 10px; border:1px solid #ddd; border-radius:6px; background:#fff; cursor:pointer;">
   清除
 </button>
-<span id="member-picked" style="margin-left:8px; color:#666; font-size:12px;"></span>
+<span id="msg-recipient-picked" style="margin-left:8px; color:#666; font-size:12px;"></span>
+
 
 
       <label>類型：</label>
@@ -824,18 +826,20 @@
   
 <script>
 (function () {
-  const $input = document.getElementById('member-search');
-  const $datalist = document.getElementById('member-suggest');
-  const $hidden = document.getElementById('member-id');
-  const $picked = document.getElementById('member-picked');
-  const $clear = document.getElementById('member-clear');
+  const $input  = document.getElementById('msg-recipient-input');
+  const $list   = document.getElementById('msg-recipient-suggest');
+  const $hidden = document.getElementById('msg-recipient-id');
+  const $picked = document.getElementById('msg-recipient-picked');
+  const $clear  = document.getElementById('msg-recipient-clear');
+
+  if (!$input || !$list || !$hidden) return; // 安全防呆
+
   const cache = new Map(); // label -> id
   let lastQuery = '';
   let timer = null;
 
-  function buildLabel(m) {
-    const name = m.name || '(未命名)';
-    const parts = [name];
+  function labelOf(m) {
+    const parts = [m.name || '(未命名)'];
     if (m.email) parts.push(m.email);
     if (m.account) parts.push(m.account);
     return parts.join(' ｜ ');
@@ -843,67 +847,65 @@
 
   async function searchMembers(q) {
     try {
-      const r = await fetch(`/admin0363/members/search?q=${encodeURIComponent(q)}&limit=20`, {credentials:'same-origin'});
+      const r = await fetch(`/admin0363/members/search?q=${encodeURIComponent(q)}&limit=20`, { credentials:'same-origin' });
       const j = await r.json();
       return j.items || [];
     } catch (e) {
-      console.error('search error', e);
+      console.error('[member search] error:', e);
       return [];
     }
   }
 
-  function fillSuggestions(items) {
-    $datalist.innerHTML = '';
+  function fill(items) {
+    $list.innerHTML = '';
     cache.clear();
-    items.forEach(m => {
-      const label = buildLabel(m);
+    for (const m of items) {
+      const label = labelOf(m);
       const opt = document.createElement('option');
-      opt.value = label;        // 顯示給使用者看的字串
-      opt.dataset.id = m.id;    // 把 id 放在 data-id（備用）
-      $datalist.appendChild(opt);
-      cache.set(label, m.id);   // 主要用這個 map 取回 id
-    });
+      opt.value = label;   // 顯示文字
+      $list.appendChild(opt);
+      cache.set(label, m.id); // 用 label 反查 id
+    }
   }
 
   function setPicked(label) {
     const id = cache.get(label);
     if (id) {
       $hidden.value = id;
-      $picked.textContent = `已選：${label}（ID:${id.slice(0,8)}…）`;
+      $picked.textContent = `已選：${label}（ID:${String(id).slice(0,8)}…）`;
     } else {
-      // 使用者改手動輸入非清單內容 → 清掉
       $hidden.value = '';
       $picked.textContent = '';
     }
   }
 
-  // 輸入時：debounce 250ms 後查詢
+  // 輸入：debounce 後查詢
   $input.addEventListener('input', () => {
     const q = ($input.value || '').trim();
-    setPicked($input.value); // 若剛好是選單項目，會帶入 id；否則清空
-    if (q.length < 2 || q === lastQuery) return;
+    setPicked($input.value); // 若剛好選到清單項目，會帶入 id
 
+    if (q.length < 2 || q === lastQuery) return;
     clearTimeout(timer);
     timer = setTimeout(async () => {
       lastQuery = q;
       const items = await searchMembers(q);
-      fillSuggestions(items);
+      fill(items);
     }, 250);
   });
 
-  // 變更（選到 datalist 項目）時再保險一次
+  // change：選到 datalist 項目時也帶入 id
   $input.addEventListener('change', () => setPicked($input.value));
 
-  // 清除按鈕
+  // 清除
   $clear.addEventListener('click', () => {
     $input.value = '';
     $hidden.value = '';
     $picked.textContent = '';
-    $datalist.innerHTML = '';
+    $list.innerHTML = '';
     $input.focus();
   });
 
-  // 表單送出前保證 member_id 已選
+  // 送出前必須選到清單（才有 member_id）
   const form = $input.closest('form');
   form.addEventListener('submit', (e) => {
     if (!$hidden.value) {
