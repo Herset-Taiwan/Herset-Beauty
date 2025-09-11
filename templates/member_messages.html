@@ -26,7 +26,7 @@
   {% if messages %}
     <div class="msg-list">
       {% for msg in messages %}
-      <article class="msg-card">
+      <article class="msg-card {% if msg['type']=='系統通知' %}is-system{% endif %}">
         <header class="msg-head">
           <div class="msg-type">{{ msg['type'] }}</div>
           <time class="msg-time">{{ msg['local_created_at'] }}</time>
@@ -51,22 +51,24 @@
         </div>
         {% endif %}
 
-        <div class="msg-row">
-          <span class="msg-label">留言內容</span>
-          <div class="msg-content">{{ msg['content'] }}</div>
-        </div>
+        {% if msg['type'] != '系統通知' %}
+<div class="msg-row">
+  <span class="msg-label">留言內容</span>
+  <div class="msg-content">{{ msg['content'] }}</div>
+</div>
+{% endif %}
+
 
        {% if msg['is_replied'] %}
-  <div class="msg-reply">
+  <div class="msg-reply {% if msg['type']=='系統通知' %}is-system{% endif %}">
     <div class="msg-reply-title">
-      {{ '系統通知' if msg['type']=='系統通知' else '管理員回覆' }}
+      {% if msg['type']=='系統通知' %}📣 系統通知{% else %}管理員回覆{% endif %}
     </div>
     {% set reply = msg['reply_text'] if msg['reply_text'] else msg['content'] %}
-    <div class="msg-reply-body">
-      {{ reply|trim if reply|trim else '（無內容）' }}
-    </div>
+    <div class="msg-reply-body">{{ reply|trim or '（無內容）' }}</div>
   </div>
 {% endif %}
+
 
   </article>
       {% endfor %}
@@ -133,5 +135,35 @@
   .msg-label{flex-basis:68px}
   .msg-time{width:100%;order:3;margin-left:0}
 }
+
+/* === 系統通知：卡片整體顯示不同色調 === */
+.msg-card.is-system{
+  border-color:#b8d7ff;
+  background:#f7fbff;
+  position:relative;
+}
+
+/* 可選的角落小標籤（想要更低調可刪掉這段） */
+.msg-card.is-system::before{
+  content:"SYSTEM";
+  position:absolute; top:12px; left:-8px;
+  background:#0b63ce; color:#fff;
+  font-size:11px; letter-spacing:.08em;
+  padding:2px 6px; border-radius:4px;
+  transform:rotate(-8deg);
+  box-shadow:0 2px 6px rgba(0,0,0,.12);
+}
+
+/* 卡片頂部類型膠囊顏色 */
+.msg-card.is-system .msg-type{background:#e6f0ff;color:#0b63ce}
+
+/* 回覆（通知）區塊高亮 */
+.msg-reply.is-system{
+  border-left-color:#0b63ce;
+  background:#eef6ff;
+}
+.msg-reply.is-system .msg-reply-title{color:#0b63ce}
+
+
 </style>
 {% endblock %}
