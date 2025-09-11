@@ -75,6 +75,46 @@
     .opt-lines  { margin:4px 0 8px 0; padding-left:18px; color:#444; font-size:14px; line-height:1.7; list-style: disc; }
     .opt-line   { margin:0 0 2px 0; }
 
+/*寄送資訊的風格*/
+/* 寄送資訊樣式 */
+.ship-card{
+  margin-top:18px;background:#fff;border:1px solid #eee;border-radius:14px;
+  padding:16px 18px;box-shadow:0 6px 16px rgba(0,0,0,.04)
+}
+.ship-head{display:flex;justify-content:space-between;align-items:center}
+.ship-title{font-weight:800;color:#5a4b45;display:flex;align-items:center;gap:8px}
+.ship-edit-btn{
+  border:1px solid #e5e7eb;background:#fff;border-radius:10px;padding:8px 12px;
+  cursor:pointer;display:inline-flex;align-items:center;gap:6px;color:#5a4b45
+}
+.ship-edit-btn:hover{background:#fbf7f5}
+.ship-display{margin-top:12px;line-height:1.9;color:#3c3c3c}
+
+.ship-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:640px){ .ship-grid{ grid-template-columns:1fr } }
+
+.ship-field label{display:block;margin-bottom:6px;color:#7a6c66;font-weight:700;font-size:13px}
+.ship-input{
+  width:100%;padding:11px 12px;border:1px solid #eaded7;border-radius:12px;background:#fff;
+  box-shadow:inset 0 1px 0 rgba(0,0,0,.02);font-size:15px;color:#3b2f2a;
+  transition:border-color .15s, box-shadow .15s
+}
+.ship-input::placeholder{color:#b8a8a1}
+.ship-input:focus{outline:none;border-color:#e9b6c2;box-shadow:0 0 0 3px rgba(233,30,99,.12)}
+
+.ship-checkbox{display:inline-flex;align-items:center;gap:8px;margin-top:10px;color:#6b7280}
+
+.ship-actions{margin-top:12px;display:flex;gap:8px}
+.ship-btn-primary{
+  background:#e91e63;color:#fff;border:none;border-radius:10px;padding:10px 16px;
+  font-weight:800;cursor:pointer
+}
+.ship-btn-secondary{
+  background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:10px 16px;cursor:pointer
+}
+.ship-btn-secondary:hover{background:#fbf7f5}
+
+
   </style>
 
 <!-- FB像素Meta Pixel Code -->
@@ -229,14 +269,52 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
   {% set ship_phone = (checkout_address.phone   if checkout_address else None) or (u.get('phone') or '') %}
   {% set ship_addr  = (checkout_address.address if checkout_address else None) or (u.get('address') or '') %}
 
-  <div class="ship-card" style="margin-top:18px;background:#fff;border:1px solid #eee;border-radius:12px;padding:16px 18px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-      <div style="font-weight:800;color:#5a4b45;">📦 寄送資訊</div>
-      <button type="button" id="ship-edit-btn"
-        style="border:1px solid #ddd;background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;">
-        ✏️ 修改
-      </button>
+  <div class="ship-card">
+  <div class="ship-head">
+    <div class="ship-title">📦 寄送資訊</div>
+    <button type="button" id="ship-edit-btn" class="ship-edit-btn">✏️ 修改</button>
+  </div>
+
+  <!-- 顯示態 -->
+  <div id="ship-display" class="ship-display">
+    <div><strong>收件人：</strong><span id="ship-name">{{ ship_name }}</span></div>
+    <div><strong>電話：</strong><span id="ship-phone">{{ ship_phone }}</span></div>
+    <div><strong>地址：</strong><span id="ship-address">{{ ship_addr }}</span></div>
+    {% if not ship_name or not ship_phone or not ship_addr %}
+      <div style="margin-top:6px;color:#a33;font-size:13px;">（目前資料未完整，請點「修改」補齊）</div>
+    {% endif %}
+  </div>
+
+  <!-- 編輯態（預設隱藏） -->
+  <form id="ship-form" style="display:none;margin-top:12px;">
+    <div class="ship-grid">
+      <div class="ship-field">
+        <label>收件人</label>
+        <input class="ship-input" name="name" required value="{{ ship_name }}" placeholder="收件人姓名">
+      </div>
+      <div class="ship-field">
+        <label>電話</label>
+        <input class="ship-input" name="phone" required value="{{ ship_phone }}" placeholder="聯絡電話">
+      </div>
     </div>
+
+    <div class="ship-field" style="margin-top:10px;">
+      <label>地址</label>
+      <input class="ship-input" name="address" required value="{{ ship_addr }}" placeholder="寄送地址">
+    </div>
+
+    <label class="ship-checkbox">
+      <input type="checkbox" name="save_profile" value="1">
+      同步更新到我的會員資料
+    </label>
+
+    <div class="ship-actions">
+      <button type="submit" class="ship-btn-primary">💾 儲存</button>
+      <button type="button" id="ship-cancel" class="ship-btn-secondary">取消</button>
+    </div>
+  </form>
+</div>
+
 
     <!-- 顯示態 -->
     <div id="ship-display" style="margin-top:10px;line-height:1.8;color:#3c3c3c;">
