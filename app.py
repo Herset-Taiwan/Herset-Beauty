@@ -3128,15 +3128,16 @@ def linepay_notify():
 
 
 # 判斷用戶選的付款方式
+# 判斷用戶選的付款方式
 @app.route("/process_payment", methods=["POST"])
 def process_payment():
-    # 0) 取得表單與 session 的基本資訊
+    # 0) 取得表單 & session
     form_order_id = request.form.get("order_id")
     method = request.form.get("method")  # "linepay" / "credit" / "bank"
     is_repay = request.form.get("is_repay") == "1"
     session_order_id = session.get("pending_order_id")
 
-    # 1) 取得 order_id（表單優先，沒有就用 session）
+    # 1) 決定 order_id（表單優先，其次 session）
     order_id = form_order_id or session_order_id
     if not order_id:
         flash("找不到待處理的訂單。", "error")
@@ -3162,7 +3163,7 @@ def process_payment():
     if not order:
         return "找不到訂單", 404
 
-    # 3) 解析 member_id：以訂單上的為主，否則退而求其次用 session
+    # 3) 解析 member_id：以訂單上的為主，否則用 session
     current_member_id = session.get("member_id")
     member_id = order.get("member_id") or current_member_id
 
@@ -3175,11 +3176,12 @@ def process_payment():
     if not order.get("member_id") and current_member_id:
         try:
             supabase.table("orders").update({"member_id": current_member_id}).eq("id", order_id).execute()
+            order["member_id"] = current_member_id  # 同步本地變數，後續用得到
+            member_id = current_member_id
         except Exception as e:
             app.logger.warning(f"[process_payment] 綁定 member_id 失敗：order_id={order_id}, err={e}")
 
-    # 6) 會員資料完整性檢查（必填：姓名、電話、地址）
-    #    這段一定要在 member_id 取得之後再做，避免 NameError
+    # 6) 會員資料完整性檢查（必須在 member_id 決定之後）
     if not member_id:
         session["incomplete_profile"] = True
         flash("請先登入並完整填寫會員資料再進行結帳。", "error")
@@ -3198,7 +3200,7 @@ def process_payment():
         prof = {}
 
     if not (prof.get("name") and prof.get("phone") and prof.get("address")):
-        session["incomplete_profile"] = True  # 你前端原本就有用這個 flag
+        session["incomplete_profile"] = True  # 你前端本來就有使用這個 flag
         flash("請先完整填寫會員資料（姓名、電話、地址）再進行結帳", "error")
         return redirect("/cart")
 
@@ -3277,6 +3279,7 @@ def process_payment():
 
     else:
         return "未知付款方式", 400
+
 
 
 # Linepay 付款成功後 confirm
@@ -4455,23 +4458,51 @@ def reply_message(msg_id):
     return redirect("/admin0363/dashboard?tab=messages")
 
 
-
-
-
-#每次頁面刷新時都會自動檢查是否有新回覆
+# 每次頁面刷新時自動檢查是否有新回覆（加上節流＆忽略靜態/健康檢查）
 @app.before_request
 def check_member_messages():
-    if "member_id" in session:
-        member_id = session["member_id"]
-        res = supabase.table("messages") \
-            .select("id") \
-            .eq("member_id", member_id) \
-            .eq("is_replied", True) \
-            .eq("is_read", False) \
-            .execute()
-        session["has_new_reply"] = bool(res.data)
-    else:
+    # 1) 跳過靜態與健康檢查路徑，避免不必要查詢
+    p = request.path or ""
+    if (
+        p.startswith("/static/") or p == "/favicon.ico" or
+        p.startswith("/health") or p.startswith("/ping")
+    ):
+        return None
+
+    # 2) 未登入 → 清除旗標
+    if "member_id" not in session:
         session.pop("has_new_reply", None)
+        session.pop("hnr_checked_at", None)
+        return None
+
+    member_id = session["member_id"]
+
+    # 3) 節流：60 秒內只檢查一次（避免每頁都打 DB）
+    now_ts = int(time.time())
+    last_ts = session.get("hnr_checked_at")
+    if last_ts and (now_ts - int(last_ts) < 60):
+        return None
+
+    # 4) 輕量查詢：只要知道是否存在即可
+    try:
+        res = (
+            supabase.table("messages")
+            .select("id", count="exact")
+            .eq("member_id", member_id)
+            .eq("is_replied", True)
+            .eq("is_read", False)
+            .limit(1)
+            .execute()
+        )
+        # 有資料（count > 0）代表有新回覆
+        has_new = bool(getattr(res, "count", 0))
+    except Exception as e:
+        app.logger.warning(f"[check_member_messages] query error: {e}")
+        has_new = False
+
+    session["has_new_reply"] = has_new
+    session["hnr_checked_at"] = now_ts
+
 
 # 當會員查看訊息時，將已回覆但尚未讀取的留言標記為已讀
 @app.route("/member/messages")
@@ -4481,67 +4512,102 @@ def member_messages():
 
     tz = TW  # ✅ 全域台灣時區
     member_id = session["member_id"]
-    page = int(request.args.get("page", 1))
+    page = max(int(request.args.get("page", 1)), 1)
     per_page = 5
     status = request.args.get("status", "all")  # all | replied | unreplied
 
-    # 取出該會員全部留言（新→舊）
-    all_messages = (supabase.table("messages")
+    # ---- 跨頁總數（給上方徽章用）以 count 計算，不抓整包 ----
+    try:
+        all_cnt_res = (
+            supabase.table("messages")
+            .select("id", count="exact")
+            .eq("member_id", member_id)
+            .execute()
+        )
+        count_all = getattr(all_cnt_res, "count", 0) or 0
+
+        replied_cnt_res = (
+            supabase.table("messages")
+            .select("id", count="exact")
+            .eq("member_id", member_id)
+            .eq("is_replied", True)
+            .execute()
+        )
+        count_replied = getattr(replied_cnt_res, "count", 0) or 0
+
+        count_unreplied = max(count_all - count_replied, 0)
+    except Exception as e:
+        app.logger.warning(f"[member_messages] count error: {e}")
+        count_all = count_replied = 0
+        count_unreplied = 0
+
+    # ---- 依 tab 過濾 + 伺服器端分頁（只取當頁資料）----
+    base_q = (
+        supabase.table("messages")
         .select("*")
         .eq("member_id", member_id)
         .order("created_at", desc=True)
-        .execute().data or [])
+    )
 
-    # ✅ 跨頁總數（給上方徽章用）
-    count_all = len(all_messages)
-    count_replied = sum(1 for m in all_messages if m.get("is_replied"))
-    count_unreplied = count_all - count_replied
+    if status == "replied":
+        base_q = base_q.eq("is_replied", True)
+        total = count_replied
+    elif status == "unreplied":
+        base_q = base_q.eq("is_replied", False)
+        total = count_unreplied
+    else:
+        total = count_all
 
-    # 顯示台灣時間 & 是否為新回覆
-    for m in all_messages:
+    # 計算分頁範圍（PostgREST 的 range 是含頭含尾）
+    start = (page - 1) * per_page
+    end = max(start, start + per_page - 1)
+
+    try:
+        page_res = base_q.range(start, end).execute()
+        messages = page_res.data or []
+    except Exception as e:
+        app.logger.warning(f"[member_messages] page query error: {e}")
+        messages = []
+
+    has_prev = page > 1
+    has_next = (page * per_page) < total
+
+    # ---- 顯示台灣時間 & 是否為新回覆 ----
+    for m in messages:
         try:
             m["local_created_at"] = parser.parse(m["created_at"]).astimezone(tz).strftime("%Y-%m-%d %H:%M")
         except Exception:
-            m["local_created_at"] = m["created_at"]
+            m["local_created_at"] = m.get("created_at")
         m["is_new"] = bool(m.get("is_replied") and not m.get("is_read"))
 
-    # ✅ 依 tab 過濾（不影響上方三個總數）
-    if status == "replied":
-        working = [m for m in all_messages if m.get("is_replied")]
-    elif status == "unreplied":
-        working = [m for m in all_messages if not m.get("is_replied")]
-    else:
-        working = all_messages
-
-    # 分頁（針對過濾後的集合）
-    total = len(working)
-    start = (page - 1) * per_page
-    end = start + per_page
-    messages = working[start:end]
-    has_prev = page > 1
-    has_next = end < total
-
-    # 設為已讀（沿用你的做法：進入頁面即把該會員所有「已回覆未讀」設為已讀）
-    if messages:
-        (supabase.table("messages")
+    # ---- 進入頁面即把該會員所有「已回覆未讀」設為已讀（沿用你的策略）----
+    try:
+        (
+            supabase.table("messages")
             .update({"is_read": True})
             .eq("member_id", member_id)
             .eq("is_replied", True)
             .eq("is_read", False)
-            .execute())
+            .execute()
+        )
+    except Exception as e:
+        app.logger.warning(f"[member_messages] mark read error: {e}")
 
+    # 前端提示徽章也要同步清掉
     session["has_new_reply"] = False
 
-    return render_template("member_messages.html",
-                           messages=messages,
-                           page=page,
-                           has_prev=has_prev,
-                           has_next=has_next,
-                           # 👇 新增給模板的徽章數 & 當前狀態
-                           count_all=count_all,
-                           count_replied=count_replied,
-                           count_unreplied=count_unreplied,
-                           status=status)
+    return render_template(
+        "member_messages.html",
+        messages=messages,
+        page=page,
+        has_prev=has_prev,
+        has_next=has_next,
+        # 👇 徽章數 & 當前狀態
+        count_all=count_all,
+        count_replied=count_replied,
+        count_unreplied=count_unreplied,
+        status=status
+    )
 
 
 
