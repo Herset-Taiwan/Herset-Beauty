@@ -4429,48 +4429,76 @@ def submit_message():
 
 
 #管理員主動發送訊息
-@app.post("/admin0363/messages/send")
+@app.route("/admin0363/messages/send", methods=["POST"])
 def admin_send_message():
-    # 僅允許已登入的管理員
+    # 1) 權限檢查
     if not session.get("admin_logged_in"):
+        flash("尚未登入管理員", "danger")
         return redirect("/admin0363")
 
-    from datetime import datetime
-    member_id = (request.form.get("member_id") or "").strip()
-    subject   = (request.form.get("subject") or "").strip()
-    content   = (request.form.get("content") or "").strip()
-    mtype     = (request.form.get("type") or "系統通知").strip()
+    # 2) 取值與基本驗證
+    form = request.form
+    member_id = (form.get("member_id") or "").strip()
+    subject   = (form.get("subject") or "").strip()
+    content   = (form.get("content") or "").strip()
+    msg_type  = (form.get("type") or "其他").strip()
 
-    if not member_id or not content:
-        flash("請選擇會員並輸入內容", "danger")
+    if not member_id or not subject or not content:
+        flash("請完整填寫：會員、主題、內容", "danger")
         return redirect("/admin0363/dashboard?tab=messages")
 
-    # 為了沿用你現有的「新回覆提示」機制：
-    #   - is_replied=True：讓會員端視為有「新回覆」
-    #   - is_read=False：會員未讀
-    #   - reply_text=content：回覆內容即本次主動通知
-    #   - content 也一併存，方便列表檢視原文
-    now_iso = datetime.utcnow().isoformat()
+    # 3) 產生 payload（沿用你前台徽章規則）
+    now_iso = datetime.now(timezone.utc).isoformat()
     payload = {
+        # 若你的 messages.id 是 uuid 預設，可改為不傳 id 讓 DB 自生；或保留這行
         "id": str(uuid4()),
         "member_id": member_id,
-        "type": mtype,                 # 例如「系統通知」
-        "subject": subject or None,
-        "content": content,            # 原文內容
+        "type": msg_type,
+        "subject": subject,
+        "content": content,
         "order_number": None,
         "attachment_path": None,
         "created_at": now_iso,
         "updated_at": now_iso,
-        "is_replied": True,            # 觸發你現有的「已回覆」/新回覆提示
-        "is_read": False,              # 讓會員端看到提示
-        "reply_text": content,         # 會員端可看到回覆內容
+        "is_replied": True,   # 讓會員端顯示「有新回覆」
+        "is_read": False,
+        "reply_text": None,   # 若想顯示在前台回覆區，也可設為 content
     }
 
+    # 4) 硬派除錯：把收到的表單與 payload 打進 log
     try:
-        supabase.table("messages").insert(payload).execute()
-        flash("訊息已發送給指定會員", "success")
+        app.logger.info(f"[admin_send_message] form={dict(form)}")
+        app.logger.info(f"[admin_send_message] payload={payload}")
     except Exception:
-        flash("發送失敗，請稍後再試", "danger")
+        pass
+
+    # 5) 嘗試插入 + 立即回讀驗證
+    try:
+        ins = supabase.table("messages").insert(payload).execute()
+        app.logger.info(f"[admin_send_message] insert result={ins.data}")
+
+        # 立即回讀確認（用 id 回查最可靠）
+        chk = supabase.table("messages").select("id, member_id, subject") \
+            .eq("id", payload["id"]).execute()
+        if not chk.data:
+            # 若 id 有 DB 預設，或你不傳 id，改以 member_id+subject+時間窗回查
+            chk = supabase.table("messages").select("id, member_id, subject") \
+                .eq("member_id", member_id) \
+                .eq("subject", subject) \
+                .gte("created_at", now_iso[:19]) \
+                .order("created_at", desc=True) \
+                .limit(1).execute()
+
+        if chk.data:
+            flash("訊息已送出", "success")
+        else:
+            # 走到這裡代表 insert 沒丟錯，但回讀不到 → 高機率是 RLS 政策擋住 insert 或欄位型別不合
+            flash("已嘗試送出，但未能在資料表中找到紀錄，請檢查 Supabase RLS/欄位設定", "danger")
+            app.logger.error("[admin_send_message] Insert seemingly succeeded but record not found. Check RLS/policies/constraints.")
+    except Exception as e:
+        # 把具體錯誤打 log（例如 RLS、NOT NULL、型別不合）
+        app.logger.error(f"[admin_send_message] insert error: {e}", exc_info=True)
+        flash(f"發送失敗：{e}", "danger")
 
     return redirect("/admin0363/dashboard?tab=messages")
 
