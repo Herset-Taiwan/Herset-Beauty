@@ -3189,9 +3189,7 @@ def linepay_notify():
         }).eq("id", order_id).execute()
         app.logger.warning("[LP][notify] confirm failed: %s", data)
         return "NG", 400
-
-
-# 判斷用戶選的付款方式
+    
 # 判斷用戶選的付款方式
 @app.route("/process_payment", methods=["POST"])
 def process_payment():
