@@ -3391,11 +3391,46 @@ def linepay_confirm():
         }).eq("id", order_id).execute()
         return redirect("/cart")
      
-#Linepay取消返回
+# LINE Pay 取消返回（直接回首頁；不再轉 /order/cancel/<id>）
 @app.route("/payment_cancel")
 def linepay_cancel():
-    order_id = request.args.get("order_id", "")
-    return redirect(f"/order/cancel/{order_id}" if order_id else "/")
+    # LINE Pay 會帶回的參數
+    mtno  = request.args.get("orderId") or request.args.get("merchantTradeNo")  # 你的 MerchantTradeNo
+    oid   = request.args.get("order_id")  # 你舊版自己帶的數字 id
+    txnid = request.args.get("transactionId")
+
+    # 可選：把訂單標記回未付款 / 待處理（相容以 id 或 MerchantTradeNo 查）
+    try:
+        target = mtno or oid
+        if target:
+            q = (
+                supabase.table("orders")
+                .select("id")
+                .or_(f"id.eq.{target},MerchantTradeNo.eq.{target}")
+                .limit(1)
+                .execute()
+            )
+            row = (q.data or [None])[0]
+            if row:
+                supabase.table("orders").update({
+                    "payment_status": "unpaid",
+                    "status": "pending",
+                    "payment_method": None,
+                    "intended_payment_method": None,
+                    "last_payment_error": "linepay_cancelled",
+                    "linepay_transaction_id": txnid,
+                }).eq("id", row["id"]).execute()
+    except Exception as e:
+        app.logger.warning(f"[payment_cancel] skip update: {e}")
+
+    flash("您已取消付款，訂單尚未完成。可至『歷史訂單』重新付款，或改用其他方式。")
+    return redirect("/")
+
+@app.route("/order/cancel/<path:_any>")
+def order_cancel_legacy(_any):
+    flash("您已取消付款。")
+    return redirect("/")
+
 
 # 會員刪除自己的訂單（僅限「未付款 且 待處理」）
 @app.post('/order/delete/<int:order_id>')
