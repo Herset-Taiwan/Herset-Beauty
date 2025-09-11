@@ -4507,6 +4507,32 @@ def admin_send_message():
 
     return redirect("/admin0363/dashboard?tab=messages")
 
+# Admin：會員即時搜尋（for autocomplete）
+@app.get("/admin0363/members/search")
+def admin_member_search():
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "unauthorized"}), 401
+
+    q = (request.args.get("q") or "").strip()
+    limit = int(request.args.get("limit") or 20)
+    if len(q) < 2:
+        return jsonify({"items": []})
+
+    # 以 name / email / account 模糊比對
+    try:
+        # Postgrest 的 OR 語法：欄位.ilike.%關鍵字%
+        pattern = f"%{q}%"
+        resp = (supabase.table("members")
+                .select("id, name, email, account")
+                .or_(f"name.ilike.{pattern},email.ilike.{pattern},account.ilike.{pattern}")
+                .order("created_at", desc=True)
+                .limit(limit)
+                .execute())
+        items = resp.data or []
+        return jsonify({"items": items})
+    except Exception as e:
+        app.logger.error(f"[admin_member_search] error: {e}")
+        return jsonify({"items": []})
 
 
 #回覆留言（設為已回覆）
