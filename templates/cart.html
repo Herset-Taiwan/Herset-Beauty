@@ -316,50 +316,7 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
 </div>
 
 
-    <!-- 顯示態 -->
-    <div id="ship-display" style="margin-top:10px;line-height:1.8;color:#3c3c3c;">
-      <div><strong>收件人：</strong><span id="ship-name">{{ ship_name }}</span></div>
-      <div><strong>電話：</strong><span id="ship-phone">{{ ship_phone }}</span></div>
-      <div><strong>地址：</strong><span id="ship-address">{{ ship_addr }}</span></div>
-      {% if not ship_name or not ship_phone or not ship_addr %}
-        <div style="margin-top:6px;color:#a33;font-size:13px;">（目前資料未完整，請點「修改」補齊）</div>
-      {% endif %}
-    </div>
-
-    <!-- 編輯態（預設隱藏） -->
-    <form id="ship-form" style="display:none;margin-top:12px;">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <label>收件人
-          <input name="name" required value="{{ ship_name }}"
-                 style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;">
-        </label>
-        <label>電話
-          <input name="phone" required value="{{ ship_phone }}"
-                 style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;">
-        </label>
-      </div>
-      <label style="display:block;margin-top:10px;">地址
-        <input name="address" required value="{{ ship_addr }}"
-               style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;">
-      </label>
-
-      <label style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;">
-        <input type="checkbox" name="save_profile" value="1">
-        同步更新到我的會員資料
-      </label>
-
-      <div style="margin-top:12px;display:flex;gap:8px;">
-        <button type="submit" class="btn-save"
-          style="background:#e91e63;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:800;cursor:pointer;">
-          💾 儲存
-        </button>
-        <button type="button" id="ship-cancel"
-          style="background:#fff;border:1px solid #ddd;border-radius:8px;padding:8px 14px;cursor:pointer;">
-          取消
-        </button>
-      </div>
-    </form>
-  </div>
+    
 
   <script>
   (function(){
