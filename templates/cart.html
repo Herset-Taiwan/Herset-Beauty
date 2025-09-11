@@ -95,17 +95,21 @@
 /* 控制收件人 / 電話 欄位寬度（地址不變） */
 .ship-grid{
   display:grid;
-  grid-template-columns: minmax(220px, 360px) minmax(140px, 240px) 1fr;
+  grid-template-columns: minmax(220px, 340px) minmax(140px, 220px) 1fr; /* 姓名 / 電話 / 留白 */
   column-gap:12px;
   row-gap:10px;
   align-items:end;
 }
+/* 重要：限制姓名 / 電話 input 寬，避免被其他規則撐滿 */
+.ship-grid .ship-field:nth-child(1) .ship-input{ max-width:340px; } /* 收件人 */
+.ship-grid .ship-field:nth-child(2) .ship-input{ max-width:220px; } /* 電話 */
 
 /* 手機改回單欄，保持好填寫 */
 @media (max-width:640px){
   .ship-grid{ grid-template-columns:1fr; }
+  .ship-grid .ship-field:nth-child(1) .ship-input,
+  .ship-grid .ship-field:nth-child(2) .ship-input{ max-width:100%; }
 }
-
 
 /* 標籤更緊湊 */
 .ship-field label{display:block;margin-bottom:4px;color:#7a6c66;font-weight:700;font-size:12px}
@@ -131,6 +135,7 @@
   background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:8px 14px;cursor:pointer;font-size:14px
 }
 .ship-btn-secondary:hover{background:#fbf7f5}
+
 
 
 
