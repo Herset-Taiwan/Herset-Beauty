@@ -3130,37 +3130,84 @@ def linepay_notify():
 # 判斷用戶選的付款方式
 @app.route("/process_payment", methods=["POST"])
 def process_payment():
-
-    # === 會員資料完整性檢查（必填：姓名、電話、地址） ===
-    prof_res = (
-        supabase.table("members")
-        .select("name, phone, address")
-        .eq("id", member_id)
-        .single()
-        .execute()
-    )
-    prof = prof_res.data or {}
-    if not (prof.get("name") and prof.get("phone") and prof.get("address")):
-        # 記一個旗標給前端（你的程式本來就有在用這個 flag）
-        session['incomplete_profile'] = True
-        flash("請先完整填寫會員資料（姓名、電話、地址）再進行結帳")
-        return redirect('/cart')
-
-
-    order_id = request.form.get("order_id")
-    method = request.form.get("method")
+    # 0) 取得表單與 session 的基本資訊
+    form_order_id = request.form.get("order_id")
+    method = request.form.get("method")  # "linepay" / "credit" / "bank"
     is_repay = request.form.get("is_repay") == "1"
+    session_order_id = session.get("pending_order_id")
 
-    # 查詢訂單
-    order = supabase.table("orders").select("*").eq("id", order_id).single().execute().data
+    # 1) 取得 order_id（表單優先，沒有就用 session）
+    order_id = form_order_id or session_order_id
+    if not order_id:
+        flash("找不到待處理的訂單。", "error")
+        return redirect("/cart")
+
+    if not method:
+        flash("請選擇付款方式。", "error")
+        return redirect("/choose-payment")
+
+    # 2) 讀取訂單
+    try:
+        order_res = (
+            supabase.table("orders")
+            .select("*")
+            .eq("id", order_id)
+            .single()
+            .execute()
+        )
+        order = order_res.data or None
+    except Exception:
+        order = None
+
     if not order:
         return "找不到訂單", 404
 
+    # 3) 解析 member_id：以訂單上的為主，否則退而求其次用 session
+    current_member_id = session.get("member_id")
+    member_id = order.get("member_id") or current_member_id
+
+    # 4) 權限檢查：避免不同會員操作他人訂單
+    if order.get("member_id") and str(order["member_id"]) != str(current_member_id):
+        flash("沒有權限操作此訂單。", "error")
+        return redirect("/cart")
+
+    # 5) 若訂單尚未綁會員、但目前有人登入 → 自動綁定
+    if not order.get("member_id") and current_member_id:
+        try:
+            supabase.table("orders").update({"member_id": current_member_id}).eq("id", order_id).execute()
+        except Exception as e:
+            app.logger.warning(f"[process_payment] 綁定 member_id 失敗：order_id={order_id}, err={e}")
+
+    # 6) 會員資料完整性檢查（必填：姓名、電話、地址）
+    #    這段一定要在 member_id 取得之後再做，避免 NameError
+    if not member_id:
+        session["incomplete_profile"] = True
+        flash("請先登入並完整填寫會員資料再進行結帳。", "error")
+        return redirect("/login?next=cart")
+
+    try:
+        prof_res = (
+            supabase.table("members")
+            .select("name, phone, address")
+            .eq("id", member_id)
+            .single()
+            .execute()
+        )
+        prof = prof_res.data or {}
+    except Exception:
+        prof = {}
+
+    if not (prof.get("name") and prof.get("phone") and prof.get("address")):
+        session["incomplete_profile"] = True  # 你前端原本就有用這個 flag
+        flash("請先完整填寫會員資料（姓名、電話、地址）再進行結帳", "error")
+        return redirect("/cart")
+
+    # 7) 依付款方式分流
     if method == "linepay":
-        # 1) 金額／幣別（TWD 需整數）
+        # 7-1) 金額／幣別（TWD 需整數）
         amount, currency = _order_amount_currency(order)
 
-        # 2) 準備 request body
+        # 7-2) 組請求 body
         body = {
             "amount": amount,
             "currency": currency,
@@ -3170,7 +3217,7 @@ def process_payment():
                 "amount": amount,
                 "name": "HERSET 訂單",
                 "products": [{
-    "name": f"訂單 {order.get('order_no') or order.get('MerchantTradeNo') or ('#' + str(order['id']))} 總額",
+                    "name": f"訂單 {order.get('order_no') or order.get('MerchantTradeNo') or ('#' + str(order['id']))} 總額",
                     "quantity": 1,
                     "price": amount
                 }]
@@ -3182,11 +3229,10 @@ def process_payment():
         }
 
         api_path = "/v3/payments/request"
-        # ★ 一定要先序列化，簽名與送出都用同一份 payload
-        payload = json.dumps(body, separators=(",", ":"))
+        payload = json.dumps(body, separators=(",", ":"))  # 簽名與送出都用同一份
         headers = _lp_signature_headers(api_path, payload, method="POST")
 
-        # 3) 呼叫 LINE Pay
+        # 7-3) 呼叫 LINE Pay
         r = requests.post(f"{LINE_PAY_BASE}{api_path}", headers=headers, data=payload, timeout=15)
         try:
             data = r.json()
@@ -3198,7 +3244,7 @@ def process_payment():
             payment_url = info.get("paymentUrl", {}).get("web")
             transaction_id = info.get("transactionId")
 
-            # 4) 記為待付款，並保存 transactionId（後續 confirm/備援都會用到）
+            # 7-4) 訂單狀態更新
             supabase.table("orders").update({
                 "payment_method": "linepay",
                 "payment_status": "pending",
@@ -3207,34 +3253,31 @@ def process_payment():
 
             return redirect(payment_url)
         else:
-            # 失敗也寫回錯誤方便追蹤
             supabase.table("orders").update({
                 "payment_status": "failed",
                 "lp_error": json.dumps(data, ensure_ascii=False)
             }).eq("id", order["id"]).execute()
             return f"LINE Pay 建立失敗：{data}", 400
 
-
     elif method == "bank":
-        return render_template("bank_transfer.html", order=order)  # 顯示轉帳資料
+        # 顯示轉帳資訊頁
+        return render_template("bank_transfer.html", order=order)
 
     elif method == "credit":
-        # 產生新的 MerchantTradeNo，避免與原本的衝突
+        # 綠界刷卡（支援重送）
         new_trade_no = generate_merchant_trade_no()
         supabase.table("ecpay_repay_map").insert({
-            "original_trade_no": order["MerchantTradeNo"],
+            "original_trade_no": order.get("MerchantTradeNo"),
             "new_trade_no": new_trade_no,
             "order_id": order["id"]
         }).execute()
 
-        # 產生 ECPay 表單 HTML
         html = generate_ecpay_form(order, trade_no=new_trade_no)
-
-        # 回傳 HTML，瀏覽器會自動跳轉至綠界頁面
-        return Response(html, content_type='text/html; charset=utf-8')
+        return Response(html, content_type="text/html; charset=utf-8")
 
     else:
         return "未知付款方式", 400
+
 
 # Linepay 付款成功後 confirm
 @app.route("/linepay/confirm")
