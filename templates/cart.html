@@ -75,44 +75,52 @@
     .opt-lines  { margin:4px 0 8px 0; padding-left:18px; color:#444; font-size:14px; line-height:1.7; list-style: disc; }
     .opt-line   { margin:0 0 2px 0; }
 
-/*寄送資訊的風格*/
-/* 寄送資訊樣式 */
+/* 寄送資訊樣式（緊湊版） */
 .ship-card{
-  margin-top:18px;background:#fff;border:1px solid #eee;border-radius:14px;
-  padding:16px 18px;box-shadow:0 6px 16px rgba(0,0,0,.04)
+  margin-top:18px;background:#fff;border:1px solid #eee;border-radius:12px;
+  padding:14px 16px;box-shadow:0 4px 12px rgba(0,0,0,.04)
 }
 .ship-head{display:flex;justify-content:space-between;align-items:center}
 .ship-title{font-weight:800;color:#5a4b45;display:flex;align-items:center;gap:8px}
+
+/* 按鈕小一號 */
 .ship-edit-btn{
-  border:1px solid #e5e7eb;background:#fff;border-radius:10px;padding:8px 12px;
-  cursor:pointer;display:inline-flex;align-items:center;gap:6px;color:#5a4b45
+  border:1px solid #e5e7eb;background:#fff;border-radius:8px;padding:6px 10px;
+  cursor:pointer;display:inline-flex;align-items:center;gap:6px;color:#5a4b45;font-size:14px
 }
 .ship-edit-btn:hover{background:#fbf7f5}
-.ship-display{margin-top:12px;line-height:1.9;color:#3c3c3c}
 
-.ship-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ship-display{margin-top:10px;line-height:1.7;color:#3c3c3c}
+
+/* 欄間距縮小、手機維持一欄 */
+.ship-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media (max-width:640px){ .ship-grid{ grid-template-columns:1fr } }
 
-.ship-field label{display:block;margin-bottom:6px;color:#7a6c66;font-weight:700;font-size:13px}
+/* 標籤更緊湊 */
+.ship-field label{display:block;margin-bottom:4px;color:#7a6c66;font-weight:700;font-size:12px}
+
+/* 輸入框高度與圓角變小 */
 .ship-input{
-  width:100%;padding:11px 12px;border:1px solid #eaded7;border-radius:12px;background:#fff;
-  box-shadow:inset 0 1px 0 rgba(0,0,0,.02);font-size:15px;color:#3b2f2a;
+  width:100%;height:38px;padding:6px 10px;border:1px solid #eaded7;border-radius:8px;background:#fff;
+  box-shadow:inset 0 1px 0 rgba(0,0,0,.02);font-size:14px;color:#3b2f2a;line-height:1.3;
   transition:border-color .15s, box-shadow .15s
 }
 .ship-input::placeholder{color:#b8a8a1}
-.ship-input:focus{outline:none;border-color:#e9b6c2;box-shadow:0 0 0 3px rgba(233,30,99,.12)}
+.ship-input:focus{outline:none;border-color:#e9b6c2;box-shadow:0 0 0 2px rgba(233,30,99,.12)}
 
-.ship-checkbox{display:inline-flex;align-items:center;gap:8px;margin-top:10px;color:#6b7280}
+/* checkbox 與按鈕也縮小 */
+.ship-checkbox{display:inline-flex;align-items:center;gap:8px;margin-top:8px;color:#6b7280;font-size:14px}
 
-.ship-actions{margin-top:12px;display:flex;gap:8px}
+.ship-actions{margin-top:10px;display:flex;gap:8px}
 .ship-btn-primary{
-  background:#e91e63;color:#fff;border:none;border-radius:10px;padding:10px 16px;
-  font-weight:800;cursor:pointer
+  background:#e91e63;color:#fff;border:none;border-radius:8px;padding:8px 14px;
+  font-weight:800;cursor:pointer;font-size:14px
 }
 .ship-btn-secondary{
-  background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:10px 16px;cursor:pointer
+  background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:8px 14px;cursor:pointer;font-size:14px
 }
 .ship-btn-secondary:hover{background:#fbf7f5}
+
 
 
   </style>
