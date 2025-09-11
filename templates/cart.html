@@ -92,9 +92,20 @@
 
 .ship-display{margin-top:10px;line-height:1.7;color:#3c3c3c}
 
-/* 欄間距縮小、手機維持一欄 */
-.ship-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-@media (max-width:640px){ .ship-grid{ grid-template-columns:1fr } }
+/* 控制收件人 / 電話 欄位寬度（地址不變） */
+.ship-grid{
+  display:grid;
+  grid-template-columns: minmax(220px, 360px) minmax(140px, 240px) 1fr;
+  column-gap:12px;
+  row-gap:10px;
+  align-items:end;
+}
+
+/* 手機改回單欄，保持好填寫 */
+@media (max-width:640px){
+  .ship-grid{ grid-template-columns:1fr; }
+}
+
 
 /* 標籤更緊湊 */
 .ship-field label{display:block;margin-bottom:4px;color:#7a6c66;font-weight:700;font-size:12px}
