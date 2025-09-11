@@ -1365,8 +1365,9 @@ function printOrder(orderId) {
         <p><strong>訂單編號：</strong>${esc(displayNo)}</p>
         <p><strong>訂單日期：</strong>${(order.created_local || '').split(' ')[0]}</p>
         <p><strong>物流廠商：</strong>宅配</p>
-        <p><strong>收件人姓名：</strong>${order.member?.name || ''}</p>
-        <p><strong>聯絡電話：</strong>${order.member?.phone || ''}</p>
+        <p><strong>收件人姓名：</strong>${order.receiver_name || order.member?.name || ''}</p>
+        <p><strong>聯絡電話：</strong>${order.receiver_phone || order.member?.phone || ''}</p>
+        <p><strong>寄送地址：</strong>${order.receiver_address || order.member?.address || ''}</p>
       </div>
 
       <table>

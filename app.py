@@ -2811,6 +2811,39 @@ def validate_discount_for_cart(code: str, subtotal: float):
     }
     return True, "折扣碼已套用", info
 
+# 購物車：更新寄送資訊（AJAX）
+@app.post("/cart/address")
+def cart_address_update():
+    # 需要會員已登入
+    member_id = session.get("member_id")
+    if not member_id:
+        return jsonify({"ok": False, "error": "not_logged_in"}), 401
+
+    data = request.get_json(silent=True) or request.form
+    name    = (data.get("name") or "").strip()
+    phone   = (data.get("phone") or "").strip()
+    address = (data.get("address") or "").strip()
+    save_profile = str(data.get("save_profile") or "").lower() in {"1","true","yes","on"}
+
+    if not name or not phone or not address:
+        return jsonify({"ok": False, "error": "missing_fields"}), 400
+
+    # 1) 先把這次結帳要用的寄送資訊放進 session（只影響本次訂單）
+    session["checkout_address"] = {"name": name, "phone": phone, "address": address}
+
+    # 2) 若勾選同步更新，寫回 members 資料表
+    if save_profile:
+        try:
+            supabase.table("members").update({
+                "name": name,
+                "phone": phone,
+                "address": address
+            }).eq("id", member_id).execute()
+        except Exception as e:
+            app.logger.error(f"[cart_address_update] update member error: {e}")
+
+    return jsonify({"ok": True})
+
 
 # 結帳
 @app.route('/checkout', methods=['POST'])
@@ -2825,7 +2858,7 @@ def checkout():
         return redirect('/cart')
 
     member_id = session['member_id']
-        # === 會員資料完整性檢查（必填：姓名、電話、地址） ===
+        # === 會員/寄送資料（優先採用購物車裡暫存的覆蓋地址） ===
     prof_res = (
         supabase.table("members")
         .select("name, phone, address")
@@ -2834,11 +2867,18 @@ def checkout():
         .execute()
     )
     prof = prof_res.data or {}
-    if not (prof.get("name") and prof.get("phone") and prof.get("address")):
-        # 記一個旗標給前端（你的程式本來就有在用這個 flag）
+    ship = session.get("checkout_address") or {}
+
+    receiver_name  = (ship.get("name")    or prof.get("name")    or "").strip()
+    receiver_phone = (ship.get("phone")   or prof.get("phone")   or "").strip()
+    receiver_addr  = (ship.get("address") or prof.get("address") or "").strip()
+
+    # 若兩邊加總仍缺，就導回購物車
+    if not (receiver_name and receiver_phone and receiver_addr):
         session['incomplete_profile'] = True
-        flash("請先完整填寫會員資料（姓名、電話、地址）再進行結帳")
+        flash("請先填寫完整的收件資訊（姓名、電話、地址）再進行結帳")
         return redirect('/cart')
+
 
 
     # 1) 組商品明細 + 算小計（以加入購物車時記錄的價格為主）
@@ -2927,8 +2967,11 @@ def checkout():
         'created_at': created_at,
         'MerchantTradeNo': merchant_trade_no,
         # ✅ 只記 “意圖付款方式”，真正入帳才寫 payment_method
-        'intended_payment_method': intended
-        # 'payment_method':  不要在這裡寫
+        'intended_payment_method': intended,
+        # 〔新增〕收件資訊快照（本次訂單使用）
+        'receiver_name': receiver_name,
+        'receiver_phone': receiver_phone,
+        'receiver_address': receiver_addr
     }
     result = supabase.table('orders').insert(order_data).execute()
     order_id = result.data[0]['id']
@@ -2954,6 +2997,13 @@ def checkout():
     session['cart'] = []
     session.pop('cart_discount', None)
     session['current_trade_no'] = merchant_trade_no
+    # 8) 清空購物車與折扣碼暫存、保存交易編號
+    session['cart'] = []
+    session.pop('cart_discount', None)
+    session['current_trade_no'] = merchant_trade_no
+
+    # 〔新增〕清掉這次用過的寄送覆蓋，避免影響下次
+    session.pop('checkout_address', None)
 
     return redirect("/choose-payment")
 

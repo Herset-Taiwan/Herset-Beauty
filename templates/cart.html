@@ -221,6 +221,118 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
         {% endif %}
       </form>
 
+      <!-- 寄送資訊（顯示 + 可展開編輯；需已登入） -->
+{% if session.member_id %}
+  {# 先準備顯示資料：優先用本次結帳暫存的 checkout_address，其次用 session.user #}
+  {% set u = session.get('user', {}) %}
+  {% set ship_name  = (checkout_address.name    if checkout_address else None) or (u.get('name') or u.get('username') or u.get('account') or '') %}
+  {% set ship_phone = (checkout_address.phone   if checkout_address else None) or (u.get('phone') or '') %}
+  {% set ship_addr  = (checkout_address.address if checkout_address else None) or (u.get('address') or '') %}
+
+  <div class="ship-card" style="margin-top:18px;background:#fff;border:1px solid #eee;border-radius:12px;padding:16px 18px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-weight:800;color:#5a4b45;">📦 寄送資訊</div>
+      <button type="button" id="ship-edit-btn"
+        style="border:1px solid #ddd;background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;">
+        ✏️ 修改
+      </button>
+    </div>
+
+    <!-- 顯示態 -->
+    <div id="ship-display" style="margin-top:10px;line-height:1.8;color:#3c3c3c;">
+      <div><strong>收件人：</strong><span id="ship-name">{{ ship_name }}</span></div>
+      <div><strong>電話：</strong><span id="ship-phone">{{ ship_phone }}</span></div>
+      <div><strong>地址：</strong><span id="ship-address">{{ ship_addr }}</span></div>
+      {% if not ship_name or not ship_phone or not ship_addr %}
+        <div style="margin-top:6px;color:#a33;font-size:13px;">（目前資料未完整，請點「修改」補齊）</div>
+      {% endif %}
+    </div>
+
+    <!-- 編輯態（預設隱藏） -->
+    <form id="ship-form" style="display:none;margin-top:12px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <label>收件人
+          <input name="name" required value="{{ ship_name }}"
+                 style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;">
+        </label>
+        <label>電話
+          <input name="phone" required value="{{ ship_phone }}"
+                 style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;">
+        </label>
+      </div>
+      <label style="display:block;margin-top:10px;">地址
+        <input name="address" required value="{{ ship_addr }}"
+               style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;">
+      </label>
+
+      <label style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;">
+        <input type="checkbox" name="save_profile" value="1">
+        同步更新到我的會員資料
+      </label>
+
+      <div style="margin-top:12px;display:flex;gap:8px;">
+        <button type="submit" class="btn-save"
+          style="background:#e91e63;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:800;cursor:pointer;">
+          💾 儲存
+        </button>
+        <button type="button" id="ship-cancel"
+          style="background:#fff;border:1px solid #ddd;border-radius:8px;padding:8px 14px;cursor:pointer;">
+          取消
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+  (function(){
+    const $btn = document.getElementById('ship-edit-btn');
+    const $display = document.getElementById('ship-display');
+    const $form = document.getElementById('ship-form');
+    const $cancel = document.getElementById('ship-cancel');
+
+    if (!$btn || !$display || !$form) return;
+
+    function toEdit(){ $display.style.display = 'none';  $form.style.display = 'block'; }
+    function toView(){ $form.style.display = 'none';     $display.style.display = 'block'; }
+
+    $btn.addEventListener('click', toEdit);
+    $cancel.addEventListener('click', toView);
+
+    $form.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const fd = new FormData($form);
+      const data = Object.fromEntries(fd.entries());
+
+      if(!data.name || !data.phone || !data.address){
+        alert('請完整填寫收件人 / 電話 / 地址');
+        return;
+      }
+
+      try{
+        const res = await fetch('/cart/address', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(data),
+          credentials:'same-origin'
+        });
+        const j = await res.json();
+        if(!j.ok) throw new Error(j.error || 'unknown');
+
+        // 更新顯示
+        document.getElementById('ship-name').textContent = data.name;
+        document.getElementById('ship-phone').textContent = data.phone;
+        document.getElementById('ship-address').textContent = data.address;
+        toView();
+      }catch(err){
+        alert('儲存失敗，請稍後再試');
+        console.error('[cart/address] error:', err);
+      }
+    });
+  })();
+  </script>
+{% endif %}
+
+
       <div class="total">
   <div>商品總金額：${{ "{:,.0f}".format(total) }}</div>
 
