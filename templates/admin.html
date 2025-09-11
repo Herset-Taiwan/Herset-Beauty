@@ -783,9 +783,10 @@
     <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
       <label>收件會員：</label>
 <input id="member-search" type="text" placeholder="輸入姓名 / Email / 帳號（至少 2 字）"
-       autocomplete="off" style="min-width:260px; padding:6px 8px;">
+       list="member-suggest" autocomplete="off" style="min-width:260px; padding:6px 8px;">
 <datalist id="member-suggest"></datalist>
 <input type="hidden" name="member_id" id="member-id" required>
+
 
 <button type="button" id="member-clear"
   style="margin-left:8px; padding:6px 10px; border:1px solid #ddd; border-radius:6px; background:#fff; cursor:pointer;">
