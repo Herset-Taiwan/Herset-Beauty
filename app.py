@@ -4441,7 +4441,12 @@ def admin_send_message():
     member_id = (form.get("member_id") or "").strip()
     subject   = (form.get("subject") or "").strip()
     content   = (form.get("content") or "").strip()
-    msg_type  = (form.get("type") or "其他").strip()
+    msg_type = (form.get("type") or "其他").strip()
+    ALLOWED_TYPES = {"商品問題", "訂單問題", "其他", "系統通知"}
+    if msg_type not in ALLOWED_TYPES:
+        app.logger.warning(f"[admin_send_message] invalid type '{msg_type}', fallback to '其他'")
+        msg_type = "其他"
+
 
     if not member_id or not subject or not content:
         flash("請完整填寫：會員、主題、內容", "danger")

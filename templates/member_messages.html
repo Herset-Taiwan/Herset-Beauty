@@ -56,14 +56,16 @@
           <div class="msg-content">{{ msg['content'] }}</div>
         </div>
 
-        {% if msg['reply_text'] %}
-        <div class="msg-reply">
-          <div class="msg-reply-title">管理員回覆</div>
-          <div class="msg-reply-body">{{ msg['reply_text'] }}</div>
-        </div>
-        {% endif %}
-      </article>
-      {% endfor %}
+       {% if msg['is_replied'] %}
+<div class="msg-reply">
+  <div class="msg-reply-title">
+    {% if msg['type'] == '系統通知' %}系統通知{% else %}管理員回覆{% endif %}
+  </div>
+  <div class="msg-reply-body">
+    {{ (msg['reply_text'] or msg['content'])|trim or '（無內容）' }}
+  </div>
+</div>
+{% endif %}
     </div>
 
     <!-- 分頁 -->
