@@ -773,10 +773,50 @@
     <option value="{{ t }}" {% if request.args.get('type') == t %}selected{% endif %}>{{ t }}</option>
   {% endfor %}
 </select>
-
 </form>
 
 
+<!-- ➕ 發送訊息給單一會員 -->
+<div style="margin: 16px 0; padding: 14px 16px; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;">
+  <h3 style="margin: 0 0 10px; font-size: 16px;">➕ 發送訊息給單一會員</h3>
+  <form method="POST" action="/admin0363/messages/send">
+    <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
+      <label>收件會員：</label>
+      <select name="member_id" required style="min-width:260px; padding:6px 8px;">
+        <option value="">— 請選擇會員 —</option>
+        {% for m in member_options %}
+          <option value="{{ m['id'] }}">
+            {{ m['name'] or '(未命名)' }}{% if m['email'] %}｜{{ m['email'] }}{% endif %}{% if m['account'] %}｜{{ m['account'] }}{% endif %}
+          </option>
+        {% endfor %}
+      </select>
+
+      <label>類型：</label>
+      <select name="type" style="padding:6px 8px;">
+        {% for t in (question_types or []) + ['系統通知'] %}
+          <option value="{{ t }}" {% if t == '系統通知' %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+
+      <label>主旨：</label>
+      <input type="text" name="subject" placeholder="可留空" style="flex:1; min-width:240px; padding:6px 8px;">
+    </div>
+
+    <div style="margin-top:10px;">
+      <label style="display:block; margin-bottom:6px;">內容：</label>
+      <textarea name="content" rows="4" required
+        style="width:100%; padding:10px; border:1px solid #ccc; border-radius:8px; resize:vertical;"
+        placeholder="輸入要通知會員的內容"></textarea>
+    </div>
+
+    <div style="margin-top:10px; text-align:right;">
+      <button type="submit"
+        style="background:#e91e63; color:white; border:none; padding:8px 16px; border-radius:8px; font-weight:bold; cursor:pointer;">
+        📨 發送
+      </button>
+    </div>
+  </form>
+</div>
   
 
 <form method="get" action="/admin0363/dashboard" style="display:inline-block;">

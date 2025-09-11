@@ -620,6 +620,18 @@ def admin_dashboard():
     show_order_alert = new_order_alert and not session.get("seen_orders")
     show_message_alert = new_message_alert and not session.get("seen_messages")
 
+    # === 供「發送訊息」表單使用的會員下拉 ===
+    member_options = []
+    if tab == "messages":
+        try:
+            member_options = (supabase.table("members")
+                              .select("id, name, account, email")
+                              .order("created_at", desc=True)
+                              .limit(5000)
+                              .execute().data) or []
+        except Exception:
+            member_options = []
+
     # === Render ===
     question_types = ["商品問題", "訂單問題", "其他"]
     response = render_template(
@@ -651,6 +663,8 @@ def admin_dashboard():
         member_page=member_page,
         member_total_pages=member_total_pages,
         member_page_size=member_page_size,
+        member_options=member_options,
+
     )
 
     # 進此頁後視為已讀
@@ -4414,9 +4428,55 @@ def submit_message():
     return render_template("message_success.html")
 
 
+#管理員主動發送訊息
+@app.post("/admin0363/messages/send")
+def admin_send_message():
+    # 僅允許已登入的管理員
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
+
+    from datetime import datetime
+    member_id = (request.form.get("member_id") or "").strip()
+    subject   = (request.form.get("subject") or "").strip()
+    content   = (request.form.get("content") or "").strip()
+    mtype     = (request.form.get("type") or "系統通知").strip()
+
+    if not member_id or not content:
+        flash("請選擇會員並輸入內容", "danger")
+        return redirect("/admin0363/dashboard?tab=messages")
+
+    # 為了沿用你現有的「新回覆提示」機制：
+    #   - is_replied=True：讓會員端視為有「新回覆」
+    #   - is_read=False：會員未讀
+    #   - reply_text=content：回覆內容即本次主動通知
+    #   - content 也一併存，方便列表檢視原文
+    now_iso = datetime.utcnow().isoformat()
+    payload = {
+        "id": str(uuid4()),
+        "member_id": member_id,
+        "type": mtype,                 # 例如「系統通知」
+        "subject": subject or None,
+        "content": content,            # 原文內容
+        "order_number": None,
+        "attachment_path": None,
+        "created_at": now_iso,
+        "updated_at": now_iso,
+        "is_replied": True,            # 觸發你現有的「已回覆」/新回覆提示
+        "is_read": False,              # 讓會員端看到提示
+        "reply_text": content,         # 會員端可看到回覆內容
+    }
+
+    try:
+        supabase.table("messages").insert(payload).execute()
+        flash("訊息已發送給指定會員", "success")
+    except Exception:
+        flash("發送失敗，請稍後再試", "danger")
+
+    return redirect("/admin0363/dashboard?tab=messages")
+
+
+
 #回覆留言（設為已回覆）
-
-
 @app.route("/admin0363/messages/reply/<msg_id>", methods=["POST"])
 def reply_message(msg_id):
     if not session.get("admin_logged_in"):
