@@ -2180,24 +2180,11 @@ def login():
 # === 第三方登入：導向同意頁開始 ===
 
 # 啟動登入：把 next 存起來，取消或成功都可以導回
-@app.get("/login/facebook")
+@app.route("/login/facebook")
 def login_facebook():
-    raw_next = request.args.get("next") or url_for("index")
-    from urllib.parse import urlparse
-    try:
-        p = urlparse(raw_next)
-        if p.netloc or "/login" in (p.path or ""):
-            raw_next = url_for("index")
-    except Exception:
-        raw_next = url_for("index")
-    session["oauth_next"] = raw_next
-
+    # 產生 https 的絕對回呼網址，需與 FB 後台的 Valid OAuth Redirect URIs 完全一致
     redirect_uri = url_for("login_facebook_callback", _external=True, _scheme="https")
-    app.logger.info(f"[FB] using redirect_uri: {redirect_uri}")
     return oauth.facebook.authorize_redirect(redirect_uri)
-
-
-
 
 
 # ========= Google OAuth =========
@@ -2287,59 +2274,90 @@ def login_google_callback():
 
 
 
-# === Facebook 回呼 ===
+# === Facebook 回呼（加強版）===
 @app.route("/login/facebook/callback")
 def login_facebook_callback():
-    # 1) 先處理 Facebook 傳回的錯誤，包含你現在的 1349220
-    if (request.args.get("error")
+    # --- A) Facebook 直接回錯（含使用者取消、1349220 等）---
+    fb_err = (
+        request.args.get("error")
         or request.args.get("error_code")
-        or request.args.get("error_reason")):
-        app.logger.warning(
-            "[FB][callback] error_code=%s error=%s reason=%s message=%s",
-            request.args.get("error_code"),
-            request.args.get("error"),
-            request.args.get("error_reason"),
-            request.args.get("error_message"),
-        )
+        or request.args.get("error_reason")
+        or request.args.get("error_description")
+    )
+    if fb_err:
+        code = request.args.get("error_code")
+        reason = request.args.get("error_reason")
+        msg = request.args.get("error_message") or request.args.get("error_description")
+        app.logger.warning("[FB][callback] error_code=%s error=%s reason=%s message=%s",
+                           code, request.args.get("error"), reason, msg)
+
+        # 針對 1349220（App 未上線/受限）用不同狀態字串，前端可顯示更清楚
+        status = "app_unavailable" if str(code) == "1349220" else "error"
+
         next_url = session.pop("oauth_next", url_for("login"))
-        # 導回登入頁並帶狀態，避免 400 破壞體驗
-        return redirect(f"{next_url}?oauth=facebook&status=error", code=302)
+        return redirect(f"{next_url}?oauth=facebook&status={status}", code=302)
 
     try:
-        # 2) 正常交換 token
+        # --- B) 兌換 access_token（Authlib 會驗 state）---
+        # 備註：有些情況需要帶同一個 redirect_uri；若你發現偶發 "redirect_uri mismatch"，
+        # 可解除下一行註解傳同一個 callback URL。
+        # token = oauth.facebook.authorize_access_token(redirect_uri=url_for("login_facebook_callback", _external=True, _scheme="https"))
         token = oauth.facebook.authorize_access_token()
-        resp = oauth.facebook.get("me?fields=id,name,email,picture.type(large)")
-        data = resp.json()
+        if not isinstance(token, dict) or not token.get("access_token"):
+            raise RuntimeError("facebook authorize_access_token() 回傳異常")
 
-        sub = data.get("id")
+        # --- C) 取使用者資料（容錯）：---
+        # 寬高指定可得較清晰頭像；若沒有 email 也允許登入
+        resp = oauth.facebook.get("me?fields=id,name,email,picture.width(256).height(256)")
+        try:
+            data = resp.json() if hasattr(resp, "json") else {}
+        except Exception:
+            data = {}
+
+        sub = (data or {}).get("id")
         if not sub:
+            # 少見：Graph 回來缺 id，直接視為失敗
             abort(400, "Facebook 回傳缺少 id")
+
+        picture = (((data.get("picture") or {}).get("data")) or {})
+        avatar_url = picture.get("url")
 
         member = upsert_member_from_oauth(
             provider="facebook",
             sub=sub,
             email=data.get("email"),
             name=data.get("name"),
-            avatar_url=((data.get("picture", {}) or {}).get("data") or {}).get("url"),
+            avatar_url=avatar_url,
         )
 
-        session['member_id'] = member["id"]
-        session['user'] = {
-            'account': member.get('account') or (member.get('email') or "facebook_user"),
-            'email': member.get('email'),
-            'name': member.get('name') or data.get('name'),
-            'provider': 'facebook',
-            'avatar_url': member.get('avatar_url'),
+        # --- D) 建立登入狀態 ---
+        session["member_id"] = member["id"]
+        session["user"] = {
+            "account": member.get("account") or (member.get("email") or "facebook_user"),
+            "email": member.get("email"),
+            "name": member.get("name") or data.get("name"),
+            "provider": "facebook",
+            "avatar_url": member.get("avatar_url") or avatar_url,
         }
-        session['incomplete_profile'] = not all([
-            member.get('name'), member.get('phone'), member.get('address')
+        session["incomplete_profile"] = not all([
+            member.get("name"), member.get("phone"), member.get("address")
         ])
 
+        # --- E) 乾淨的安全跳轉（只允許站內 & 非 /login）---
         next_url = session.pop("oauth_next", None) or url_for("index")
-        from urllib.parse import urlparse
+        from urllib.parse import urlparse, urlunparse, parse_qsl, urlencode
         p = urlparse(next_url)
-        if p.netloc or "/login" in (p.path or ""):
+
+        # 外站/含 netloc → 改回首頁；避免 open redirect
+        if p.netloc:
             next_url = url_for("index")
+        else:
+            # 清理掉任何 oauth 訊息參數，避免殘留
+            query = [(k, v) for (k, v) in parse_qsl(p.query) if k not in {"oauth", "status", "error"}]
+            clean = p._replace(query=urlencode(query))
+            next_url = urlunparse(clean)
+            if "/login" in (p.path or ""):
+                next_url = url_for("index")
 
         resp = redirect(next_url, code=302)
         resp.headers["Cache-Control"] = "no-store"
@@ -2349,6 +2367,7 @@ def login_facebook_callback():
         app.logger.exception("[FB][callback] exchange failed: %s", e)
         next_url = session.pop("oauth_next", url_for("login"))
         return redirect(f"{next_url}?oauth=facebook&status=error", code=302)
+
 
 # === 第三方登入：導向同意頁結束 ===
 
