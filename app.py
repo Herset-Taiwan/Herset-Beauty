@@ -2188,35 +2188,9 @@ def login():
 def login_facebook():
     next_url = request.args.get("next") or request.referrer or url_for("index")
     session["oauth_next"] = next_url
-    redirect_path = url_for("facebook_callback")
-    redirect_uri = f"{OAUTH_REDIRECT_BASE}{redirect_path}"
+
+    redirect_uri = url_for("login_facebook_callback", _external=True, _scheme="https")
     return oauth.facebook.authorize_redirect(redirect_uri)
-
-
-# Facebook callback
-@app.get("/login/facebook/callback")
-def facebook_callback():
-    # 使用者按「取消」或發生錯誤時，Facebook 會把 error 帶回 redirect_uri
-    if (
-        request.args.get("error")                     # e.g. access_denied
-        or request.args.get("error_reason") == "user_denied"
-        or request.args.get("error_code")             # e.g. 200
-    ):
-        # 導回首頁（或先前頁）而不是顯示錯誤訊息
-        next_url = session.pop("oauth_next", url_for("index"))
-        return redirect(next_url)  # 也可加參數：url_for('index', login='cancelled')
-
-    # 沒有錯誤才做 token 交換 / 取得用戶資料
-    try:
-        token = oauth.facebook.authorize_access_token()  # 視你的套件/實作而定
-        # ... 這裡處理登入、建立 session ...
-        next_url = session.pop("oauth_next", url_for("index"))
-        return redirect(next_url)
-    except Exception:
-        # 發生例外也導回（避免把錯誤印在畫面上）
-        next_url = session.pop("oauth_next", url_for("index"))
-        return redirect(next_url)  # 也可帶 login='failed'
-
 
 
 # ========= Google OAuth =========
@@ -2303,7 +2277,6 @@ def login_google_callback():
     resp = redirect(next_url, code=302)
     resp.headers["Cache-Control"] = "no-store"
     return resp
-
 
 
 
