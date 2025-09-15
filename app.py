@@ -2182,13 +2182,21 @@ def login():
 # 啟動登入：把 next 存起來，取消或成功都可以導回
 @app.get("/login/facebook")
 def login_facebook():
-    # 登入完成或取消要回到哪
-    next_url = request.args.get("next") or request.referrer or url_for("index")
-    session["oauth_next"] = next_url
+    raw_next = request.args.get("next") or url_for("index")
+    from urllib.parse import urlparse
+    try:
+        p = urlparse(raw_next)
+        if p.netloc or "/login" in (p.path or ""):
+            raw_next = url_for("index")
+    except Exception:
+        raw_next = url_for("index")
+    session["oauth_next"] = raw_next
 
-    # 產生 https 的絕對回呼網址，endpoint 要對應到下方唯一保留的函式
     redirect_uri = url_for("login_facebook_callback", _external=True, _scheme="https")
+    app.logger.info(f"[FB] using redirect_uri: {redirect_uri}")
     return oauth.facebook.authorize_redirect(redirect_uri)
+
+
 
 
 
