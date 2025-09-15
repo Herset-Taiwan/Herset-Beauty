@@ -2290,36 +2290,65 @@ def login_google_callback():
 # === Facebook 回呼 ===
 @app.route("/login/facebook/callback")
 def login_facebook_callback():
+    # 1) 先處理 Facebook 傳回的錯誤，包含你現在的 1349220
+    if (request.args.get("error")
+        or request.args.get("error_code")
+        or request.args.get("error_reason")):
+        app.logger.warning(
+            "[FB][callback] error_code=%s error=%s reason=%s message=%s",
+            request.args.get("error_code"),
+            request.args.get("error"),
+            request.args.get("error_reason"),
+            request.args.get("error_message"),
+        )
+        next_url = session.pop("oauth_next", url_for("login"))
+        # 導回登入頁並帶狀態，避免 400 破壞體驗
+        return redirect(f"{next_url}?oauth=facebook&status=error", code=302)
+
     try:
+        # 2) 正常交換 token
         token = oauth.facebook.authorize_access_token()
         resp = oauth.facebook.get("me?fields=id,name,email,picture.type(large)")
         data = resp.json()
+
         sub = data.get("id")
-        name = data.get("name")
-        email = data.get("email")  # 有時可能為 None
-        picture = (data.get("picture", {}).get("data") or {}).get("url")
         if not sub:
             abort(400, "Facebook 回傳缺少 id")
 
         member = upsert_member_from_oauth(
-    provider="facebook", sub=sub, email=email, name=name, avatar_url=picture
-)
-
+            provider="facebook",
+            sub=sub,
+            email=data.get("email"),
+            name=data.get("name"),
+            avatar_url=((data.get("picture", {}) or {}).get("data") or {}).get("url"),
+        )
 
         session['member_id'] = member["id"]
         session['user'] = {
-            'account': member.get('account') or (email or "facebook_user"),
-            'email': member.get('email')
+            'account': member.get('account') or (member.get('email') or "facebook_user"),
+            'email': member.get('email'),
+            'name': member.get('name') or data.get('name'),
+            'provider': 'facebook',
+            'avatar_url': member.get('avatar_url'),
         }
-        if not member.get('name') or not member.get('phone') or not member.get('address'):
-            session['incomplete_profile'] = True
-        else:
-            session.pop('incomplete_profile', None)
+        session['incomplete_profile'] = not all([
+            member.get('name'), member.get('phone'), member.get('address')
+        ])
 
-        next_url = request.args.get("next") or url_for("index")
-        return redirect(next_url)
+        next_url = session.pop("oauth_next", None) or url_for("index")
+        from urllib.parse import urlparse
+        p = urlparse(next_url)
+        if p.netloc or "/login" in (p.path or ""):
+            next_url = url_for("index")
+
+        resp = redirect(next_url, code=302)
+        resp.headers["Cache-Control"] = "no-store"
+        return resp
+
     except Exception as e:
-        return f"Facebook 登入失敗：{e}", 400
+        app.logger.exception("[FB][callback] exchange failed: %s", e)
+        next_url = session.pop("oauth_next", url_for("login"))
+        return redirect(f"{next_url}?oauth=facebook&status=error", code=302)
 
 # === 第三方登入：導向同意頁結束 ===
 
