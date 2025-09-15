@@ -2179,18 +2179,17 @@ def login():
 
 # === 第三方登入：導向同意頁開始 ===
 
-
-
-
-
 # 啟動登入：把 next 存起來，取消或成功都可以導回
 @app.get("/login/facebook")
 def login_facebook():
+    # 登入完成或取消要回到哪
     next_url = request.args.get("next") or request.referrer or url_for("index")
     session["oauth_next"] = next_url
 
+    # 產生 https 的絕對回呼網址，endpoint 要對應到下方唯一保留的函式
     redirect_uri = url_for("login_facebook_callback", _external=True, _scheme="https")
     return oauth.facebook.authorize_redirect(redirect_uri)
+
 
 
 # ========= Google OAuth =========
@@ -2315,6 +2314,7 @@ def login_facebook_callback():
         return f"Facebook 登入失敗：{e}", 400
 
 # === 第三方登入：導向同意頁結束 ===
+
 
 # ----- LINE provider 註冊 -----
 # ========= LINE OAuth =========
