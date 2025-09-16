@@ -1475,12 +1475,27 @@ def admin_banners_upload():
 
     # 取得公開網址（這個網址可跨機、重啟、換節點）
     image_url = supabase.storage.from_("images").get_public_url(storage_path)
+
+    # ➊ 取得目前最大 sort_order，計算下一個號碼（沒有資料時從 0 開始）
+    try:
+        last = (supabase.table("banners")
+                .select("sort_order")
+                .order("sort_order", desc=True)
+                .limit(1).execute().data)
+        cur_max = last[0].get("sort_order") if last else None
+        next_order = (int(cur_max) + 1) if isinstance(cur_max, (int, float)) else 0
+    except Exception:
+        next_order = 0
+
+    # ➋ 帶入 sort_order 寫入
     supabase.table("banners").insert({
         "title": title or None,
         "href": href or None,
         "image_url": image_url,
-        "is_active": True
+        "is_active": True,
+        "sort_order": next_order,   # ← 新增這行
     }).execute()
+
     return redirect("/admin0363/features/banners")
 
 @app.post("/admin0363/features/banners/toggle/<int:bid>")
