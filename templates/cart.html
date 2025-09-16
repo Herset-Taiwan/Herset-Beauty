@@ -183,6 +183,17 @@
 .ship-btn-secondary:hover{ background:#fbf7f5; }
 
 
+/* 右上角「繼續購物」 */
+.continue-btn{
+  background:#fff; color:#5A4B45; border:1px solid #eaded7;
+  border-radius:999px; padding:8px 14px; font-weight:800;
+  text-decoration:none; display:inline-flex; align-items:center; gap:6px;
+}
+.continue-btn:hover{ background:#fbf7f5; border-color:#e9b6c2; }
+@media (max-width:480px){
+  .continue-btn{ padding:6px 10px; font-size:14px; }
+}
+
 /* ==== 加購區（免運進度與推薦） ==== */
 .upsell { margin-top:18px; padding:16px; border:1px solid #eee; border-radius:12px; background:#fff7f9; }
 .upsell-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; }
@@ -269,13 +280,18 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
                            or session.user.get('email') 
                            or '會員') %}
     <div class="left">您好：<span class="account">{{ display_name }}</span></div>
+    <div class="right">
+      <a class="continue-btn" href="/">← 繼續購物</a>
+    </div>
   {% else %}
     <div class="left">您尚未登入會員，請先登入會員才可結帳。</div>
-    <div class="right">
+    <div class="right" style="display:flex; gap:8px;">
       <a class="login-btn" href="/login?next=cart">登入會員</a>
+      <a class="continue-btn" href="/">← 繼續購物</a>
     </div>
   {% endif %}
 </div>
+
 
 
     {% with messages = get_flashed_messages() %}
