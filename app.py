@@ -2762,20 +2762,19 @@ def cart():
     # 2) 從 products 表抓一批可售賣商品，排除購物車中已存在者
     # 3) 依「價格接近 還差金額 free_shipping_diff」排序，取前 6 筆
     # ============================================================
-    upsell_products = []
+   upsell_products = []
     remain_for_upsell = max(0.0, (free_shipping_threshold or 0.0) - total)
 
     if remain_for_upsell > 0:
         try:
             cart_ids = {str(p.get('id')) for p in products if p.get('id')}
 
-            q = (supabase.table('products')
-                 .select('id,name,price,discount_price,image,images,is_active,stock,product_type')
-                 .eq('is_active', True)
-                 .gt('stock', 0)
-                 .limit(60)  # 先拉一批回來在記憶體過濾/排序
-                 .execute())
-            rows = q.data or []
+            # 只選取一定存在的欄位，避免未知欄位導致 42703
+            res = (supabase.table('products')
+                   .select('id,name,price,discount_price,image,images,product_type')
+                   .limit(60)
+                   .execute())
+            rows = res.data or []
 
             def eff_price(r):
                 p1 = r.get('discount_price') or r.get('price') or 0
@@ -2784,19 +2783,32 @@ def cart():
                 except:
                     return 0.0
 
-            # 排除：已在購物車 / 價格<=0 / （如不想推薦套組就排除）
             cand = []
             for r in rows:
+                # 排除：已在購物車
                 if str(r.get('id')) in cart_ids:
                     continue
-                if (r.get('product_type') == 'bundle'):
-                    # 若不想推薦套組，保留這段 continue；若也要推薦套組，請把這行註解掉
+                # 若你不想推薦套組，保留這段；若也要推薦套組，註解掉即可
+                if r.get('product_type') == 'bundle':
                     continue
+                # 價格必須 > 0
                 if eff_price(r) <= 0:
                     continue
+
+                # 如果你的表其實有 is_active/stock，可「選擇性」保留判斷（鍵不存在就略過）
+                ia = r.get('is_active')
+                if ia is False:
+                    continue
+                st = r.get('stock')
+                try:
+                    if st is not None and float(st) <= 0:
+                        continue
+                except:
+                    pass
+
                 cand.append(r)
 
-            # 依與差額距離排序（越接近越前）
+            # 依「價格與差額的距離」排序，取前 6 筆
             cand.sort(key=lambda r: abs(eff_price(r) - remain_for_upsell))
             upsell_products = cand[:6]
 
