@@ -184,41 +184,55 @@
 
 
 /* ==== 加購區（免運進度與推薦） ==== */
-.upsell {
-  margin-top: 18px; padding: 16px; border: 1px solid #eee; border-radius: 12px; background: #fff7f9;
-}
-.upsell-head {
-  display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;
-}
+.upsell { margin-top:18px; padding:16px; border:1px solid #eee; border-radius:12px; background:#fff7f9; }
+.upsell-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; }
 .upsell-title { font-weight:800; color:#5a4b45; display:flex; align-items:center; gap:8px; }
-.upsell-tip   { color:#a33; font-size:14px; font-weight:700; }
-.upsell-ok    { color:#0a8a4b; font-size:14px; font-weight:700; }
+.upsell-tip { color:#a33; font-size:14px; font-weight:700; }
+.upsell-ok { color:#0a8a4b; font-size:14px; font-weight:700; }
+.upsell-bar { height:10px; background:#ffe3ec; border-radius:999px; overflow:hidden; margin:6px 0 12px; }
+.upsell-bar > div { height:100%; background:#e91e63; width:0%; }
 
-.upsell-bar {
-  height: 10px; background: #ffe3ec; border-radius: 999px; overflow: hidden; margin: 6px 0 12px 0;
-}
-.upsell-bar > div {
-  height: 100%; background: #e91e63; width: 0%;
+.upsell-rail { position:relative; }
+.upsell-scroller {
+  display:flex; gap:12px; overflow-x:auto; padding:8px 4px 2px;
+  scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin; flex-wrap: nowrap;                 /* ← 新增這行，強制單行橫滑 */
+  mask-image: linear-gradient(to right, transparent 0, black 24px, black calc(100% - 24px), transparent 100%);
 }
 
-.upsell-list {
-  display:grid; grid-template-columns: repeat(3, 1fr); gap:12px;
+.upsell-card {
+  flex:0 0 260px; /* 卡片寬度 */
+  scroll-snap-align:start;
+  display:flex; gap:10px; padding:12px; border:1px solid #f0d7df; border-radius:12px; background:#fff;
 }
-.upsell-item {
-  display:flex; gap:10px; padding:10px; border:1px solid #f0d7df; border-radius:10px; background:#fff;
-}
-.upsell-item img {
+.upsell-card img {
   width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid #eee;
 }
-.upsell-item .name { font-size:14px; color:#3c3c3c; font-weight:700; line-height:1.4; }
-.upsell-item .price { margin-top:4px; font-weight:800; color:#e91e63; }
-.upsell-item form { margin-top:auto; }
+.upsell-card .name { font-size:14px; color:#3c3c3c; font-weight:700; line-height:1.4; }
+.upsell-card .price { margin-top:4px; font-weight:800; color:#e91e63; }
+.upsell-card form { margin-top:auto; }
 .upsell-add-btn {
-  background:#e91e63; color:#fff; border:none; border-radius:8px; padding:6px 10px; cursor:pointer; font-size:13px; font-weight:800;
+  background:#e91e63; color:#fff; border:none; border-radius:999px; padding:6px 12px; cursor:pointer; font-size:13px; font-weight:800;
 }
 
-@media (max-width: 720px){
-  .upsell-list { grid-template-columns: repeat(2, 1fr); }
+.upsell-nav {
+  position:absolute; top:50%; transform:translateY(-50%);
+  width:34px; height:34px; border-radius:999px; border:1px solid #e5e7eb;
+  background:#fff; box-shadow:0 4px 10px rgba(0,0,0,.06);
+  display:none; align-items:center; justify-content:center; cursor:pointer;
+}
+.upsell-nav:hover{ background:#fbf7f5; }
+.upsell-nav.left{ left:-8px; }
+.upsell-nav.right{ right:-8px; }
+
+/* 螢幕夠寬再顯示左右箭頭 */
+@media (min-width: 900px){
+  .upsell-nav{ display:flex; }
+}
+
+/* 手機：卡片窄一點 */
+@media (max-width: 480px){
+  .upsell-card{ flex-basis: 220px; }
 }
 
 
@@ -396,27 +410,32 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
 
   {# 只有「未達免運」時才顯示推薦商品 #}
   {% if remain > 0 and upsell_products and upsell_products|length > 0 %}
-    <div class="upsell-list">
-      {% for u in upsell_products %}
-        {% set up = (u.get('discount_price') or u.get('price') or 0) | float %}
-        <div class="upsell-item">
-          {% set cover = u.get('image') or (u.get('images')[0] if u.get('images') else None) %}
-          <img src="{{ cover or url_for('static', filename='placeholder.png') }}"
-               onerror="this.src='{{ url_for('static', filename='placeholder.png') }}'"
-               alt="{{ u.get('name') or '' }}">
-          <div style="display:flex; flex-direction:column; flex:1;">
-            <div class="name">{{ u.get('name') }}</div>
-            <div class="price">${{ '%.0f' % up }}</div>
-            <form method="POST" action="/add_to_cart">
-              <input type="hidden" name="product_id" value="{{ u.get('id') }}">
-              <input type="hidden" name="qty" value="1">
-              <input type="hidden" name="next" value="cart">
-              <button type="submit" class="upsell-add-btn">＋ 加入購物車</button>
-            </form>
-          </div>
+    <div class="upsell-rail">
+  <button type="button" class="upsell-nav left" id="upsell-prev">‹</button>
+  <div class="upsell-scroller" id="upsell-scroller">
+    {% for u in upsell_products %}
+      {% set up = (u.get('discount_price') or u.get('price') or 0) | float %}
+      <div class="upsell-card">
+        {% set cover = u.get('image') or (u.get('images')[0] if u.get('images') else None) %}
+        <img src="{{ cover or url_for('static', filename='placeholder.png') }}"
+             onerror="this.src='{{ url_for('static', filename='placeholder.png') }}'"
+             alt="{{ u.get('name') or '' }}">
+        <div style="display:flex; flex-direction:column; flex:1;">
+          <div class="name">{{ u.get('name') }}</div>
+          <div class="price">${{ '%.0f' % up }}</div>
+          <form method="POST" action="/add_to_cart">
+            <input type="hidden" name="product_id" value="{{ u.get('id') }}">
+            <input type="hidden" name="qty" value="1">
+            <input type="hidden" name="next" value="cart">
+            <button type="submit" class="upsell-add-btn">＋ 加入購物車</button>
+          </form>
         </div>
-      {% endfor %}
-    </div>
+      </div>
+    {% endfor %}
+  </div>
+  <button type="button" class="upsell-nav right" id="upsell-next">›</button>
+</div>
+
   {% endif %}
 </div>
 
@@ -564,5 +583,35 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
 
     <a href="/" class="back-btn">← 繼續購物</a>
   </div>
+
+  <script>
+(function(){
+  const scroller = document.getElementById('upsell-scroller');
+  const prev = document.getElementById('upsell-prev');
+  const next = document.getElementById('upsell-next');
+  if (!scroller) return;
+
+  // 左右箭頭：一次捲動 90% 寬
+  function jump(dir){
+    const w = scroller.clientWidth;
+    scroller.scrollBy({ left: dir * Math.round(w * 0.9), behavior: 'smooth' });
+  }
+  prev && prev.addEventListener('click', () => jump(-1));
+  next && next.addEventListener('click', () => jump(1));
+
+  // 拖曳滑動（桌面也能拖）
+  let isDown=false,startX,scrollLeft;
+  scroller.addEventListener('pointerdown', e=>{
+    isDown=true; startX=e.pageX; scrollLeft=scroller.scrollLeft; scroller.setPointerCapture(e.pointerId);
+  });
+  scroller.addEventListener('pointermove', e=>{
+    if(!isDown) return; scroller.scrollLeft = scrollLeft - (e.pageX - startX);
+  });
+  ['pointerup','pointercancel','pointerleave'].forEach(ev=>{
+    scroller.addEventListener(ev, ()=>{ isDown=false; });
+  });
+})();
+</script>
+
 </body>
 </html>

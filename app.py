@@ -2814,8 +2814,9 @@ def cart():
 
                 cand.append(r)
 
-            # 依「與差額距離」排序，取前 6 筆
-            cand.sort(key=lambda r: abs(eff_price(r) - remain_for_upsell))
+            # 依價格由小到大（最小金額優先）
+            cand.sort(key=lambda r: eff_price(r))
+
             upsell_products = cand[:6]
 
         except Exception as e:
