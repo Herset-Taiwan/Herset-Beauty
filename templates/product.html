@@ -548,6 +548,21 @@ body.product-page .tab-btn.active {
 }
 #bundle-steps .step .step-options button.selected{ background:#5E3C2C; color:#fff; border-color:#5E3C2C; }
 
+
+/* ====== 商品頁即時提醒（flash） ====== */
+.flash-msg{
+  margin: 12px 0 18px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #fdecea;
+  color:#8a1c1c;
+  border: 1px solid #f5c2c0;
+  font-weight: 700;
+  transition: opacity .4s ease;
+}
+.flash-msg.warn::before{ content: "⚠ "; }
+
+
   </style>
 
 <!-- FB像素Meta Pixel Code -->
@@ -571,6 +586,19 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
 </head>
 {% set is_bundle = (product.get('product_type') == 'bundle') %}
 <body class="product-page">
+
+  {% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div class="flash-msg warn" id="option-hint">
+      {% for m in messages %}<p>{{ m }}</p>{% endfor %}
+    </div>
+    <script>
+      // 幾秒後淡出提醒
+      setTimeout(()=>{ const el=document.getElementById('option-hint'); if(el){ el.style.opacity='0'; } }, 3500);
+    </script>
+  {% endif %}
+{% endwith %}
+
 
 <div class="header-bar">
   <a href="/" class="back-btn">← 返回首頁</a>
@@ -707,7 +735,7 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
 
     {% if not is_bundle %}
   <!-- 單品規格（保留原本） -->
-  <div class="options">
+  <div id="options" class="options">
     <label>選項：</label><br>
     {% for opt in product['options'] %}
       <button type="button" class="single-opt">{{ opt }}</button>
@@ -715,6 +743,7 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
   </div>
 {% else %}
   {# === 套組（逐步挑選） === #}
+  <a id="options"></a>
   <div id="bundle-steps" data-total="{{ required_total or 1 }}">
     <!-- 第 1 步，JS 會在選完口味後自動加上第 2 / 3 步… -->
     <div class="step" data-step="1">
@@ -828,7 +857,7 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
   document.getElementById('selected-option-input').value = optionToSend;
   document.getElementById('qty-input-checkout').value = qty;
 
-  fetch('/add_to_cart', {
+    fetch('/add_to_cart', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: `product_id=${productId}&qty=${qty}&option=${encodeURIComponent(optionToSend)}`
@@ -842,6 +871,9 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
         countEl.style.display = 'inline-block';
       }
       showTip('✅ 已加入購物車！');
+    } else if (data.requires_option && data.redirect) {
+      // 後端判定需要規格 → 直接導到商品頁選項區
+      window.location.href = data.redirect;
     } else {
       alert("加入購物車失敗");
     }
@@ -1217,6 +1249,20 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
+<script>
+(function(){
+  const params = new URLSearchParams(location.search);
+  if (params.get('need_option') === '1') {
+    const el = document.getElementById('options');
+    if (el) {
+      el.scrollIntoView({behavior:'smooth', block:'center'});
+      el.style.outline = '3px solid #e91e63';
+      el.style.borderRadius = '12px';
+      setTimeout(()=>{ el.style.outline = 'none'; }, 1800);
+    }
+  }
+})();
+</script>
 
 
 </body>

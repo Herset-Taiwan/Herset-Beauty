@@ -4190,7 +4190,7 @@ def add_to_cart():
     qty_raw    = pick('qty', default=1)
     option     = (pick('option', default='') or '').strip()
     action     = (pick('action', default='') or '').strip()
-    next_url   = (pick('next', default='') or '').strip()              # ← 新增：讓 upsell 能導回 cart
+    next_url   = (pick('next', default='') or '').strip()              # 讓 upsell 能導回 cart
 
     # 解析數量
     try:
@@ -4220,8 +4220,8 @@ def add_to_cart():
             return redirect(url_for('cart'))
         return jsonify(success=False, message="找不到商品"), 404
 
-    # ---- A) 若商品有選項但未帶 option：導去商品頁先選 ----
-    # 盡量相容不同欄位命名：options / option_values / variants(物件陣列) / 逗號字串
+    # ---- A) 若商品有選項但未帶 option（或帶了無效 option）：導去商品頁先選 ----
+    # 相容不同欄位：options / option_values / variants(物件陣列) / 逗號字串
     def extract_options(p):
         src = None
         if isinstance(p.get('options'), list) and p['options']:
@@ -4238,7 +4238,6 @@ def add_to_cart():
         elif isinstance(p.get('options'), str) and p['options'].strip():
             import re
             src = [s.strip() for s in re.split(r'[,\n、|｜/]+', p['options']) if s.strip()]
-
         if not src:
             return []
         # 去重+過濾空白
@@ -4246,15 +4245,25 @@ def add_to_cart():
         for s in src:
             s = (str(s) or '').strip()
             if s and s not in seen:
-                out.append(s)
-                seen.add(s)
+                out.append(s); seen.add(s)
         return out
 
     candidate_options = extract_options(product)
-    if candidate_options and not option:
-        # 表單流程（例如加購卡片）：直接導去商品頁讓使用者選規格
-        product_url = f"/product/{product_id}"   # 若你的商品頁路由不同，改這行
-        # 只有表單才導頁；AJAX 則回 JSON 讓前端自己處理
+
+    def _norm(s):  # 大小寫/空白不敏感比對
+        return (str(s or '')).strip().lower()
+
+    option_invalid = False
+    if candidate_options:
+        if not option:
+            option_invalid = True
+        else:
+            valid = {_norm(x) for x in candidate_options}
+            option_invalid = (_norm(option) not in valid)
+
+    if option_invalid:
+        # 指到商品頁並直接定位到選項區塊
+        product_url = f"/product/{product_id}?need_option=1#options"
         wants_json = (
             request.is_json
             or 'application/json' in (request.headers.get('Accept') or '')
@@ -4267,7 +4276,7 @@ def add_to_cart():
                 product_id=product_id,
                 redirect=product_url
             ), 200
-        # 非 AJAX：直接帶去商品頁
+        # 非 AJAX：直接帶去商品頁並顯示提醒（商品頁需渲染 flash）
         try:
             flash("此商品需先選擇款式，再加入購物車")
         except Exception:
@@ -4363,6 +4372,7 @@ def add_to_cart():
 
     total_qty = session.get('cart_count', len(cart))
     return jsonify(success=True, count=total_qty)
+
 
 
 
