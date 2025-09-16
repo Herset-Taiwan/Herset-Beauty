@@ -221,6 +221,23 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY") or os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
+# ===== Banners helpers =====
+def get_active_banners():
+    """
+    從 banners 資料表取出啟用中的輪播，依 sort_order 正序。
+    """
+    try:
+        res = (supabase.table("banners")
+               .select("*")
+               .eq("is_active", True)
+               .order("sort_order", desc=False)
+               .order("id", desc=False)
+               .execute())
+        return res.data or []
+    except Exception:
+        return []
+
+
 # ✅ 郵件設定
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
@@ -333,7 +350,11 @@ def index():
 
     cart = session.get('cart', [])
     cart_count = sum(item.get('qty', 0) for item in cart)
-    return render_template("index.html", products=products, cart_count=cart_count)
+    return render_template("index.html",
+                       products=products,
+                       cart_count=cart_count,
+                       banners=get_active_banners())
+
 
 
 # ✅ SEO相關
@@ -1409,6 +1430,86 @@ def admin_features_hub():
     # 中樞頁不需要 discounts 參數
     return render_template("features_hub.html")
 
+# ====== Admin: 首頁輪播圖管理開始 ======
+from werkzeug.utils import secure_filename
+import os, time, json
+
+# 本地上傳目錄（會自動建立）
+BANNER_UPLOAD_DIR = os.path.join(app.root_path, "static", "uploads", "banners")
+os.makedirs(BANNER_UPLOAD_DIR, exist_ok=True)
+
+def _admin_required_redirect():
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
+
+@app.get("/admin0363/features/banners")
+def admin_banners_page():
+    auth = _admin_required_redirect()
+    if auth: return auth
+    res = supabase.table("banners").select("*").order("sort_order").order("id").execute()
+    items = res.data or []
+    return render_template("admin_banners.html", items=items)
+
+@app.post("/admin0363/features/banners/upload")
+def admin_banners_upload():
+    auth = _admin_required_redirect()
+    if auth: return auth
+    title = (request.form.get("title") or "").strip()
+    href  = (request.form.get("href") or "").strip()
+    f = request.files.get("image")
+    if not f or not f.filename:
+        return "缺少圖片", 400
+
+    # 儲存實體檔
+    ext = os.path.splitext(f.filename)[1].lower()
+    filename = f"{int(time.time()*1000)}{ext}"
+    save_path = os.path.join(BANNER_UPLOAD_DIR, filename)
+    f.save(save_path)
+
+    image_url = f"/static/uploads/banners/{filename}"
+    supabase.table("banners").insert({
+        "title": title or None,
+        "href": href or None,
+        "image_url": image_url,
+        "is_active": True
+    }).execute()
+    return redirect("/admin0363/features/banners")
+
+@app.post("/admin0363/features/banners/toggle/<int:bid>")
+def admin_banners_toggle(bid):
+    auth = _admin_required_redirect()
+    if auth: return auth
+    row = supabase.table("banners").select("is_active").eq("id", bid).limit(1).execute().data
+    cur = bool(row and row[0].get("is_active"))
+    supabase.table("banners").update({"is_active": not cur}).eq("id", bid).execute()
+    return redirect("/admin0363/features/banners")
+
+@app.post("/admin0363/features/banners/delete/<int:bid>")
+def admin_banners_delete(bid):
+    auth = _admin_required_redirect()
+    if auth: return auth
+    row = supabase.table("banners").select("image_url").eq("id", bid).limit(1).execute().data
+    supabase.table("banners").delete().eq("id", bid).execute()
+    # 嘗試刪本地檔（若存在）
+    try:
+        if row and (row[0].get("image_url") or "").startswith("/static/uploads/banners/"):
+            os.remove(os.path.join(app.root_path, row[0]["image_url"].lstrip("/")))
+    except Exception:
+        pass
+    return redirect("/admin0363/features/banners")
+
+@app.post("/admin0363/features/banners/reorder")
+def admin_banners_reorder():
+    auth = _admin_required_redirect()
+    if auth: return auth
+    data = request.get_json(silent=True) or {}
+    for idx, bid in enumerate(data.get("ids") or []):
+        try:
+            supabase.table("banners").update({"sort_order": idx}).eq("id", bid).execute()
+        except Exception:
+            pass
+    return jsonify(ok=True)
+# ====== Admin: 首頁輪播圖管理 結束======
 
 # 功能管理 → 網站綜合設定（表單頁）
 @app.get("/admin0363/features/settings")

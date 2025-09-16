@@ -3,18 +3,32 @@
 {% block title %}HERSET 官方網站｜天然保養 × 品味生活{% endblock %}
 
 {% block banner %}
-<!-- 首頁輪播圖：只在首頁顯示 -->
+<!-- 首頁輪播圖（後台可管理） -->
 <div class="carousel-container">
   <div class="carousel">
-    <img src="{{ url_for('static', filename='uploads/banner1.png') }}" class="carousel-img active">
-    <img src="{{ url_for('static', filename='uploads/banner2.png') }}" class="carousel-img">
-    <img src="{{ url_for('static', filename='uploads/banner3.jpg') }}" class="carousel-img">
-    <img src="{{ url_for('static', filename='uploads/banner4.png') }}" class="carousel-img">
-    <!-- <img src="{{ url_for('static', filename='uploads/banner5.png') }}" class="carousel-img">  -->
+    {% if banners and banners|length > 0 %}
+      {% for b in banners %}
+        {% if b.href %}
+          <a href="{{ b.href }}">
+            <img src="{{ b.image_url }}" alt="{{ b.title or ('banner ' ~ loop.index) }}"
+                 class="carousel-img {{ 'active' if loop.first }}">
+          </a>
+        {% else %}
+          <img src="{{ b.image_url }}" alt="{{ b.title or ('banner ' ~ loop.index) }}"
+               class="carousel-img {{ 'active' if loop.first }}">
+        {% endif %}
+      {% endfor %}
+    {% else %}
+      {# 後備：若資料表還沒建或沒有資料，保留原三張以防空白 #}
+      <img src="{{ url_for('static', filename='uploads/banner1.png') }}" class="carousel-img active">
+      <img src="{{ url_for('static', filename='uploads/banner2.png') }}" class="carousel-img">
+      <img src="{{ url_for('static', filename='uploads/banner3.jpg') }}" class="carousel-img">
+    {% endif %}
   </div>
   <div class="carousel-dots" id="carouselDots"></div>
 </div>
 {% endblock %}
+
 
 {% block content %}
 <!-- 商品規格提示 -->
