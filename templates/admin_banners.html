@@ -5,25 +5,32 @@
   <title>首頁輪播圖管理 - HERSET BEAUTY</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    .wrap{max-width:1100px;margin:32px auto;padding:0 20px;font-family:"Segoe UI","Noto Sans TC",sans-serif}
-    h1{margin:0 0 16px;font-size:24px}
-    .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
-    .grid{display:grid;grid-template-columns:1fr;gap:16px}
-    @media(min-width:720px){.grid{grid-template-columns:repeat(2,1fr)}}
-    .card{border:1px solid #e5e7eb;border-radius:14px;background:#fff;box-shadow:0 8px 20px rgba(0,0,0,.06);padding:14px}
-    .row{display:flex;gap:12px;align-items:center}
-    .thumb{width:180px;aspect-ratio:16/9;object-fit:cover;border-radius:10px;border:1px solid #eee}
-    .meta{flex:1}
-    .meta small{color:#6b7280}
-    .btns{display:flex;gap:8px}
-    .btn{padding:8px 12px;border-radius:10px;border:1px solid #e5e7eb;background:#f8fafc;cursor:pointer}
-    .btn.primary{background:#e91e63;color:#fff;border-color:#e91e63}
-    .list{margin-top:18px}
-    .draggable{cursor:move}
-    form.inline{display:inline}
-    .upload{margin-top:10px;border:1px dashed #e5e7eb;border-radius:12px;padding:12px;background:#fff}
-    .back{background:#9ca3af;color:#fff;text-decoration:none;padding:8px 14px;border-radius:10px}
-  </style>
+  .wrap{max-width:1100px;margin:32px auto;padding:0 20px;font-family:"Segoe UI","Noto Sans TC",sans-serif}
+  h1{margin:0 0 16px;font-size:24px}
+  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+  .grid{display:grid;grid-template-columns:1fr;gap:16px}
+  @media(min-width:720px){.grid{grid-template-columns:repeat(2,1fr)}}
+  .card{border:1px solid #e5e7eb;border-radius:14px;background:#fff;box-shadow:0 8px 20px rgba(0,0,0,.06);padding:14px}
+  .row{display:grid;grid-template-columns:200px 1fr auto;gap:14px;align-items:center} /* ← 改成三欄：圖 / 內容 / 按鈕 */
+  .thumb{width:200px;aspect-ratio:16/9;object-fit:cover;border-radius:10px;border:1px solid #eee;background:#f8fafc}
+  .meta{flex:1}
+  .meta small{color:#6b7280}
+
+  /* 表單排版：兩列（title / href），欄寬一致且貼齊 */
+  .meta form{display:grid;grid-template-columns:1fr auto;grid-row-gap:8px;grid-column-gap:8px;align-items:center}
+  .meta input[type="text"]{width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px;background:#f9fafb}
+  .meta .save-btn{padding:8px 10px;border-radius:10px;border:1px solid #e5e7eb;background:#e91e63;color:#fff;cursor:pointer}
+  .meta .save-btn:disabled{opacity:.6;cursor:not-allowed}
+
+  /* 右側操作鈕：改成直向窄幅 */
+  .btns{display:flex;flex-direction:column;gap:8px}
+  .btn{padding:8px 10px;border-radius:10px;border:1px solid #e5e7eb;background:#f8fafc;cursor:pointer;white-space:nowrap}
+  .btn.danger{background:#fee2e2;border-color:#fecaca}
+
+  /* 狀態/ID 排版更淡、更緊湊 */
+  .meta .fine{display:flex;gap:14px;color:#6b7280;font-size:13px;margin-top:4px}
+</style>
+
 </head>
 <body>
   <div class="wrap">
@@ -52,32 +59,30 @@
         <div class="row">
           <img class="thumb" src="{{ it.image_url }}?v={{ it.id }}" alt="">
           <div class="meta">
-  <form action="/admin0363/features/banners/update/{{ it.id }}" method="post" style="display:flex;flex-direction:column;gap:8px">
-    <div style="display:flex;gap:8px;align-items:center">
-      <input type="text" name="title" value="{{ it.title or '' }}" placeholder="標題（可空白）"
-             style="flex:1;min-width:160px;padding:8px">
-    </div>
-    <div style="display:flex;gap:8px;align-items:center">
-      <input type="text" name="href" value="{{ it.href or '' }}" placeholder="點擊導向（可空白）"
-             style="flex:1;min-width:220px;padding:8px">
-      <button class="btn" type="submit">儲存文字</button>
-    </div>
+  <form action="/admin0363/features/banners/update/{{ it.id }}" method="post">
+    <input type="text" name="title" value="{{ it.title or '' }}" placeholder="標題（可空白）">
+    <button class="save-btn" type="submit">儲存</button>
+
+    <input type="text" name="href" value="{{ it.href or '' }}" placeholder="點擊導向（可空白）">
+    <a class="btn" href="{{ it.href or '#' }}" target="_blank" style="text-align:center;{{ '' if it.href else 'pointer-events:none;opacity:.5' }}">預覽</a>
   </form>
 
-  <div><small>狀態：</small>{{ '啟用' if it.is_active else '停用' }}</div>
-  <div><small>ID：</small>{{ it.id }}　<small>排序：</small>{{ it.sort_order }}</div>
-  {% if it.href %}
-    <div><small>預覽：</small><a href="{{ it.href }}" target="_blank">{{ it.href }}</a></div>
-  {% endif %}
+  <div class="fine">
+    <span><small>狀態：</small>{{ '啟用' if it.is_active else '停用' }}</span>
+    <span><small>ID：</small>{{ it.id }}</span>
+    <span><small>排序：</small>{{ it.sort_order }}</span>
+  </div>
 </div>
+
 
           <div class="btns">
             <form class="inline" action="/admin0363/features/banners/toggle/{{ it.id }}" method="post">
               <button class="btn" type="submit">{{ '停用' if it.is_active else '啟用' }}</button>
             </form>
             <form class="inline" action="/admin0363/features/banners/delete/{{ it.id }}" method="post" onsubmit="return confirm('確定刪除？')">
-              <button class="btn" type="submit">刪除</button>
-            </form>
+  <button class="btn danger" type="submit">刪除</button>
+</form>
+
           </div>
         </div>
       </div>
