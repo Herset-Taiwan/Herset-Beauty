@@ -52,11 +52,25 @@
         <div class="row">
           <img class="thumb" src="{{ it.image_url }}?v={{ it.id }}" alt="">
           <div class="meta">
-            <div style="font-weight:700">{{ it.title or '（未命名）' }}</div>
-            {% if it.href %}<div><small>連結：</small><a href="{{ it.href }}" target="_blank">{{ it.href }}</a></div>{% endif %}
-            <div><small>狀態：</small>{{ '啟用' if it.is_active else '停用' }}</div>
-            <div><small>ID：</small>{{ it.id }}　<small>排序：</small>{{ it.sort_order }}</div>
-          </div>
+  <form action="/admin0363/features/banners/update/{{ it.id }}" method="post" style="display:flex;flex-direction:column;gap:8px">
+    <div style="display:flex;gap:8px;align-items:center">
+      <input type="text" name="title" value="{{ it.title or '' }}" placeholder="標題（可空白）"
+             style="flex:1;min-width:160px;padding:8px">
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <input type="text" name="href" value="{{ it.href or '' }}" placeholder="點擊導向（可空白）"
+             style="flex:1;min-width:220px;padding:8px">
+      <button class="btn" type="submit">儲存文字</button>
+    </div>
+  </form>
+
+  <div><small>狀態：</small>{{ '啟用' if it.is_active else '停用' }}</div>
+  <div><small>ID：</small>{{ it.id }}　<small>排序：</small>{{ it.sort_order }}</div>
+  {% if it.href %}
+    <div><small>預覽：</small><a href="{{ it.href }}" target="_blank">{{ it.href }}</a></div>
+  {% endif %}
+</div>
+
           <div class="btns">
             <form class="inline" action="/admin0363/features/banners/toggle/{{ it.id }}" method="post">
               <button class="btn" type="submit">{{ '停用' if it.is_active else '啟用' }}</button>
