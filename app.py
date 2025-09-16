@@ -2670,10 +2670,9 @@ def cart():
         image = item.get('image') or dbp.get('image') \
                 or (images[0] if images else None)
 
-        # 🔹 新增：把套組選擇的內容整理成可顯示的行列
+        # 🔹 套組內容整理（給前端顯示）
         bundle_lines = []
         if (item.get('product_type') or dbp.get('product_type')) == 'bundle':
-            # 可能的欄位 1：list[dict]，例如 [{'name':'A', 'qty':2}, ...]
             if isinstance(item.get('bundle_items'), list) and item['bundle_items']:
                 for c in item['bundle_items']:
                     nm = c.get('name') or c.get('title') or c.get('product_name') or c.get('label')
@@ -2681,8 +2680,6 @@ def cart():
                     if nm:
                         nm = _clean_bundle_label(nm)
                         bundle_lines.append(f"{nm} × {q}" if q > 1 else nm)
-
-            # 可能的欄位 2：list[...]，例如 ['A','B'] 或 [{'label':'A'}]
             elif isinstance(item.get('bundle_selected'), list):
                 for s in item['bundle_selected']:
                     if isinstance(s, dict):
@@ -2691,11 +2688,9 @@ def cart():
                         if nm:
                             nm = _clean_bundle_label(nm)
                             bundle_lines.append(f"{nm} × {q}" if q > 1 else nm)
-
                     else:
                         if s:
                             bundle_lines.append(str(s))
-            # 可能的欄位 3：文字（用逗號/換行/頓號分隔）
             elif item.get('option'):
                 text = str(item['option']).strip()
                 parts = [_clean_bundle_label(p) for p in re.split(r'[,\n、|｜]+', text) if p.strip()]
@@ -2706,7 +2701,7 @@ def cart():
             'name': dbp.get('name') or item.get('name'),
             'product_type': item.get('product_type') or dbp.get('product_type'),
 
-            # ✅ 仍保留套組價格欄位
+            # ✅ 套組價格欄位（若為套組）
             'bundle_price':   item.get('bundle_price'),
             'bundle_compare': item.get('bundle_compare'),
 
@@ -2717,14 +2712,13 @@ def cart():
             'qty': qty,
             'subtotal': unit_price * qty,
 
-            # 🔹 新增：給模板顯示的套組行
+            # 🔹 給模板顯示的套組行
             'bundle_lines': bundle_lines,
 
             'option': item.get('option', ''),
             'image': image,
             'images': images,
         }
-
 
         products.append(product_out)
         total += product_out['subtotal']
@@ -2733,7 +2727,6 @@ def cart():
     free_shipping_threshold, default_shipping_fee = get_shipping_rules()
     shipping_fee = 0.0 if total >= free_shipping_threshold else float(default_shipping_fee)
     free_shipping_diff = 0.0 if total >= free_shipping_threshold else (free_shipping_threshold - total)
-
 
     # ---- 折扣碼（若 session 有暫存，依目前 subtotal 再次檢核並計算折抵）----
     discount = session.get('cart_discount')
@@ -2750,6 +2743,7 @@ def cart():
 
     # 應付金額（不得為負）
     final_total = max(total + shipping_fee - discount_deduct, 0)
+
     # 會員顯示名稱（優先 name，否則 username、account、email）
     member_name = None
     if session.get("member_id"):
@@ -2761,19 +2755,69 @@ def cart():
         m = mres.data or {}
         member_name = (m.get("name") or m.get("username") or m.get("account") or m.get("email"))
 
+    # ============================================================
+    # ==== 加購推薦（upsell）：若「尚未達免運」就挑商品推薦 ====
+    # 規則：
+    # 1) 使用「未扣折扣碼」的小計 total 與免運門檻比較（和你的運費邏輯一致）
+    # 2) 從 products 表抓一批可售賣商品，排除購物車中已存在者
+    # 3) 依「價格接近 還差金額 free_shipping_diff」排序，取前 6 筆
+    # ============================================================
+    upsell_products = []
+    remain_for_upsell = max(0.0, (free_shipping_threshold or 0.0) - total)
 
+    if remain_for_upsell > 0:
+        try:
+            cart_ids = {str(p.get('id')) for p in products if p.get('id')}
+
+            q = (supabase.table('products')
+                 .select('id,name,price,discount_price,image,images,is_active,stock,product_type')
+                 .eq('is_active', True)
+                 .gt('stock', 0)
+                 .limit(60)  # 先拉一批回來在記憶體過濾/排序
+                 .execute())
+            rows = q.data or []
+
+            def eff_price(r):
+                p1 = r.get('discount_price') or r.get('price') or 0
+                try:
+                    return float(p1)
+                except:
+                    return 0.0
+
+            # 排除：已在購物車 / 價格<=0 / （如不想推薦套組就排除）
+            cand = []
+            for r in rows:
+                if str(r.get('id')) in cart_ids:
+                    continue
+                if (r.get('product_type') == 'bundle'):
+                    # 若不想推薦套組，保留這段 continue；若也要推薦套組，請把這行註解掉
+                    continue
+                if eff_price(r) <= 0:
+                    continue
+                cand.append(r)
+
+            # 依與差額距離排序（越接近越前）
+            cand.sort(key=lambda r: abs(eff_price(r) - remain_for_upsell))
+            upsell_products = cand[:6]
+
+        except Exception as e:
+            print('[upsell] error:', e)
+
+    # ---- render ----
     return render_template(
-    "cart.html",
-    products=products,
-    total=total,
-    shipping_fee=shipping_fee,
-    final_total=final_total,
-    free_shipping_threshold=free_shipping_threshold,  # ← 新增這行
-    free_shipping_diff=free_shipping_diff,
-    discount=discount,
-    discount_deduct=discount_deduct,
-    member_name=member_name,
-)
+        "cart.html",
+        products=products,
+        total=total,
+        shipping_fee=shipping_fee,
+        final_total=final_total,
+        free_shipping_threshold=free_shipping_threshold,
+        free_shipping_diff=free_shipping_diff,
+        discount=discount,
+        discount_deduct=discount_deduct,
+        member_name=member_name,
+        upsell_products=upsell_products,   # ← 新增帶入模板
+        # checkout_address 可視你的實作情況帶入；目前模板用 None 也能渲染
+    )
 
 
 # 以台灣時間解讀開始/到期；購物車驗證也用台灣時間

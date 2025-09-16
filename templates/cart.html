@@ -183,8 +183,46 @@
 .ship-btn-secondary:hover{ background:#fbf7f5; }
 
 
+/* ==== 加購區（免運進度與推薦） ==== */
+.upsell {
+  margin-top: 18px; padding: 16px; border: 1px solid #eee; border-radius: 12px; background: #fff7f9;
+}
+.upsell-head {
+  display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;
+}
+.upsell-title { font-weight:800; color:#5a4b45; display:flex; align-items:center; gap:8px; }
+.upsell-tip   { color:#a33; font-size:14px; font-weight:700; }
+.upsell-ok    { color:#0a8a4b; font-size:14px; font-weight:700; }
 
-  </style>
+.upsell-bar {
+  height: 10px; background: #ffe3ec; border-radius: 999px; overflow: hidden; margin: 6px 0 12px 0;
+}
+.upsell-bar > div {
+  height: 100%; background: #e91e63; width: 0%;
+}
+
+.upsell-list {
+  display:grid; grid-template-columns: repeat(3, 1fr); gap:12px;
+}
+.upsell-item {
+  display:flex; gap:10px; padding:10px; border:1px solid #f0d7df; border-radius:10px; background:#fff;
+}
+.upsell-item img {
+  width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid #eee;
+}
+.upsell-item .name { font-size:14px; color:#3c3c3c; font-weight:700; line-height:1.4; }
+.upsell-item .price { margin-top:4px; font-weight:800; color:#e91e63; }
+.upsell-item form { margin-top:auto; }
+.upsell-add-btn {
+  background:#e91e63; color:#fff; border:none; border-radius:8px; padding:6px 10px; cursor:pointer; font-size:13px; font-weight:800;
+}
+
+@media (max-width: 720px){
+  .upsell-list { grid-template-columns: repeat(2, 1fr); }
+}
+
+
+</style>
 
 <!-- FB像素Meta Pixel Code -->
 <script>
@@ -329,6 +367,59 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
           <span class="coupon-hint">可於此輸入活動折扣碼；若未達門檻或逾期，系統會提示原因。</span>
         {% endif %}
       </form>
+
+{# ==== 加購就免運（若還差金額 > 0 才顯示推薦） ==== #}
+{% set threshold = free_shipping_threshold | default(0, true) %}
+{% set remain    = free_shipping_diff       | default(0, true) %}
+{% set cart_total = total - (discount_deduct or 0) %}
+{% set progress = (cart_total / threshold * 100) if threshold > 0 else 100 %}
+{% set progress = 100 if progress > 100 else (0 if progress < 0 else progress) %}
+
+<div class="upsell">
+  <div class="upsell-head">
+    <div class="upsell-title">🛍️ 加購推薦</div>
+    {% if remain > 0 %}
+      <div class="upsell-tip">還差 <strong>${{ "{:,.0f}".format(remain) }}</strong> 即可享免運</div>
+    {% else %}
+      <div class="upsell-ok">已達免運門檻 🎉</div>
+    {% endif %}
+  </div>
+
+  {# 免運進度條 #}
+  {% if threshold > 0 %}
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:#777;">
+      <span>目前：${{ "{:,.0f}".format(cart_total) }}</span>
+      <span>免運門檻：${{ "{:,.0f}".format(threshold) }}</span>
+    </div>
+    <div class="upsell-bar"><div style="width: {{ '%.0f' % progress }}%;"></div></div>
+  {% endif %}
+
+  {# 只有「未達免運」時才顯示推薦商品 #}
+  {% if remain > 0 and upsell_products and upsell_products|length > 0 %}
+    <div class="upsell-list">
+      {% for u in upsell_products %}
+        {% set up = (u.get('discount_price') or u.get('price') or 0) | float %}
+        <div class="upsell-item">
+          {% set cover = u.get('image') or (u.get('images')[0] if u.get('images') else None) %}
+          <img src="{{ cover or url_for('static', filename='placeholder.png') }}"
+               onerror="this.src='{{ url_for('static', filename='placeholder.png') }}'"
+               alt="{{ u.get('name') or '' }}">
+          <div style="display:flex; flex-direction:column; flex:1;">
+            <div class="name">{{ u.get('name') }}</div>
+            <div class="price">${{ '%.0f' % up }}</div>
+            <form method="POST" action="/add_to_cart">
+              <input type="hidden" name="product_id" value="{{ u.get('id') }}">
+              <input type="hidden" name="qty" value="1">
+              <input type="hidden" name="next" value="cart">
+              <button type="submit" class="upsell-add-btn">＋ 加入購物車</button>
+            </form>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+
 
       <!-- 寄送資訊（顯示 + 可展開編輯；需已登入） -->
 {% if session.member_id %}
