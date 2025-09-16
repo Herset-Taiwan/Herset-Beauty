@@ -4170,34 +4170,29 @@ def delete_product(product_id):
 
 @app.route('/add_to_cart', methods=['POST'])
 def add_to_cart():
-    # 可能是 JSON，也可能是 HTML 表單
+    # 同時支援 Form 與 JSON
     data = request.get_json(silent=True) or {}
     form = request.form
 
-    # 判斷前端是否期望 JSON（AJAX / fetch / axios）
-    wants_json = (
-        bool(request.is_json or data)
-        or 'application/json' in (request.headers.get('Accept') or '')
-        or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-    )
-
-    # 讀取參數（先表單、後JSON）
+    # 取參數（先表單、再 JSON、最後 querystring）
     def pick(*keys, default=None):
         for k in keys:
-            v = (form.get(k) if form else None)
+            v = form.get(k) if form else None
             if v is None and data:
                 v = data.get(k)
+            if v is None:
+                v = request.args.get(k)
             if v is not None:
                 return v
         return default
 
-    product_id = (pick('product_id', 'id', default='') or '').strip()
+    product_id = (pick('product_id', 'id', default='') or '').strip()  # 有些前端會傳 id
     qty_raw    = pick('qty', default=1)
     option     = (pick('option', default='') or '').strip()
     action     = (pick('action', default='') or '').strip()
-    next_url   = (pick('next', default='') or request.args.get('next') or '').strip()
+    next_url   = (pick('next', default='') or '').strip()              # ← 新增：用來決定是否 redirect
 
-    # 數量檢核
+    # 參數檢核
     try:
         qty = int(qty_raw)
         if qty <= 0:
@@ -4205,35 +4200,29 @@ def add_to_cart():
     except Exception:
         qty = 1
 
-    # 缺參數處理
     if not product_id:
-        if wants_json:
-            return jsonify(success=False, message="缺少商品編號"), 400
-        flash("商品資料有誤")
-        return redirect(url_for('cart'))
+        # 表單流程（加購/結帳）→ 回購物車；AJAX → 回 JSON 錯誤
+        if action == 'checkout' or next_url == 'cart':
+            return redirect(url_for('cart'))
+        return jsonify(success=False, message="缺少商品編號"), 400
 
     # 1) 取商品
-    try:
-        res = (
-            supabase.table('products')
-            .select('id,name,price,discount_price,image,images,product_type')
-            .eq('id', str(product_id))
-            .single()
-            .execute()
-        )
-        product = res.data or {}
-    except Exception:
-        product = {}
-
+    res = (
+        supabase.table('products')
+        .select('*')
+        .eq('id', str(product_id))
+        .single()
+        .execute()
+    )
+    product = res.data
     if not product:
-        if wants_json:
-            return jsonify(success=False, message="找不到商品"), 404
-        flash("找不到商品")
-        return redirect(url_for('cart'))
+        if action == 'checkout' or next_url == 'cart':
+            return redirect(url_for('cart'))
+        return jsonify(success=False, message="找不到商品"), 404
 
     is_bundle = (product.get('product_type') == 'bundle')
 
-    # 2) 基本定價
+    # 2) 單品價
     try:
         orig = float(product.get('price') or 0)          # 原價
     except Exception:
@@ -4242,9 +4231,9 @@ def add_to_cart():
         disc = float(product.get('discount_price') or 0) # 折扣價
     except Exception:
         disc = 0.0
-    cur = disc if (disc and disc < orig) else orig       # 結帳用單價（單品預設）
+    cur = disc if (disc and disc < orig) else orig       # 結帳用單價（先用單品邏輯）
 
-    # 3) 套組價（若有 bundles 表，可覆蓋）
+    # 3) 套組價覆蓋（若有 bundles 表）
     bundle_price = None
     bundle_compare = None
     if is_bundle:
@@ -4272,7 +4261,7 @@ def add_to_cart():
     # 4) 初始化購物車
     cart = session.get('cart', [])
 
-    # 5) 相同商品+規格 → 增量
+    # 5) 相同商品+規格，直接加量
     matched = False
     pid_str = str(product_id)
     opt_str = str(option or '')
@@ -4294,8 +4283,8 @@ def add_to_cart():
             'price': cur,                           # 小計用單價
             'original_price': orig,                 # 顯示用
             'discount_price': (disc if (disc and disc < orig) else 0),
-            'image': product.get('image'),
-            'images': product.get('images') or [],
+            'image': product.get('image'),          # ← 補上單張封面，避免前端取不到
+            'images': product.get('images', []),
             'qty': qty,
             'option': opt_str,
             'product_type': product.get('product_type'),
@@ -4306,7 +4295,7 @@ def add_to_cart():
             entry['bundle_compare'] = bundle_compare
         cart.append(entry)
 
-    # 7) 寫回 session
+    # 7) 回寫 session
     session['cart'] = cart
     try:
         session['cart_count'] = sum(int(x.get('qty', 1)) for x in cart)
@@ -4314,18 +4303,14 @@ def add_to_cart():
         session['cart_count'] = len(cart)
     session.modified = True
 
-    # 8) 回應：表單/next=cart → redirect；AJAX → JSON
+    # 8) 回應：
+    # - 有 next=cart（加購卡片）或 action=checkout → 直接導回購物車
+    # - 其它情境維持回 JSON（保留原本的動態角標/提示）
     if action == 'checkout' or next_url == 'cart':
         return redirect(url_for('cart'))
 
-    if wants_json:
-        total_qty = session.get('cart_count', len(cart))
-        return jsonify(success=True, count=total_qty)
-
-    if next_url and next_url.startswith('/'):
-        return redirect(next_url)
-
-    return redirect(request.referrer or url_for('cart'))
+    total_qty = session.get('cart_count', len(cart))
+    return jsonify(success=True, count=total_qty)
 
 
 
