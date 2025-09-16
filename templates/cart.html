@@ -194,6 +194,7 @@
   .continue-btn{ padding:6px 10px; font-size:14px; }
 }
 
+
 /* ==== 加購區（免運進度與推薦） ==== */
 .upsell { margin-top:18px; padding:16px; border:1px solid #eee; border-radius:12px; background:#fff7f9; }
 .upsell-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; }
@@ -245,7 +246,9 @@
 @media (max-width: 480px){
   .upsell-card{ flex-basis: 220px; }
 }
-
+/* 拖曳時指標樣式 */
+.upsell-scroller{ cursor: grab; }
+.upsell-scroller.dragging{ cursor: grabbing; }
 
 </style>
 
@@ -615,19 +618,43 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
   prev && prev.addEventListener('click', () => jump(-1));
   next && next.addEventListener('click', () => jump(1));
 
-  // 拖曳滑動（桌面也能拖）
-  let isDown=false,startX,scrollLeft;
+  // ---- 拖曳滑動（不使用 pointer capture；避免吃掉按鈕點擊）----
+  let isDown = false, startX = 0, startLeft = 0, moved = false;
+
+  const isInteractive = el => !!el.closest('button, a, input, select, textarea, label, form');
+
   scroller.addEventListener('pointerdown', e=>{
-    isDown=true; startX=e.pageX; scrollLeft=scroller.scrollLeft; scroller.setPointerCapture(e.pointerId);
+    // 若點在按鈕/連結等互動元件上，就交給它，不進入拖曳
+    if (isInteractive(e.target)) return;
+    isDown = true; moved = false;
+    startX = e.clientX;
+    startLeft = scroller.scrollLeft;
+    scroller.classList.add('dragging');
   });
+
   scroller.addEventListener('pointermove', e=>{
-    if(!isDown) return; scroller.scrollLeft = scrollLeft - (e.pageX - startX);
+    if (!isDown) return;
+    const dx = e.clientX - startX;
+    if (Math.abs(dx) > 3) moved = true;
+    scroller.scrollLeft = startLeft - dx;
   });
-  ['pointerup','pointercancel','pointerleave'].forEach(ev=>{
-    scroller.addEventListener(ev, ()=>{ isDown=false; });
-  });
+
+  function endDrag(e){
+    if (!isDown) return;
+    isDown = false;
+    scroller.classList.remove('dragging');
+    // 若確實拖曳過，避免產生子元素的點擊
+    if (moved) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }
+  scroller.addEventListener('pointerup', endDrag);
+  scroller.addEventListener('pointercancel', endDrag);
+  scroller.addEventListener('pointerleave', endDrag);
 })();
 </script>
+
 
 </body>
 </html>
