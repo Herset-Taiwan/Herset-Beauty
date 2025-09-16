@@ -80,14 +80,26 @@
   // 簡易拖曳排序（原生 HTML5 DnD）
   const list = document.getElementById('bannerList');
   let dragEl = null;
+
   list.addEventListener('dragstart', e => {
     dragEl = e.target.closest('.draggable');
-    if (dragEl) e.dataTransfer.setData('text/plain','drag');
+    if (dragEl) {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain','drag');
+      dragEl.classList.add('dragging');
+    }
   });
+
+  list.addEventListener('dragend', () => {
+    if (dragEl) dragEl.classList.remove('dragging');
+    dragEl = null;
+  });
+
   list.addEventListener('dragover', e => {
     e.preventDefault();
     const card = e.target.closest('.draggable');
     if (!card || card === dragEl) return;
+
     const rect = card.getBoundingClientRect();
     const before = (e.clientY - rect.top) < rect.height / 2;
     card.parentNode.insertBefore(dragEl, before ? card : card.nextSibling);
@@ -95,13 +107,59 @@
 })();
 
 function saveOrder(){
-  const ids = Array.from(document.querySelectorAll('.draggable')).map(d => parseInt(d.dataset.id, 10));
+  // 只取「第一層」卡片，避免抓到巢狀元素
+  const cards = Array.from(document.querySelectorAll('#bannerList > .draggable'));
+  const ids = cards
+    .map(el => parseInt(el.dataset.id, 10))
+    .filter(Number.isFinite);
+
+  // 基本檢查
+  if (!ids.length){
+    alert('沒有可儲存的項目');
+    return;
+  }
+
+  console.log('saveOrder → ids =', ids);
+
+  const btn = document.querySelector('button.btn.primary[onclick="saveOrder()"]');
+  if (btn){ btn.disabled = true; btn.textContent = '儲存中...'; }
+
   fetch('/admin0363/features/banners/reorder', {
     method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ids})
-  }).then(r => r.json()).then(() => location.reload());
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids })
+  })
+  .then(r => r.json().catch(() => ({})))
+  .then(resp => {
+    if (!resp || resp.ok !== true){
+      // 後端若沒回 JSON 或回傳 {ok:false}，改以 form 提交一次（後端也支援）
+      const form = new URLSearchParams();
+      form.append('ids', ids.join(','));
+      return fetch('/admin0363/features/banners/reorder', {
+        method: 'POST',
+        body: form
+      }).then(r => r.json().catch(() => ({})));
+    }
+    return resp;
+  })
+  .then(resp2 => {
+    if (!resp2 || resp2.ok !== true){
+      console.error('儲存排序失敗：', resp2);
+      alert('儲存排序失敗，請稍後再試');
+    } else {
+      // 重整以讓「排序：X」的數字更新
+      location.reload();
+    }
+  })
+  .catch(err => {
+    console.error('儲存排序發生錯誤：', err);
+    alert('儲存排序發生錯誤，請稍後再試');
+  })
+  .finally(() => {
+    if (btn){ btn.disabled = false; btn.textContent = '儲存目前排序'; }
+  });
 }
 </script>
+
 </body>
 </html>

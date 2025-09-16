@@ -1520,15 +1520,32 @@ def admin_banners_delete(bid):
 
 @app.post("/admin0363/features/banners/reorder")
 def admin_banners_reorder():
-    auth = _admin_required_redirect()
-    if auth: return auth
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
+
+    # 1) 先試 JSON: {"ids":[6,7,8,9]}
     data = request.get_json(silent=True) or {}
-    for idx, bid in enumerate(data.get("ids") or []):
+    ids = data.get("ids")
+
+    # 2) 若沒拿到，再試 form：ids=6,7,8,9
+    if not ids:
+        raw = (request.form.get("ids") or "").strip()
+        if raw:
+            ids = [int(x) for x in raw.split(",") if x.strip().isdigit()]
+
+    # 3) 還是沒有 → 回傳錯誤提示（方便除錯）
+    if not ids:
+        return jsonify(ok=False, error="no ids"), 400
+
+    # 4) 逐筆更新 sort_order
+    for idx, bid in enumerate(ids):
         try:
             supabase.table("banners").update({"sort_order": idx}).eq("id", bid).execute()
-        except Exception:
-            pass
+        except Exception as e:
+            print("update sort_order failed:", bid, e)
+
     return jsonify(ok=True)
+
 # ====== Admin: 首頁輪播圖管理 結束======
 
 # 功能管理 → 網站綜合設定（表單頁）
