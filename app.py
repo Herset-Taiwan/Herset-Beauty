@@ -2747,40 +2747,46 @@ def cart():
     # 會員顯示名稱（優先 name，否則 username、account、email）
     member_name = None
     if session.get("member_id"):
-        mres = (supabase.table("members")
-                .select("name, username, account, email")
-                .eq("id", session["member_id"])
-                .single()
-                .execute())
+        mres = (
+            supabase.table("members")
+            .select("name, username, account, email")
+            .eq("id", session["member_id"])
+            .single()
+            .execute()
+        )
         m = mres.data or {}
-        member_name = (m.get("name") or m.get("username") or m.get("account") or m.get("email"))
+        member_name = (
+            m.get("name")
+            or m.get("username")
+            or m.get("account")
+            or m.get("email")
+        )
 
     # ============================================================
     # ==== 加購推薦（upsell）：若「尚未達免運」就挑商品推薦 ====
-    # 規則：
-    # 1) 使用「未扣折扣碼」的小計 total 與免運門檻比較（和你的運費邏輯一致）
-    # 2) 從 products 表抓一批可售賣商品，排除購物車中已存在者
-    # 3) 依「價格接近 還差金額 free_shipping_diff」排序，取前 6 筆
+    # 不依賴 is_active/stock 欄位（避免不存在），全部使用 4 空白縮排
     # ============================================================
-   upsell_products = []
+    upsell_products = []
     remain_for_upsell = max(0.0, (free_shipping_threshold or 0.0) - total)
 
     if remain_for_upsell > 0:
         try:
             cart_ids = {str(p.get('id')) for p in products if p.get('id')}
 
-            # 只選取一定存在的欄位，避免未知欄位導致 42703
-            res = (supabase.table('products')
-                   .select('id,name,price,discount_price,image,images,product_type')
-                   .limit(60)
-                   .execute())
+            # 只選必定存在的欄位，避免 42703
+            res = (
+                supabase.table('products')
+                .select('id,name,price,discount_price,image,images,product_type')
+                .limit(60)
+                .execute()
+            )
             rows = res.data or []
 
             def eff_price(r):
                 p1 = r.get('discount_price') or r.get('price') or 0
                 try:
                     return float(p1)
-                except:
+                except Exception:
                     return 0.0
 
             cand = []
@@ -2788,14 +2794,14 @@ def cart():
                 # 排除：已在購物車
                 if str(r.get('id')) in cart_ids:
                     continue
-                # 若你不想推薦套組，保留這段；若也要推薦套組，註解掉即可
+                # 不想推薦套組就保留；若要推薦套組，註解下一段
                 if r.get('product_type') == 'bundle':
                     continue
                 # 價格必須 > 0
                 if eff_price(r) <= 0:
                     continue
 
-                # 如果你的表其實有 is_active/stock，可「選擇性」保留判斷（鍵不存在就略過）
+                # 若表中其實有 is_active/stock，可選擇性過濾（鍵不存在就略過）
                 ia = r.get('is_active')
                 if ia is False:
                     continue
@@ -2803,19 +2809,18 @@ def cart():
                 try:
                     if st is not None and float(st) <= 0:
                         continue
-                except:
+                except Exception:
                     pass
 
                 cand.append(r)
 
-            # 依「價格與差額的距離」排序，取前 6 筆
+            # 依「與差額距離」排序，取前 6 筆
             cand.sort(key=lambda r: abs(eff_price(r) - remain_for_upsell))
             upsell_products = cand[:6]
 
         except Exception as e:
             print('[upsell] error:', e)
 
-    # ---- render ----
     return render_template(
         "cart.html",
         products=products,
@@ -2827,8 +2832,7 @@ def cart():
         discount=discount,
         discount_deduct=discount_deduct,
         member_name=member_name,
-        upsell_products=upsell_products,   # ← 新增帶入模板
-        # checkout_address 可視你的實作情況帶入；目前模板用 None 也能渲染
+        upsell_products=upsell_products,   # ← 帶到模板
     )
 
 
