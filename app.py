@@ -350,11 +350,7 @@ def index():
 
     cart = session.get('cart', [])
     cart_count = sum(item.get('qty', 0) for item in cart)
-    return render_template("index.html",
-                       products=products,
-                       cart_count=cart_count,
-                       banners=get_active_banners()
-
+    return render_template("index.html", products=products, cart_count=cart_count, banners=get_active_banners())
 
 
 # ✅ SEO相關
