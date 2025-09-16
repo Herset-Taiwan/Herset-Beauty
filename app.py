@@ -353,7 +353,7 @@ def index():
     return render_template("index.html",
                        products=products,
                        cart_count=cart_count,
-                       banners=get_active_banners())
+                       banners=get_active_banners()
 
 
 
@@ -1461,12 +1461,24 @@ def admin_banners_upload():
         return "缺少圖片", 400
 
     # 儲存實體檔
-    ext = os.path.splitext(f.filename)[1].lower()
-    filename = f"{int(time.time()*1000)}{ext}"
-    save_path = os.path.join(BANNER_UPLOAD_DIR, filename)
-    f.save(save_path)
+    ext = (f.filename.rsplit(".", 1)[-1] or "").lower()
+    safe_name = secure_filename(f.filename)
+    unique = f"{uuid4()}_{safe_name}"
+    storage_path = f"banners/{unique}"
 
-    image_url = f"/static/uploads/banners/{filename}"
+    tmp_path = None
+    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+        f.save(tmp.name)
+        tmp_path = tmp.name
+    try:
+        supabase.storage.from_("images").upload(storage_path, tmp_path)
+    finally:
+        if tmp_path:
+            try: os.unlink(tmp_path)
+            except: pass
+
+    # 取得公開網址（這個網址可跨機、重啟、換節點）
+    image_url = supabase.storage.from_("images").get_public_url(storage_path)
     supabase.table("banners").insert({
         "title": title or None,
         "href": href or None,
@@ -1490,12 +1502,24 @@ def admin_banners_delete(bid):
     if auth: return auth
     row = supabase.table("banners").select("image_url").eq("id", bid).limit(1).execute().data
     supabase.table("banners").delete().eq("id", bid).execute()
-    # 嘗試刪本地檔（若存在）
-    try:
-        if row and (row[0].get("image_url") or "").startswith("/static/uploads/banners/"):
-            os.remove(os.path.join(app.root_path, row[0]["image_url"].lstrip("/")))
-    except Exception:
-        pass
+
+    if row:
+        url = row[0].get("image_url") or ""
+        # 1) 若是 Supabase Storage 公開網址（常見長相 .../object/public/images/banners/...）
+        if "/object/public/images/" in url:
+            # 擷取 object key：images bucket 之後那段，例如 banners/uuid_filename.jpg
+            # 公開網址大概像 https://xxxx.supabase.co/storage/v1/object/public/images/banners/xxx.jpg
+            key = url.split("/object/public/images/", 1)[-1]  # -> banners/xxx.jpg
+            try:
+                supabase.storage.from_("images").remove([key])
+            except Exception as e:
+                print("刪 Storage 檔案失敗：", e)
+        # 2) 舊資料：本機檔案路徑才嘗試刪除
+        elif url.startswith("/static/uploads/banners/"):
+            try:
+                os.remove(os.path.join(app.root_path, url.lstrip("/")))
+            except Exception:
+                pass
     return redirect("/admin0363/features/banners")
 
 @app.post("/admin0363/features/banners/reorder")

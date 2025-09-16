@@ -50,7 +50,7 @@
       {% for it in items %}
       <div class="card draggable" draggable="true" data-id="{{ it.id }}">
         <div class="row">
-          <img class="thumb" src="{{ it.image_url }}" alt="">
+          <img class="thumb" src="{{ it.image_url }}?v={{ it.id }}" alt="">
           <div class="meta">
             <div style="font-weight:700">{{ it.title or '（未命名）' }}</div>
             {% if it.href %}<div><small>連結：</small><a href="{{ it.href }}" target="_blank">{{ it.href }}</a></div>{% endif %}
