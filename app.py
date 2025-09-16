@@ -1561,8 +1561,7 @@ def admin_banners_reorder():
 
     return jsonify(ok=True)
 
-
-    @app.post("/admin0363/features/banners/update/<int:bid>")
+@app.post("/admin0363/features/banners/update/<int:bid>")
 def admin_banners_update(bid):
     if not session.get("admin_logged_in"):
         return redirect("/admin0363")
@@ -1572,15 +1571,15 @@ def admin_banners_update(bid):
 
     payload = {
         "title": (title or None),
-        "href": (href or None),
+        "href":  (href or None),
     }
     try:
         supabase.table("banners").update(payload).eq("id", bid).execute()
     except Exception as e:
         print("更新 banner 失敗：", e)
 
-    # 回到列表
     return redirect("/admin0363/features/banners")
+
 
 
 # ====== Admin: 首頁輪播圖管理 結束======
