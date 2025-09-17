@@ -789,11 +789,10 @@ def admin_new_bundle():
             # --- 5) 再建立 bundles 明細（與殼商品關聯） ---
             # 若你的專案已建立 bundles 表，欄位建議：product_id, compare_at, required_total, pool_ids(jsonb), description(text)
             bundle_row = {
-                "product_id": product_id,
-                "compare_at": compare_at,          # 原價（劃線價）
-                "required_total": required_total,  # 逐步挑選件數
-                "pool_ids": pool_ids,              # 可選商品池（jsonb）
-                "description": description,        # 後台備註
+            "product_id": product_id,
+            "compare_at": compare_at,          # 原價（劃線價）
+            "required_total": required_total,  # 逐步挑選件數
+            "description": description,        # 後台備註
             }
             bres = supabase.table("bundles").insert(bundle_row).execute()
             if hasattr(bres, "error") and bres.error:
