@@ -3643,48 +3643,61 @@ def member_delete_order(order_id):
         flash("只能刪除「未付款」且「待處理」的訂單", "error")
         return redirect('/order-history')
 
-    # 先回補庫存 → 再刪訂單
+    # 先回補庫存 → 成功才刪訂單
     try:
-        # 撈出此訂單的所有品項
+        # ⚠️ 僅選存在的欄位
         its = (
             supabase.table("order_items")
-            .select("product_id, qty, quantity")
+            .select("product_id, qty")
             .eq("order_id", order_id)
             .execute()
             .data
             or []
         )
-
-        # 逐品項回補庫存
-        for it in its:
-            pid = it.get("product_id")
-            qty = int(it.get("qty") or it.get("quantity") or 0)
-            if not pid or qty <= 0:
-                continue
-
-            try:
-                cur = (
-                    supabase.table("products")
-                    .select("stock")
-                    .eq("id", pid)
-                    .single()
-                    .execute()
-                    .data
-                    or {}
-                )
-                cur_stock = int(cur.get("stock") or 0)
-                new_stock = cur_stock + qty
-                supabase.table("products").update({"stock": new_stock}).eq("id", pid).execute()
-            except Exception as e:
-                app.logger.error(f"[order delete restock] pid={pid} qty={qty} error={e}")
     except Exception as e:
-        app.logger.error(f"[order delete restock] order_id={order_id} error={e}")
+        app.logger.error(f"[order delete restock] read items order_id={order_id} error={e}")
+        flash("讀取訂單品項失敗，暫時無法刪除。", "error")
+        return redirect("/order-history")
 
-    # 最後再刪主檔（order_items 會跟著被砍）
-    supabase.table("orders").delete().eq("id", order_id).execute()
+    had_error = False
+    for it in its:
+        pid = it.get("product_id")
+        qty = int(it.get("qty") or 0)
+        if not pid or qty <= 0:
+            continue
+        try:
+            cur = (
+                supabase.table("products")
+                .select("stock")
+                .eq("id", pid)
+                .single()
+                .execute()
+                .data
+                or {}
+            )
+            cur_stock = int(cur.get("stock") or 0)
+            new_stock = cur_stock + qty
+            supabase.table("products").update({"stock": new_stock}).eq("id", pid).execute()
+        except Exception as e:
+            had_error = True
+            app.logger.error(f"[order delete restock] pid={pid} qty={qty} error={e}")
+
+    if had_error:
+        # 任何一筆回補失敗就不刪單，避免庫存不一致
+        flash("庫存回補失敗，訂單未刪除。請稍後再試。", "error")
+        return redirect("/order-history")
+
+    # 庫存已回補 → 刪主檔（order_items 由 FK 連動刪除）
+    try:
+        supabase.table("orders").delete().eq("id", order_id).execute()
+    except Exception as e:
+        app.logger.error(f"[order delete] order_id={order_id} error={e}")
+        flash("刪除訂單時發生錯誤。", "error")
+        return redirect("/order-history")
 
     flash("訂單已刪除（庫存已回補）", "success")
     return redirect("/order-history")
+
 
 
 
