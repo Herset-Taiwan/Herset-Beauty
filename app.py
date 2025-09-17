@@ -3014,7 +3014,8 @@ def checkout():
         return redirect('/cart')
 
     member_id = session['member_id']
-        # === 會員/寄送資料（優先採用購物車裡暫存的覆蓋地址） ===
+
+    # === 會員/寄送資料（優先採用購物車裡暫存的覆蓋地址） ===
     prof_res = (
         supabase.table("members")
         .select("name, phone, address")
@@ -3035,8 +3036,6 @@ def checkout():
         flash("請先填寫完整的收件資訊（姓名、電話、地址）再進行結帳")
         return redirect('/cart')
 
-
-
     # 1) 組商品明細 + 算小計（以加入購物車時記錄的價格為主）
     total = 0.0
     items = []
@@ -3049,11 +3048,13 @@ def checkout():
         product = res.data or {}
 
         # 單價：購物車記錄的 price 優先；若沒有再回退 DB price/discount_price
-        item_price = float(item.get('price')
-                           or item.get('discount_price')
-                           or product.get('discount_price')
-                           or product.get('price')
-                           or 0)
+        item_price = float(
+            item.get('price')
+            or item.get('discount_price')
+            or product.get('discount_price')
+            or product.get('price')
+            or 0
+        )
         qty = int(item.get('qty', 1))
         subtotal = item_price * qty
         total += subtotal
@@ -3084,29 +3085,25 @@ def checkout():
             flash(msg)
             session.pop('cart_discount', None)  # 無效就清掉
 
-    # 4) 應付金額（不得為負）
+    # 4) 應付金額（不得為負）→ 統一轉整數入庫
     final_total = max(total + shipping_fee - discount_amount, 0)
-    # ---- 將所有入庫金額統一轉 int（四捨五入到元）----
     total_i           = _money(total)
     shipping_fee_i    = _money(shipping_fee)
     discount_amount_i = _money(discount_amount)
     final_total_i     = max(total_i + shipping_fee_i - discount_amount_i, 0)
 
-    # 同步把每個品項的單價與小計轉成整數，避免 order_items 的欄位也是浮點
-    for it in items:  # 你的迴圈變數名可能是 cart_items/products/items，照你的程式替換即可
+    # 同步把每個品項的單價與小計轉成整數，避免 order_items 的欄位是浮點
+    for it in items:
         it['price']    = _money(it.get('price'))
         it['subtotal'] = _money(it.get('subtotal'))
 
-
     # 4.1 使用者此次在畫面上選的「意圖付款方式」(可有可無)
-    #    ✅ 只存 intended，不在這裡寫 payment_method（避免用戶反悔）
     intended = (request.form.get("payment_method") or request.form.get("method") or "").lower()
     ALLOWED_METHODS = {"linepay", "ecpay", "transfer", "atm", "bank", "bank_transfer"}
     if intended not in ALLOWED_METHODS:
         intended = None
 
     # 5) 建立訂單
-    from uuid import uuid4
     from pytz import timezone
     from datetime import datetime
     tw = timezone("Asia/Taipei")
@@ -3115,16 +3112,15 @@ def checkout():
 
     order_data = {
         'member_id': member_id,
-        'total_amount':   final_total_i,      # ✅ 用整數
-        'shipping_fee':   shipping_fee_i,     # ✅ 用整數
-        'discount_code': discount_code,   # 需有欄位
-        'discount_amount': discount_amount_i, # ✅ 用整數
+        'total_amount':   final_total_i,      # ✅ 整數
+        'shipping_fee':   shipping_fee_i,     # ✅ 整數
+        'discount_code': discount_code,
+        'discount_amount': discount_amount_i, # ✅ 整數
         'status': 'pending',
         'created_at': created_at,
         'MerchantTradeNo': merchant_trade_no,
-        # ✅ 只記 “意圖付款方式”，真正入帳才寫 payment_method
-        'intended_payment_method': intended,
-        # 〔新增〕收件資訊快照（本次訂單使用）
+        'intended_payment_method': intended,  # 只記「意圖」
+        # 收件資訊快照
         'receiver_name': receiver_name,
         'receiver_phone': receiver_phone,
         'receiver_address': receiver_addr
@@ -3133,6 +3129,7 @@ def checkout():
     order_id = result.data[0]['id']
 
     # 6) 寫入每筆商品明細
+    from uuid import uuid4
     for it in items:
         it['id'] = str(uuid4())
         it['order_id'] = order_id
@@ -3140,55 +3137,54 @@ def checkout():
     supabase.table('order_items').insert(items).execute()
 
     # 6.1 扣庫存（逐品項）
-for it in items:
-    pid = it.get("product_id")
-    qty = int(it.get("qty") or it.get("quantity") or 0)
-    if not pid or qty <= 0:
-        continue
+    for it in items:
+        pid = it.get("product_id")
+        qty = int(it.get("qty") or it.get("quantity") or 0)
+        if not pid or qty <= 0:
+            continue
+        try:
+            cur = (
+                supabase.table("products")
+                .select("stock")
+                .eq("id", pid)
+                .single()
+                .execute()
+                .data
+                or {}
+            )
+            cur_stock = int(cur.get("stock") or 0)
+            new_stock = max(0, cur_stock - qty)
+            supabase.table("products").update({"stock": new_stock}).eq("id", pid).execute()
+        except Exception as e:
+            app.logger.error(f"[checkout stock deduct] pid={pid} qty={qty} error={e}")
 
-    try:
-        # 讀目前庫存
-        cur = (
-            supabase.table("products")
-            .select("stock")
-            .eq("id", pid)
-            .single()
-            .execute()
-            .data
-            or {}
-        )
-        cur_stock = int(cur.get("stock") or 0)
-        new_stock = max(0, cur_stock - qty)
-
-        # 寫回新庫存
-        supabase.table("products").update({"stock": new_stock}).eq("id", pid).execute()
-    except Exception as e:
-        app.logger.error(f"[checkout stock deduct] pid={pid} qty={qty} error={e}")
-
-    # 7) 成功後才累計折扣使用次數（簡單版；想更嚴謹可用 RPC）
+    # 7) 成功後才累計折扣使用次數（簡單版）
     if discount_code:
         try:
-            d = supabase.table('discounts').select('used_count').eq('code', discount_code).single().execute().data or {}
+            d = (
+                supabase.table('discounts')
+                .select('used_count')
+                .eq('code', discount_code)
+                .single()
+                .execute()
+                .data
+                or {}
+            )
             used = int(d.get('used_count') or 0) + 1
             supabase.table('discounts').update({'used_count': used}).eq('code', discount_code).execute()
         except Exception:
             # 若失敗就略過，不影響下單
             pass
 
-    # 8) 清空購物車與折扣碼暫存、保存交易編號
+    # 8) 清空購物車與折扣碼暫存、保存交易編號、清除這次寄送覆蓋
     session['cart'] = []
     session.pop('cart_discount', None)
     session['current_trade_no'] = merchant_trade_no
-    # 8) 清空購物車與折扣碼暫存、保存交易編號
-    session['cart'] = []
-    session.pop('cart_discount', None)
-    session['current_trade_no'] = merchant_trade_no
-
-    # 〔新增〕清掉這次用過的寄送覆蓋，避免影響下次
     session.pop('checkout_address', None)
 
-    return redirect("/choose-payment")
-
+    # 9) 導向選擇付款頁
+    flash("訂單已建立，請選擇付款方式", "success")
+    return redirect(f"/choose-payment?order_id={order_id}")
 
 
 
