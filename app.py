@@ -2244,7 +2244,7 @@ def admin_wallet_settings():
            .eq("key", "wallet.signup_bonus")
            .single().execute().data)
     cfg = row["value"] if row else {"amount_cents": 10000, "valid_days": 90}
-    return render_template("admin_wallet_settings.html", cfg=cfg)
+    return render_template("admin_wallet_settings.html", cfg=cfg, orders=[])
 
 #購物金手動發放頁路由
 @app.route("/admin0363/wallet/grant", methods=["GET", "POST"])
@@ -2279,7 +2279,7 @@ def admin_wallet_grant():
                       .select("id,name,email,phone")
                       .ilike("email", f"%{q}%")
                       .execute().data or [])
-    return render_template("admin_wallet_grant.html", candidates=candidates)
+    return render_template("admin_wallet_grant.html", candidates=candidates, orders=[])
 
 #購物金報表頁路由
 @app.route("/admin0363/wallet/report", methods=["GET"])
@@ -2331,7 +2331,9 @@ def admin_wallet_report():
     return render_template("admin_wallet_report.html",
                        rows=rows, member_map=member_map,
                        date_from=date_from, date_to=date_to, reason=reason,
-                       total_in=total_in, total_out=total_out, net=net)
+                       total_in=total_in, total_out=total_out, net=net,
+                       orders=[])
+
 
 
 

@@ -12,7 +12,7 @@
     <tbody>
     {% for r in rows %}
       <tr>
-        <td>{{ r.created_at | replace('T',' ')[:19] }}</td>
+        <td>{{ (r.created_at | replace('T',' ')) | truncate(19, True, '') }}</td>
         <td>{{ r.reason }}</td>
         <td style="font-weight:600; color:{{ 'green' if r.amount_cents>0 else 'crimson' }};">
           {{ (r.amount_cents // 100) }} 元

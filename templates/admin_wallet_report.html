@@ -57,7 +57,7 @@
   {% for r in rows %}
     {% set m = member_map.get(r.member_id) %}
     <tr>
-      <td>{{ r.created_at | replace('T',' ')[:19] }}</td>
+      <td>{{ (r.created_at | replace('T',' ')) | truncate(19, True, '') }}</td>
       <td>#{{ r.member_id }} {{ m and m.name or '' }} {{ m and m.email or '' }}</td>
       <td>{{ r.reason }}</td>
       <td style="font-weight:600;color:{{ 'green' if r.amount_cents>0 else 'crimson' }};">
