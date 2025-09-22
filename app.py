@@ -3284,6 +3284,7 @@ def checkout():
         pid = item.get('product_id')
         if not pid:
             continue
+
         # 撈必要欄位（名稱），價格仍以購物車為準
         res = supabase.table("products").select("id,name").eq("id", pid).single().execute()
         product = res.data or {}
@@ -3356,34 +3357,32 @@ def checkout():
     # 3) 真正可使用的購物金（分）= min(輸入值, 可用餘額, 未扣錢前應付)
     use_cents = min(want_cents, available_cents, pre_wallet_total_i)
 
+    # (4-3) 最終應付金額（分）
+    final_total_i = max(pre_wallet_total_i - use_cents, 0)
 
-        # (4-3) 最終應付金額（分）
-        final_total_i = max(pre_wallet_total_i - use_cents, 0)
+    # 同步把每個品項的單價與小計轉成整數，避免 order_items 的欄位是浮點
+    for it in items:
+        it['price']    = _money(it.get('price'))
+        it['subtotal'] = _money(it.get('subtotal'))
 
+    # 4.1 使用者此次在畫面上選的「意圖付款方式」(可有可無)
+    intended = (request.form.get("payment_method") or request.form.get("method") or "").lower()
+    ALLOWED_METHODS = {"linepay", "ecpay", "transfer", "atm", "bank", "bank_transfer"}
+    if intended not in ALLOWED_METHODS:
+        intended = None
 
-        # 同步把每個品項的單價與小計轉成整數，避免 order_items 的欄位是浮點
-        for it in items:
-            it['price']    = _money(it.get('price'))
-            it['subtotal'] = _money(it.get('subtotal'))
+    # 5) 建立訂單
+    from pytz import timezone
+    from datetime import datetime
+    tw = timezone("Asia/Taipei")
+    merchant_trade_no = generate_merchant_trade_no()
+    created_at = datetime.now(tw).isoformat()
 
-        # 4.1 使用者此次在畫面上選的「意圖付款方式」(可有可無)
-        intended = (request.form.get("payment_method") or request.form.get("method") or "").lower()
-        ALLOWED_METHODS = {"linepay", "ecpay", "transfer", "atm", "bank", "bank_transfer"}
-        if intended not in ALLOWED_METHODS:
-            intended = None
-
-        # 5) 建立訂單
-        from pytz import timezone
-        from datetime import datetime
-        tw = timezone("Asia/Taipei")
-        merchant_trade_no = generate_merchant_trade_no()
-        created_at = datetime.now(tw).isoformat()
-
-        order_data = {
+    order_data = {
         'member_id': member_id,
         'total_amount':   final_total_i,      # ✅ 整數
         'shipping_fee':   shipping_fee_i,     # ✅ 整數
-        'discount_code': discount_code,
+        'discount_code':  discount_code,
         'discount_amount': discount_amount_i, # ✅ 整數
         'status': 'pending',
         'created_at': created_at,
@@ -3394,13 +3393,14 @@ def checkout():
         'receiver_phone': receiver_phone,
         'receiver_address': receiver_addr,
         'wallet_used_cents': use_cents,   # 本次實際扣抵的購物金（分）
-        'amount_payable': final_total_i   # ← DB 有的欄位，用來放「最後應付」（分）
-
+        'amount_payable': final_total_i   # DB 欄位：最後應付（分）
     }
     result = supabase.table('orders').insert(order_data).execute()
     order_id = result.data[0]['id']
+
+    # 錢包扣款（若有使用）
     if use_cents > 0:
-      spend_wallet(str(member_id), order_id, use_cents)
+        spend_wallet(str(member_id), order_id, use_cents)
 
     # 6) 寫入每筆商品明細
     from uuid import uuid4
@@ -3459,6 +3459,7 @@ def checkout():
     # 9) 導向選擇付款頁
     flash("訂單已建立，請選擇付款方式", "success")
     return redirect(f"/choose-payment?order_id={order_id}")
+
 
 
 
