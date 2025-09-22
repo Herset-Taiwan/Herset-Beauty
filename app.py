@@ -142,55 +142,45 @@ def apply_wallet(member_id: str, want_cents: int, order_total_cents: int) -> int
 
 def spend_wallet(member_id, order_id, use_cents: int, note: str = "結帳扣抵"):
     """
-    從會員錢包扣除指定金額（單位：分）。
-    - member_id: UUID/文字/整數皆可，原樣寫入/查詢（不轉型）
-    - order_id:  對應 orders.id
-    - use_cents: 要扣的金額（分、非負整數）
-    同步：
-      1) wallet_balances.balance_cents 扣款（upsert）
-      2) wallet_credits 寫一筆負值紀錄
+    扣錢包金額（單位：分）。
+    注意：wallet_balances 是 VIEW（含 GROUP BY），不能寫入！
+    因此這裡只寫一筆負值到 wallet_credits，餘額由 VIEW 自行加總。
     """
     amt = int(use_cents or 0)
     if amt <= 0:
         return
 
-    # 1) 讀目前餘額（分）— 若不存在視為 0
-    try:
-        row = (
-            supabase.table("wallet_balances")
-            .select("balance_cents")
-            .eq("member_id", member_id)  # ← 不轉型，原樣比對（支援 uuid/text）
-            .single()
-            .execute()
-            .data
-            or {}
-        )
-        cur = int(row.get("balance_cents") or 0)
-    except Exception:
-        # 查無此會員餘額紀錄時，視為 0
-        cur = 0
-
-    # 2) 新餘額（不可負）
-    new_bal = max(0, cur - amt)
-
-    # 3) 更新/建立餘額（以 member_id 當唯一鍵）
-    supabase.table("wallet_balances").upsert(
-        {"member_id": member_id, "balance_cents": new_bal},
-        on_conflict="member_id"
-    ).execute()
-
-    # 4) 記錄錢包交易（負數代表支出）
+    # 1) 寫入錢包交易（負數 = 支出）
     supabase.table("wallet_credits").insert({
-        "member_id": member_id,
-        "amount_cents": -amt,          # ← 分為單位
+        "member_id": member_id,       # UUID/text/整數皆可，沿用你現在的型別
+        "amount_cents": -amt,         # 單位：分，支出用負數
         "reason": "order_apply",
         "related_order_id": order_id,
         "note": note
     }).execute()
 
-    # 可選：log 與回傳新餘額
+    # 2)（可選）讀 VIEW 取得新餘額，只作記錄或回傳，不做寫入
+    new_bal = None
     try:
-        app.logger.info(f"[wallet] spend member_id={member_id} order_id={order_id} use_cents={amt} new_bal={new_bal}")
+        row = (
+            supabase.table("wallet_balances")
+            .select("balance_cents")
+            .eq("member_id", member_id)
+            .single()
+            .execute()
+            .data
+            or {}
+        )
+        new_bal = int(row.get("balance_cents") or 0)
+    except Exception:
+        # 若 VIEW 查不到就略過（不影響扣款成功）
+        pass
+
+    try:
+        app.logger.info(
+            f"[wallet] spend member_id={member_id} order_id={order_id} "
+            f"use_cents={amt} new_bal={new_bal}"
+        )
     except Exception:
         pass
 
