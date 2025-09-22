@@ -2317,17 +2317,16 @@ def login():
 
         res = (supabase.table("members")
                .select("id, account, password, name, phone, address")
-               .eq("account", account)
-               .execute())
+               .eq("account", account).execute())
 
         if res.data and res.data[0]['password'] == password:
             user = res.data[0]
             session['user'] = user
             session['member_id'] = user['id']
 
-            # ★ 新增：舊會員「第一次登入補發」新會員購物金（尚未領過才會發）
+            # ✅ 第一次登入自動發放新會員購物金（若後台金額>0且尚未發過）
             try:
-                _auto_grant_signup_wallet(session["member_id"])
+                _auto_grant_signup_wallet(session['member_id'])
             except Exception:
                 current_app.logger.exception("[wallet] auto grant (platform login) failed")
 
@@ -2337,12 +2336,15 @@ def login():
             else:
                 session.pop('incomplete_profile', None)
 
+            # 支援 ?next=wallet 直接帶去錢包頁
+            if next_page == 'wallet':
+                return redirect('/member/wallet')
             return redirect('/cart' if next_page == 'cart' else '/')
-
         else:
             return render_template("login.html", error="帳號或密碼錯誤")
 
     return render_template("login.html")
+
 
 
 # === 第三方登入：導向同意頁開始 ===
@@ -2828,6 +2830,42 @@ def admin_wallet_grant():
 
     flash(f"發放完成：成功 {ok_cnt} 筆，失敗 {fail_cnt} 筆", "success" if fail_cnt == 0 else "warning")
     return redirect("/admin0363/wallet/grant")
+
+# === Member: 我的購物金 ===
+@app.get("/member/wallet")
+def member_wallet():
+    mid = session.get("member_id")
+    if not mid:
+        # 未登入 → 帶 next=wallet，登入後回跳本頁
+        return redirect("/login?next=wallet")
+
+    # 讀可用餘額（沒有就 0）
+    try:
+        bres = (supabase.table("wallet_balances")
+                .select("balance_cents")
+                .eq("member_id", mid)
+                .limit(1)
+                .execute())
+        balance_cents = int((bres.data or [{}])[0].get("balance_cents") or 0)
+    except Exception:
+        balance_cents = 0
+
+    # 讀發放/異動紀錄（依你表結構：wallet_credits）
+    try:
+        rows = (supabase.table("wallet_credits")
+                .select("*")
+                .eq("member_id", mid)
+                .order("id", desc=True)
+                .limit(200)
+                .execute()).data or []
+    except Exception:
+        rows = []
+
+    # 渲染你上傳的模板（member_wallet.html 會自行格式化時間/金額）
+    return render_template("member_wallet.html",
+                           balance_cents=balance_cents,
+                           rows=rows)
+
 
 # === Admin: 簡易報表 ===
 @app.get("/admin0363/wallet/report")
