@@ -1,0 +1,24 @@
+{% extends "admin.html" %}
+{% block title %}購物金設定 - HERSET 後台{% endblock %}
+{% block content %}
+
+<h2 style="margin:0 0 16px;">購物金設定</h2>
+<form method="post" class="form" style="max-width:560px;display:grid;gap:14px;">
+  <label>新會員購物金（元）
+    <input type="number" name="signup_amount" value="{{ (cfg.amount_cents or 0) // 100 }}" min="0" required>
+  </label>
+  <label>新會員購物金有效天數（天，0＝不過期）
+    <input type="number" name="signup_valid_days" value="{{ cfg.valid_days or 0 }}" min="0" required>
+  </label>
+
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+    <button type="submit" class="btn btn-primary">儲存設定</button>
+    <a class="btn" href="/admin0363/features">返回</a>
+  </div>
+
+  <p style="color:#666;margin-top:8px;">
+    小提醒：登入即自動發放一次新會員購物金；已發過的會員不會重複發放（DB 有唯一索引保護）。
+  </p>
+</form>
+
+{% endblock %}

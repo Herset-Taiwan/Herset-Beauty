@@ -1,0 +1,52 @@
+{% extends "admin.html" %}
+{% block title %}購物金發放 - HERSET 後台{% endblock %}
+{% block content %}
+
+<h2 style="margin:0 0 16px;">發放購物金</h2>
+
+<form method="get" class="form" action="/admin0363/wallet/grant" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+  <label style="flex:1 1 280px;">搜尋會員（email / 姓名 / 電話）
+    <input type="text" name="q" value="{{ request.args.get('q','') }}" placeholder="輸入關鍵字後按搜尋">
+  </label>
+  <button class="btn">搜尋</button>
+  <a class="btn" href="/admin0363/features">返回</a>
+</form>
+
+{% if candidates and candidates|length > 0 %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>會員</th>
+      <th>Email</th>
+      <th>電話</th>
+      <th style="width:420px;">發放</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for m in candidates %}
+    <tr>
+      <td>#{{ m.id }} {{ m.name or '' }}</td>
+      <td>{{ m.email or '' }}</td>
+      <td>{{ m.phone or '' }}</td>
+      <td>
+        <form method="post" class="form" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <input type="hidden" name="member_id" value="{{ m.id }}">
+          <input type="number" name="amount" placeholder="金額(元)" min="1" required style="width:120px;">
+          <input type="date" name="expires_at" placeholder="到期日（可空）" style="width:170px;">
+          <input type="text" name="note" placeholder="備註" style="flex:1 1 160px;">
+          <button class="btn btn-primary">發放</button>
+        </form>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+  {% if request.args.get('q') %}
+    <div style="color:#999;">找不到符合條件的會員。</div>
+  {% else %}
+    <div style="color:#999;">請先上方搜尋會員。</div>
+  {% endif %}
+{% endif %}
+
+{% endblock %}

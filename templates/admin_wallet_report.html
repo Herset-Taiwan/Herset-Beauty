@@ -1,0 +1,78 @@
+{% extends "admin.html" %}
+{% block title %}購物金查詢 / 報表 - HERSET 後台{% endblock %}
+{% block content %}
+
+<h2 style="margin:0 0 16px;">購物金 查詢 / 報表</h2>
+
+<form class="form" method="get" action="/admin0363/wallet/report"
+      style="display:grid;grid-template-columns:repeat(5,minmax(160px,1fr));gap:10px;align-items:end;margin-bottom:14px;">
+  <label>起日
+    <input type="date" name="from" value="{{ date_from or '' }}">
+  </label>
+  <label>迄日
+    <input type="date" name="to" value="{{ date_to or '' }}">
+  </label>
+  <label>類型
+    <select name="reason">
+      <option value="">全部</option>
+      {% for r in ['signup','manual','order_apply','refund'] %}
+        <option value="{{ r }}" {{ 'selected' if reason==r else '' }}>{{ r }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>會員關鍵字
+    <input type="text" name="q" value="{{ request.args.get('q','') }}" placeholder="email / 姓名 / 電話">
+  </label>
+  <button class="btn btn-primary">查詢</button>
+</form>
+
+<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px;">
+  <div class="card" style="padding:10px 14px;">
+    <div style="color:#666;">發放總額</div>
+    <div style="font-weight:700;font-size:18px;">{{ (total_in // 100) }} 元</div>
+  </div>
+  <div class="card" style="padding:10px 14px;">
+    <div style="color:#666;">扣抵總額</div>
+    <div style="font-weight:700;font-size:18px;">{{ (total_out // 100) }} 元</div>
+  </div>
+  <div class="card" style="padding:10px 14px;">
+    <div style="color:#666;">淨額</div>
+    <div style="font-weight:700;font-size:18px;">{{ (net // 100) }} 元</div>
+  </div>
+</div>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>時間</th>
+      <th>會員</th>
+      <th>類型</th>
+      <th>金額</th>
+      <th>到期</th>
+      <th>訂單</th>
+      <th>備註</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for r in rows %}
+    {% set m = member_map.get(r.member_id) %}
+    <tr>
+      <td>{{ r.created_at | replace('T',' ')[:19] }}</td>
+      <td>#{{ r.member_id }} {{ m and m.name or '' }} {{ m and m.email or '' }}</td>
+      <td>{{ r.reason }}</td>
+      <td style="font-weight:600;color:{{ 'green' if r.amount_cents>0 else 'crimson' }};">
+        {{ (r.amount_cents // 100) }} 元
+      </td>
+      <td>{{ r.expires_at and r.expires_at[:10] or '-' }}</td>
+      <td>{{ r.related_order_id or '-' }}</td>
+      <td>{{ r.note or '' }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<div style="margin-top:12px;">
+  <a class="btn" href="/admin0363/features">返回</a>
+</div>
+
+{% endblock %}

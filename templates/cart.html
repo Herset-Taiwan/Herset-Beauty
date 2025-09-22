@@ -593,9 +593,24 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
 </div>
 
 
-      <form method="POST" action="/checkout">
-        <button type="submit" class="checkout-btn">結帳</button>
-      </form>
+      <form method="POST" action="/checkout" style="margin-top:20px;">
+  <!-- 購物金輸入區 -->
+  {% if session.get('member_id') %}
+    <div style="margin-bottom:14px; text-align:right;">
+      <label style="font-weight:bold; color:#5a4b45;">
+        使用購物金（元）：
+        <input type="number" name="wallet_amount" min="0" step="1" value="0"
+               style="width:100px; padding:6px 8px; border:1px solid #ddd; border-radius:6px;">
+      </label>
+      <div style="font-size:13px; color:#666; margin-top:4px;">
+        可用餘額：{{ (session.get('wallet_balance_cents', 0) // 100) }} 元
+      </div>
+    </div>
+  {% endif %}
+
+  <button type="submit" class="checkout-btn">結帳</button>
+</form>
+
     {% else %}
       <p>目前尚無商品。</p>
     {% endif %}

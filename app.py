@@ -117,6 +117,44 @@ def _money(v) -> int:
     except Exception:
         return int(round(float(v or 0)))
 
+# === Wallet helpers（放在 _money() 後面、checkout 路由之前）===
+
+def apply_wallet(member_id: str, want_cents: int, order_total_cents: int) -> int:
+    """
+    回傳本次可實際使用的購物金（單位：分）。
+    - 不可超過會員錢包餘額
+    - 不可超過本次應付金額
+    """
+    try:
+        row = (supabase.table("wallet_balances")
+               .select("balance_cents")
+               .eq("member_id", member_id)
+               .single()
+               .execute().data) or {}
+        balance = int(row.get("balance_cents") or 0)
+    except Exception:
+        balance = 0
+
+    want = int(max(0, want_cents))
+    payable = int(max(0, order_total_cents))
+    return max(0, min(want, balance, payable))
+
+
+def spend_wallet(member_id: str, order_id, use_cents: int, note: str = "結帳扣抵"):
+    """
+    真正扣帳：在 wallet_credits 寫入一筆負值，綁定 related_order_id
+    （orders.id 可能是 uuid 或 bigint，所以 order_id 型別保持彈性）
+    """
+    if use_cents and use_cents > 0:
+        supabase.table("wallet_credits").insert({
+            "member_id": member_id,
+            "amount_cents": -int(use_cents),
+            "reason": "order_apply",
+            "related_order_id": order_id,
+            "note": note
+        }).execute()
+
+
 # ✅ 正確：第二參數是「已序列化」的 JSON 字串（POST 傳 body；GET 傳 querystring；沒有就空字串）
 def _lp_signature_headers(request_uri: str, serialized: str, method: str = "POST"):
     nonce = str(uuid4())
@@ -212,6 +250,39 @@ def upsert_member_from_oauth(*, provider: str, sub: str, email: str | None, name
     created = supabase.table("members").insert(payload).execute()
     return created.data[0]
 
+# 新增：登入後發放新會員購物金（只發一次）
+def grant_signup_bonus_if_needed(member_id: str):
+    # 讀設定
+    row = (supabase.table("settings")
+           .select("value")
+           .eq("key", "wallet.signup_bonus")
+           .single().execute().data)
+    cfg = row["value"] if row else {"amount_cents": 10000, "valid_days": 90}
+    amount_cents = int(cfg.get("amount_cents", 10000))
+    valid_days = int(cfg.get("valid_days", 90))
+
+    # 是否已發過
+    existed = (supabase.table("wallet_credits")
+               .select("id")
+               .eq("member_id", member_id)
+               .eq("reason", "signup")
+               .gt("amount_cents", 0)
+               .execute().data)
+    if existed:
+        return
+
+    from datetime import datetime, timedelta, timezone
+    expires_at = None
+    if valid_days > 0:
+        expires_at = (datetime.now(timezone.utc) + timedelta(days=valid_days)).isoformat()
+
+    supabase.table("wallet_credits").insert({
+        "member_id": member_id,
+        "amount_cents": amount_cents,
+        "reason": "signup",
+        "expires_at": expires_at,
+        "note": "新會員購物金"
+    }).execute()
 
 
 
@@ -2151,6 +2222,118 @@ def _analytics_member(keyword, start_date, end_date):
     }
 # admin後台 搜尋報表 結束
 
+#購物金路由開始:
+#購物金設定頁路由
+@app.route("/admin0363/wallet/settings", methods=["GET", "POST"])
+def admin_wallet_settings():
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
+
+    if request.method == "POST":
+        amount = int(request.form.get("signup_amount", "100") or 100) * 100
+        days = int(request.form.get("signup_valid_days", "90") or 90)
+        supabase.table("settings").upsert({
+            "key": "wallet.signup_bonus",
+            "value": {"amount_cents": amount, "valid_days": days}
+        }).execute()
+        flash("購物金設定已儲存", "success")
+        return redirect("/admin0363/wallet/settings")
+
+    row = (supabase.table("settings")
+           .select("value")
+           .eq("key", "wallet.signup_bonus")
+           .single().execute().data)
+    cfg = row["value"] if row else {"amount_cents": 10000, "valid_days": 90}
+    return render_template("admin/wallet_settings.html", cfg=cfg)
+
+#購物金手動發放頁路由
+@app.route("/admin0363/wallet/grant", methods=["GET", "POST"])
+def admin_wallet_grant():
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
+
+    if request.method == "POST":
+        member_id = int(request.form["member_id"])
+        amount_cents = int(request.form["amount"]) * 100
+        note = request.form.get("note") or ""
+        expires_at = request.form.get("expires_at") or None
+        admin_id = session.get("admin_id")
+
+        supabase.table("wallet_credits").insert({
+            "member_id": member_id,
+            "amount_cents": amount_cents,
+            "reason": "manual",
+            "expires_at": expires_at,
+            "issued_by_admin_id": admin_id,
+            "note": note
+        }).execute()
+        flash("已發放購物金", "success")
+        return redirect("/admin0363/wallet/grant")
+
+    # GET：簡易會員搜尋（用 query 參數）
+    q = request.args.get("q", "").strip()
+    candidates = []
+    if q:
+        # 你現有 members 欄位：可依 email/phone/name…
+        candidates = (supabase.table("members")
+                      .select("id,name,email,phone")
+                      .ilike("email", f"%{q}%")
+                      .execute().data or [])
+    return render_template("admin/wallet_grant.html", candidates=candidates)
+
+#購物金報表頁路由
+@app.route("/admin0363/wallet/report", methods=["GET"])
+def admin_wallet_report():
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
+
+    # 篩選：日期區間、類型(reason)、會員關鍵字
+    date_from = request.args.get("from")
+    date_to = request.args.get("to")
+    reason = request.args.get("reason")  # signup/manual/order_apply/refund 或空
+    q = request.args.get("q", "").strip()
+
+    query = supabase.table("wallet_credits").select(
+        "id, member_id, amount_cents, reason, related_order_id, expires_at, issued_by_admin_id, note, created_at"
+    )
+    if date_from:
+        query = query.gte("created_at", date_from + " 00:00:00+00")
+    if date_to:
+        query = query.lte("created_at", date_to + " 23:59:59+00")
+    if reason:
+        query = query.eq("reason", reason)
+
+    rows = query.order("created_at", desc=True).limit(1000).execute().data or []
+
+    member_map = {}
+    if q:
+        ms = (supabase.table("members")
+              .select("id,name,email,phone")
+              .or_(f"email.ilike.%{q}%,name.ilike.%{q}%,phone.ilike.%{q}%")
+              .execute().data or [])
+        ids = [m["id"] for m in ms]
+        rows = [r for r in rows if r["member_id"] in ids]
+        member_map = {m["id"]: m for m in ms}
+    else:
+        # 小優化：帶出出現在 rows 的會員
+        ids = list({r["member_id"] for r in rows})
+        if ids:
+            ms = (supabase.table("members")
+                  .select("id,name,email,phone")
+                  .in_("id", ids).execute().data or [])
+            member_map = {m["id"]: m for m in ms}
+
+    # 統計加總
+    total_in = sum(r["amount_cents"] for r in rows if r["amount_cents"] > 0)
+    total_out = sum(-r["amount_cents"] for r in rows if r["amount_cents"] < 0)
+    net = total_in - total_out
+
+    return render_template("admin/wallet_report.html",
+                           rows=rows, member_map=member_map,
+                           date_from=date_from, date_to=date_to, reason=reason,
+                           total_in=total_in, total_out=total_out, net=net)
+
+
 
 @app.route("/admin0363/mark_seen_orders", methods=["POST"])
 def mark_seen_orders():
@@ -2244,6 +2427,8 @@ def login():
             user = res.data[0]
             session['user'] = user
             session['member_id'] = user['id']
+            grant_signup_bonus_if_needed(str(session["member_id"]))
+
 
             # ✅ 判斷是否有缺資料
             if not user.get('name') or not user.get('phone') or not user.get('address'):
@@ -2324,6 +2509,7 @@ def login_google_callback():
     )
 
     session["member_id"] = member["id"]
+    grant_signup_bonus_if_needed(str(session["member_id"]))
     session["user"] = {
         "account": member.get("account") or (member.get("email") or "google_user"),
         "email": member.get("email"),
@@ -2413,6 +2599,7 @@ def login_facebook_callback():
 
         # --- D) 建立登入狀態 ---
         session["member_id"] = member["id"]
+        grant_signup_bonus_if_needed(str(session["member_id"]))
         session["user"] = {
             "account": member.get("account") or (member.get("email") or "facebook_user"),
             "email": member.get("email"),
@@ -2519,6 +2706,7 @@ def login_line_callback():
         provider="line", sub=sub, email=email, name=name, avatar_url=picture
     )
     session["member_id"] = member["id"]
+    grant_signup_bonus_if_needed(str(session["member_id"]))
     session["user"] = {
         "account": member.get("account") or (member.get("email") or "line_user"),
         "email": member.get("email"),
@@ -2643,6 +2831,28 @@ def register():
     except Exception as e:
         app.logger.error(f"🚨 註冊錯誤：{e}")
         return render_template("register.html", error="註冊失敗，請稍後再試")
+
+# 新增購物金：本次 Session 僅檢查一次
+@app.before_request
+def ensure_signup_bonus_once_per_session():
+    if "member_id" in session and not session.get("signup_bonus_checked"):
+        try:
+            grant_signup_bonus_if_needed(str(session["member_id"]))
+        finally:
+            session["signup_bonus_checked"] = True
+
+# 新增：把可用購物金餘額放到 session，供導覽列顯示
+@app.before_request
+def inject_wallet_badge():
+    if "member_id" in session:
+        mid = str(session["member_id"])
+        res = (supabase.table("wallet_balances")
+               .select("balance_cents")
+               .eq("member_id", mid).execute().data)
+        session["wallet_balance_cents"] = int(res[0]["balance_cents"]) if res else 0
+    else:
+        session.pop("wallet_balance_cents", None)
+
 
 
 
@@ -3100,12 +3310,21 @@ def checkout():
             flash(msg)
             session.pop('cart_discount', None)  # 無效就清掉
 
-    # 4) 應付金額（不得為負）→ 統一轉整數入庫
-    final_total = max(total + shipping_fee - discount_amount, 0)
+    # 4) 應付金額（不得為負）→ 先算未扣購物金，再套用購物金
     total_i           = _money(total)
     shipping_fee_i    = _money(shipping_fee)
     discount_amount_i = _money(discount_amount)
-    final_total_i     = max(total_i + shipping_fee_i - discount_amount_i, 0)
+
+    # (4-1) 未扣購物金前的應付（整數、分）
+    pre_wallet_total_i = max(total_i + shipping_fee_i - discount_amount_i, 0)
+
+    # (4-2) 套用購物金（前端欄位名稱：wallet_amount，單位：元；沒有就當 0）
+    want_wallet_amount = int(request.form.get("wallet_amount", "0") or 0)   # 會員想用多少「元」
+    use_cents = apply_wallet(str(member_id), want_wallet_amount * 100, pre_wallet_total_i)
+
+    # (4-3) 最終應付金額（分）
+    final_total_i = max(pre_wallet_total_i - use_cents, 0)
+
 
     # 同步把每個品項的單價與小計轉成整數，避免 order_items 的欄位是浮點
     for it in items:
@@ -3138,10 +3357,15 @@ def checkout():
         # 收件資訊快照
         'receiver_name': receiver_name,
         'receiver_phone': receiver_phone,
-        'receiver_address': receiver_addr
+        'receiver_address': receiver_addr,
+        'wallet_used_cents': use_cents,          # ✅ 本次實際扣抵的購物金（分）
+        'amount_payable_cents': final_total_i   # ✅ 方便對帳（也可不加；你原本 total_amount 仍保留）
+
     }
     result = supabase.table('orders').insert(order_data).execute()
     order_id = result.data[0]['id']
+    if use_cents > 0:
+      spend_wallet(str(member_id), order_id, use_cents)
 
     # 6) 寫入每筆商品明細
     from uuid import uuid4

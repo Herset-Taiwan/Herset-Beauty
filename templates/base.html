@@ -77,6 +77,13 @@ fbq('track', 'PageView');
     <span>HERSET</span>
   </a>
 
+  {# 新增：登入後在頁首顯示購物金徽章 #}
+{% if session.get('member_id') %}
+  <a href="/member/wallet" class="wallet-badge">
+    購物金：{{ (session.get('wallet_balance_cents', 0) // 100) }} 元
+  </a>
+{% endif %}
+
    {# 只在首頁顯示；若想所有頁面都顯示，把這個 if 整段拿掉即可 #}
   {% if request.path == '/' %}
     <div class="ann-ticker">
@@ -108,6 +115,7 @@ fbq('track', 'PageView');
           <ul class="dropdown-menu">
             <li><a href="/order-history">歷史訂單</a></li>
             <li><a href="#" id="open-profile-link">會員資料</a></li>
+            <li><a href="/member/wallet">💰 我的購物金</a></li>
             <li><a href="/member/messages">📨 我的留言</a></li>
             <li><a href="/change-password">🔒 修改密碼</a></li>
             <li><a href="/logout">登出</a></li>
