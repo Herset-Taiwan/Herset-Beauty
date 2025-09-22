@@ -1,24 +1,57 @@
-{% extends "admin.html" %}
-{% block title %}購物金設定 - HERSET 後台{% endblock %}
-{% block admin_content %}
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>購物金設定 - HERSET 後台</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .admin-topbar{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:12px 16px;background:#f7f2f1;border-bottom:1px solid #e6d6d2}
+    .admin-topbar .nav a{display:inline-block;background:#fff;border:1px solid #e5d3cf;border-radius:999px;padding:8px 14px;margin-right:8px;text-decoration:none;color:#5a4b45}
+    .container{max-width:960px;margin:20px auto;padding:0 16px}
+    .btn{display:inline-block;padding:8px 14px;border-radius:8px;border:1px solid #d9c6c2;cursor:pointer;background:#fff}
+    .btn-primary{background:#c6456c;color:#fff;border:none}
+    .card{background:#fff;border:1px solid #eadad6;border-radius:12px;padding:16px}
+    .form{display:grid;gap:14px;max-width:560px}
+    label{display:grid;gap:6px}
+  </style>
+</head>
+<body>
 
-<h2 style="margin:0 0 16px;">購物金設定</h2>
-<form method="post" class="form" style="max-width:560px;display:grid;gap:14px;">
-  <label>新會員購物金（元）
-    <input type="number" name="signup_amount" value="{{ (cfg.amount_cents or 0) // 100 }}" min="0" required>
-  </label>
-  <label>新會員購物金有效天數（天，0＝不過期）
-    <input type="number" name="signup_valid_days" value="{{ cfg.valid_days or 0 }}" min="0" required>
-  </label>
-
-  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
-    <button type="submit" class="btn btn-primary">儲存設定</button>
-    <a class="btn" href="/admin0363/features">返回</a>
+  <div class="admin-topbar">
+    <div class="nav">
+      <a href="/admin0363/features">功能管理</a>
+      <a href="/admin0363/wallet/grant">購物金發放</a>
+      <a href="/admin0363/wallet/report">購物金報表</a>
+    </div>
+    <div>
+      <a class="btn" href="/admin0363/dashboard">返回儀表板</a>
+      <a class="btn" href="/admin0363/logout">登出</a>
+    </div>
   </div>
 
-  <p style="color:#666;margin-top:8px;">
-    小提醒：登入即自動發放一次新會員購物金；已發過的會員不會重複發放（DB 有唯一索引保護）。
-  </p>
-</form>
+  <div class="container">
+    <h2 style="margin:0 0 16px;">購物金設定</h2>
+    <div class="card">
+      <form method="post" class="form">
+        <label>新會員購物金（元）
+          <input type="number" name="signup_amount" value="{{ (cfg.amount_cents or 0) // 100 }}" min="0" required>
+        </label>
+        <label>新會員購物金有效天數（天，0＝不過期）
+          <input type="number" name="signup_valid_days" value="{{ cfg.valid_days or 0 }}" min="0" required>
+        </label>
 
-{% endblock %}
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+          <button type="submit" class="btn btn-primary">儲存設定</button>
+          <a class="btn" href="/admin0363/features">返回</a>
+        </div>
+
+        <p style="color:#666;margin-top:8px;">
+          小提醒：登入即自動發放一次新會員購物金；已發過的會員不會重複發放（DB 有唯一索引保護）。
+        </p>
+      </form>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -1,78 +1,112 @@
-{% extends "admin.html" %}
-{% block title %}購物金查詢 / 報表 - HERSET 後台{% endblock %}
-{% block admin_content %}
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>購物金查詢 / 報表 - HERSET 後台</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .admin-topbar{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:12px 16px;background:#f7f2f1;border-bottom:1px solid #e6d6d2}
+    .admin-topbar .nav a{display:inline-block;background:#fff;border:1px solid #e5d3cf;border-radius:999px;padding:8px 14px;margin-right:8px;text-decoration:none;color:#5a4b45}
+    .container{max-width:1200px;margin:20px auto;padding:0 16px}
+    .btn{display:inline-block;padding:8px 14px;border-radius:8px;border:1px solid #d9c6c2;cursor:pointer;background:#fff}
+    .btn-primary{background:#c6456c;color:#fff;border:none}
+    .table{width:100%;border-collapse:collapse}
+    .table th,.table td{border:1px solid #eadad6;padding:8px 10px;text-align:left}
+    .card{background:#fff;border:1px solid #eadad6;border-radius:12px;padding:16px}
+    .filters{display:grid;grid-template-columns:repeat(5,minmax(160px,1fr));gap:10px;align-items:end;margin-bottom:14px}
+    @media (max-width: 900px){ .filters{grid-template-columns:repeat(2,1fr);} }
+  </style>
+</head>
+<body>
 
-<h2 style="margin:0 0 16px;">購物金 查詢 / 報表</h2>
-
-<form class="form" method="get" action="/admin0363/wallet/report"
-      style="display:grid;grid-template-columns:repeat(5,minmax(160px,1fr));gap:10px;align-items:end;margin-bottom:14px;">
-  <label>起日
-    <input type="date" name="from" value="{{ date_from or '' }}">
-  </label>
-  <label>迄日
-    <input type="date" name="to" value="{{ date_to or '' }}">
-  </label>
-  <label>類型
-    <select name="reason">
-      <option value="">全部</option>
-      {% for r in ['signup','manual','order_apply','refund'] %}
-        <option value="{{ r }}" {{ 'selected' if reason==r else '' }}>{{ r }}</option>
-      {% endfor %}
-    </select>
-  </label>
-  <label>會員關鍵字
-    <input type="text" name="q" value="{{ request.args.get('q','') }}" placeholder="email / 姓名 / 電話">
-  </label>
-  <button class="btn btn-primary">查詢</button>
-</form>
-
-<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px;">
-  <div class="card" style="padding:10px 14px;">
-    <div style="color:#666;">發放總額</div>
-    <div style="font-weight:700;font-size:18px;">{{ (total_in // 100) }} 元</div>
+  <div class="admin-topbar">
+    <div class="nav">
+      <a href="/admin0363/features">功能管理</a>
+      <a href="/admin0363/wallet/settings">購物金設定</a>
+      <a href="/admin0363/wallet/grant">購物金發放</a>
+    </div>
+    <div>
+      <a class="btn" href="/admin0363/dashboard">返回儀表板</a>
+      <a class="btn" href="/admin0363/logout">登出</a>
+    </div>
   </div>
-  <div class="card" style="padding:10px 14px;">
-    <div style="color:#666;">扣抵總額</div>
-    <div style="font-weight:700;font-size:18px;">{{ (total_out // 100) }} 元</div>
+
+  <div class="container">
+    <h2 style="margin:0 0 16px;">購物金 查詢 / 報表</h2>
+
+    <div class="card">
+      <form class="filters" method="get" action="/admin0363/wallet/report">
+        <label>起日
+          <input type="date" name="from" value="{{ date_from or '' }}">
+        </label>
+        <label>迄日
+          <input type="date" name="to" value="{{ date_to or '' }}">
+        </label>
+        <label>類型
+          <select name="reason">
+            <option value="">全部</option>
+            {% for r in ['signup','manual','order_apply','refund'] %}
+              <option value="{{ r }}" {{ 'selected' if reason==r else '' }}>{{ r }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>會員關鍵字
+          <input type="text" name="q" value="{{ request.args.get('q','') }}" placeholder="email / 姓名 / 電話">
+        </label>
+        <button class="btn btn-primary" style="height:38px;">查詢</button>
+      </form>
+
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px;">
+        <div class="card" style="padding:10px 14px;">
+          <div style="color:#666;">發放總額</div>
+          <div style="font-weight:700;font-size:18px;">{{ (total_in // 100) }} 元</div>
+        </div>
+        <div class="card" style="padding:10px 14px;">
+          <div style="color:#666;">扣抵總額</div>
+          <div style="font-weight:700;font-size:18px;">{{ (total_out // 100) }} 元</div>
+        </div>
+        <div class="card" style="padding:10px 14px;">
+          <div style="color:#666;">淨額</div>
+          <div style="font-weight:700;font-size:18px;">{{ (net // 100) }} 元</div>
+        </div>
+      </div>
+
+      <table class="table">
+        <thead>
+          <tr>
+            <th>時間</th>
+            <th>會員</th>
+            <th>類型</th>
+            <th>金額</th>
+            <th>到期</th>
+            <th>訂單</th>
+            <th>備註</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for r in rows %}
+          {% set m = member_map.get(r.member_id) %}
+          <tr>
+            <td>{{ (r.created_at | replace('T',' ')) | truncate(19, True, '') }}</td>
+            <td>#{{ r.member_id }} {{ m and m.name or '' }} {{ m and m.email or '' }}</td>
+            <td>{{ r.reason }}</td>
+            <td style="font-weight:600;color:{{ 'green' if r.amount_cents>0 else 'crimson' }};">
+              {{ (r.amount_cents // 100) }} 元
+            </td>
+            <td>{{ r.expires_at and r.expires_at[:10] or '-' }}</td>
+            <td>{{ r.related_order_id or '-' }}</td>
+            <td>{{ r.note or '' }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+
+      <div style="margin-top:12px;">
+        <a class="btn" href="/admin0363/features">返回</a>
+      </div>
+    </div>
   </div>
-  <div class="card" style="padding:10px 14px;">
-    <div style="color:#666;">淨額</div>
-    <div style="font-weight:700;font-size:18px;">{{ (net // 100) }} 元</div>
-  </div>
-</div>
 
-<table class="table">
-  <thead>
-    <tr>
-      <th>時間</th>
-      <th>會員</th>
-      <th>類型</th>
-      <th>金額</th>
-      <th>到期</th>
-      <th>訂單</th>
-      <th>備註</th>
-    </tr>
-  </thead>
-  <tbody>
-  {% for r in rows %}
-    {% set m = member_map.get(r.member_id) %}
-    <tr>
-      <td>{{ (r.created_at | replace('T',' ')) | truncate(19, True, '') }}</td>
-      <td>#{{ r.member_id }} {{ m and m.name or '' }} {{ m and m.email or '' }}</td>
-      <td>{{ r.reason }}</td>
-      <td style="font-weight:600;color:{{ 'green' if r.amount_cents>0 else 'crimson' }};">
-        {{ (r.amount_cents // 100) }} 元
-      </td>
-      <td>{{ r.expires_at and r.expires_at[:10] or '-' }}</td>
-      <td>{{ r.related_order_id or '-' }}</td>
-      <td>{{ r.note or '' }}</td>
-    </tr>
-  {% endfor %}
-  </tbody>
-</table>
-
-<div style="margin-top:12px;">
-  <a class="btn" href="/admin0363/features">返回</a>
-</div>
-
-{% endblock %}
+</body>
+</html>

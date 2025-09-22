@@ -935,6 +935,16 @@ footer ul li a:visited {
 
 /*-- 新增：購物金徽章樣式 */
 
+ /* 讓 header 在窄螢幕可以換行，不會把右側導覽擠爆 */
+  header.main-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;           /* ★ 關鍵：允許換行 */
+    gap:8px;
+  }
+  header .logo-area{ display:flex; align-items:center; gap:8px; }
+
   .wallet-badge{
     display:inline-block;
     padding:6px 10px;
@@ -943,9 +953,26 @@ footer ul li a:visited {
     background:#fff0f3;
     color:#c2185b;
     font-weight:600;
+    line-height:1;
     box-shadow:0 2px 6px rgba(0,0,0,.06);
     text-decoration:none;
+    white-space:nowrap;        /* 避免斷行變高 */
   }
   .wallet-badge:hover{ background:#ffe2e8; }
+
+  /* 平板：縮小一點就好 */
+  @media (max-width: 768px){
+    .wallet-badge{
+      padding:4px 8px;
+      font-size:12px;
+      margin-left:8px;
+    }
+  }
+
+  /* 很小的手機寬度（≤420px）：直接隱藏徽章，避免擠到導覽列
+     使用者仍可從「會員中心 → 💰 我的購物金」進入 */
+  @media (max-width: 420px){
+    .wallet-badge{ display:none; }
+  }
 
 
