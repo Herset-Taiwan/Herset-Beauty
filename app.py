@@ -2285,22 +2285,33 @@ def admin_wallet_grant():
         return redirect("/admin0363")
 
     if request.method == "POST":
-        member_id = int(request.form["member_id"])
-        amount_cents = int(request.form["amount"]) * 100
-        note = request.form.get("note") or ""
-        expires_at = request.form.get("expires_at") or None
-        admin_id = session.get("admin_id")
+    member_id = (request.form.get("member_id") or "").strip()   # UUID / text
+    amount_yuan_raw = request.form.get("amount_yuan", "").strip()
+    note = (request.form.get("note") or "後台發放").strip()
 
-        supabase.table("wallet_credits").insert({
-            "member_id": member_id,
-            "amount_cents": amount_cents,
-            "reason": "manual",
-            "expires_at": expires_at,
-            "issued_by_admin_id": admin_id,
-            "note": note
-        }).execute()
-        flash("已發放購物金", "success")
-        return redirect("/admin0363/wallet/grant")
+    # 只允許「整元」→ 轉「分」的整數
+    try:
+        amount_yuan = int(float(amount_yuan_raw or "0"))
+    except Exception:
+        amount_yuan = 0
+
+    if amount_yuan == 0:
+        flash("金額不可為 0")
+        return redirect(request.url)
+
+    amount_cents = amount_yuan * 100  # 分（正數=增加，負數=扣回）
+
+    # 只寫 wallet_credits；VIEW 會自己加總成餘額
+    supabase.table("wallet_credits").insert({
+        "member_id": member_id,
+        "amount_cents": amount_cents,     # 單位：分；發放用正數
+        "reason": "admin_grant",
+        "related_order_id": None,
+        "note": note
+    }).execute()
+
+    flash(f"已對會員 {member_id} 發放 {amount_yuan} 元（{amount_cents} 分）")
+    return redirect(request.url)
 
     # GET：簡易會員搜尋（用 query 參數）
     q = request.args.get("q", "").strip()
