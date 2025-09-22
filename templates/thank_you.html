@@ -29,33 +29,33 @@
   </style>
 
 <!-- Meta Pixel Code (2 pixels) -->
-<script>
-!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
-n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
-t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+  <script>
+  !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+  n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
 
-fbq('init', '2160093911138296');   /* 你的像素（要收到 Purchase） */
-fbq('init', '1143341790993619');   /* 第二顆像素（保留 PageView 即可） */
-fbq('track', 'PageView');          /* 兩顆都會收到 PageView */
+  fbq('init', '2160093911138296');   // 像素 A
+  fbq('init', '1143341790993619');   // 像素 B
+  fbq('track', 'PageView');          // 兩顆都送 PageView
 
-/* 僅送 Purchase 到你的像素（不影響另一顆） */
-fbq('trackSingle', '2160093911138296', 'Purchase');
-</script>
-<noscript>
-  <!-- PageView（兩顆像素） -->
-  <img height="1" width="1" style="display:none"
-       src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"/>
-  <img height="1" width="1" style="display:none"
-       src="https://www.facebook.com/tr?id=1143341790993619&ev=PageView&noscript=1"/>
+  // 兩顆都送 Purchase（不帶金額，避免後端變數依賴）
+  fbq('track', 'Purchase');
+  </script>
+  <noscript>
+    <!-- PageView（兩顆像素） -->
+    <img height="1" width="1" style="display:none"
+         src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"/>
+    <img height="1" width="1" style="display:none"
+         src="https://www.facebook.com/tr?id=1143341790993619&ev=PageView&noscript=1"/>
 
-  <!-- Purchase（只送到你的像素） -->
-  <img height="1" width="1" style="display:none"
-       src="https://www.facebook.com/tr?id=2160093911138296&ev=Purchase&noscript=1"/>
-</noscript>
-<!-- End Meta Pixel Code -->
-
-
+    <!-- Purchase（兩顆像素） -->
+    <img height="1" width="1" style="display:none"
+         src="https://www.facebook.com/tr?id=2160093911138296&ev=Purchase&noscript=1"/>
+    <img height="1" width="1" style="display:none"
+         src="https://www.facebook.com/tr?id=1143341790993619&ev=Purchase&noscript=1"/>
+  </noscript>
+  <!-- End Meta Pixel Code -->
 
 
 </head>
