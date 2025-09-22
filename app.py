@@ -250,14 +250,14 @@ def _grant_wallet(member_id: str, amount_cents: int, *, reason: str,
             "expires_at": expires_at_iso,
             "issued_by_admin": issued_by_admin,
             "note": note
-        }).execute()
+    }, returning="minimal").execute()
         # 2) 更新餘額（簡單兩段式；若要完全避免競爭以 SQL function 取代）
         cur = _get_wallet_balance(member_id)
         new_balance = cur + amount_cents
         supabase.table("wallet_balances").upsert({
             "member_id": member_id,
             "balance_cents": new_balance
-        }).execute()
+        }, returning="minimal").execute()
         return True
     except Exception as e:
         current_app.logger.exception("[wallet] grant failed: %s", e)
