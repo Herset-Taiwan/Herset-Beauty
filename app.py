@@ -152,12 +152,12 @@ def spend_wallet(member_id, order_id, use_cents: int, note: str = "結帳扣抵"
 
     # 1) 寫入錢包交易（負數 = 支出）
     supabase.table("wallet_credits").insert({
-        "member_id": member_id,       # UUID/text/整數皆可，沿用你現在的型別
-        "amount_cents": -amt,         # 單位：分，支出用負數
-        "reason": "order_apply",
-        "related_order_id": order_id,
-        "note": note
-    }).execute()
+            "member_id": member_id,
+            "amount_cents": -int(use_cents),
+            "reason": "order_apply",
+            "related_order_id": order_id,
+            "note": note
+        }, returning="minimal").execute()
 
     # 2)（可選）讀 VIEW 取得新餘額，只作記錄或回傳，不做寫入
     new_bal = None
@@ -224,12 +224,13 @@ def grant_signup_bonus_once(member_id):
 
     # 3) 寫入錢包（正數=發放；分）
     supabase.table("wallet_credits").insert({
-        "member_id": member_id,
-        "amount_cents": bonus_yuan * 100,
-        "reason": "signup",
-        "related_order_id": None,
-        "note": "新會員註冊贈點",
-    }).execute()
+    "member_id": member_id,
+    "amount_cents": bonus_yuan * 100,
+    "reason": "signup",
+    "related_order_id": None,
+    "note": "新會員註冊贈點",
+}, returning="minimal").execute()
+
 
     return True
 
@@ -2355,13 +2356,14 @@ def admin_wallet_grant():
 
         try:
             # 只寫 wallet_credits；餘額由 VIEW/加總自動反映
-            supabase.table("wallet_credits").insert({
-                "member_id": member_id,
-                "amount_cents": amount_cents,   # 分；正數=增加，負數=扣回
-                "reason": "admin_grant",
-                "related_order_id": None,
-                "note": note
-            }).execute()
+         supabase.table("wallet_credits").insert({
+            "member_id": member_id,
+            "amount_cents": amount_cents,
+            "reason": "admin_grant",
+            "related_order_id": None,
+            "note": note
+        }, returning="minimal").execute()
+
         except Exception as e:
             app.logger.error(f"[admin_wallet_grant] insert fail mid={member_id} cents={amount_cents} err={e}")
             flash("發放失敗，請稍後再試或查看日誌")
