@@ -933,8 +933,8 @@ footer ul li a:visited {
   padding: 4px;
 }
 
-<!-- 新增：購物金徽章樣式 -->
-<style>
+/*-- 新增：購物金徽章樣式 */
+
   .wallet-badge{
     display:inline-block;
     padding:6px 10px;
@@ -947,5 +947,5 @@ footer ul li a:visited {
     text-decoration:none;
   }
   .wallet-badge:hover{ background:#ffe2e8; }
-</style>
+
 
