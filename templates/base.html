@@ -80,7 +80,7 @@ fbq('track', 'PageView');
   {# 新增：登入後在頁首顯示購物金徽章 #}
 {% if session.get('member_id') %}
   <a href="/member/wallet" class="wallet-badge">
-    購物金：{{ (session.get('wallet_balance_cents', 0) // 100) }} 元
+    購物金：{{ wallet_badge_amount }} 元
   </a>
 {% endif %}
 

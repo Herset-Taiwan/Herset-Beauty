@@ -293,6 +293,62 @@ def _auto_grant_signup_wallet(member_id: str):
     if ok:
         current_app.logger.info("[wallet] signup bonus granted to %s, %s cents", member_id, amt)
 
+# === Wallet helpers: 取餘額（從 table 或用 SUM 計算，擇一，依你現在 DB 為準） ===
+def _get_wallet_balance_cents(member_id: str) -> int:
+    """
+    回傳會員當前購物金（cents）。
+    若你的 wallet_balances 是 table → 走 table；
+    若它是 VIEW（不能寫入）→ 直接從 wallet_credits 加總。
+    """
+    try:
+        # 如果你已把 wallet_balances 改成「table」，用這段：
+        res = (supabase.table("wallet_balances")
+               .select("balance_cents")
+               .eq("member_id", member_id)
+               .limit(1).execute())
+        return int((res.data or [{}])[0].get("balance_cents") or 0)
+    except Exception:
+        # 若上面失敗（或你保留 balances 為 VIEW），退回用 credits 加總
+        res = (supabase.table("wallet_credits")
+               .select("amount_cents")
+               .eq("member_id", member_id).execute())
+        return sum(int(r.get("amount_cents") or 0) for r in (res.data or []))
+
+
+def _refresh_wallet_badge(member_id: str) -> None:
+    """把最新餘額塞回 session，給頁首徽章使用。"""
+    try:
+        session["wallet_balance_cents"] = _get_wallet_balance_cents(member_id)
+    except Exception:
+        session["wallet_balance_cents"] = 0
+
+
+# ★ 保險：每個請求若已登入但 session 沒該值，就補一次
+@app.before_request
+def _ensure_wallet_badge():
+    mid = session.get("member_id")
+    if mid and "wallet_balance_cents" not in session:
+        _refresh_wallet_badge(mid)
+
+#刷新購物金到 session
+def _refresh_wallet_session(member_id: str) -> int:
+    """
+    從 DB 讀取最新餘額（分），寫回 session['wallet_balance_cents']，並回傳整數分。
+    """
+    try:
+        r = (supabase.table('wallet_balances')
+             .select('balance_cents')
+             .eq('member_id', member_id)
+             .single()
+             .execute())
+        bal = int((r.data or {}).get('balance_cents') or 0)
+    except Exception:
+        current_app.logger.exception('[wallet] refresh balance failed')
+        bal = 0
+    session['wallet_balance_cents'] = bal
+    return bal
+
+
 
 
 # ✅ Supabase 初始化（同時支援 SUPABASE_ANON_KEY / SUPABASE_KEY）
@@ -2330,6 +2386,15 @@ def login():
             except Exception:
                 current_app.logger.exception("[wallet] auto grant (platform login) failed")
 
+            # ★ 新增：立即刷新頁首購物金徽章（用 credits 加總，兼容你目前 DB）
+            try:
+                bres = (supabase.table("wallet_credits")
+                        .select("amount_cents")
+                        .eq("member_id", session['member_id']).execute())
+                session['wallet_balance_cents'] = sum(int(r.get('amount_cents') or 0) for r in (bres.data or []))
+            except Exception:
+                session['wallet_balance_cents'] = 0
+
             # ✅ 判斷是否有缺資料
             if not user.get('name') or not user.get('phone') or not user.get('address'):
                 session['incomplete_profile'] = True
@@ -2344,6 +2409,7 @@ def login():
             return render_template("login.html", error="帳號或密碼錯誤")
 
     return render_template("login.html")
+
 
 
 
@@ -2866,6 +2932,11 @@ def member_wallet():
                            balance_cents=balance_cents,
                            rows=rows)
 
+@app.context_processor
+def inject_wallet_badge_amount():
+    amt = (session.get("wallet_balance_cents") or 0) // 100
+    return {"wallet_badge_amount": amt}
+
 
 # === Admin: 簡易報表 ===
 @app.get("/admin0363/wallet/report")
@@ -3140,6 +3211,21 @@ def cart():
         except Exception as e:
             print('[upsell] error:', e)
 
+        # === 立即查詢購物金餘額（以 wallet_credits 明細加總） ===
+    wallet_balance_cents = 0
+    mid = session.get("member_id")
+    if mid:
+        try:
+            r = (supabase.table("wallet_credits")
+                 .select("amount_cents")
+                 .eq("member_id", mid)
+                 .execute())
+            wallet_balance_cents = sum(int(x.get("amount_cents") or 0) for x in (r.data or []))
+        except Exception:
+            current_app.logger.exception("[cart] load wallet balance failed")
+            wallet_balance_cents = 0
+
+
     return render_template(
         "cart.html",
         products=products,
@@ -3152,6 +3238,7 @@ def cart():
         discount_deduct=discount_deduct,
         member_name=member_name,
         upsell_products=upsell_products,   # ← 帶到模板
+        wallet_balance_cents=wallet_balance_cents,  # ← 新增：提供模板即時餘額
     )
 
 
@@ -3344,6 +3431,7 @@ def checkout():
     discount_amount_i = _money(discount_amount)
     final_total_i     = max(total_i + shipping_fee_i - discount_amount_i, 0)
 
+
     # 同步把每個品項的單價與小計轉成整數，避免 order_items 的欄位是浮點
     for it in items:
         it['price']    = _money(it.get('price'))
@@ -3354,6 +3442,22 @@ def checkout():
     ALLOWED_METHODS = {"linepay", "ecpay", "transfer", "atm", "bank", "bank_transfer"}
     if intended not in ALLOWED_METHODS:
         intended = None
+
+        # 4.2 使用購物金（元）-> 轉分處理；上限為「可用餘額」與「應付總額」
+    requested_wallet_yuan = request.form.get('wallet_amount') or '0'
+    try:
+        requested_wallet_cents = int(float(requested_wallet_yuan) * 100)
+    except Exception:
+        requested_wallet_cents = 0
+
+    available_cents = int(session.get('wallet_balance_cents', 0))
+    # 不能用負數，不能超過可用餘額，也不能超過「應付總額」
+    requested_wallet_cents = max(0, requested_wallet_cents)
+    wallet_to_use_cents = min(available_cents, requested_wallet_cents, final_total_i)
+
+    # 套用到應付總額
+    final_total_i = max(final_total_i - wallet_to_use_cents, 0)
+
 
     # 5) 建立訂單
     from pytz import timezone
@@ -3427,6 +3531,20 @@ def checkout():
         except Exception:
             # 若失敗就略過，不影響下單
             pass
+        # 6.x 若有使用購物金，寫入一筆「負數」錢包紀錄，並刷新 session 餘額
+    if wallet_to_use_cents > 0:
+        try:
+            supabase.table('wallet_credits').insert({
+                'member_id': member_id,
+                'amount_cents': -int(wallet_to_use_cents),  # 以分為單位；負數代表扣款
+                'reason': 'order_checkout',
+                'note': f'checkout order_id={order_id}',
+                'created_at': datetime.utcnow().isoformat() + 'Z'
+            }, returning='minimal').execute()
+            # 重新拉一次餘額，讓後續頁面顯示正確
+            _refresh_wallet_session(member_id)
+        except Exception:
+            current_app.logger.exception('[wallet] deduct on checkout failed')
 
     # 8) 清空購物車與折扣碼暫存、保存交易編號、清除這次寄送覆蓋
     session['cart'] = []

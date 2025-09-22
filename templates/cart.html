@@ -598,13 +598,20 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
   {% if session.get('member_id') %}
     <div style="margin-bottom:14px; text-align:right;">
       <label style="font-weight:bold; color:#5a4b45;">
-        使用購物金（元）：
-        <input type="number" name="wallet_amount" min="0" step="1" value="0"
-               style="width:100px; padding:6px 8px; border:1px solid #ddd; border-radius:6px;">
-      </label>
-      <div style="font-size:13px; color:#666; margin-top:4px;">
-        可用餘額：{{ (session.get('wallet_balance_cents', 0) // 100) }} 元
-      </div>
+  使用購物金（元）：
+  <input
+    type="number"
+    name="wallet_amount"
+    min="0"
+    step="1"
+    value="0"
+    max="{{ ((wallet_balance_cents or 0) // 100) }}"
+    style="width:100px; padding:6px 8px; border:1px solid #ddd; border-radius:6px;">
+</label>
+<div style="font-size:13px; color:#666; margin-top:4px;">
+  可用餘額：{{ ((wallet_balance_cents or 0) // 100) }} 元
+</div>
+
     </div>
   {% endif %}
 
