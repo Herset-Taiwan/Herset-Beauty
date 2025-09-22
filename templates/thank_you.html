@@ -48,7 +48,7 @@ fbq('track', 'PageView');          /* 兩顆都會收到 PageView */
   };
 
   /* 若模板有帶明細就一起送（沒有就略過） */
-  {% if order and order.items %}
+  {% if order is defined and order and order.items %}
   payload.contents = [
     {% for it in order.items %}
       { id: '{{ it.product_id or it.id }}', quantity: {{ it.qty or it.quantity or 1 }}, item_price: {{ it.price or it.item_price or 0 }} }{% if not loop.last %},{% endif %}
@@ -75,9 +75,9 @@ fbq('track', 'PageView');          /* 兩顆都會收到 PageView */
 
   <!-- Purchase（兩顆像素）— noscript 無法帶 contents，只帶金額與幣別 -->
   <img height="1" width="1" style="display:none"
-       src="https://www.facebook.com/tr?id=2160093911138296&ev=Purchase&cd[value]={{ order.total | default(0) }}&cd[currency]=TWD&noscript=1"/>
+       src="https://www.facebook.com/tr?id=2160093911138296&ev=Purchase&cd[value]={{ (order.total if (order is defined and order) else 0) }}&cd[currency]=TWD&noscript=1"/>
   <img height="1" width="1" style="display:none"
-       src="https://www.facebook.com/tr?id=1143341790993619&ev=Purchase&cd[value]={{ order.total | default(0) }}&cd[currency]=TWD&noscript=1"/>
+       src="https://www.facebook.com/tr?id=1143341790993619&ev=Purchase&cd[value]={{ (order.total if (order is defined and order) else 0) }}&cd[currency]=TWD&noscript=1"/>
 </noscript>
 <!-- End Meta Pixel Code -->
 
