@@ -35,17 +35,52 @@ n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
 n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
 
-fbq('init', '2160093911138296');         // 既有像素
-fbq('init', '1143341790993619');          // ★ 第二顆像素（請換成正確 15–16 碼 Pixel ID）
-fbq('track', 'PageView');                // 感謝頁仍送 PageView
+fbq('init', '2160093911138296');   /* 像素 A */
+fbq('init', '1143341790993619');   /* 像素 B */
+fbq('track', 'PageView');          /* 兩顆都會收到 PageView */
+
+/* 🔻 新增：一次送 Purchase 到所有已 init 的像素 */
+/* ＊＊ 一次送 Purchase 到所有已 init 的像素 ＊＊ */
+(function () {
+  var payload = {
+    value: {{ order.total | default(0) }},   // 數字；沒有 order 就是 0
+    currency: 'TWD',                         // ← 修正：加上結尾引號與逗號
+  };
+
+  /* 若模板有帶明細就一起送（沒有就略過） */
+  {% if order and order.items %}
+  payload.contents = [
+    {% for it in order.items %}
+      { id: '{{ it.product_id or it.id }}', quantity: {{ it.qty or it.quantity or 1 }}, item_price: {{ it.price or it.item_price or 0 }} }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ];
+  payload.content_type = 'product';
+  {% endif %}
+
+  /* 若同時有 CAPI/GTM 也送 Purchase，為避免重複可帶同一個 eventID */
+  {% if order and order.id %}
+  fbq('track', 'Purchase', payload, { eventID: 'TY-{{ order.id }}' });
+  {% else %}
+  fbq('track', 'Purchase', payload);
+  {% endif %}
+})();
+
 </script>
 <noscript>
+  <!-- PageView（兩顆像素） -->
   <img height="1" width="1" style="display:none"
        src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"/>
   <img height="1" width="1" style="display:none"
-       src="https://www.facebook.com/tr?id=SECOND_PIXEL_ID&ev=PageView&noscript=1"/>
+       src="https://www.facebook.com/tr?id=1143341790993619&ev=PageView&noscript=1"/>
+
+  <!-- Purchase（兩顆像素）— noscript 無法帶 contents，只帶金額與幣別 -->
+  <img height="1" width="1" style="display:none"
+       src="https://www.facebook.com/tr?id=2160093911138296&ev=Purchase&cd[value]={{ order.total | default(0) }}&cd[currency]=TWD&noscript=1"/>
+  <img height="1" width="1" style="display:none"
+       src="https://www.facebook.com/tr?id=1143341790993619&ev=Purchase&cd[value]={{ order.total | default(0) }}&cd[currency]=TWD&noscript=1"/>
 </noscript>
 <!-- End Meta Pixel Code -->
+
 
 
 </head>
