@@ -187,6 +187,53 @@ def spend_wallet(member_id, order_id, use_cents: int, note: str = "結帳扣抵"
     return new_bal
 
 
+def grant_signup_bonus_once(member_id):
+    """
+    註冊贈點只發一次：
+    - 已有 reason='signup' 記錄就跳過
+    - 金額 <= 0 就不寫
+    - 單位：分（整數）
+    回傳 True=有發放；False=跳過
+    """
+    # 1) 有發過就跳過
+    existed = (
+        supabase.table("wallet_credits")
+        .select("id")
+        .eq("member_id", member_id)
+        .eq("reason", "signup")
+        .limit(1)
+        .execute()
+        .data
+        or []
+    )
+    if existed:
+        return False
+
+    # 2) 從站台設定撈贈點（元，整數）；你的欄位如不同請替換
+    res = (
+        supabase.table("site_settings")
+        .select("signup_bonus_yuan")
+        .limit(1)
+        .execute()
+    )
+    s = (res.data or [{}])[0]
+    bonus_yuan = int(float(s.get("signup_bonus_yuan") or 0))
+
+    if bonus_yuan <= 0:
+        return False
+
+    # 3) 寫入錢包（正數=發放；分）
+    supabase.table("wallet_credits").insert({
+        "member_id": member_id,
+        "amount_cents": bonus_yuan * 100,
+        "reason": "signup",
+        "related_order_id": None,
+        "note": "新會員註冊贈點",
+    }).execute()
+
+    return True
+
+
 # ✅ 正確：第二參數是「已序列化」的 JSON 字串（POST 傳 body；GET 傳 querystring；沒有就空字串）
 def _lp_signature_headers(request_uri: str, serialized: str, method: str = "POST"):
     nonce = str(uuid4())
@@ -3300,7 +3347,7 @@ def cart_address_update():
     return jsonify({"ok": True})
 
 
-# 結帳
+# 結帳（方案A：RPC 取得購物金餘額，單位全程「分」）
 @app.route('/checkout', methods=['POST'])
 def checkout():
     if 'member_id' not in session:
@@ -3374,8 +3421,8 @@ def checkout():
             'product_id': str(pid),
             'product_name': product.get('name') or item.get('name', ''),
             'qty': qty,
-            'price': price_i,      # 直接存分（整數）
-            'subtotal': subtotal_i,# 直接存分（整數）
+            'price': price_i,       # 直接存分（整數）
+            'subtotal': subtotal_i, # 直接存分（整數）
             'option': item.get('option', '')
         })
 
@@ -3392,8 +3439,8 @@ def checkout():
     discount_code = None
     discount_amount_i = 0
     if discount:
-        # validate_discount_for_cart(total) 之前用的是元；傳「元」
-        ok, msg, info = validate_discount_for_cart(discount.get('code'), total_i / 100)
+        # 傳「元」且用整除避免浮點
+        ok, msg, info = validate_discount_for_cart(discount.get('code'), total_i // 100)
         if ok:
             discount_code = info['code']
             discount_amount_i = to_int_yuan(info.get('amount') or 0) * 100  # 分
@@ -3404,16 +3451,12 @@ def checkout():
     # ====== 4) 未扣購物金前的應付（分） ======
     pre_wallet_total_i = max(total_i + shipping_fee_i - discount_amount_i, 0)
 
-    # ====== 4-2) 會員可用購物金（分）→ 直接加總 wallet_credits ======
-    agg = (
-        supabase.table("wallet_credits")
-        .select("sum_cents:amount_cents.sum()")
-        .eq("member_id", member_id)
-        .single()
-        .execute()
-        .data or {}
-    )
-    available_cents = int(agg.get("sum_cents") or 0)
+    # ====== 4-1) 會員可用購物金（分）— 透過 RPC 取加總（避免 PGRST123） ======
+    try:
+        rpc_res = supabase.rpc("wallet_sum_cents", {"p_member_id": member_id}).execute()
+        available_cents = int(getattr(rpc_res, "data", 0) or 0)
+    except Exception:
+        available_cents = 0
     if available_cents < 0:
         available_cents = 0
 
