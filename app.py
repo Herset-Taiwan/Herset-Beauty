@@ -2278,51 +2278,66 @@ def admin_wallet_settings():
     cfg = row["value"] if row else {"amount_cents": 10000, "valid_days": 90}
     return render_template("admin_wallet_settings.html", cfg=cfg, orders=[])
 
-#購物金手動發放頁路由
+# 購物金手動發放頁路由（整數：分；member_id 為 UUID/text）
 @app.route("/admin0363/wallet/grant", methods=["GET", "POST"])
 def admin_wallet_grant():
     if not session.get("admin_logged_in"):
         return redirect("/admin0363")
 
+    # --- POST：後台發放/扣回購物金（只寫 wallet_credits；單位=分） ---
     if request.method == "POST":
-    member_id = (request.form.get("member_id") or "").strip()   # UUID / text
-    amount_yuan_raw = request.form.get("amount_yuan", "").strip()
-    note = (request.form.get("note") or "後台發放").strip()
+        member_id = (request.form.get("member_id") or "").strip()   # UUID / text，原樣使用
+        if not member_id:
+            flash("缺少 member_id")
+            return redirect(request.url)
 
-    # 只允許「整元」→ 轉「分」的整數
-    try:
-        amount_yuan = int(float(amount_yuan_raw or "0"))
-    except Exception:
-        amount_yuan = 0
+        amount_yuan_raw = (request.form.get("amount_yuan") or "").strip()
+        note = (request.form.get("note") or "後台發放").strip()
 
-    if amount_yuan == 0:
-        flash("金額不可為 0")
+        # 只允許「整元」→ 轉「分」的整數（可為負，表示扣回；不可為 0）
+        try:
+            amount_yuan = int(float(amount_yuan_raw or "0"))
+        except Exception:
+            amount_yuan = 0
+
+        if amount_yuan == 0:
+            flash("金額不可為 0（只接受整元，正數=發放、負數=扣回）")
+            return redirect(request.url)
+
+        amount_cents = amount_yuan * 100  # 分（整數）
+
+        try:
+            # 只寫 wallet_credits；餘額由 VIEW/加總自動反映
+            supabase.table("wallet_credits").insert({
+                "member_id": member_id,
+                "amount_cents": amount_cents,   # 分；正數=增加，負數=扣回
+                "reason": "admin_grant",
+                "related_order_id": None,
+                "note": note
+            }).execute()
+        except Exception as e:
+            app.logger.error(f"[admin_wallet_grant] insert fail mid={member_id} cents={amount_cents} err={e}")
+            flash("發放失敗，請稍後再試或查看日誌")
+            return redirect(request.url)
+
+        flash(f"已對會員 {member_id} 記錄 {amount_yuan} 元（{amount_cents} 分）")
         return redirect(request.url)
 
-    amount_cents = amount_yuan * 100  # 分（正數=增加，負數=扣回）
-
-    # 只寫 wallet_credits；VIEW 會自己加總成餘額
-    supabase.table("wallet_credits").insert({
-        "member_id": member_id,
-        "amount_cents": amount_cents,     # 單位：分；發放用正數
-        "reason": "admin_grant",
-        "related_order_id": None,
-        "note": note
-    }).execute()
-
-    flash(f"已對會員 {member_id} 發放 {amount_yuan} 元（{amount_cents} 分）")
-    return redirect(request.url)
-
-    # GET：簡易會員搜尋（用 query 參數）
-    q = request.args.get("q", "").strip()
+    # --- GET：簡易會員搜尋（用 query 參數） ---
+    q = (request.args.get("q") or "").strip()
     candidates = []
     if q:
-        # 你現有 members 欄位：可依 email/phone/name…
-        candidates = (supabase.table("members")
-                      .select("id,name,email,phone")
-                      .ilike("email", f"%{q}%")
-                      .execute().data or [])
+        # 可視需求擴充為 name/phone 搜尋
+        res = (
+            supabase.table("members")
+            .select("id,name,email,phone")
+            .ilike("email", f"%{q}%")
+            .execute()
+        )
+        candidates = res.data or []
+
     return render_template("admin_wallet_grant.html", candidates=candidates, orders=[])
+
 
 #購物金報表頁路由
 @app.route("/admin0363/wallet/report", methods=["GET"])
