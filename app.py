@@ -140,19 +140,58 @@ def apply_wallet(member_id: str, want_cents: int, order_total_cents: int) -> int
     return max(0, min(want, balance, payable))
 
 
-def spend_wallet(member_id: str, order_id, use_cents: int, note: str = "結帳扣抵"):
+def spend_wallet(member_id, order_id, use_cents: int, note: str = "結帳扣抵"):
     """
-    真正扣帳：在 wallet_credits 寫入一筆負值，綁定 related_order_id
-    （orders.id 可能是 uuid 或 bigint，所以 order_id 型別保持彈性）
+    從會員錢包扣除指定金額（單位：分）。
+    - member_id: 可轉 int
+    - order_id:  對應 orders.id
+    - use_cents: 要扣的金額（分、非負整數）
+    同步：
+      1) 寫入 wallet_credits 一筆負值
+      2) 更新 wallet_balances.balance_cents
     """
-    if use_cents and use_cents > 0:
-        supabase.table("wallet_credits").insert({
-            "member_id": member_id,
-            "amount_cents": -int(use_cents),
-            "reason": "order_apply",
-            "related_order_id": order_id,
-            "note": note
-        }).execute()
+    # --- 型別與值檢查 ---
+    try:
+        mid = int(member_id)
+    except Exception:
+        raise ValueError("member_id 必須是可轉為 int 的值")
+
+    amt = int(use_cents or 0)
+    if amt <= 0:
+        return  # 不扣款就直接返回
+
+    # --- 1) 讀目前餘額（分） ---
+    row = (
+        supabase.table("wallet_balances")
+        .select("balance_cents")
+        .eq("member_id", mid)
+        .single()
+        .execute()
+        .data
+        or {}
+    )
+    cur = int(row.get("balance_cents") or 0)
+
+    # --- 2) 新餘額（不可為負） ---
+    new_bal = max(0, cur - amt)
+
+    # --- 3) 更新餘額（upsert by member_id）---
+    supabase.table("wallet_balances").upsert(
+        {"member_id": mid, "balance_cents": new_bal},
+        on_conflict="member_id"
+    ).execute()
+
+    # --- 4) 記錄錢包交易（負數代表支出） ---
+    supabase.table("wallet_credits").insert({
+        "member_id": mid,
+        "amount_cents": -amt,          # 這裡就是「分」的負值
+        "reason": "order_apply",
+        "related_order_id": order_id,
+        "note": note
+    }).execute()
+
+    # （可選）回傳新餘額，供呼叫端顯示或寫 log
+    return new_bal
 
 
 # ✅ 正確：第二參數是「已序列化」的 JSON 字串（POST 傳 body；GET 傳 querystring；沒有就空字串）
@@ -3397,10 +3436,11 @@ def checkout():
     }
     result = supabase.table('orders').insert(order_data).execute()
     order_id = result.data[0]['id']
+    app.logger.info(f"[checkout] spend_wallet member_id={member_id} use_cents={use_cents} (元={use_cents/100:.2f})")
 
     # 錢包扣款（若有使用）
     if use_cents > 0:
-        spend_wallet(str(member_id), order_id, use_cents)
+        spend_wallet(member_id, order_id, use_cents)
 
     # 6) 寫入每筆商品明細
     from uuid import uuid4
