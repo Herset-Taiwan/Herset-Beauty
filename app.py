@@ -3392,8 +3392,8 @@ def checkout():
         'receiver_name': receiver_name,
         'receiver_phone': receiver_phone,
         'receiver_address': receiver_addr,
-        'wallet_used_cents': use_cents,   # 本次實際扣抵的購物金（分）
-        'amount_payable': final_total_i   # DB 欄位：最後應付（分）
+        'wallet_used_cents': use_cents   # 本次實際扣抵的購物金（分）
+        
     }
     result = supabase.table('orders').insert(order_data).execute()
     order_id = result.data[0]['id']
