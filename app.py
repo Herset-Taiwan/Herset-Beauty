@@ -329,6 +329,9 @@ def index():
     res = supabase.table("products").select("*").execute()
     products = res.data or []
 
+        # 🔻 過濾：前台只顯示未下架的商品
+    products = [p for p in products if not (p.get('is_hidden') is True)]
+
     # 撈出所有套組，做 (shell_product_id -> bundle資料) 對照
     bres = supabase.table("bundles") \
         .select("id, price, compare_at, shell_product_id") \
@@ -3843,6 +3846,11 @@ def product_detail(product_id):
     if not product:
         # 不存在 → 回 404（不要 500）
         return "找不到商品", 404
+    
+        # 🔻 若商品已下架，前台直接回 404（避免被看到）
+    if product.get('is_hidden') is True:
+        return "找不到商品", 404
+
 
     cart = session.get('cart', [])
     cart_count = sum(item.get('qty', 0) for item in cart)
@@ -3888,6 +3896,7 @@ def product_detail(product_id):
                         supabase.table("products")
                         .select("id,name,price,options,image,images")
                         .in_("id", pool_ids)
+                        .eq("is_hidden", False)
                         .order("name")
                         .execute()
                         .data
@@ -4168,7 +4177,8 @@ def add_product():
             "ingredient": ingredient,
             "options": options,
             "categories": categories,
-            "tags": tags
+            "tags": tags,
+            "is_hidden": bool(request.form.get("is_hidden"))   # 🔻 新增：下架欄位
         }
 
         response = supabase.table("products").insert(data).execute()
@@ -4203,6 +4213,7 @@ def edit_product(product_id):
                 "options": request.form.getlist('options[]'),
                 "categories": request.form.getlist('categories[]'),
                 "tags": request.form.getlist('tags'),
+                "is_hidden": bool(request.form.get("is_hidden"))   # 🔻 新增：下架欄位
             }
 
             # === 主圖處理（單張） ===
@@ -4363,6 +4374,13 @@ def add_to_cart():
         if action == 'checkout' or next_url == 'cart':
             return redirect(url_for('cart'))
         return jsonify(success=False, message="找不到商品"), 404
+
+        # 🔻 已下架商品不可加入購物車
+    if product.get('is_hidden') is True:
+        if action == 'checkout' or next_url == 'cart':
+            return redirect(url_for('cart'))
+        return jsonify(success=False, message="此商品目前已下架"), 400
+
 
     # ---- A) 若商品有選項但未帶 option（或帶了無效 option）：導去商品頁先選 ----
     # 相容不同欄位：options / option_values / variants(物件陣列) / 逗號字串

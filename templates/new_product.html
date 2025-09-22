@@ -106,6 +106,15 @@
 <label>庫存數量</label>
 <input type="number" name="stock" required step="1" min="0">
 
+<!-- 下架（前台隱藏） -->
+<div class="form-group" style="margin-top:16px;">
+  <label for="is_hidden" style="display:block; margin-bottom:6px;">商品狀態</label>
+  <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer;">
+    <input type="checkbox" id="is_hidden" name="is_hidden">
+    <span>下架（前台隱藏）</span>
+  </label>
+</div>
+
 
 <label>分類（可多選）</label>
 <select id="categories" name="categories[]" multiple placeholder="請選擇或輸入分類">
