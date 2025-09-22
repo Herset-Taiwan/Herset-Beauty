@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}我的購物金 - HERSET{% endblock %}
+{% block content %}
+<div class="container" style="max-width:960px;margin:24px auto;padding:0 12px;">
+  <h2 style="margin-bottom:12px;">我的購物金</h2>
+  <div style="background:#fff7f9;border:1px solid #f3c7d1;padding:10px 14px;border-radius:10px;margin-bottom:14px;">
+    可用餘額：<strong style="font-size:18px;">{{ balance_cents // 100 }} 元</strong>
+  </div>
+
+  <table class="table">
+    <thead><tr><th>時間</th><th>類型</th><th>金額</th><th>到期</th><th>備註</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+      <tr>
+        <td>{{ r.created_at | replace('T',' ')[:19] }}</td>
+        <td>{{ r.reason }}</td>
+        <td style="font-weight:600; color:{{ 'green' if r.amount_cents>0 else 'crimson' }};">
+          {{ (r.amount_cents // 100) }} 元
+        </td>
+        <td>{{ r.expires_at and r.expires_at[:10] or '-' }}</td>
+        <td>{{ r.note or '' }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

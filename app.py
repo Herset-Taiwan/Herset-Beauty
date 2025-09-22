@@ -2244,7 +2244,7 @@ def admin_wallet_settings():
            .eq("key", "wallet.signup_bonus")
            .single().execute().data)
     cfg = row["value"] if row else {"amount_cents": 10000, "valid_days": 90}
-    return render_template("admin/wallet_settings.html", cfg=cfg)
+    return render_template("admin_wallet_settings.html", cfg=cfg)
 
 #購物金手動發放頁路由
 @app.route("/admin0363/wallet/grant", methods=["GET", "POST"])
@@ -2279,7 +2279,7 @@ def admin_wallet_grant():
                       .select("id,name,email,phone")
                       .ilike("email", f"%{q}%")
                       .execute().data or [])
-    return render_template("admin/wallet_grant.html", candidates=candidates)
+    return render_template("admin_wallet_grant.html", candidates=candidates)
 
 #購物金報表頁路由
 @app.route("/admin0363/wallet/report", methods=["GET"])
@@ -2328,10 +2328,10 @@ def admin_wallet_report():
     total_out = sum(-r["amount_cents"] for r in rows if r["amount_cents"] < 0)
     net = total_in - total_out
 
-    return render_template("admin/wallet_report.html",
-                           rows=rows, member_map=member_map,
-                           date_from=date_from, date_to=date_to, reason=reason,
-                           total_in=total_in, total_out=total_out, net=net)
+    return render_template("admin_wallet_report.html",
+                       rows=rows, member_map=member_map,
+                       date_from=date_from, date_to=date_to, reason=reason,
+                       total_in=total_in, total_out=total_out, net=net)
 
 
 
@@ -2854,6 +2854,20 @@ def inject_wallet_badge():
         session.pop("wallet_balance_cents", None)
 
 
+@app.route("/member/wallet")
+def member_wallet():
+    if "member_id" not in session:
+        return redirect("/login?next=/member/wallet")
+    mid = str(session["member_id"])
+
+    rows = (supabase.table("wallet_credits")
+            .select("amount_cents,reason,related_order_id,expires_at,note,created_at")
+            .eq("member_id", mid)
+            .order("created_at", desc=True)
+            .limit(200).execute().data or [])
+
+    balance_cents = int(session.get("wallet_balance_cents") or 0)
+    return render_template("member_wallet.html", rows=rows, balance_cents=balance_cents)
 
 
 
