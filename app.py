@@ -331,6 +331,7 @@ def upsert_member_from_oauth(*, provider: str, sub: str, email: str | None, name
     return created.data[0]
 
 # 新增：登入後發放新會員購物金（只發一次）
+# 新增：登入後發放新會員購物金（只發一次）
 def grant_signup_bonus_if_needed(member_id: str):
     # 讀設定
     row = (supabase.table("settings")
@@ -356,13 +357,15 @@ def grant_signup_bonus_if_needed(member_id: str):
     if valid_days > 0:
         expires_at = (datetime.now(timezone.utc) + timedelta(days=valid_days)).isoformat()
 
+    # ⚠️ 關鍵：對有 RULE/VIEW 的錢包明細，避免使用 INSERT RETURNING
     supabase.table("wallet_credits").insert({
         "member_id": member_id,
         "amount_cents": amount_cents,
         "reason": "signup",
         "expires_at": expires_at,
         "note": "新會員購物金"
-    }).execute()
+    }, returning="minimal").execute()
+
 
 
 
