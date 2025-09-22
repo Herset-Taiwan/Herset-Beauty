@@ -3369,7 +3369,6 @@ def checkout():
     receiver_phone = (ship.get("phone")   or prof.get("phone")   or "").strip()
     receiver_addr  = (ship.get("address") or prof.get("address") or "").strip()
 
-    # 若兩邊加總仍缺，就導回購物車
     if not (receiver_name and receiver_phone and receiver_addr):
         session['incomplete_profile'] = True
         flash("請先填寫完整的收件資訊（姓名、電話、地址）再進行結帳")
@@ -3382,11 +3381,9 @@ def checkout():
         pid = item.get('product_id')
         if not pid:
             continue
-        # 撈必要欄位（名稱），價格仍以購物車為準
         res = supabase.table("products").select("id,name").eq("id", pid).single().execute()
         product = res.data or {}
 
-        # 單價：購物車記錄的 price 優先；若沒有再回退 DB price/discount_price
         item_price = float(
             item.get('price')
             or item.get('discount_price')
@@ -3407,11 +3404,11 @@ def checkout():
             'option': item.get('option', '')
         })
 
-    # 2) 運費 讀 site_settings
+    # 2) 運費
     free_shipping_threshold, default_shipping_fee = get_shipping_rules()
     shipping_fee = 0.0 if total >= free_shipping_threshold else float(default_shipping_fee)
 
-    # 3) 折扣碼（再次驗證後套用，不讓無效碼寫入訂單）
+    # 3) 折扣碼
     discount = session.get('cart_discount')
     discount_code = None
     discount_amount = 0.0
@@ -3422,7 +3419,7 @@ def checkout():
             discount_amount = float(info['amount'])
         else:
             flash(msg)
-            session.pop('cart_discount', None)  # 無效就清掉
+            session.pop('cart_discount', None)
 
     # 4) 應付金額（不得為負）→ 統一轉整數入庫
     final_total = max(total + shipping_fee - discount_amount, 0)
@@ -3431,54 +3428,47 @@ def checkout():
     discount_amount_i = _money(discount_amount)
     final_total_i     = max(total_i + shipping_fee_i - discount_amount_i, 0)
 
-
-    # 同步把每個品項的單價與小計轉成整數，避免 order_items 的欄位是浮點
-    for it in items:
-        it['price']    = _money(it.get('price'))
-        it['subtotal'] = _money(it.get('subtotal'))
-
     # 4.1 使用者此次在畫面上選的「意圖付款方式」(可有可無)
     intended = (request.form.get("payment_method") or request.form.get("method") or "").lower()
     ALLOWED_METHODS = {"linepay", "ecpay", "transfer", "atm", "bank", "bank_transfer"}
     if intended not in ALLOWED_METHODS:
         intended = None
 
-        # 4.2 使用購物金（元）-> 轉分處理；上限為「可用餘額」與「應付總額」
-     try:
+    # 4.2 使用購物金（元）=> 轉分；上限=使用者輸入、餘額、此次應付
+    try:
         wallet_req_yuan = int(float(request.form.get("wallet_amount") or 0))
     except Exception:
         wallet_req_yuan = 0
     wallet_req_yuan = max(wallet_req_yuan, 0)
 
-    # 取得目前可用餘額（cents）
-    # 建議：若有 view wallet_balances 就用它；沒有就用 sum(wallet_credits)
+    # 目前錢包餘額（分）
     try:
-        bres = (supabase
-                .table("wallet_balances")
-                .select("balance_cents")
-                .eq("member_id", member_id)
-                .single()
-                .execute())
-        balance_cents = int(bres.data.get("balance_cents") or 0)
+        bres = (
+            supabase.table("wallet_balances")
+            .select("balance_cents")
+            .eq("member_id", member_id)
+            .single()
+            .execute()
+        )
+        balance_cents = int((bres.data or {}).get("balance_cents") or 0)
     except Exception:
-        sres = (supabase
-                .table("wallet_credits")
-                .select("amount_cents")
-                .eq("member_id", member_id)
-                .execute())
+        sres = (
+            supabase.table("wallet_credits")
+            .select("amount_cents")
+            .eq("member_id", member_id)
+            .execute()
+        )
         rows = sres.data or []
         balance_cents = sum(int(r.get("amount_cents") or 0) for r in rows)
 
-    # 三者取最小：使用者輸入、錢包餘額、此次應付金額（換成 cents）
-    final_total_cents = int(final_total_i) * 100
     req_cents = wallet_req_yuan * 100
+    final_total_cents = int(final_total_i) * 100
     used_wallet_cents = min(req_cents, balance_cents, final_total_cents)
     used_wallet_cents = max(used_wallet_cents, 0)
-
-    # 依購物金扣抵後，更新真正要入庫的訂單總金額（單位仍是「元」整數）
     wallet_used_yuan = used_wallet_cents // 100
-    final_total_i_after_wallet = max(final_total_i - wallet_used_yuan, 0)
 
+    # 扣完錢包後的訂單總金額（元）
+    final_total_i_after_wallet = max(final_total_i - wallet_used_yuan, 0)
 
     # 5) 建立訂單
     from pytz import timezone
@@ -3487,9 +3477,9 @@ def checkout():
     merchant_trade_no = generate_merchant_trade_no()
     created_at = datetime.now(tw).isoformat()
 
-     order_data = {
+    order_data = {
         'member_id': member_id,
-        'total_amount':   final_total_i_after_wallet,  # ✅ 已扣完購物金的整數（元）
+        'total_amount':   final_total_i_after_wallet,   # ✅ 已扣完購物金
         'shipping_fee':   shipping_fee_i,
         'discount_code':  discount_code,
         'discount_amount': discount_amount_i,
@@ -3512,7 +3502,7 @@ def checkout():
         it['option'] = it.get('option', '')
     supabase.table('order_items').insert(items).execute()
 
-    # 6.1 扣庫存（逐品項）
+    # 6.1 扣庫存
     for it in items:
         pid = it.get("product_id")
         qty = int(it.get("qty") or it.get("quantity") or 0)
@@ -3534,42 +3524,28 @@ def checkout():
         except Exception as e:
             app.logger.error(f"[checkout stock deduct] pid={pid} qty={qty} error={e}")
 
-    # 6.x 若有使用購物金，寫入一筆「負數」錢包紀錄，並刷新 session 餘額
-    if wallet_to_use_cents > 0:
-        try:
-            supabase.table('wallet_credits').insert({
-                'member_id': member_id,
-                'amount_cents': -int(wallet_to_use_cents),  # 以分為單位；負數代表扣款
-                'reason': 'order_checkout',
-                'note': f'checkout order_id={order_id}',
-                'created_at': datetime.utcnow().isoformat() + 'Z'
-            }, returning='minimal').execute()
-            # 重新拉一次餘額，讓後續頁面顯示正確
-            _refresh_wallet_session(member_id)
-        except Exception:
-            current_app.logger.exception('[wallet] deduct on checkout failed')
-    
-        # 6.x 若有使用購物金 → 落帳到 wallet_credits（單位：cents，負數）
+    # 6.2 若有使用購物金 → 寫入 wallet_credits（分，負數），並刷新 session
     if used_wallet_cents > 0:
         try:
             supabase.table("wallet_credits").insert({
                 "member_id": member_id,
-                "amount_cents": -used_wallet_cents,         # 負數
+                "amount_cents": -used_wallet_cents,     # 負數代表扣款（單位：分）
                 "reason": "order_checkout",
                 "related_order_id": order_id,
                 "note": f"已使用於訂單 #{order_id}",
             }).execute()
 
-            # 更新 session 的錢包餘額徽章
+            # 更新 session 的餘額徽章
             try:
-                session['wallet_balance_cents'] = max(int(session.get('wallet_balance_cents') or 0) - used_wallet_cents, 0)
+                session['wallet_balance_cents'] = max(
+                    int(session.get('wallet_balance_cents') or 0) - used_wallet_cents, 0
+                )
             except Exception:
                 pass
-        except Exception as e:
-            app.logger.error(f"[wallet] write checkout credit failed: {e}")
+        except Exception:
+            current_app.logger.exception('[wallet] deduct on checkout failed')
 
-
-    # 7) 成功後才累計折扣使用次數（簡單版）
+    # 7) 成功後才累計折扣使用次數
     if discount_code:
         try:
             d = (
@@ -3584,11 +3560,9 @@ def checkout():
             used = int(d.get('used_count') or 0) + 1
             supabase.table('discounts').update({'used_count': used}).eq('code', discount_code).execute()
         except Exception:
-            # 若失敗就略過，不影響下單
             pass
-        
 
-    # 8) 清空購物車與折扣碼暫存、保存交易編號、清除這次寄送覆蓋
+    # 8) 清空購物車與暫存
     session['cart'] = []
     session.pop('cart_discount', None)
     session['current_trade_no'] = merchant_trade_no
@@ -3597,6 +3571,7 @@ def checkout():
     # 9) 導向選擇付款頁
     flash("訂單已建立，請選擇付款方式", "success")
     return redirect(f"/choose-payment?order_id={order_id}")
+
 
 
 
