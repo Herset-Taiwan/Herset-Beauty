@@ -143,54 +143,57 @@ def apply_wallet(member_id: str, want_cents: int, order_total_cents: int) -> int
 def spend_wallet(member_id, order_id, use_cents: int, note: str = "結帳扣抵"):
     """
     從會員錢包扣除指定金額（單位：分）。
-    - member_id: 可轉 int
+    - member_id: UUID/文字/整數皆可，原樣寫入/查詢（不轉型）
     - order_id:  對應 orders.id
     - use_cents: 要扣的金額（分、非負整數）
     同步：
-      1) 寫入 wallet_credits 一筆負值
-      2) 更新 wallet_balances.balance_cents
+      1) wallet_balances.balance_cents 扣款（upsert）
+      2) wallet_credits 寫一筆負值紀錄
     """
-    # --- 型別與值檢查 ---
-    try:
-        mid = int(member_id)
-    except Exception:
-        raise ValueError("member_id 必須是可轉為 int 的值")
-
     amt = int(use_cents or 0)
     if amt <= 0:
-        return  # 不扣款就直接返回
+        return
 
-    # --- 1) 讀目前餘額（分） ---
-    row = (
-        supabase.table("wallet_balances")
-        .select("balance_cents")
-        .eq("member_id", mid)
-        .single()
-        .execute()
-        .data
-        or {}
-    )
-    cur = int(row.get("balance_cents") or 0)
+    # 1) 讀目前餘額（分）— 若不存在視為 0
+    try:
+        row = (
+            supabase.table("wallet_balances")
+            .select("balance_cents")
+            .eq("member_id", member_id)  # ← 不轉型，原樣比對（支援 uuid/text）
+            .single()
+            .execute()
+            .data
+            or {}
+        )
+        cur = int(row.get("balance_cents") or 0)
+    except Exception:
+        # 查無此會員餘額紀錄時，視為 0
+        cur = 0
 
-    # --- 2) 新餘額（不可為負） ---
+    # 2) 新餘額（不可負）
     new_bal = max(0, cur - amt)
 
-    # --- 3) 更新餘額（upsert by member_id）---
+    # 3) 更新/建立餘額（以 member_id 當唯一鍵）
     supabase.table("wallet_balances").upsert(
-        {"member_id": mid, "balance_cents": new_bal},
+        {"member_id": member_id, "balance_cents": new_bal},
         on_conflict="member_id"
     ).execute()
 
-    # --- 4) 記錄錢包交易（負數代表支出） ---
+    # 4) 記錄錢包交易（負數代表支出）
     supabase.table("wallet_credits").insert({
-        "member_id": mid,
-        "amount_cents": -amt,          # 這裡就是「分」的負值
+        "member_id": member_id,
+        "amount_cents": -amt,          # ← 分為單位
         "reason": "order_apply",
         "related_order_id": order_id,
         "note": note
     }).execute()
 
-    # （可選）回傳新餘額，供呼叫端顯示或寫 log
+    # 可選：log 與回傳新餘額
+    try:
+        app.logger.info(f"[wallet] spend member_id={member_id} order_id={order_id} use_cents={amt} new_bal={new_bal}")
+    except Exception:
+        pass
+
     return new_bal
 
 
