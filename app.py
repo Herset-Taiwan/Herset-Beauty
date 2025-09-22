@@ -2514,14 +2514,13 @@ def login():
             user = res.data[0]
             session['user'] = user
             session['member_id'] = user['id']
-            try:
-                grant_signup_bonus_once(str(session["member_id"]))
-            except Exception as e:
-                try:
-                  app.logger.error(f"[wallet] grant signup bonus failed but ignored: {e}")
-            except Exception:
-                 pass
-
+    try:
+        grant_signup_bonus_once(str(session["member_id"]))
+    except Exception as e:
+        try:
+            app.logger.error(f"[wallet] grant signup bonus failed but ignored: {e}")
+        except Exception:
+            pass
 
 
             # ✅ 判斷是否有缺資料
