@@ -464,6 +464,22 @@
 .badge.method.facebook { background:#1877F2; }   /* FB 藍 */
 .badge.method.apple    { background:#111827; }   /* Apple 黑 */
 
+/*下架功能顯示*/
+.product-row.is-hidden {
+  opacity: 0.55; /* 下架商品半透明 */
+}
+
+.badge-off {
+  background: #fde2e2;
+  color: #b42318;
+  border: 1px solid #f1aeb5;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+
 
 </style>
 
@@ -562,15 +578,21 @@
 
 {% if products %}
   {% for p in products %}
-    <div class="product-row">
+    <div class="product-row {% if p.is_hidden %}is-hidden{% endif %}">
       <img src="{{ p['image'] or '' }}" alt="{{ p['name'] }}">
       <div class="info">
-        <strong>
-  {{ p['name'] or '無名稱' }}
+        <strong style="display:flex;align-items:center;gap:8px;">
+  <span>{{ p['name'] or '無名稱' }}</span>
+
+  {% if p.is_hidden %}
+    <span class="badge-off">已下架</span>
+  {% endif %}
+
   {% if p.get('product_type') == 'bundle' %}
-    <span class="badge" style="background:#7b1fa2; margin-left:8px;">套組</span>
+    <span class="badge" style="background:#7b1fa2;">套組</span>
   {% endif %}
 </strong><br>
+
 
 
         {% if p.get('discount_price') %}
