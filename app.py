@@ -187,13 +187,13 @@ def spend_wallet(member_id, order_id, use_cents: int, note: str = "結帳扣抵"
     return new_bal
 
 
-def grant_signup_bonus_once(member_id):
+def grant_signup_bonus_once(member_id: str) -> bool:
     """
     註冊贈點只發一次：
-    - 已有 reason='signup' 記錄就跳過
-    - 金額 <= 0 就不寫
-    - 單位：分（整數）
-    回傳 True=有發放；False=跳過
+    - 若 wallet_credits 已存在 reason='signup' 的正值紀錄就跳過
+    - 金額 <= 0 就不寫入
+    - 單位：分
+    回傳 True=有發放；False=跳過或失敗（不阻斷登入流程）
     """
     # 1) 有發過就跳過
     existed = (
@@ -201,6 +201,7 @@ def grant_signup_bonus_once(member_id):
         .select("id")
         .eq("member_id", member_id)
         .eq("reason", "signup")
+        .gt("amount_cents", 0)
         .limit(1)
         .execute()
         .data
@@ -209,7 +210,8 @@ def grant_signup_bonus_once(member_id):
     if existed:
         return False
 
-    # 2) 從站台設定撈贈點（元，整數）；你的欄位如不同請替換
+    # 2) 從站台設定撈金額（你檔案原本讀 site_settings.signup_bonus_yuan）
+    #    若你要沿用另一組設定也可以，但保持「單一來源」即可
     res = (
         supabase.table("site_settings")
         .select("signup_bonus_yuan")
@@ -218,21 +220,33 @@ def grant_signup_bonus_once(member_id):
     )
     s = (res.data or [{}])[0]
     bonus_yuan = int(float(s.get("signup_bonus_yuan") or 0))
-
     if bonus_yuan <= 0:
         return False
 
-    # 3) 寫入錢包（正數=發放；分）
-    supabase.table("wallet_credits").insert({
-    "member_id": member_id,
-    "amount_cents": bonus_yuan * 100,
-    "reason": "signup",
-    "related_order_id": None,
-    "note": "新會員註冊贈點",
-}, returning="minimal").execute()
+    # 3) 嘗試寫入（正數=發放），避免 RETURNING 與 VIEW/RULE 衝突
+    payload = {
+        "member_id": member_id,
+        "amount_cents": bonus_yuan * 100,
+        "reason": "signup",
+        "related_order_id": None,
+        "note": "新會員註冊贈點",
+    }
 
-
-    return True
+    try:
+        supabase.table("wallet_credits").insert(payload, returning="minimal").execute()
+        return True
+    except APIError as e:
+        # 若 DB 端 VIEW/RULE 缺 RETURNING，PG 會拋 0A000：cannot perform INSERT RETURNING...
+        msg = (getattr(e, "message", None) or "") or str(getattr(e, "args", [""])[0])
+        if 'cannot perform INSERT RETURNING on relation "wallet_credits"' in msg:
+            try:
+                app.logger.warning(f"[wallet] signup bonus insert skipped due to RULE RETURNING: {msg}")
+            except Exception:
+                pass
+            # 不阻斷登入，只是跳過發放；之後你可用 DB 端補 RULE RETURNING 一次根治
+            return False
+        # 其他錯誤仍拋出，方便偵錯
+        raise
 
 
 # ✅ 正確：第二參數是「已序列化」的 JSON 字串（POST 傳 body；GET 傳 querystring；沒有就空字串）
@@ -329,45 +343,6 @@ def upsert_member_from_oauth(*, provider: str, sub: str, email: str | None, name
     }
     created = supabase.table("members").insert(payload).execute()
     return created.data[0]
-
-# 新增：登入後發放新會員購物金（只發一次）
-# 新增：登入後發放新會員購物金（只發一次）
-def grant_signup_bonus_if_needed(member_id: str):
-    # 讀設定
-    row = (supabase.table("settings")
-           .select("value")
-           .eq("key", "wallet.signup_bonus")
-           .single().execute().data)
-    cfg = row["value"] if row else {"amount_cents": 10000, "valid_days": 90}
-    amount_cents = int(cfg.get("amount_cents", 10000))
-    valid_days = int(cfg.get("valid_days", 90))
-
-    # 是否已發過
-    existed = (supabase.table("wallet_credits")
-               .select("id")
-               .eq("member_id", member_id)
-               .eq("reason", "signup")
-               .gt("amount_cents", 0)
-               .execute().data)
-    if existed:
-        return
-
-    from datetime import datetime, timedelta, timezone
-    expires_at = None
-    if valid_days > 0:
-        expires_at = (datetime.now(timezone.utc) + timedelta(days=valid_days)).isoformat()
-
-    # ⚠️ 關鍵：對有 RULE/VIEW 的錢包明細，避免使用 INSERT RETURNING
-    supabase.table("wallet_credits").insert({
-        "member_id": member_id,
-        "amount_cents": amount_cents,
-        "reason": "signup",
-        "expires_at": expires_at,
-        "note": "新會員購物金"
-    }, returning="minimal").execute()
-
-
-
 
 
 # ✅ Supabase 初始化（同時支援 SUPABASE_ANON_KEY / SUPABASE_KEY）
@@ -2539,7 +2514,14 @@ def login():
             user = res.data[0]
             session['user'] = user
             session['member_id'] = user['id']
-            grant_signup_bonus_if_needed(str(session["member_id"]))
+            try:
+                grant_signup_bonus_once(str(session["member_id"]))
+            except Exception as e:
+                try:
+                  app.logger.error(f"[wallet] grant signup bonus failed but ignored: {e}")
+            except Exception:
+                 pass
+
 
 
             # ✅ 判斷是否有缺資料
@@ -2621,7 +2603,13 @@ def login_google_callback():
     )
 
     session["member_id"] = member["id"]
-    grant_signup_bonus_if_needed(str(session["member_id"]))
+    try:
+        grant_signup_bonus_once(str(session["member_id"]))
+    except Exception as e:
+        try:
+            app.logger.error(f"[wallet] grant signup bonus failed but ignored: {e}")
+        except Exception:
+            pass
     session["user"] = {
         "account": member.get("account") or (member.get("email") or "google_user"),
         "email": member.get("email"),
@@ -2711,7 +2699,13 @@ def login_facebook_callback():
 
         # --- D) 建立登入狀態 ---
         session["member_id"] = member["id"]
-        grant_signup_bonus_if_needed(str(session["member_id"]))
+        try:
+            grant_signup_bonus_once(str(session["member_id"]))
+        except Exception as e:
+            try:
+                app.logger.error(f"[wallet] grant signup bonus failed but ignored: {e}")
+            except Exception:
+                pass
         session["user"] = {
             "account": member.get("account") or (member.get("email") or "facebook_user"),
             "email": member.get("email"),
@@ -2818,7 +2812,13 @@ def login_line_callback():
         provider="line", sub=sub, email=email, name=name, avatar_url=picture
     )
     session["member_id"] = member["id"]
-    grant_signup_bonus_if_needed(str(session["member_id"]))
+    try:
+        grant_signup_bonus_once(str(session["member_id"]))
+    except Exception as e:
+        try:
+            app.logger.error(f"[wallet] grant signup bonus failed but ignored: {e}")
+        except Exception:
+            pass
     session["user"] = {
         "account": member.get("account") or (member.get("email") or "line_user"),
         "email": member.get("email"),
@@ -2949,9 +2949,16 @@ def register():
 def ensure_signup_bonus_once_per_session():
     if "member_id" in session and not session.get("signup_bonus_checked"):
         try:
-            grant_signup_bonus_if_needed(str(session["member_id"]))
+            # 改呼叫「只發一次」的安全版本，避免 0A000 讓請求 500
+            grant_signup_bonus_once(str(session["member_id"]))
+        except Exception as e:
+            try:
+                app.logger.error(f"[wallet] grant signup bonus failed but ignored: {e}")
+            except Exception:
+                pass
         finally:
             session["signup_bonus_checked"] = True
+
 
 # 新增：把可用購物金餘額放到 session，供導覽列顯示
 @app.before_request
