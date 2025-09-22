@@ -49,6 +49,14 @@
 <form method="POST" action="/admin0363/bundles/new" enctype="multipart/form-data">
   <h2>新增套組</h2>
 
+  <!-- 下架功能（前台隱藏） -->
+<label style="margin-top:12px; font-weight:700; display:block;">商品狀態</label>
+<label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer;">
+  <input type="checkbox" id="is_hidden" name="is_hidden">
+  <span>下架（前台隱藏）</span>
+</label>
+
+
   <!-- 套組名稱 -->
   <label>套組名稱</label>
   <input type="text" name="name" required class="input-lg" value="{{ bundle.get('name','') }}">

@@ -742,6 +742,7 @@ def admin_new_bundle():
         "tags": [],
         "required_total": 0,
         "cover_image": None,
+        "is_hidden": False,
     }
 
     return render_template(
@@ -787,6 +788,7 @@ def admin_create_bundle():
     stock          = _to_int(form.get("stock"), 0)
     description    = (form.get("description") or "").strip()  # 後台備註（只進 bundles）
     required_total = _to_int(form.get("required_total"), 0)
+    is_hidden = bool(form.get("is_hidden"))  # ← 新增：是否下架
 
     # 共用可選池 / 動態 slots
     pool_ids    = [pid for pid in request.form.getlist("pool_ids[]") if pid]
@@ -872,6 +874,7 @@ def admin_create_bundle():
             "categories": final_categories,
             "tags": final_tags,
             "videos": videos,             # ✅ 新增：套組影片
+            "is_hidden": is_hidden,          # ★ 新增：套組下架旗標
         })
         .execute()
         .data
@@ -935,6 +938,7 @@ def admin_create_bundle():
                 "tags": final_tags,
                 "product_type": "bundle",
                 "videos": videos,  # ✅ 殼商品也存影片，商品頁相簿可直接顯示
+                "is_hidden": is_hidden,       # ★ 新增：殼商品同樣下架
             })
             .execute()
         )
@@ -1053,6 +1057,7 @@ def admin_edit_bundle(bundle_id):
         supabase.table("products")
         .select("id,name,price,product_type")
         .eq("product_type", "single")
+        .eq("is_hidden", False)   # ← 可選：後台挑選來源也排除下架單品
         .order("name")
         .execute()
         .data
@@ -1103,6 +1108,9 @@ def admin_update_bundle(bundle_id):
     feature        = (form.get("feature") or "").strip()
     spec           = (form.get("spec") or "").strip()
 
+    # ✅ 新增：讀取是否下架
+    is_hidden = bool(form.get("is_hidden"))
+
     # 共用可選池 / 動態 slots / 分類標籤（維持你原本）
     pool_ids    = [pid for pid in request.form.getlist("pool_ids[]") if pid]
     slot_labels = request.form.getlist("slot_label[]")
@@ -1134,8 +1142,8 @@ def admin_update_bundle(bundle_id):
                 try: os.unlink(tmp_path)
                 except: pass
 
-    # ✅ 新增哪一段：影片處理（保留舊 + 新增連結 + 新上傳）
-    kept_videos = request.form.getlist("existing_videos[]")  # 由編輯頁現有清單（hidden）帶回
+    # 影片處理（保留舊 + 新增連結 + 新上傳）
+    kept_videos = request.form.getlist("existing_videos[]")
     video_urls_from_form = [
         (u or "").strip()
         for u in request.form.getlist("video_urls[]")
@@ -1168,7 +1176,7 @@ def admin_update_bundle(bundle_id):
 
     videos = kept_videos + video_urls_from_form + video_urls_from_upload
 
-    # 1) 更新 bundles 主檔（🔸這裡「取代」你原本 update 的 dict，加入 videos）
+    # 1) 更新 bundles 主檔 —— ✅ 修改：加入 is_hidden
     update_data = {
         "name": name,
         "price": price,
@@ -1178,7 +1186,8 @@ def admin_update_bundle(bundle_id):
         "required_total": required_total,
         "categories": final_categories,
         "tags": final_tags,
-        "videos": videos,  # ✅
+        "videos": videos,
+        "is_hidden": is_hidden,  # ★ 新增
     }
     if cover_image_url:
         update_data["cover_image"] = cover_image_url
@@ -1218,7 +1227,7 @@ def admin_update_bundle(bundle_id):
         except Exception as e:
             print("❗️寫入 bundle_pool 失敗：", pid, e)
 
-    # 4) 同步殼商品（intro/feature/spec/封面 & 影片）
+    # 4) 同步殼商品（intro/feature/spec/封面 & 影片）—— ✅ 修改：同步 is_hidden
     bres = (
         supabase.table("bundles")
         .select("shell_product_id, cover_image")
@@ -1229,7 +1238,7 @@ def admin_update_bundle(bundle_id):
     current_cover = cover_image_url or bundle_row.get("cover_image") or DEFAULT_SHELL_IMAGE
 
     if not shell_id:
-        # 沒殼就補建
+        # 沒殼就補建 —— ✅ 新增 is_hidden
         try:
             shell_insert = (
                 supabase.table("products")
@@ -1248,7 +1257,8 @@ def admin_update_bundle(bundle_id):
                     "categories": final_categories,
                     "tags": final_tags,
                     "product_type": "bundle",
-                    "videos": videos,  # ✅ 一併帶入
+                    "videos": videos,
+                    "is_hidden": is_hidden,  # ★ 新增
                 })
                 .execute()
             )
@@ -1257,7 +1267,7 @@ def admin_update_bundle(bundle_id):
         except Exception as e:
             print("❗️建立套組殼品項失敗：", e)
     else:
-        # 更新既有殼商品
+        # 更新既有殼商品 —— ✅ 新增 is_hidden
         shell_update = {
             "name": f"[套組優惠] {name}",
             "price": price,
@@ -1267,7 +1277,8 @@ def admin_update_bundle(bundle_id):
             "spec": spec,
             "categories": final_categories,
             "tags": final_tags,
-            "videos": videos,  # ✅ 同步影片
+            "videos": videos,
+            "is_hidden": is_hidden,  # ★ 新增
         }
         if current_cover:
             shell_update["image"] = current_cover
@@ -1278,6 +1289,7 @@ def admin_update_bundle(bundle_id):
 
     flash("套組已更新", "success")
     return redirect("/admin0363/dashboard?tab=products")
+
 
 
 
