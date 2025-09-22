@@ -3327,40 +3327,59 @@ def checkout():
             session.pop('cart_discount', None)  # 無效就清掉
 
     # 4) 應付金額（不得為負）→ 先算未扣購物金，再套用購物金
-    total_i           = _money(total)
-    shipping_fee_i    = _money(shipping_fee)
-    discount_amount_i = _money(discount_amount)
+    total_i           = _money(total)            # 商品小計（分）
+    shipping_fee_i    = _money(shipping_fee)     # 運費（分）
+    discount_amount_i = _money(discount_amount)  # 折扣碼扣抵（分）
 
     # (4-1) 未扣購物金前的應付（整數、分）
     pre_wallet_total_i = max(total_i + shipping_fee_i - discount_amount_i, 0)
 
     # (4-2) 套用購物金（前端欄位名稱：wallet_amount，單位：元；沒有就當 0）
-    want_wallet_amount = int(request.form.get("wallet_amount", "0") or 0)   # 會員想用多少「元」
-    use_cents = apply_wallet(str(member_id), want_wallet_amount * 100, pre_wallet_total_i)
+    # 1) 會員可用購物金餘額（分）
+    wallet_bal = (
+        supabase.table("wallet_balances")
+        .select("balance_cents")
+        .eq("member_id", member_id)
+        .single()
+        .execute()
+        .data or {}
+    )
+    available_cents = int(wallet_bal.get("balance_cents") or 0)
 
-    # (4-3) 最終應付金額（分）
-    final_total_i = max(pre_wallet_total_i - use_cents, 0)
+    # 2) 會員本次輸入的購物金（元 → 分）
+    try:
+        want_wallet_amount = float(request.form.get("wallet_amount", "0") or 0)
+    except Exception:
+        want_wallet_amount = 0.0
+    want_cents = _money(want_wallet_amount)
+
+    # 3) 真正可使用的購物金（分）= min(輸入值, 可用餘額, 未扣錢前應付)
+    use_cents = min(want_cents, available_cents, pre_wallet_total_i)
 
 
-    # 同步把每個品項的單價與小計轉成整數，避免 order_items 的欄位是浮點
-    for it in items:
-        it['price']    = _money(it.get('price'))
-        it['subtotal'] = _money(it.get('subtotal'))
+        # (4-3) 最終應付金額（分）
+        final_total_i = max(pre_wallet_total_i - use_cents, 0)
 
-    # 4.1 使用者此次在畫面上選的「意圖付款方式」(可有可無)
-    intended = (request.form.get("payment_method") or request.form.get("method") or "").lower()
-    ALLOWED_METHODS = {"linepay", "ecpay", "transfer", "atm", "bank", "bank_transfer"}
-    if intended not in ALLOWED_METHODS:
-        intended = None
 
-    # 5) 建立訂單
-    from pytz import timezone
-    from datetime import datetime
-    tw = timezone("Asia/Taipei")
-    merchant_trade_no = generate_merchant_trade_no()
-    created_at = datetime.now(tw).isoformat()
+        # 同步把每個品項的單價與小計轉成整數，避免 order_items 的欄位是浮點
+        for it in items:
+            it['price']    = _money(it.get('price'))
+            it['subtotal'] = _money(it.get('subtotal'))
 
-    order_data = {
+        # 4.1 使用者此次在畫面上選的「意圖付款方式」(可有可無)
+        intended = (request.form.get("payment_method") or request.form.get("method") or "").lower()
+        ALLOWED_METHODS = {"linepay", "ecpay", "transfer", "atm", "bank", "bank_transfer"}
+        if intended not in ALLOWED_METHODS:
+            intended = None
+
+        # 5) 建立訂單
+        from pytz import timezone
+        from datetime import datetime
+        tw = timezone("Asia/Taipei")
+        merchant_trade_no = generate_merchant_trade_no()
+        created_at = datetime.now(tw).isoformat()
+
+        order_data = {
         'member_id': member_id,
         'total_amount':   final_total_i,      # ✅ 整數
         'shipping_fee':   shipping_fee_i,     # ✅ 整數
@@ -3374,8 +3393,8 @@ def checkout():
         'receiver_name': receiver_name,
         'receiver_phone': receiver_phone,
         'receiver_address': receiver_addr,
-        'wallet_used_cents': use_cents,          # ✅ 本次實際扣抵的購物金（分）
-        'amount_payable_cents': final_total_i   # ✅ 方便對帳（也可不加；你原本 total_amount 仍保留）
+        'wallet_used_cents': use_cents,   # 本次實際扣抵的購物金（分）
+        'amount_payable': final_total_i   # ← DB 有的欄位，用來放「最後應付」（分）
 
     }
     result = supabase.table('orders').insert(order_data).execute()
