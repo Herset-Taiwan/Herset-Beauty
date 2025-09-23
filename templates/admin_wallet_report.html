@@ -46,17 +46,18 @@
         <label>類型
   <select name="reason">
     <option value="">全部</option>
-    {% set reasons = [
-      ['signup_bonus','signup_bonus'],
-      ['manual','manual'],
-      ['order_checkout','order_checkout'],
-      ['refund','refund']
+    {% set reason_options = [
+      ('signup_bonus', '新會員自動發放'),
+      ('manual', '後台發送'),
+      ('order_checkout', '已使用'),
+      ('refund', '退回')
     ] %}
-    {% for val, label in reasons %}
+    {% for val, label in reason_options %}
       <option value="{{ val }}" {{ 'selected' if reason==val else '' }}>{{ label }}</option>
     {% endfor %}
   </select>
 </label>
+
 
         <label>會員關鍵字
           <input type="text" name="q" value="{{ request.args.get('q','') }}" placeholder="email / 姓名 / 電話">
@@ -78,6 +79,13 @@
           <div style="font-weight:700;font-size:18px;">{{ (net // 100) }} 元</div>
         </div>
       </div>
+{% set reason_map = {
+  'signup_bonus': '新會員自動發放',
+  'manual': '後台發送',
+  'order_checkout': '已使用',
+  'refund': '退回'
+} %}
+
 
       <table class="table">
         <thead>
@@ -97,7 +105,7 @@
           <tr>
             <td>{{ (r.created_at | replace('T',' ')) | truncate(19, True, '') }}</td>
             <td>#{{ r.member_id }} {{ (m.name ~ ' / ' ~ m.email) if m else '' }}</td>
-            <td>{{ r.reason }}</td>
+            <td>{{ reason_map.get(r.reason, r.reason) }}</td>
             <td style="font-weight:600;color:{{ 'green' if r.amount_cents>0 else 'crimson' }};">
               {{ (r.amount_cents // 100) }} 元
             </td>
