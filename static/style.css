@@ -936,5 +936,116 @@ footer ul li a:visited {
 
 /*-- 新增：購物金徽章樣式 */
 
+/* ===== NAV & Wallet – clean, stable ===== */
+
+/* 防 iOS 自動放大字（放一次就好） */
+html{ -webkit-text-size-adjust:100%; }
+
+/* 只套到最上層選單，避免把 dropdown 的 <ul> 攤平 */
+.main-header .main-nav > ul{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:16px;
+  list-style:none;
+  margin:0;
+  padding:0;
+}
+.main-header .main-nav > ul > li{ display:inline-flex; align-items:center; }
+
+/* 會員中心下拉 */
+.main-header .main-nav .dropdown{ position:relative; }
+.main-header .main-nav .dropdown-menu{
+  display:none;
+  position:absolute;
+  right:0;
+  top:calc(100% + 8px);
+  background:#fff;
+  border:1px solid #eadad6;
+  border-radius:12px;
+  padding:8px 0;
+  margin:0;
+  list-style:none;
+  white-space:nowrap;
+  box-shadow:0 10px 20px rgba(0,0,0,.08);
+  z-index:1000;
+}
+.main-header .main-nav .dropdown:hover .dropdown-menu{ display:block; }
+.main-header .main-nav .dropdown-menu a{
+  display:block; padding:8px 14px; color:#5a4b45; text-decoration:none;
+}
+.main-header .main-nav .dropdown-menu a:hover{ background:#f7f2f1; }
+
+/* 購物金膠囊（統一一份） */
+.wallet-chip{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:8px 14px; border-radius:999px; text-decoration:none;
+  background:linear-gradient(180deg,#FFF7FB 0%,#FDE8EF 100%);
+  border:1px solid #F4C9D6;
+  box-shadow:0 1px 0 rgba(255,255,255,.8) inset, 0 6px 14px rgba(198,69,108,.10);
+  color:#5C2543; font-weight:700; font-size:14px; line-height:1;
+  font-variant-numeric:tabular-nums;
+}
+.wallet-chip .chip-icon{ width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center; }
+.wallet-chip .chip-amount{ font-size:15px; margin-left:2px; }
+.wallet-chip .chip-text{ opacity:.9; }
+.wallet-chip .chip-unit{ opacity:.8; }
+.wallet-chip.is-zero{
+  background:linear-gradient(180deg,#FBFBFB 0%,#F4F4F4 100%);
+  color:#6B6B6B; border-color:#E6E6E6;
+  box-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 4px 10px rgba(0,0,0,.06);
+}
+.wallet-chip:hover,
+.wallet-chip:focus-visible{
+  transform:translateY(-1px);
+  box-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 10px 18px rgba(198,69,108,.18);
+  outline:none;
+}
+
+/* ≤ 768px：手機/平板 */
+@media (max-width:768px){
+  .main-header{ padding:8px 12px; }
+  .logo-area img{ height:22px; }
+  .logo-area span{ font-size:16px; }
+
+  .ann-ticker{ display:none; } /* 跑馬燈手機收掉 */
+
+  /* 主選單保持一行，可左右滑，不換行 */
+  .main-header .main-nav > ul{
+    gap:10px;
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  .main-header .main-nav > ul > li > a{
+    font-size:14px;
+    padding:6px 6px;
+    line-height:1.2;
+    white-space:nowrap;
+  }
+
+  /* 手機只留 ICON + 數字 */
+  .wallet-chip{ padding:6px 8px; }
+  .wallet-chip .chip-text,
+  .wallet-chip .chip-unit{ display:none; }
+  .wallet-chip .chip-amount{ font-size:14px; }
+
+  /* 分類列也縮一點 */
+  .sub-categories{ padding:10px 8px; }
+  .sub-categories a{
+    margin:0 8px;
+    font-size:14px;
+    padding:6px 10px;
+    font-weight:700;
+  }
+}
+
+/* ≤ 430px：小螢幕再緊湊 */
+@media (max-width:430px){
+  .main-header .main-nav > ul{ gap:8px; }
+  .main-header .main-nav > ul > li > a{ font-size:13px; }
+  .sub-categories{ padding:8px 6px; }
+  .sub-categories a{ margin:0 6px; font-size:13px; padding:6px 8px; }
+}
 
 
