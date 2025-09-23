@@ -15,6 +15,13 @@
     .table th,.table td{border:1px solid #eadad6;padding:8px 10px;text-align:left}
     .form-inline{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
     .card{background:#fff;border:1px solid #eadad6;border-radius:12px;padding:16px}
+
+    .flash-area{margin:0 0 12px}
+    .alert{padding:10px 12px;border-radius:8px;border:1px solid transparent}
+    .alert.success{background:#ecfdf5;border-color:#10b98133;color:#065f46}
+    .alert.warning{background:#fffbeb;border-color:#f59e0b33;color:#92400e}
+    .alert.error{background:#fef2f2;border-color:#ef444433;color:#991b1b}
+
   </style>
 </head>
 <body>
@@ -33,6 +40,16 @@
 
   <div class="container">
     <h2 style="margin:0 0 16px;">發放購物金</h2>
+    {% with flashes = get_flashed_messages(with_categories=True) %}
+  {% if flashes %}
+    <div class="flash-area">
+      {% for cat, msg in flashes %}
+        <div class="alert {{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
 
     <div class="card">
       <form method="get" class="form-inline" action="/admin0363/wallet/grant">
