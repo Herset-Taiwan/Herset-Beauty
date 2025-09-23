@@ -31,7 +31,7 @@ footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  /*border-bottom: 2px solid #C7A7A3;*/
+  border-bottom: 2px solid #C7A7A3;
   box-sizing: border-box;     /* 新增 */
   min-height: 68px;          /* 新增：給下限，高度自動撐開 */
 }
