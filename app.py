@@ -2875,11 +2875,36 @@ def admin_wallet_settings_save():
           "success" if (ok1 and ok2) else "error")
     return redirect("/admin0363/wallet/settings")
 # === Admin: 購物金發放（表單） ===
+# === Admin: 購物金發放（表單 + 搜尋） ===
 @app.get("/admin0363/wallet/grant")
 def admin_wallet_grant_form():
     if not session.get("admin_logged_in"):
         return redirect("/admin0363")
-    return render_template("admin_wallet_grant.html")  # 你可以先用簡單表單，或直接用 Dashboard 的動態載入
+
+    q = (request.args.get("q") or "").strip()
+    candidates = []
+    if q:
+        # 模糊比對 email / 姓名 / 電話 / 帳號 / username
+        pattern = f"%{q}%"
+        try:
+            res = (
+                supabase.table("members")
+                .select("id,name,email,phone")
+                .or_(
+                    "email.ilike.{p},name.ilike.{p},phone.ilike.{p},account.ilike.{p},username.ilike.{p}"
+                    .format(p=pattern)
+                )
+                .order("id", desc=True)
+                .limit(100)
+                .execute()
+            )
+            candidates = res.data or []
+        except Exception as e:
+            current_app.logger.exception("search members failed: %s", e)
+            candidates = []
+
+    return render_template("admin_wallet_grant.html", candidates=candidates)
+
 
 # === Admin: 購物金發放（提交） ===
 @app.post("/admin0363/wallet/grant")
@@ -2888,12 +2913,22 @@ def admin_wallet_grant():
         return redirect("/admin0363")
 
     form = request.form
-    # 支援單筆或多筆 member_id（逗號分隔），金額用「元」
+
+    # ① 同時支援單一 member_id（來自每列表單）或多筆 member_ids（逗號分隔）
     raw_ids = (form.get("member_ids") or "").strip()
-    amount_nt = float(form.get("amount") or 0)
+    single_id = (form.get("member_id") or "").strip()
+    if single_id and not raw_ids:
+        raw_ids = single_id
+
+    # 金額用「元」
+    try:
+        amount_nt = float(form.get("amount") or 0)
+    except Exception:
+        amount_nt = 0.0
+
     reason = (form.get("reason") or "manual").strip() or "manual"
     note = (form.get("note") or "").strip() or None
-    expires_raw = (form.get("expires_at") or "").strip()  # yyyy-mm-dd hh:mm
+    expires_raw = (form.get("expires_at") or "").strip()  # 可能是 'YYYY-MM-DD' 或空字串
 
     if not raw_ids or amount_nt <= 0:
         flash("請輸入會員與正確金額", "error")
@@ -2901,24 +2936,36 @@ def admin_wallet_grant():
 
     amount_cents = int(round(amount_nt * 100))
     ids = [x.strip() for x in raw_ids.split(",") if x.strip()]
+
+    # ② 到期日：你的表單是 <input type="date">，只有日期
+    #    若有填，預設取台灣時間當天的 23:59 轉成 UTC ISO
     expires_iso = None
     if expires_raw:
         try:
-            expires_iso = to_utc_iso_from_tw(expires_raw)  # 你專案已有的時間轉換 helper（折扣碼在用） :contentReference[oaicite:6]{index=6}
+            # 'YYYY-MM-DD' -> 'YYYY-MM-DDT23:59'
+            local_dt = f"{expires_raw}T23:59"
+            expires_iso = to_utc_iso_from_tw(local_dt)
         except Exception:
             expires_iso = None
 
     ok_cnt, fail_cnt = 0, 0
     for mid in ids:
-        if _grant_wallet(mid, amount_cents, reason=reason,
-                         expires_at_iso=expires_iso,
-                         issued_by_admin=session.get("admin_id"),
-                         note=note):
+        if _grant_wallet(
+            mid,
+            amount_cents,
+            reason=reason,
+            expires_at_iso=expires_iso,
+            issued_by_admin=session.get("admin_id"),
+            note=note,
+        ):
             ok_cnt += 1
         else:
             fail_cnt += 1
 
-    flash(f"發放完成：成功 {ok_cnt} 筆，失敗 {fail_cnt} 筆", "success" if fail_cnt == 0 else "warning")
+    flash(
+        f"發放完成：成功 {ok_cnt} 筆，失敗 {fail_cnt} 筆",
+        "success" if fail_cnt == 0 else "warning",
+    )
     return redirect("/admin0363/wallet/grant")
 
 # === Member: 我的購物金 ===
@@ -2960,20 +3007,81 @@ def inject_wallet_badge_amount():
     return {"wallet_badge_amount": amt}
 
 
-# === Admin: 簡易報表 ===
+# === Admin: 購物金查詢 / 報表 ===
 @app.get("/admin0363/wallet/report")
 def admin_wallet_report():
     if not session.get("admin_logged_in"):
         return redirect("/admin0363")
-    # 最近 200 筆
-    res = (supabase.table("wallet_credits")
-           .select("*")
-           .order("id", desc=True)
-           .limit(200)
-           .execute())
-    rows = res.data or []
-    return render_template("admin_wallet_report.html", rows=rows)
 
+    # 1) 讀取查詢條件
+    date_from = (request.args.get("from") or "").strip()
+    date_to   = (request.args.get("to") or "").strip()
+    reason    = (request.args.get("reason") or "").strip()   # e.g. signup_bonus/manual/order_checkout/refund
+    q         = (request.args.get("q") or "").strip()
+
+    # 2) 基礎查詢：wallet_credits 最近 200 筆（可依條件縮小）
+    query = (supabase.table("wallet_credits")
+             .select("id,member_id,amount_cents,reason,created_at,expires_at,related_order_id,note")
+             .order("id", desc=True))
+
+    # 日期過濾（created_at，date-only 以當天 00:00~23:59:59）
+    if date_from:
+        query = query.gte("created_at", f"{date_from}T00:00:00")
+    if date_to:
+        query = query.lte("created_at", f"{date_to}T23:59:59")
+    if reason:
+        query = query.eq("reason", reason)
+
+    rows = (query.limit(200).execute().data) or []
+
+    # 3) 會員關鍵字過濾（email / name / phone / account / username）
+    member_map = {}
+    if q:
+        # 先撈出所有 rows 的 member_id
+        mids = list({r["member_id"] for r in rows if r.get("member_id")})
+        if mids:
+            # 撈會員資料做過濾 + 之後顯示
+            mem_rows = (supabase.table("members")
+                        .select("id,name,email,phone,account,username")
+                        .in_("id", mids).execute().data) or []
+            # 建立查詢字典
+            member_map = {m["id"]: m for m in mem_rows}
+            def _match(m):
+                s = q.lower()
+                return (s in (m.get("email") or "").lower()
+                        or s in (m.get("name") or "").lower()
+                        or s in (m.get("phone") or "").lower()
+                        or s in (m.get("account") or "").lower()
+                        or s in (m.get("username") or "").lower())
+            allow_ids = {m["id"] for m in mem_rows if _match(m)}
+            rows = [r for r in rows if r.get("member_id") in allow_ids]
+        else:
+            rows = []
+
+    # 4) 合計（以「分」為單位；模板寫法用 // 100，所以這裡傳分）
+    total_in_cents = 0
+    total_out_cents = 0
+    for r in rows:
+        amt = int(r.get("amount_cents") or 0)
+        if amt >= 0:
+            total_in_cents += amt
+        else:
+            total_out_cents += (-amt)
+    net_cents = total_in_cents - total_out_cents
+
+    # 5) 傳給模板（注意：這裡傳的是「分」→ 可直接配合你的 {{ (xx // 100) }} 寫法）
+    return render_template(
+        "admin_wallet_report.html",
+        rows=rows,
+        member_map=member_map,        # ← 供模板顯示姓名/Email
+        total_in=total_in_cents,      # ← 分
+        total_out=total_out_cents,    # ← 分
+        net=net_cents,                # ← 分（模板用 {{ (net // 100) }}）
+        # 把查詢條件回填到表單
+        date_from=date_from,
+        date_to=date_to,
+        reason=reason,
+    )
 
 
 

@@ -44,13 +44,20 @@
           <input type="date" name="to" value="{{ date_to or '' }}">
         </label>
         <label>類型
-          <select name="reason">
-            <option value="">全部</option>
-            {% for r in ['signup','manual','order_apply','refund'] %}
-              <option value="{{ r }}" {{ 'selected' if reason==r else '' }}>{{ r }}</option>
-            {% endfor %}
-          </select>
-        </label>
+  <select name="reason">
+    <option value="">全部</option>
+    {% set reasons = [
+      ['signup_bonus','signup_bonus'],
+      ['manual','manual'],
+      ['order_checkout','order_checkout'],
+      ['refund','refund']
+    ] %}
+    {% for val, label in reasons %}
+      <option value="{{ val }}" {{ 'selected' if reason==val else '' }}>{{ label }}</option>
+    {% endfor %}
+  </select>
+</label>
+
         <label>會員關鍵字
           <input type="text" name="q" value="{{ request.args.get('q','') }}" placeholder="email / 姓名 / 電話">
         </label>
@@ -89,7 +96,7 @@
           {% set m = member_map.get(r.member_id) %}
           <tr>
             <td>{{ (r.created_at | replace('T',' ')) | truncate(19, True, '') }}</td>
-            <td>#{{ r.member_id }} {{ m and m.name or '' }} {{ m and m.email or '' }}</td>
+            <td>#{{ r.member_id }} {{ (m.name ~ ' / ' ~ m.email) if m else '' }}</td>
             <td>{{ r.reason }}</td>
             <td style="font-weight:600;color:{{ 'green' if r.amount_cents>0 else 'crimson' }};">
               {{ (r.amount_cents // 100) }} 元
