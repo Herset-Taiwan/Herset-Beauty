@@ -936,8 +936,9 @@ footer ul li a:visited {
 /*-- 新增：購物金徽章樣式 */
 
 /* 導覽列右側保持靠右（你若已有可略過） */
-.main-header .main-nav ul{
+.main-header .main-nav > ul{
   display:flex; align-items:center; gap:18px; justify-content:flex-end;
+  list-style:none; margin:0; padding:0;
 }
 
 /* 膠囊徽章 */
