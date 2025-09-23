@@ -31,8 +31,9 @@ footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 2px solid #C7A7A3; /* 乾燥玫瑰 */
-  max-height: 80px;
+  border-bottom: 2px solid #C7A7A3;
+  box-sizing: border-box;     /* 新增 */
+  min-height: 72px;           /* 新增：給下限，高度自動撐開 */
 }
 
 .logo-area {
@@ -762,6 +763,11 @@ footer {
   padding-bottom: 10px;  /* 改小或設為 0 */
   overflow: hidden;
 }
+
+/* 保險：確保輪播區塊是正常的層級與定位 */
+.carousel-container{ position: relative; z-index: 1; }
+/* header 本來就有較高 z-index，這裡僅明確化 */
+.main-header{ position: relative; z-index: 10; }
 
 .carousel {
   position: relative;
