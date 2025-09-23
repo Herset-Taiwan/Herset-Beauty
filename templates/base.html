@@ -1,9 +1,8 @@
-檔案：templates/_header.html（或你的 header 模板，放在「HOME」前面那個錨點的位置）
-我的不是header.html，是Base.html
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{% block title %}HERSET 官方網站｜天然保養 × 品味生活{% endblock %}</title>
 
   <!-- SEO -->
@@ -32,6 +31,7 @@
 
   <!-- CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
 
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;700&family=Rubik:wght@500&display=swap" rel="stylesheet">
 
@@ -101,10 +101,47 @@ fbq('track', 'PageView');
 
   {# 新增：登入後在頁首顯示購物金徽章 #}
 {% if session.get('member_id') %}
-  <a href="/member/wallet" class="wallet-badge">
-    購物金：{{ wallet_badge_amount }} 元
+  {# 0 元淡化（可省略） #}
+  {% set _amt = (wallet_badge_amount|int) if wallet_badge_amount is not none else ((session.get('wallet_balance_cents') or 0)//100) %}
+  <a href="/member/wallet"
+     class="wallet-badge {{ 'is-zero' if _amt == 0 else '' }}"
+     aria-label="我的購物金 {{ _amt }} 元"
+     title="我的購物金：{{ _amt }} 元">
+    <span class="wb-icon" aria-hidden="true"><!-- 可放 SVG 金幣，先留空也行 --></span>
+    <span class="wb-label">購物金</span>
+    <span class="wb-amt">{{ _amt }}</span>
+    <span class="wb-unit">元</span>
   </a>
 {% endif %}
+
+
+  <li>
+    <a class="wallet-chip {{ 'is-zero' if wallet_amount == 0 else '' }}"
+       href="/member/wallet"
+       data-amount="{{ wallet_amount }}"
+       title="我的購物金：{{ wallet_amount }} 元"
+       aria-label="我的購物金 {{ wallet_amount }} 元">
+      <span class="chip-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
+          <defs>
+            <linearGradient id="coin" x1="0" y1="0" x2="0" y2="24">
+              <stop offset="0" stop-color="#FFD985"/>
+              <stop offset="1" stop-color="#FFBF47"/>
+            </linearGradient>
+          </defs>
+          <circle cx="12" cy="12" r="9" fill="url(#coin)"/>
+          <circle cx="12" cy="12" r="9" stroke="#E49B2E" stroke-width="1"/>
+          <path d="M9 9h6M9 12h6M9 15h6" stroke="#8B5E15" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <span class="chip-text">購物金</span>
+      <span class="chip-amount">{{ wallet_amount }}</span>
+      <span class="chip-unit">元</span>
+    </a>
+  </li>
+{% endif %}
+
+
 
       <li><a href="/">HOME</a></li>
 
