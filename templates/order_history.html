@@ -173,14 +173,15 @@ const zhStatus = s => s==='shipped' ? '已出貨' : s==='paid' ? '已確認付�
         <div class="grid">
           <ul class="items">${items || '<li class="item"><div class="name">（此訂單無商品）</div></li>'}</ul>
           <div>
-            <div class="sum">
-              <div class="row"><span>小計（不含運）</span><span>$${(o.items||[]).reduce((s,i)=>s + (i.price||0)*(i.qty||1),0)}</span></div>
-              <div class="row"><span>運費</span>
-                <span>${(o.shipping_fee||0)===0?'<span class="free">$0（免運）</span>':`$${o.shipping_fee}`}</span>
-              </div>
-              ${o.discount_amount ? `<div class="row"><span>折扣</span><span>-$${o.discount_amount}</span></div>` : ''}
-              <div class="row total"><span>應付總額</span><span>$${o.total_amount}</span></div>
-            </div>
+              <div class="sum">
+    <div class="row"><span>小計（不含運）</span><span>$${o.subtotal || 0}</span></div>
+    <div class="row"><span>運費</span>
+      <span>${(o.shipping_fee||0)===0 ? '<span class="free">$0（免運）</span>' : `$${o.shipping_fee}`}</span>
+    </div>
+    ${o.discount_amount ? `<div class="row"><span>折扣</span><span>-$${o.discount_amount}</span></div>` : ''}
+    ${o.wallet_used ? `<div class="row"><span>購物金折抵</span><span>-$${o.wallet_used}</span></div>` : ''}
+    <div class="row total"><span>應付總額</span><span>$${o.total_amount}</span></div>
+  </div>
             <div class="actions">
   ${!paid && o.MerchantTradeNo
     ? `<button class="btn repay" onclick="repay('${o.MerchantTradeNo}')">🔁 重新付款</button>`

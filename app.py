@@ -609,7 +609,6 @@ def admin_login():
     return render_template("admin_login.html")
 
 # admin 後台
-# admin 後台
 @app.route("/admin0363/dashboard")
 def admin_dashboard():
     if not session.get("admin_logged_in"):
@@ -715,6 +714,33 @@ def admin_dashboard():
     order_ids = [o["id"] for o in orders_raw]
     member_ids = list({o["member_id"] for o in orders_raw if o.get("member_id")})
 
+        # === 新增：一次撈出每張訂單使用的購物金（單位：分 / cents）===
+    # 規則：wallet_credits.amount_cents < 0 表示「使用」，> 0 表示「退回」
+    # 以 related_order_id 關聯訂單；最後得到 {order_id: used_cents}
+    wallet_used_map = {}
+    if order_ids:
+        wc_rows = (
+            supabase.table("wallet_credits")
+            .select("related_order_id, amount_cents")
+            .in_("related_order_id", order_ids)
+            .execute()
+            .data
+            or []
+        )
+        for r in wc_rows:
+            oid = r.get("related_order_id")
+            if not oid:
+                continue
+            amt = int(r.get("amount_cents") or 0)
+            cur = wallet_used_map.get(oid, 0)
+            if amt < 0:
+                # 使用購物金（負數）→ 加上其絕對值
+                cur += (-amt)
+            else:
+                # 退回購物金（正數）→ 扣掉
+                cur -= amt
+            wallet_used_map[oid] = max(0, cur)  # 不要出現負值
+
     order_items = supabase.table("order_items").select("*").in_("order_id", order_ids).execute().data or []
     members_res = supabase.table("members").select("id, account, name, phone, address").in_("id", member_ids).execute().data or []
     member_dict = {m["id"]: m for m in members_res}
@@ -744,6 +770,11 @@ def admin_dashboard():
             o["created_local"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
         except Exception:
             o["created_local"] = o["created_at"]
+
+        # ★★★ 新增這兩行：把「本張訂單使用的購物金」帶到模板 ★★★
+        o["wallet_used_cents"] = int(wallet_used_map.get(o["id"], 0))
+        o["wallet_used_nt"]    = o["wallet_used_cents"] // 100
+        
         orders.append(o)
     unshipped_count = sum(1 for o in orders if (o.get("status") != "shipped"))
 
@@ -5180,11 +5211,12 @@ def order_history():
     member_id = session['member_id']
     tz = TW  # 直接使用全域 TW
 
-    # 查詢會員的所有訂單
-    res = supabase.table("orders") \
-        .select("*") \
-        .eq("member_id", member_id) \
-        .order("created_at", desc=True).execute()
+    # 查詢會員的所有訂單（新到舊）
+    res = (supabase.table("orders")
+           .select("*")
+           .eq("member_id", member_id)
+           .order("created_at", desc=True)
+           .execute())
     orders_raw = res.data or []
 
     # 查詢所有訂單項目（一次撈取）
@@ -5194,30 +5226,49 @@ def order_history():
     for item in items:
         item_group.setdefault(item['order_id'], []).append(item)
 
-    # 整合資料 + 台灣時區轉換 + 狀態中文化
+    # 🔸 新增：把「與訂單關聯」的購物金扣抵撈出來 → {order_id: 使用金額(元)}
+    cres = (supabase.table("wallet_credits")
+            .select("related_order_id, amount_cents")
+            .eq("member_id", member_id)
+            .eq("reason", "order_checkout")
+            .execute())
+    crows = cres.data or []
+    wallet_used_map = {}
+    for r in crows:
+        oid = r.get("related_order_id")
+        amt_cents = int(r.get("amount_cents") or 0)  # 負數
+        if oid:
+            wallet_used_map[oid] = abs(amt_cents) // 100  # 轉元，取絕對值
+
+    # 整合資料 + 台灣時區轉換 + 狀態中文化 + 帶入購物金
     orders = []
     for o in orders_raw:
         o['items'] = item_group.get(o['id'], [])
 
         # 狀態轉換為中文
-        if o['status'] == 'pending':
+        if o.get('status') == 'pending':
             o['status_text'] = '待處理'
-        elif o['status'] == 'paid':
+        elif o.get('status') == 'paid':
             o['status_text'] = '已付款'
-        elif o['status'] == 'shipped':
+        elif o.get('status') == 'shipped':
             o['status_text'] = '已出貨'
         else:
-            o['status_text'] = o['status']  # fallback 顯示原文
+            o['status_text'] = o.get('status') or '—'
 
+        # 台灣時區
         try:
             utc_dt = parser.parse(o['created_at'])
             o['created_local'] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
-        except:
-            o['created_local'] = o['created_at']
+        except Exception:
+            o['created_local'] = o.get('created_at', '')
+
+        # 🔸 新增欄位：本筆訂單使用的購物金（元）
+        o['wallet_used'] = int(wallet_used_map.get(o['id'], 0))
 
         orders.append(o)
 
     return render_template("order_history.html", orders=orders)
+
 
 
 # 會員重新下單路由
