@@ -771,13 +771,14 @@ footer {
 
 .carousel-img {
   width: 100%;
-  height: 400px;             /* 固定高度 */
-  object-fit: **cover**;  /* 或改成 contain 看需求 */
+  height: 400px;
+  object-fit: cover;       /* ← 正確值 */
   position: absolute;
   opacity: 0;
   transition: opacity 1s ease-in-out;
   border-radius: 0;
 }
+
 
 .carousel-img.active {
   opacity: 1;
@@ -1080,4 +1081,61 @@ html { -webkit-text-size-adjust: 100% !important; }
 }
 .main-header .main-nav .dropdown:hover .dropdown-menu{ display:block; }
 
+/* ======== Mobile 縮排 & 文字大小總覆蓋（貼在檔案最底）======== */
+
+/* 避免 iOS 自動放大字 */
+html { -webkit-text-size-adjust: 100% !important; }
+
+@media (max-width: 768px){
+  /* Header 縮小 */
+  .main-header{ padding:8px 12px !important; max-height:64px !important; }
+  .logo-area img{ height:24px !important; width:auto !important; }
+  .logo-area span{ font-size:16px !important; }
+
+  /* 導覽列保持單行，可左右滑，不換行就不會把版面撐高 */
+  .main-header .main-nav > ul{
+    gap:10px !important;
+    flex-wrap:nowrap !important;
+    overflow-x:auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  .main-header .main-nav > ul > li > a{
+    font-size:14px !important;
+    padding:6px 6px !important;
+    line-height:1.2 !important;
+    white-space:nowrap !important;
+  }
+
+  /* 購物金膠囊：手機只顯示 icon + 數字 */
+  .wallet-chip{ padding:6px 8px !important; }
+  .wallet-chip .chip-text,
+  .wallet-chip .chip-unit{ display:none !important; }
+  .wallet-chip .chip-amount{ font-size:14px !important; }
+
+  /* 公告條在手機收起來，避免把 header 撐高 */
+  .ann-ticker{ display:none !important; }
+
+  /* 分類列縮小字級與間距（你看到的「全部商品／身體保養…」那一排） */
+  .sub-categories{ padding:10px 8px !important; }
+  .sub-categories a{
+    margin: 0 8px !important;
+    font-size:14px !important;
+    padding:6px 10px !important;
+    font-weight:700 !important;
+  }
+}
+
+@media (max-width: 430px){
+  /* 小螢幕再微調更緊湊 */
+  .main-header{ padding:8px 10px !important; }
+  .main-header .main-nav > ul{ gap:8px !important; }
+  .main-header .main-nav > ul > li > a{ font-size:13px !important; }
+
+  .sub-categories{ padding:8px 6px !important; }
+  .sub-categories a{
+    margin:0 6px !important;
+    font-size:13px !important;
+    padding:6px 8px !important;
+  }
+}
 
