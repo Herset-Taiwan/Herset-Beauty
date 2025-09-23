@@ -174,7 +174,16 @@ const zhStatus = s => s==='shipped' ? '已出貨' : s==='paid' ? '已確認付�
           <ul class="items">${items || '<li class="item"><div class="name">（此訂單無商品）</div></li>'}</ul>
           <div>
               <div class="sum">
-    <div class="row"><span>小計（不含運）</span><span>$${o.subtotal || 0}</span></div>
+    <div class="row"><span>小計（不含運）</span>
+  <span>$${Math.max(
+    Number(o.total_amount||0)                       // 應付總額（已扣完）
+    + Number(o.discount_amount||0)                  // 折扣（若有）
+    + Number((o.wallet_used ?? o.wallet_used_nt) || 0) // 購物金折抵（你前端用 wallet_used；後台是 wallet_used_nt，兩者皆容）
+    - Number(o.shipping_fee||0),                    // 運費
+    0
+  )}</span>
+</div>
+
     <div class="row"><span>運費</span>
       <span>${(o.shipping_fee||0)===0 ? '<span class="free">$0（免運）</span>' : `$${o.shipping_fee}`}</span>
     </div>
