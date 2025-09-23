@@ -97,19 +97,22 @@ fbq('track', 'PageView');
       <li><a href="/member/messages" style="color: red;">📩 有新留言</a></li>
     {% endif %}
 
-    {# 登入後顯示購物金（維持你舊版：ul 裡面是「裸 <a>」，不包 <li>） #}
-    {% if session.get('member_id') %}
-      {% set _amt = (wallet_badge_amount|int) if wallet_badge_amount is not none else ((session.get('wallet_balance_cents') or 0)//100) %}
-      <a href="/member/wallet"
-         class="wallet-badge {{ 'is-zero' if _amt == 0 else '' }}"
-         aria-label="我的購物金 {{ _amt }} 元"
-         title="我的購物金：{{ _amt }} 元">
-        <span class="wb-icon" aria-hidden="true"></span>
-        <span class="wb-label">購物金</span>
-        <span class="wb-amt">{{ _amt }}</span>
-        <span class="wb-unit">元</span>
-      </a>
-    {% endif %}
+    {# 登入後顯示購物金（用 <li> 包起來，避免把 ul 撐高） #}
+{% if session.get('member_id') %}
+  {% set _amt = (wallet_badge_amount|int) if wallet_badge_amount is not none else ((session.get('wallet_balance_cents') or 0)//100) %}
+  <li class="wallet-li">
+    <a href="/member/wallet"
+       class="wallet-badge {{ 'is-zero' if _amt == 0 else '' }}"
+       aria-label="我的購物金 {{ _amt }} 元"
+       title="我的購物金：{{ _amt }} 元">
+      <span class="wb-icon" aria-hidden="true"></span>
+      <span class="wb-label">購物金</span>
+      <span class="wb-amt">{{ _amt }}</span>
+      <span class="wb-unit">元</span>
+    </a>
+  </li>
+{% endif %}
+
 
     <li><a href="/">HOME</a></li>
 
