@@ -981,12 +981,10 @@ footer ul li a:visited {
 .wallet-chip.is-zero .chip-unit { opacity: .7; }
 
 /* 手機自動精簡（只留圖標與數字） */
-/* 手機／小寬度時，只顯示「圖示＋金額」 */
-@media (max-width: 900px){
-  header.main-header .main-nav .wallet-chip{ padding:6px 10px; gap:6px; font-size:13px; }
-  header.main-header .main-nav .wallet-chip .chip-text{ display:none !important; }
-  header.main-header .main-nav .wallet-chip .chip-unit{ display:none !important; }
-  header.main-header .main-nav .wallet-chip .chip-amount{ font-size:14px; }
+@media (max-width: 768px){
+  .wallet-chip{ padding:6px 10px; gap:6px; font-size:13px; }
+  .wallet-chip .chip-text, .wallet-chip .chip-unit{ display:none; }
+  .wallet-chip .chip-amount{ font-size:14px; }
 }
 
 
