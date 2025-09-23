@@ -33,7 +33,7 @@ footer {
   align-items: center;
   border-bottom: 2px solid #C7A7A3;
   box-sizing: border-box;     /* 新增 */
-  min-height: 72px;           /* 新增：給下限，高度自動撐開 */
+  min-height: 68px;          /* 新增：給下限，高度自動撐開 */
 }
 
 .logo-area {
@@ -84,7 +84,7 @@ footer {
   max-width: 760px;        /* 可依版面調整 */
   height: 28px;            /* 固定高度避免跳動 */
   overflow: hidden;
-  line-height: 28px;
+  line-height: 24px;
   font-weight: 600;
   color: #5a4b45;
   letter-spacing: .2px;
@@ -950,20 +950,20 @@ footer ul li a:visited {
 }
 
 
-/* 膠囊徽章 */
+/* 膠囊徽章（縮小版） */
 .wallet-chip{
-  display:inline-flex; align-items:center; gap:8px;
-  padding:8px 14px; border-radius:999px; text-decoration:none;
+  display:inline-flex; align-items:center; gap:6px;
+  padding:6px 10px; border-radius:999px; text-decoration:none;
   background:linear-gradient(180deg,#FFF7FB 0%,#FDE8EF 100%);
   border:1px solid #F4C9D6;
   box-shadow:0 1px 0 rgba(255,255,255,.8) inset, 0 6px 14px rgba(198,69,108,.10);
-  color:#5C2543; font-weight:700; font-size:14px; line-height:1; letter-spacing:.2px;
+  color:#5C2543; font-weight:700; font-size:13px; line-height:1; letter-spacing:.2px;
   font-variant-numeric:tabular-nums;
 }
-.wallet-chip .chip-icon{ width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center; filter:drop-shadow(0 1px 0 rgba(255,255,255,.6)); }
-.wallet-chip .chip-text{ opacity:.9; }
-.wallet-chip .chip-amount{ font-size:15px; margin-left:2px; }
-.wallet-chip .chip-unit{ opacity:.8; }
+.wallet-chip .chip-icon{ width:16px; height:16px; display:inline-flex; align-items:center; justify-content:center; filter:drop-shadow(0 1px 0 rgba(255,255,255,.6)); }
+.wallet-chip .chip-text{ opacity:.9; font-size:12px; }
+.wallet-chip .chip-amount{ font-size:14px; margin-left:2px; }
+.wallet-chip .chip-unit{ opacity:.8; font-size:12px; }
 
 .wallet-chip:hover,
 .wallet-chip:focus-visible{
@@ -976,7 +976,7 @@ footer ul li a:visited {
   box-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 5px 10px rgba(198,69,108,.16);
 }
 
-/* 0 元時變淡，不搶版面 */
+/* 0 元時變淡 */
 .wallet-chip.is-zero{
   background:linear-gradient(180deg,#FBFBFB 0%,#F4F4F4 100%);
   color:#6B6B6B; border-color:#E6E6E6;
@@ -986,12 +986,15 @@ footer ul li a:visited {
 .wallet-chip.is-zero .chip-text,
 .wallet-chip.is-zero .chip-unit { opacity: .7; }
 
-/* 手機自動精簡（只留圖標與數字） */
-@media (max-width: 768px){
-  .wallet-chip{ padding:6px 10px; gap:6px; font-size:13px; }
-  .wallet-chip .chip-text, .wallet-chip .chip-unit{ display:none; }
-  .wallet-chip .chip-amount{ font-size:14px; }
+/* 手機更精簡：只留圖示＋金額 */
+@media (max-width: 900px){
+  .wallet-chip{ padding:5px 8px; gap:6px; font-size:12px; }
+  .wallet-chip .chip-icon{ width:14px; height:14px; }
+  .wallet-chip .chip-text,
+  .wallet-chip .chip-unit{ display:none !important; }
+  .wallet-chip .chip-amount{ font-size:13px; }
 }
+
 
 
 /* 下拉容器定位 */
