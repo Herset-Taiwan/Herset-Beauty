@@ -936,12 +936,30 @@ footer ul li a:visited {
 
 /*-- 新增：購物金徽章樣式 */
 
-/* === Wallet badge（相容舊版 base.html：<a class="wallet-badge">…）=== */
+/* ======== Wallet badge 最終版（相容「裸 <a> 在 <ul> 裡」）======== */
 
-/* iOS 不要自動放大字（只放一次即可；若檔內已有可不重複） */
-html{ -webkit-text-size-adjust:100%; }
+/* 防 iOS 自動放大字（檔內若已有可略過） */
+html { -webkit-text-size-adjust: 100%; }
 
-/* 膠囊外觀：小 padding，不撐高 header */
+/* 你的 DOM 是：nav.main-nav > ul > [可能是 li, 也有裸 <a.wallet-badge>] */
+/* 先把 ul 固定在一行、避免被某個子元素撐高 */
+.main-header .main-nav ul{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin:0;
+  padding:0;
+  list-style:none;
+}
+
+/* 針對「裸 <a>」：注意是 > ul > a.wallet-badge（不是 li 裡面） */
+.main-header .main-nav > ul > a.wallet-badge{
+  display:inline-flex;             /* 讓它跟其他 <li> 並排 */
+  align-items:center;
+  vertical-align:middle;
+}
+
+/* 共同外觀（不會撐高 header 的尺寸） */
 .main-nav .wallet-badge{
   display:inline-flex;
   align-items:center;
@@ -955,11 +973,10 @@ html{ -webkit-text-size-adjust:100%; }
   color:#5C2543;
   font-weight:700;
   font-size:14px;
-  line-height:1;
+  line-height:1;                   /* 這行很關鍵：避免行高把列高撐大 */
   font-variant-numeric:tabular-nums;
-  white-space:nowrap;        /* 不換行，避免把 header 撐高 */
+  white-space:nowrap;              /* 不換行就不會把 header 撐高 */
 }
-
 .main-nav .wallet-badge .wb-icon{ width:16px; height:16px; display:inline-block; }
 .main-nav .wallet-badge .wb-label{ opacity:.9; }
 .main-nav .wallet-badge .wb-amt{ font-size:15px; }
@@ -972,7 +989,7 @@ html{ -webkit-text-size-adjust:100%; }
   box-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 3px 8px rgba(0,0,0,.06);
 }
 
-/* hover 微浮起（僅桌機有滑鼠的情境） */
+/* 只在桌機有滑鼠時的 hover 效果 */
 @media (hover:hover){
   .main-nav .wallet-badge:hover{
     transform:translateY(-1px);
@@ -980,17 +997,51 @@ html{ -webkit-text-size-adjust:100%; }
   }
 }
 
-/* 手機：只留 ICON + 數字（隱藏「購物金」「元」兩字） */
-@media (max-width:768px){
-  .main-nav .wallet-badge{ padding:5px 8px; }
-  .main-nav .wallet-badge .wb-label,
-  .main-nav .wallet-badge .wb-unit{ display:none; }
-  .main-nav .wallet-badge .wb-amt{ font-size:14px; }
+/* ======== 手機關鍵修補：縮小 header、隱藏跑馬燈、限制字級 ======== */
+@media (max-width: 768px){
+  /* Header 本身縮小，避免「看起來超大」 */
+  .main-header{ padding:8px 12px; }
+  .main-header .logo-area img{ height:24px; }
+  .main-header .logo-area span{ font-size:16px; }
+
+  /* 最容易撐高的就是跑馬燈，手機直接關掉 */
+  .ann-ticker{ display:none !important; }
+
+  /* 導覽列維持單行，必要時可左右滑，不換行就不會增高 */
+  .main-header .main-nav ul{
+    gap:10px;
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  /* 把所有頂列的連結字級、內距統一縮小（含購物金這顆） */
+  .main-header .main-nav ul > li > a,
+  .main-header .main-nav > ul > a.wallet-badge,
+  .main-nav .wallet-badge{
+    font-size:14px;
+    padding:6px 6px;
+    line-height:1.2;              /* 這行避免文字行高把 header 撐高 */
+    white-space:nowrap;
+  }
+
+  /* 分類列也一起縮一點，避免第一屏被塞滿 */
+  .sub-categories{ padding:10px 8px; }
+  .sub-categories a{
+    margin:0 8px;
+    font-size:14px;
+    padding:6px 10px;
+    font-weight:700;
+  }
 }
 
-/* 更小再緊一點 */
-@media (max-width:430px){
+/* 更小螢幕再緊一點 */
+@media (max-width: 430px){
+  .main-header .main-nav ul{ gap:8px; }
+  .main-header .main-nav ul > li > a{ font-size:13px; }
   .main-nav .wallet-badge{ padding:4px 7px; gap:4px; }
+  .sub-categories{ padding:8px 6px; }
+  .sub-categories a{ margin:0 6px; font-size:13px; padding:6px 8px; }
 }
 
 
