@@ -984,5 +984,30 @@ footer ul li a:visited {
   .wallet-chip .chip-amount{ font-size:14px; }
 }
 
+/* 手機版優化 */
+@media (max-width: 768px){
+  /* 縮 header 與 logo，避免擠爆 */
+  .main-header{ padding: 8px 10px !important; }
+  .logo-area img{ height: 22px !important; }
+  .logo-area span{ font-size: 16px !important; }
+
+  /* 主選單一行排好：縮間距、不換行，超出可左右滑 */
+  .main-header .main-nav > ul{
+    gap: 10px !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .main-header .main-nav a{ font-size: 14px !important; }
+
+  /* 公告跑馬若佔位，手機直接隱藏 */
+  .ann-ticker{ display: none !important; }
+
+  /* 購物金膠囊：手機只留圖示＋數字，隱藏「購物金」「元」 */
+  .wallet-chip{ padding: 6px 8px !important; }
+  .wallet-chip .chip-text,
+  .wallet-chip .chip-unit{ display: none !important; }
+  .wallet-chip .chip-amount{ font-size: 14px !important; }
+}
 
 
