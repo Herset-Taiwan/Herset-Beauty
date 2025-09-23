@@ -6,11 +6,51 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    .admin-topbar{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:12px 16px;background:#f7f2f1;border-bottom:1px solid #e6d6d2}
-    .admin-topbar .nav a{display:inline-block;background:#fff;border:1px solid #e5d3cf;border-radius:999px;padding:8px 14px;margin-right:8px;text-decoration:none;color:#5a4b45}
+    /* ── Topbar（與其他購物金頁一致） ───────────────────── */
+    .admin-topbar{
+      position:relative;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:12px 16px;
+      background:#f7f2f1;
+      border-bottom:1px solid #e6d6d2;
+    }
+    /* 置中膠囊選單 */
+    .admin-topbar .nav{
+      position:absolute;
+      left:50%;
+      transform:translateX(-50%);
+      display:flex;
+      gap:10px;
+    }
+    .admin-topbar .nav a{
+      display:inline-block;
+      background:#fff;
+      border:1px solid #e5d3cf;
+      border-radius:999px;
+      padding:8px 14px;
+      text-decoration:none;
+      color:#5a4b45;
+    }
+    /* 右側動作按鈕 */
+    .admin-topbar .actions{
+      margin-left:auto;
+      display:flex;
+      gap:10px;
+    }
+    .btn{display:inline-block;padding:8px 14px;border-radius:999px;border:1px solid #d9c6c2;cursor:pointer;background:#fff;color:#5a4b45;text-decoration:none}
+    .btn-primary{background:#c6456c;color:#fff;border:none;border-radius:8px}
+
+    /* RWD：小螢幕避免重疊 */
+    @media (max-width:768px){
+      .admin-topbar{flex-wrap:wrap}
+      .admin-topbar .nav{position:static;transform:none;margin:6px auto 0}
+      .admin-topbar .actions{width:100%;justify-content:flex-end}
+    }
+
+    /* ── 本頁樣式 ─────────────────────────────────────── */
     .container{max-width:1200px;margin:20px auto;padding:0 16px}
-    .btn{display:inline-block;padding:8px 14px;border-radius:8px;border:1px solid #d9c6c2;cursor:pointer;background:#fff}
-    .btn-primary{background:#c6456c;color:#fff;border:none}
     .table{width:100%;border-collapse:collapse}
     .table th,.table td{border:1px solid #eadad6;padding:8px 10px;text-align:left}
     .card{background:#fff;border:1px solid #eadad6;border-radius:12px;padding:16px}
@@ -21,12 +61,15 @@
 <body>
 
   <div class="admin-topbar">
+    <!-- 中央膠囊選單 -->
     <div class="nav">
-      <a href="/admin0363/features">功能管理</a>
-      <a href="/admin0363/wallet/settings">購物金設定</a>
       <a href="/admin0363/wallet/grant">購物金發放</a>
+      <a href="/admin0363/wallet/report">購物金報表</a>
+      <a href="/admin0363/wallet/settings">購物金設定</a>
     </div>
-    <div>
+    <!-- 右側按鈕 -->
+    <div class="actions">
+      <a class="btn" href="/admin0363/features">功能管理</a>
       <a class="btn" href="/admin0363/dashboard">返回儀表板</a>
       <a class="btn" href="/admin0363/logout">登出</a>
     </div>
@@ -44,21 +87,19 @@
           <input type="date" name="to" value="{{ date_to or '' }}">
         </label>
         <label>類型
-  <select name="reason">
-    <option value="">全部</option>
-    {% set reason_options = [
-      ('signup_bonus', '新會員自動發放'),
-      ('manual', '後台發送'),
-      ('order_checkout', '已使用'),
-      ('refund', '退回')
-    ] %}
-    {% for val, label in reason_options %}
-      <option value="{{ val }}" {{ 'selected' if reason==val else '' }}>{{ label }}</option>
-    {% endfor %}
-  </select>
-</label>
-
-
+          <select name="reason">
+            <option value="">全部</option>
+            {% set reason_options = [
+              ('signup_bonus', '新會員自動發放'),
+              ('manual', '後台發送'),
+              ('order_checkout', '已使用'),
+              ('refund', '退回')
+            ] %}
+            {% for val, label in reason_options %}
+              <option value="{{ val }}" {{ 'selected' if reason==val else '' }}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </label>
         <label>會員關鍵字
           <input type="text" name="q" value="{{ request.args.get('q','') }}" placeholder="email / 姓名 / 電話">
         </label>
@@ -79,13 +120,13 @@
           <div style="font-weight:700;font-size:18px;">{{ (net // 100) }} 元</div>
         </div>
       </div>
-{% set reason_map = {
-  'signup_bonus': '新會員自動發放',
-  'manual': '後台發送',
-  'order_checkout': '已使用',
-  'refund': '退回'
-} %}
 
+      {% set reason_map = {
+        'signup_bonus': '新會員自動發放',
+        'manual': '後台發送',
+        'order_checkout': '已使用',
+        'refund': '退回'
+      } %}
 
       <table class="table">
         <thead>
