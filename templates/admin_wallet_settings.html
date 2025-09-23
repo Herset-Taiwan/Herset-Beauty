@@ -6,22 +6,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    .admin-topbar{
-  position: relative;             /* ← 新增 */
+  .admin-topbar{
+  position:relative;
   display:flex;
-  gap:10px;
   align-items:center;
-  justify-content:space-between;
+  gap:10px;
   padding:12px 16px;
   background:#f7f2f1;
   border-bottom:1px solid #e6d6d2;
+  /* 刪掉 justify-content: space-between; */
 }
 
-/* 將「購物金發放／報表」絕對置中，不受左右區塊影響 */
+/* 置中「購物金發放／報表」 */
 .admin-topbar .nav{
-  position:absolute;              /* ← 新增 */
-  left:50%;                       /* ← 新增 */
-  transform:translateX(-50%);     /* ← 新增：水平正中 */
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:10px;
+}
+
+/* 把右側三顆推到最右 */
+.admin-topbar .actions{
+  margin-left:auto;           /* ← 關鍵 */
   display:flex;
   gap:10px;
 }
@@ -61,12 +68,14 @@
 </head>
 <body>
 
-  <div class="admin-topbar">
+<div class="admin-topbar">
   <div class="nav">
     <a href="/admin0363/wallet/grant">購物金發放</a>
     <a href="/admin0363/wallet/report">購物金報表</a>
   </div>
-  <div>
+
+  <!-- 加這個 class -->
+  <div class="actions">
     <a class="btn" href="/admin0363/features">功能管理</a>
     <a class="btn" href="/admin0363/dashboard">返回後台</a>
     <a class="btn" href="/admin0363/logout">登出</a>
