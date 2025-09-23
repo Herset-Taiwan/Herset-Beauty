@@ -1195,34 +1195,30 @@ card.innerHTML = `
 
     <div>
       <div class="sum">
-  <div class="sum-row">
-    <span>小計（不含運）</span>
-    <span>$ {{ o.subtotal or ((o.items or []) | sum(attribute='price')) }}</span>
+  <div class="sum-row"><span>小計（不含運）</span>
+    <span>$${(o.items||[]).reduce((s,i)=> s + (Number(i.price)||0)*(Number(i.qty)||1), 0)}</span>
   </div>
-  <div class="sum-row">
-    <span>運費</span>
-    <span>
-      {% if (o.shipping_fee or 0) == 0 %}
-        <span class="sum-free">$0（免運）</span>
-      {% else %}
-        $ {{ o.shipping_fee }}
-      {% endif %}
-    </span>
+
+  ${ Number(o.discount_amount||0)
+      ? `<div class="sum-row"><span>折扣</span><span>-$${Number(o.discount_amount||0)}</span></div>`
+      : '' }
+
+  ${ Number(o.wallet_used_nt||0)
+      ? `<div class="sum-row"><span>購物金折抵</span><span>-$${Number(o.wallet_used_nt||0)}</span></div>`
+      : '' }
+
+  <div class="sum-row"><span>運費</span>
+    <span>${
+      Number(o.shipping_fee||0)===0
+        ? '<span class="sum-free">$0（免運）</span>'
+        : `$${Number(o.shipping_fee||0)}`
+    }</span>
   </div>
-  {% if o.discount_amount %}
-    <div class="sum-row">
-      <span>折扣</span><span>- $ {{ o.discount_amount }}</span>
-    </div>
-  {% endif %}
-  {% if o.wallet_used %}
-    <div class="sum-row">
-      <span>購物金折抵</span><span>- $ {{ o.wallet_used }}</span>
-    </div>
-  {% endif %}
-  <div class="sum-row sum-total">
-    <span>應付總額</span><span>$ {{ o.total_amount }}</span>
-  </div>
+
+  <!-- 應付總額直接使用資料庫欄位（已扣折扣與購物金、加上運費） -->
+  <div class="sum-row sum-total"><span>應付總額</span><span>$${Number(o.total_amount||0)}</span></div>
 </div>
+
 
       <div class="order-actions">
         <button class="btn-solid" onclick="printOrder(${o.id})">🖨 列印訂單</button>

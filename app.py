@@ -714,9 +714,7 @@ def admin_dashboard():
     order_ids = [o["id"] for o in orders_raw]
     member_ids = list({o["member_id"] for o in orders_raw if o.get("member_id")})
 
-        # === 新增：一次撈出每張訂單使用的購物金（單位：分 / cents）===
-    # 規則：wallet_credits.amount_cents < 0 表示「使用」，> 0 表示「退回」
-    # 以 related_order_id 關聯訂單；最後得到 {order_id: used_cents}
+     # === 新增：一次撈出每張訂單使用的購物金（單位：分 / cents）===
     wallet_used_map = {}
     if order_ids:
         wc_rows = (
@@ -734,12 +732,12 @@ def admin_dashboard():
             amt = int(r.get("amount_cents") or 0)
             cur = wallet_used_map.get(oid, 0)
             if amt < 0:
-                # 使用購物金（負數）→ 加上其絕對值
+                # 使用購物金（負數）→ 累加絕對值
                 cur += (-amt)
             else:
-                # 退回購物金（正數）→ 扣掉
+                # 退回購物金（正數）→ 扣回
                 cur -= amt
-            wallet_used_map[oid] = max(0, cur)  # 不要出現負值
+            wallet_used_map[oid] = max(0, cur)
 
     order_items = supabase.table("order_items").select("*").in_("order_id", order_ids).execute().data or []
     members_res = supabase.table("members").select("id, account, name, phone, address").in_("id", member_ids).execute().data or []
@@ -774,7 +772,7 @@ def admin_dashboard():
         # ★★★ 新增這兩行：把「本張訂單使用的購物金」帶到模板 ★★★
         o["wallet_used_cents"] = int(wallet_used_map.get(o["id"], 0))
         o["wallet_used_nt"]    = o["wallet_used_cents"] // 100
-        
+
         orders.append(o)
     unshipped_count = sum(1 for o in orders if (o.get("status") != "shipped"))
 
