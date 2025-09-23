@@ -92,90 +92,58 @@ fbq('track', 'PageView');
   {% endif %}
 
   <nav class="main-nav">
-    <ul>
-      {% if has_new_reply %}
-        <li>
-          <a href="/member/messages" style="color: red;">📩 有新留言</a>
-        </li>
-      {% endif %}
+  <ul>
+    {% if has_new_reply %}
+      <li><a href="/member/messages" style="color: red;">📩 有新留言</a></li>
+    {% endif %}
 
-  {# 新增：登入後在頁首顯示購物金徽章 #}
-{% if session.get('member_id') %}
-  {# 0 元淡化（可省略） #}
-  {% set _amt = (wallet_badge_amount|int) if wallet_badge_amount is not none else ((session.get('wallet_balance_cents') or 0)//100) %}
-  <a href="/member/wallet"
-     class="wallet-badge {{ 'is-zero' if _amt == 0 else '' }}"
-     aria-label="我的購物金 {{ _amt }} 元"
-     title="我的購物金：{{ _amt }} 元">
-    <span class="wb-icon" aria-hidden="true"><!-- 可放 SVG 金幣，先留空也行 --></span>
-    <span class="wb-label">購物金</span>
-    <span class="wb-amt">{{ _amt }}</span>
-    <span class="wb-unit">元</span>
-  </a>
-{% endif %}
+    {# 登入後顯示購物金（維持你舊版：ul 裡面是「裸 <a>」，不包 <li>） #}
+    {% if session.get('member_id') %}
+      {% set _amt = (wallet_badge_amount|int) if wallet_badge_amount is not none else ((session.get('wallet_balance_cents') or 0)//100) %}
+      <a href="/member/wallet"
+         class="wallet-badge {{ 'is-zero' if _amt == 0 else '' }}"
+         aria-label="我的購物金 {{ _amt }} 元"
+         title="我的購物金：{{ _amt }} 元">
+        <span class="wb-icon" aria-hidden="true"></span>
+        <span class="wb-label">購物金</span>
+        <span class="wb-amt">{{ _amt }}</span>
+        <span class="wb-unit">元</span>
+      </a>
+    {% endif %}
 
+    <li><a href="/">HOME</a></li>
 
-  <li>
-    <a class="wallet-chip {{ 'is-zero' if wallet_amount == 0 else '' }}"
-       href="/member/wallet"
-       data-amount="{{ wallet_amount }}"
-       title="我的購物金：{{ wallet_amount }} 元"
-       aria-label="我的購物金 {{ wallet_amount }} 元">
-      <span class="chip-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
-          <defs>
-            <linearGradient id="coin" x1="0" y1="0" x2="0" y2="24">
-              <stop offset="0" stop-color="#FFD985"/>
-              <stop offset="1" stop-color="#FFBF47"/>
-            </linearGradient>
-          </defs>
-          <circle cx="12" cy="12" r="9" fill="url(#coin)"/>
-          <circle cx="12" cy="12" r="9" stroke="#E49B2E" stroke-width="1"/>
-          <path d="M9 9h6M9 12h6M9 15h6" stroke="#8B5E15" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-      </span>
-      <span class="chip-text">購物金</span>
-      <span class="chip-amount">{{ wallet_amount }}</span>
-      <span class="chip-unit">元</span>
-    </a>
-  </li>
-{% endif %}
+    {% if session.get('user') %}
+      <li><a href="/message">商品詢問</a></li>
+    {% endif %}
 
-
-
-      <li><a href="/">HOME</a></li>
-
-      {% if session.get('user') %}
-        <li><a href="/message">商品詢問</a></li>
-      {% endif %}
-
-      {% if session.get('user') %}
-        <li class="dropdown">
-          <a href="#">👤 會員中心</a>
-          <ul class="dropdown-menu">
-            <li><a href="/order-history">歷史訂單</a></li>
-            <li><a href="#" id="open-profile-link">會員資料</a></li>
-            <li><a href="/member/wallet">💰 我的購物金</a></li>
-            <li><a href="/member/messages">📨 我的留言</a></li>
-            <li><a href="/change-password">🔒 修改密碼</a></li>
-            <li><a href="/logout">登出</a></li>
-          </ul>
-        </li>
-      {% else %}
-        <li><a href="/login">👤 會員登入</a></li>
-      {% endif %}
-
-      <li>
-        <a href="/cart" class="cart-btn">🛒 購物車
-          {% if cart_count > 0 %}
-            <span class="cart-count" id="cart-count">{{ cart_count }}</span>
-          {% else %}
-            <span class="cart-count" id="cart-count" style="display: none;">0</span>
-          {% endif %}
-        </a>
+    {% if session.get('user') %}
+      <li class="dropdown">
+        <a href="#">👤 會員中心</a>
+        <ul class="dropdown-menu">
+          <li><a href="/order-history">歷史訂單</a></li>
+          <li><a href="#" id="open-profile-link">會員資料</a></li>
+          <li><a href="/member/wallet">💰 我的購物金</a></li>
+          <li><a href="/member/messages">📨 我的留言</a></li>
+          <li><a href="/change-password">🔒 修改密碼</a></li>
+          <li><a href="/logout">登出</a></li>
+        </ul>
       </li>
-    </ul>
-  </nav>
+    {% else %}
+      <li><a href="/login">👤 會員登入</a></li>
+    {% endif %}
+
+    <li>
+      <a href="/cart" class="cart-btn">🛒 購物車
+        {% if cart_count > 0 %}
+          <span class="cart-count" id="cart-count">{{ cart_count }}</span>
+        {% else %}
+          <span class="cart-count" id="cart-count" style="display: none;">0</span>
+        {% endif %}
+      </a>
+    </li>
+  </ul>
+</nav>
 </header>
 
 {% if session.get('incomplete_profile') %}
