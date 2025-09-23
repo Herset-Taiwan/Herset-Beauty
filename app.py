@@ -348,7 +348,31 @@ def _refresh_wallet_session(member_id: str) -> int:
     session['wallet_balance_cents'] = bal
     return bal
 
-
+def _calc_available_wallet_cents(credit_rows):
+    """
+    以交易明細計算『可用餘額（分）』：
+    - 正數：未過期才算進來（expires_at >= 今天 或沒有到期日）
+    - 負數：一律算進來
+    """
+    today = datetime.utcnow().date()
+    total = 0
+    for r in (credit_rows or []):
+        amt = int(r.get("amount_cents") or 0)
+        exp = r.get("expires_at")
+        if amt < 0:
+            total += amt
+        else:
+            if not exp:
+                total += amt
+            else:
+                try:
+                    d = parser.parse(exp).date()
+                    if d >= today:
+                        total += amt
+                except Exception:
+                    # 解析失敗就保守納入
+                    total += amt
+    return total
 
 
 # ✅ Supabase 初始化（同時支援 SUPABASE_ANON_KEY / SUPABASE_KEY）
@@ -2902,35 +2926,33 @@ def admin_wallet_grant():
 def member_wallet():
     mid = session.get("member_id")
     if not mid:
-        # 未登入 → 帶 next=wallet，登入後回跳本頁
         return redirect("/login?next=wallet")
 
-    # 讀可用餘額（沒有就 0）
+    # 讀發放/異動紀錄（wallet_credits）
     try:
-        bres = (supabase.table("wallet_balances")
-                .select("balance_cents")
-                .eq("member_id", mid)
-                .limit(1)
-                .execute())
-        balance_cents = int((bres.data or [{}])[0].get("balance_cents") or 0)
-    except Exception:
-        balance_cents = 0
-
-    # 讀發放/異動紀錄（依你表結構：wallet_credits）
-    try:
-        rows = (supabase.table("wallet_credits")
-                .select("*")
-                .eq("member_id", mid)
-                .order("id", desc=True)
-                .limit(200)
-                .execute()).data or []
+        rows = (
+            supabase.table("wallet_credits")
+            .select("*")
+            .eq("member_id", mid)
+            .order("id", desc=True)
+            .limit(200)
+            .execute()
+        ).data or []
     except Exception:
         rows = []
 
-    # 渲染你上傳的模板（member_wallet.html 會自行格式化時間/金額）
-    return render_template("member_wallet.html",
-                           balance_cents=balance_cents,
-                           rows=rows)
+    # ✅ 用交易明細計算『可用餘額（分）』
+    available_cents = _calc_available_wallet_cents(rows)
+
+    # （可選）把最新可用額也塞回 session，讓 header 徽章一致
+    session["wallet_balance_cents"] = available_cents
+
+    return render_template(
+        "member_wallet.html",
+        available_cents=available_cents,
+        rows=rows,
+    )
+
 
 @app.context_processor
 def inject_wallet_badge_amount():
