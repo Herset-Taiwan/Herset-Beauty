@@ -759,9 +759,15 @@ footer {
 .carousel-container {
   width: 100%;
   position: relative;
-  margin: 0 auto 20px;   /* 或視覺上再調整 */
+  margin: 16px auto 20px;   /* 或視覺上再調整 */
   padding-bottom: 10px;  /* 改小或設為 0 */
   overflow: hidden;
+}
+
+/* 讓緊貼 header 的輪播往下墊一點 */
+.main-header + .carousel-container { margin-top: 16px; }
+@media (max-width: 900px){
+  .main-header + .carousel-container { margin-top: 10px; }
 }
 
 /* 保險：確保輪播區塊是正常的層級與定位 */
