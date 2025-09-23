@@ -77,12 +77,6 @@ fbq('track', 'PageView');
     <span>HERSET</span>
   </a>
 
-  {# 新增：登入後在頁首顯示購物金徽章 #}
-{% if session.get('member_id') %}
-  <a href="/member/wallet" class="wallet-badge">
-    購物金：{{ wallet_badge_amount }} 元
-  </a>
-{% endif %}
 
    {# 只在首頁顯示；若想所有頁面都顯示，把這個 if 整段拿掉即可 #}
   {% if request.path == '/' %}
@@ -102,6 +96,13 @@ fbq('track', 'PageView');
           <a href="/member/messages" style="color: red;">📩 有新留言</a>
         </li>
       {% endif %}
+
+  {# 新增：登入後在頁首顯示購物金徽章 #}
+{% if session.get('member_id') %}
+  <a href="/member/wallet" class="wallet-badge">
+    購物金：{{ wallet_badge_amount }} 元
+  </a>
+{% endif %}
 
       <li><a href="/">HOME</a></li>
 
