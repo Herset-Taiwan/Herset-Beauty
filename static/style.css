@@ -1022,5 +1022,62 @@ footer ul li a:visited {
   .wallet-chip .chip-amount{ font-size:14px !important; }
 }
 
+/* ===== Mobile Compact Hotfix ===== */
+
+/* 避免 iOS 自動放大字 */
+html { -webkit-text-size-adjust: 100% !important; }
+
+/* 手機收斂導航、字級、間距，並隱藏購物金文字 */
+@media (max-width: 430px){
+
+  /* Header 尺寸縮小 */
+  .main-header{ padding:8px 10px !important; }
+  .logo-area img{ height:22px !important; }
+  .logo-area span{ font-size:16px !important; }
+
+  /* 主選單保持一行；必要時可左右滑，不會換行擠爆 */
+  .main-header .main-nav > ul{
+    gap:10px !important;
+    flex-wrap:nowrap !important;
+    overflow-x:auto !important;
+    -webkit-overflow-scrolling:touch;
+  }
+  .main-header .main-nav > ul > li > a{
+    font-size:14px !important;
+    padding:6px 4px !important;
+    line-height:1.2 !important;
+    white-space:nowrap;
+  }
+
+  /* 手機隱藏「購物金」「元」，只留 ICON + 數字 */
+  .wallet-chip{ padding:6px 8px !important; }
+  .wallet-chip .chip-text,
+  .wallet-chip .chip-unit{ display:none !important; }
+  .wallet-chip .chip-amount{ font-size:14px !important; }
+
+  /* 跑馬燈在手機先藏，避免佔位拉高 */
+  .ann-ticker{ display:none !important; }
+
+  /* 類別列縮小字體與間距（你現在那排「全部商品／身體保養…」） */
+  .sub-categories{ padding:10px 8px !important; }
+  .sub-categories a{
+    font-size:14px !important;
+    padding:6px 10px !important;
+  }
+}
+
+/* 防止子選單被攤平（保留） */
+.main-header .main-nav > ul{
+  display:flex; align-items:center; justify-content:flex-end;
+  gap:16px; list-style:none; margin:0; padding:0;
+}
+.main-header .main-nav .dropdown{ position:relative; }
+.main-header .main-nav .dropdown-menu{
+  display:none; position:absolute; right:0; top:calc(100% + 8px);
+  background:#fff; border:1px solid #eadad6; border-radius:12px;
+  padding:8px 0; margin:0; list-style:none; white-space:nowrap;
+  box-shadow:0 10px 20px rgba(0,0,0,.08); z-index:1000;
+}
+.main-header .main-nav .dropdown:hover .dropdown-menu{ display:block; }
 
 
