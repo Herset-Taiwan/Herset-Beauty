@@ -31,7 +31,7 @@ footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 2px solid #C7A7A3;
+  /*border-bottom: 2px solid #C7A7A3;*/
   box-sizing: border-box;     /* 新增 */
   min-height: 68px;          /* 新增：給下限，高度自動撐開 */
 }
@@ -1040,3 +1040,5 @@ footer ul li a:visited {
 }
 .main-header .main-nav .dropdown-menu a:hover{ background:#f7f2f1; }
 
+/* ⛑ 強制保險：無論其他檔案是否還有 max-height，這裡都移除 */
+.main-header { max-height: none !important; }
