@@ -994,18 +994,30 @@ footer ul li a:visited {
 .main-header .main-nav .dropdown-menu{
   display:none;
   position:absolute;
-  right:0;                    /* 右對齊會員中心 */
-  top:calc(100% + 8px);       /* 主選單下方 8px */
+  right:0;
+  top:100%;           /* ← 原本是 calc(100% + 8px) */
+  margin:0;           /* ← 確保沒有 margin-top */
+  padding:8px 0;
   background:#fff;
   border:1px solid #eadad6;
   border-radius:12px;
-  padding:8px 0;
   list-style:none;
-  margin:0;
   white-space:nowrap;
   box-shadow:0 10px 20px rgba(0,0,0,.08);
   z-index:1000;
 }
+
+/* 2) 透明「橋接層」：避免快速移動時仍有中斷 */
+.main-header .main-nav .dropdown-menu::before{
+  content:"";
+  position:absolute;
+  left:0; right:0;
+  top:-8px;           /* ↑ 往上延伸 8px，填平原本的縫 */
+  height:8px;
+}
+
+/* 3) 保證選單不被其他區塊蓋掉（有些輪播會有高 z-index） */
+.main-header{ position:relative; z-index:2000; }
 
 /* hover 顯示下拉（若有點擊切換的 JS 也相容） */
 .main-header .main-nav .dropdown:hover .dropdown-menu{ display:block; }
