@@ -3600,24 +3600,18 @@ def checkout():
     wallet_req_yuan = max(wallet_req_yuan, 0)
 
     # 目前錢包餘額（分）
-    try:
-        bres = (
-            supabase.table("wallet_balances")
-            .select("balance_cents")
-            .eq("member_id", member_id)
-            .single()
-            .execute()
-        )
-        balance_cents = int((bres.data or {}).get("balance_cents") or 0)
-    except Exception:
+     try:
         sres = (
             supabase.table("wallet_credits")
-            .select("amount_cents")
+            .select("amount_cents,expires_at")
             .eq("member_id", member_id)
             .execute()
         )
         rows = sres.data or []
-        balance_cents = sum(int(r.get("amount_cents") or 0) for r in rows)
+        # 用你現有的到期計算函式，並保底 0
+        balance_cents = max(_calc_available_wallet_cents(rows), 0)
+    except Exception:
+        balance_cents = 0
 
     req_cents = wallet_req_yuan * 100
     final_total_cents = int(final_total_i) * 100
@@ -3684,24 +3678,53 @@ def checkout():
 
     # 6.2 若有使用購物金 → 寫入 wallet_credits（分，負數），並刷新 session
     if used_wallet_cents > 0:
-        try:
+    try:
+        # 防呆：避免同張訂單重複扣（不同訂單則可各自扣）
+        exists = (
+            supabase.table("wallet_credits")
+            .select("id")
+            .eq("reason", "order_checkout")
+            .eq("related_order_id", order_id)
+            .limit(1)
+            .execute()
+        ).data
+        if not exists:
             supabase.table("wallet_credits").insert({
                 "member_id": member_id,
-                "amount_cents": -used_wallet_cents,     # 負數代表扣款（單位：分）
+                "amount_cents": -used_wallet_cents,     # 負數代表扣款（分）
                 "reason": "order_checkout",
                 "related_order_id": order_id,
                 "note": f"已使用於訂單 #{order_id}",
             }).execute()
 
-            # 更新 session 的餘額徽章
+            # ✅ 同步更新 wallet_balances（保底 0）
+            try:
+                curb = (
+                    supabase.table("wallet_balances")
+                    .select("balance_cents")
+                    .eq("member_id", member_id)
+                    .single()
+                    .execute()
+                    .data or {}
+                )
+                cur_val = int(curb.get("balance_cents") or 0)
+                new_val = max(0, cur_val - used_wallet_cents)
+                supabase.table("wallet_balances").upsert({
+                    "member_id": member_id,
+                    "balance_cents": new_val
+                }, returning="minimal").execute()
+            except Exception:
+                pass
+
+            # 更新 session 徽章（保底 0）
             try:
                 session['wallet_balance_cents'] = max(
                     int(session.get('wallet_balance_cents') or 0) - used_wallet_cents, 0
                 )
             except Exception:
                 pass
-        except Exception:
-            current_app.logger.exception('[wallet] deduct on checkout failed')
+    except Exception:
+        current_app.logger.exception('[wallet] deduct on checkout failed')
 
     # 7) 成功後才累計折扣使用次數
     if discount_code:
