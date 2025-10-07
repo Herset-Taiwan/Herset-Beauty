@@ -4187,93 +4187,89 @@ def order_cancel_legacy(_any):
     return redirect("/")
 
 
-# 會員刪除自己的訂單（僅限「未付款 且 待處理」）
-@app.post('/order/delete/<int:order_id>')
-def member_delete_order(order_id):
-    if 'member_id' not in session:
-        return redirect('/login?next=order-history')
+# 取消訂單：僅允許本人、未出貨的訂單；若有使用購物金，退回
+@app.route("/order/cancel/<int:order_id>", methods=["POST"])
+def order_cancel(order_id):
+    if "member_id" not in session:
+        return redirect("/login")
+    member_id = session["member_id"]
 
-    # 讀取訂單基本資訊
+    # 取訂單
+    o = (
+        supabase.table("orders")
+        .select("id, member_id, status, payment_status")
+        .eq("id", order_id)
+        .single()
+        .execute()
+        .data or {}
+    )
+    if not o or str(o.get("member_id")) != str(member_id):
+        flash("找不到訂單或無權限")
+        return redirect(request.referrer or "/")
+
+    if o.get("status") == "shipped":
+        flash("已出貨訂單不可取消")
+        return redirect(request.referrer or "/")
+
+    if o.get("status") == "cancelled":
+        flash("此訂單已取消")
+        return redirect(request.referrer or "/")
+
+    # 將訂單標記為取消
+    supabase.table("orders").update({"status": "cancelled"}).eq("id", order_id).execute()
+
+    # 若該訂單曾扣過購物金 → 回補
     try:
-        res = (
-            supabase.table('orders')
-            .select('id, member_id, status, payment_status')
-            .eq('id', order_id)
-            .single()
+        used_rows = (
+            supabase.table("wallet_credits")
+            .select("amount_cents")
+            .eq("member_id", member_id)
+            .eq("reason", "order_checkout")
+            .eq("related_order_id", order_id)
             .execute()
+            .data or []
         )
-        o = res.data or None
+        # 把該訂單扣過的負數累計回補為正數
+        used_cents = -sum(int(r.get("amount_cents") or 0) for r in used_rows if int(r.get("amount_cents") or 0) < 0)
+        if used_cents > 0:
+            supabase.table("wallet_credits").insert({
+                "member_id": member_id,
+                "amount_cents": used_cents,
+                "reason": "refund",
+                "related_order_id": order_id,
+                "note": "取消訂單退回"
+            }).execute()
+
+            # 同步更新 balances（保底 0）
+            try:
+                cur = (
+                    supabase.table("wallet_balances")
+                    .select("balance_cents")
+                    .eq("member_id", member_id)
+                    .single()
+                    .execute()
+                    .data or {}
+                )
+                new_val = max(0, int(cur.get("balance_cents") or 0) + used_cents)
+                supabase.table("wallet_balances").upsert({
+                    "member_id": member_id,
+                    "balance_cents": new_val
+                }, returning="minimal").execute()
+            except Exception:
+                pass
+
+            # 更新 session 徽章
+            try:
+                session["wallet_balance_cents"] = max(int(session.get("wallet_balance_cents") or 0) + used_cents, 0)
+            except Exception:
+                pass
     except Exception:
-        o = None
+        current_app.logger.exception("[order_cancel] refund wallet failed")
 
-    if not o:
-        flash("找不到訂單", "error")
-        return redirect('/order-history')
+    flash("訂單已取消")
+    # 回到歷史訂單頁（依你的實際路徑調整）
+    return redirect("/member/orders")
 
-    # 權限：只能刪自己的訂單
-    if str(o.get('member_id')) != str(session['member_id']):
-        flash("沒有權限刪除此訂單", "error")
-        return redirect('/order-history')
-
-    # 條件：未付款 + 待處理
-    if o.get('payment_status') == 'paid' or o.get('status') not in (None, 'pending'):
-        flash("只能刪除「未付款」且「待處理」的訂單", "error")
-        return redirect('/order-history')
-
-    # 先回補庫存 → 成功才刪訂單
-    try:
-        # ⚠️ 僅選存在的欄位
-        its = (
-            supabase.table("order_items")
-            .select("product_id, qty")
-            .eq("order_id", order_id)
-            .execute()
-            .data
-            or []
-        )
-    except Exception as e:
-        app.logger.error(f"[order delete restock] read items order_id={order_id} error={e}")
-        flash("讀取訂單品項失敗，暫時無法刪除。", "error")
-        return redirect("/order-history")
-
-    had_error = False
-    for it in its:
-        pid = it.get("product_id")
-        qty = int(it.get("qty") or 0)
-        if not pid or qty <= 0:
-            continue
-        try:
-            cur = (
-                supabase.table("products")
-                .select("stock")
-                .eq("id", pid)
-                .single()
-                .execute()
-                .data
-                or {}
-            )
-            cur_stock = int(cur.get("stock") or 0)
-            new_stock = cur_stock + qty
-            supabase.table("products").update({"stock": new_stock}).eq("id", pid).execute()
-        except Exception as e:
-            had_error = True
-            app.logger.error(f"[order delete restock] pid={pid} qty={qty} error={e}")
-
-    if had_error:
-        # 任何一筆回補失敗就不刪單，避免庫存不一致
-        flash("庫存回補失敗，訂單未刪除。請稍後再試。", "error")
-        return redirect("/order-history")
-
-    # 庫存已回補 → 刪主檔（order_items 由 FK 連動刪除）
-    try:
-        supabase.table("orders").delete().eq("id", order_id).execute()
-    except Exception as e:
-        app.logger.error(f"[order delete] order_id={order_id} error={e}")
-        flash("刪除訂單時發生錯誤。", "error")
-        return redirect("/order-history")
-
-    flash("訂單已刪除（庫存已回補）", "success")
-    return redirect("/order-history")
 
 
 
@@ -4348,11 +4344,31 @@ def thank_you():
 #後台訂單狀態修改
 @app.route('/admin0363/orders/update_status/<int:order_id>', methods=['POST'])
 def update_order_status(order_id):
-    new_status = request.form.get("status")
-    if new_status:
-        supabase.table("orders").update({"status": new_status}).eq("id", order_id).execute()
-        flash(f"訂單 #{order_id} 出貨狀態已修改")  # ← ✅ 修改訊息內容
+    new_status_raw = (request.form.get("status") or "").lower()
+
+    # 後台安全檢查（若你已經在別處做了 admin 驗證，可略）
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
+
+    if not new_status_raw:
+        return redirect("/admin0363/dashboard?tab=orders")
+
+    # 「未付款，取消訂單」：同時把付款狀態打回 unpaid
+    if new_status_raw == "cancelled_unpaid":
+        supabase.table("orders").update({
+            "status": "cancelled",
+            "payment_status": "unpaid",
+            "payment_method": None,
+            "paid_at": None
+        }).eq("id", order_id).execute()
+        flash(f"訂單 #{order_id} 已標記為『已取消（未付款）』", "success")
+        return redirect("/admin0363/dashboard?tab=orders")
+
+    # 其他狀態：照原邏輯更新
+    supabase.table("orders").update({"status": new_status_raw}).eq("id", order_id).execute()
+    flash(f"訂單 #{order_id} 出貨狀態已修改", "success")
     return redirect("/admin0363/dashboard?tab=orders")
+
 
 # 後台付款狀態修改（ATM/匯款人工入帳用）
 @app.route('/admin0363/orders/update_payment/<int:order_id>', methods=['POST'])

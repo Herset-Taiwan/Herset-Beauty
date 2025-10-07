@@ -741,6 +741,7 @@
       <option value="all">全部</option>
       <option value="unshipped">未出貨</option>
       <option value="shipped">已出貨</option>
+      <option value="cancelled">已取消訂單</option>
     </select>
 
     <label>搜尋訂單：</label>
@@ -1094,7 +1095,10 @@ const esc = s => (s ?? '').toString()
   .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
 function zhStatus(s){
-  return s==='shipped' ? '已出貨' : (s==='paid' ? '已確認付款，待出貨' : '待處理');
+  if (s === 'shipped')   return '已出貨';
+  if (s === 'paid')      return '已確認付款，待出貨';
+  if (s === 'cancelled') return '已取消';
+  return '待處理';
 }
 function splitOptions(opt){
   if(!opt) return [];
@@ -1122,9 +1126,10 @@ function filterOrders(){
         // ✅ 時間字串也可搜（例如 2025-09-01）
         (o.created_local || '').toLowerCase().includes(keyword);
 
-    const st = status==='all'
-            || (status==='unshipped' && o.status!=='shipped')
-            || (status==='shipped'   && o.status==='shipped');
+    const st = (status === 'all')
+        || (status === 'unshipped' && o.status !== 'shipped' && o.status !== 'cancelled')
+        || (status === 'shipped'   && o.status === 'shipped')
+        || (status === 'cancelled' && o.status === 'cancelled');
     return kw && st;
   });
 
@@ -1161,6 +1166,7 @@ function renderOrderPage(pageSize){
 
     const paid = (o.payment_status||'')==='paid';
     const shipped = o.status==='shipped';
+    const statusClass = shipped ? 'ship' : (o.status==='cancelled' ? 'unpay' : 'pending');
 
     const card = document.createElement('article');
 card.className = 'order-card';
@@ -1172,7 +1178,7 @@ card.innerHTML = `
     <div class="order-time">${esc(o.created_local||'')}</div>
     <div class="order-chips">
       ${ payBadgeHTML(o) || `<span class="order-chip unpay">未付款</span>` }
-      <span class="order-chip ${o.status==='shipped'?'ship':'pending'}">${zhStatus(o.status)}</span>
+      <span class="order-chip ${statusClass}">${zhStatus(o.status)}</span>
       ${o.discount_code ? `<span class="order-chip pending">折扣：${esc(o.discount_code)}</span>` : ''}
     </div>
   </div>
@@ -1248,6 +1254,7 @@ card.innerHTML = `
         <option value="pending" ${o.status==='pending'?'selected':''}>待處理</option>
         <option value="paid" ${o.status==='paid'?'selected':''}>已確認付款，待出貨</option>
         <option value="shipped" ${o.status==='shipped'?'selected':''}>已出貨</option>
+        <option value="cancelled_unpaid" ${o.status==='cancelled' ? 'selected' : ''}>未付款，取消訂單</option>
       </select>
     </form>
   </div>

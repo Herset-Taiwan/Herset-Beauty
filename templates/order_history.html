@@ -89,8 +89,17 @@
   <a class="back" href="/">← 返回首頁</a>
   <h1>🧾 我的歷史訂單</h1>
 
-  {% set pending_orders   = orders | selectattr('status','ne','shipped') | list %}
-  {% set completed_orders = orders | selectattr('status','equalto','shipped') | list %}
+  {# 已取消訂單 #}
+{% set cancelled_orders = orders | selectattr('status','equalto','cancelled') | list %}
+
+{# 待出貨訂單：只留 pending/paid，排除 shipped 及 cancelled #}
+{% set pending_orders = orders
+   | selectattr('status','in',['pending','paid'])
+   | list %}
+
+{# 已完成（已出貨） #}
+{% set completed_orders = orders | selectattr('status','equalto','shipped') | list %}
+
 
   <div class="tabs">
     <button class="tab active" data-target="pending">📦 待出貨訂單
@@ -99,6 +108,9 @@
     <button class="tab" data-target="completed">✅ 訂單已完成
       <span class="badge">{{ completed_orders|length }}</span>
     </button>
+      <button class="tab" data-target="cancelled">🚫 已取消訂單
+    <span class="badge">{{ cancelled_orders|length }}</span>
+  </button>
   </div>
 
   <section id="pending" class="panel show">
@@ -110,12 +122,18 @@
     <div id="completed-list"></div>
     <div id="completed-pager" class="pager"></div>
   </section>
+
+  <section id="cancelled" class="panel">
+  <div id="cancelled-list"></div>
+  <div id="cancelled-pager" class="pager"></div>
+</section>
 </div>
 
 <script>
   // 來源資料（後端已提供，不動 app.py）
-  const PENDING   = {{ pending_orders   | tojson }};
-  const COMPLETED = {{ completed_orders | tojson }};
+  const PENDING    = {{ pending_orders    | tojson }};
+  const COMPLETED  = {{ completed_orders  | tojson }};
+  const CANCELLED  = {{ cancelled_orders  | tojson }};
   const PAGE_SIZE = 8;
 
   const $ = (sel,root=document)=>root.querySelector(sel);
@@ -131,7 +149,11 @@ function formatOptionLines(optText){
   return parts.map(t => `<div>${esc(t)}</div>`).join('');
 } // ← 這個大括號你漏了，別忘了關閉
 
-const zhStatus = s => s==='shipped' ? '已出貨' : s==='paid' ? '已確認付款，待出貨' : '待處理';
+const zhStatus = s =>
+  s === 'shipped'   ? '已出貨' :
+  s === 'paid'      ? '已確認付款，待出貨' :
+  s === 'cancelled' ? '已取消' :
+                      '待處理';
 
 
   function renderList(data, boxId, pagerId, page=1){
@@ -197,11 +219,11 @@ const zhStatus = s => s==='shipped' ? '已出貨' : s==='paid' ? '已確認付�
     : ''}
 
   ${(!paid && o.status === 'pending')
-    ? `<form method="POST" action="/order/delete/${o.id}" style="display:inline;"
-         onsubmit="return confirm('確定要刪除這筆訂單嗎？');">
-         <button type="submit" class="btn del">🗑️ 刪除訂單</button>
-       </form>`
-    : ''}
+  ? `<form method="POST" action="/order/cancel/${o.id}" style="display:inline;"
+       onsubmit="return confirm('確定要取消這筆訂單嗎？');">
+       <button type="submit" class="btn del">🚫 取消訂單</button>
+     </form>`
+  : ''}
 </div>
 
           </div>
@@ -236,6 +258,7 @@ const zhStatus = s => s==='shipped' ? '已出貨' : s==='paid' ? '已確認付�
   // 初始渲染
   renderList(PENDING,'pending-list','pending-pager',1);
   renderList(COMPLETED,'completed-list','completed-pager',1);
+  renderList(CANCELLED,'cancelled-list','cancelled-pager',1);
 
   // 頁籤切換（純前端）
   document.querySelectorAll('.tab').forEach(btn=>{
