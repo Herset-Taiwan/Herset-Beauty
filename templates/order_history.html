@@ -214,9 +214,9 @@ const zhStatus = s =>
     <div class="row total"><span>應付總額</span><span>$${o.total_amount}</span></div>
   </div>
             <div class="actions">
-  ${!paid && o.MerchantTradeNo
-    ? `<button class="btn repay" onclick="repay('${o.MerchantTradeNo}')">🔁 重新付款</button>`
-    : ''}
+  ${(!paid && o.status !== 'cancelled' && o.MerchantTradeNo)
+  ? `<button class="btn repay" onclick="repay('${o.MerchantTradeNo}')">🔁 重新付款</button>`
+  : ''}
 
   ${(!paid && o.status === 'pending')
   ? `<form method="POST" action="/order/cancel/${o.id}" style="display:inline;"

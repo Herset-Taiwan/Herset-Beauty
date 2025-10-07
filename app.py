@@ -780,7 +780,7 @@ def admin_dashboard():
         o["wallet_used_nt"]    = o["wallet_used_cents"] // 100
 
         orders.append(o)
-    unshipped_count = sum(1 for o in orders if (o.get("status") != "shipped"))
+    unshipped_count = sum(1 for o in orders if (o.get("status") in (None, "pending", "paid")))
 
     # === 留言 + 分頁 ===
     reply_status = request.args.get("reply_status", "all")
@@ -4268,10 +4268,7 @@ def order_cancel(order_id):
 
     flash("訂單已取消")
     # 回到歷史訂單頁（依你的實際路徑調整）
-    return redirect("/member/orders")
-
-
-
+    return redirect("/order-history")
 
 
 # 歷史訂單重新付款
@@ -4283,6 +4280,11 @@ def repay_order(merchant_trade_no):
         return "找不到對應的訂單", 404
 
     order = order_result.data[0]
+
+# ❗已取消的訂單不可重新付款
+    if (order.get("status") or "").lower() == "cancelled":
+        flash("此訂單已取消，無法重新付款。", "error")
+        return redirect("/order-history")
 
     # 顯示付款方式選擇畫面
     return render_template("choose_payment.html", order=order, is_repay=True)
