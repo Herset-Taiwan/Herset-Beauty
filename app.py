@@ -349,11 +349,6 @@ def _refresh_wallet_session(member_id: str) -> int:
     return bal
 
 def _calc_available_wallet_cents(credit_rows):
-    """
-    以交易明細計算『可用餘額（分）』：
-    - 正數：未過期才算進來（expires_at >= 今天 或沒有到期日）
-    - 負數：一律算進來
-    """
     today = datetime.utcnow().date()
     total = 0
     for r in (credit_rows or []):
@@ -370,9 +365,10 @@ def _calc_available_wallet_cents(credit_rows):
                     if d >= today:
                         total += amt
                 except Exception:
-                    # 解析失敗就保守納入
                     total += amt
-    return total
+    # ✅ 不允許小於 0
+    return max(total, 0)
+
 
 
 # ✅ Supabase 初始化（同時支援 SUPABASE_ANON_KEY / SUPABASE_KEY）
