@@ -306,13 +306,13 @@ def _get_wallet_balance_cents(member_id: str) -> int:
                .select("balance_cents")
                .eq("member_id", member_id)
                .limit(1).execute())
-        return int((res.data or [{}])[0].get("balance_cents") or 0)
+        return max(int((res.data or [{}])[0].get("balance_cents") or 0), 0)
     except Exception:
         # 若上面失敗（或你保留 balances 為 VIEW），退回用 credits 加總
         res = (supabase.table("wallet_credits")
                .select("amount_cents")
                .eq("member_id", member_id).execute())
-        return sum(int(r.get("amount_cents") or 0) for r in (res.data or []))
+        return max(sum(int(r.get("amount_cents") or 0) for r in (res.data or [])), 0)
 
 
 def _refresh_wallet_badge(member_id: str) -> None:
@@ -3017,7 +3017,7 @@ def member_wallet():
     available_cents = _calc_available_wallet_cents(rows)
 
     # （可選）把最新可用額也塞回 session，讓 header 徽章一致
-    session["wallet_balance_cents"] = available_cents
+    session["wallet_balance_cents"] = max(int(available_cents or 0), 0)
 
     return render_template(
         "member_wallet.html",
@@ -3375,7 +3375,10 @@ def cart():
                  .select("amount_cents")
                  .eq("member_id", mid)
                  .execute())
-            wallet_balance_cents = sum(int(x.get("amount_cents") or 0) for x in (r.data or []))
+            wallet_balance_cents = max(
+    0,
+    sum(int(x.get("amount_cents") or 0) for x in (r.data or []))
+)
         except Exception:
             current_app.logger.exception("[cart] load wallet balance failed")
             wallet_balance_cents = 0
