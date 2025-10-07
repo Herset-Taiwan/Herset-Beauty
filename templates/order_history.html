@@ -82,6 +82,18 @@
   .btn.del:hover{background:#ffe4e6}
 
 
+  /* === 取消訂單 === */
+.modal{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center}
+.modal.show{display:flex}
+.modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45)}
+.modal-card{position:relative;background:#fff;border-radius:16px;box-shadow:0 20px 40px rgba(0,0,0,.15);
+  width:min(420px,90%);padding:22px}
+.modal-card h3{margin:0 0 8px;color:#5a4b45}
+.modal-card .muted{color:var(--muted);margin:6px 0 16px;font-size:14px}
+.modal-card .actions{display:flex;justify-content:flex-end;gap:10px}
+.btn.light{background:#f6f1ef;border:1px solid var(--line);color:#5a4b45}
+
+
   </style>
 </head>
 <body>
@@ -127,6 +139,19 @@
   <div id="cancelled-list"></div>
   <div id="cancelled-pager" class="pager"></div>
 </section>
+</div>
+
+<!-- 取消訂單確認視窗 -->
+<div id="cancelModal" class="modal" aria-hidden="true" style="display:none;">
+  <div class="modal-backdrop"></div>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="cancelTitle">
+    <h3 id="cancelTitle">要取消這筆訂單嗎？</h3>
+    <p class="muted">取消後將無法復原；若曾使用購物金，系統會自動退回帳戶。</p>
+    <div class="actions">
+      <button id="cancelNo" class="btn light">先不要</button>
+      <button id="cancelYes" class="btn del">確認取消</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -219,9 +244,8 @@ const zhStatus = s =>
   : ''}
 
   ${(!paid && o.status === 'pending')
-  ? `<form method="POST" action="/order/cancel/${o.id}" style="display:inline;"
-       onsubmit="return confirm('確定要取消這筆訂單嗎？');">
-       <button type="submit" class="btn del">🚫 取消訂單</button>
+  ? `<form method="POST" action="/order/cancel/${o.id}" class="cancel-form" style="display:inline;">
+       <button type="button" class="btn del js-open-cancel" data-order-id="${o.id}">🚫 取消訂單</button>
      </form>`
   : ''}
 </div>
@@ -271,6 +295,40 @@ const zhStatus = s =>
       document.getElementById(target).classList.add('show');
     });
   });
+
+// === 取消訂單 Modal 控制 ===
+let _cancelTargetForm = null;
+
+function openCancelModal(){
+  const m = document.getElementById('cancelModal');
+  m.classList.add('show');
+  m.style.display = 'flex';
+  m.setAttribute('aria-hidden','false');
+  document.getElementById('cancelNo').focus();
+}
+function closeCancelModal(){
+  const m = document.getElementById('cancelModal');
+  m.classList.remove('show');
+  m.style.display = 'none';
+  m.setAttribute('aria-hidden','true');
+  _cancelTargetForm = null;
+}
+
+// 監聽每個「取消訂單」按鈕
+document.addEventListener('click', (e)=>{
+  const btn = e.target.closest('.js-open-cancel');
+  if (!btn) return;
+  _cancelTargetForm = btn.closest('form.cancel-form');
+  openCancelModal();
+});
+
+// Modal 按鈕 & 關閉行為
+document.getElementById('cancelNo').addEventListener('click', closeCancelModal);
+document.getElementById('cancelYes').addEventListener('click', ()=>{ if(_cancelTargetForm) _cancelTargetForm.submit(); });
+document.getElementById('cancelModal').addEventListener('click', (e)=>{ if(e.target.classList.contains('modal-backdrop')) closeCancelModal(); });
+window.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeCancelModal(); });
+
+
 </script>
 </body>
 </html>
