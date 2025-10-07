@@ -55,6 +55,7 @@ app.config.update(
     PREFERRED_URL_SCHEME="https",    # url_for 生成 https
 )
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
+
 @app.before_request
 def _force_primary_host():
     # 只允許正式主機，其他一律 301 轉到正式站，避免 session 分裂
@@ -62,7 +63,6 @@ def _force_primary_host():
     host = request.host.split(":")[0]
     if host != primary:
         url = f"https://{primary}{request.full_path}"
-        # 去掉多餘的 '?'（Flask full_path 可能以 '?' 結尾）
         if url.endswith("?"):
             url = url[:-1]
         return redirect(url, code=301)
@@ -3611,8 +3611,8 @@ def checkout():
         wallet_req_yuan = 0
     wallet_req_yuan = max(wallet_req_yuan, 0)
 
-    # 目前錢包餘額（分）
-     try:
+    # 目前錢包餘額（分）— 只用 credits 明細計算（並保底 0）
+    try:
         sres = (
             supabase.table("wallet_credits")
             .select("amount_cents,expires_at")
@@ -3620,7 +3620,6 @@ def checkout():
             .execute()
         )
         rows = sres.data or []
-        # 用你現有的到期計算函式，並保底 0
         balance_cents = max(_calc_available_wallet_cents(rows), 0)
     except Exception:
         balance_cents = 0
@@ -3688,55 +3687,55 @@ def checkout():
         except Exception as e:
             app.logger.error(f"[checkout stock deduct] pid={pid} qty={qty} error={e}")
 
-    # 6.2 若有使用購物金 → 寫入 wallet_credits（分，負數），並刷新 session
-if used_wallet_cents > 0:
-    try:
-        # 防呆：避免同張訂單重複扣（不同訂單則可各自扣）
-        exists = (
-            supabase.table("wallet_credits")
-            .select("id")
-            .eq("reason", "order_checkout")
-            .eq("related_order_id", order_id)
-            .limit(1)
-            .execute()
-        ).data
-        if not exists:
-            supabase.table("wallet_credits").insert({
-                "member_id": member_id,
-                "amount_cents": -used_wallet_cents,     # 負數代表扣款（分）
-                "reason": "order_checkout",
-                "related_order_id": order_id,
-                "note": f"已使用於訂單 #{order_id}",
-            }).execute()
-
-            # ✅ 同步更新 wallet_balances（保底 0）
-            try:
-                curb = (
-                    supabase.table("wallet_balances")
-                    .select("balance_cents")
-                    .eq("member_id", member_id)
-                    .single()
-                    .execute()
-                    .data or {}
-                )
-                cur_val = int(curb.get("balance_cents") or 0)
-                new_val = max(0, cur_val - used_wallet_cents)
-                supabase.table("wallet_balances").upsert({
+    # 6.2 若有使用購物金 → 寫入 wallet_credits（分，負數），並刷新 session / balances
+    if used_wallet_cents > 0:
+        try:
+            # 防呆：避免同張訂單重複扣（不同訂單則可各自扣）
+            exists = (
+                supabase.table("wallet_credits")
+                .select("id")
+                .eq("reason", "order_checkout")
+                .eq("related_order_id", order_id)
+                .limit(1)
+                .execute()
+            ).data
+            if not exists:
+                supabase.table("wallet_credits").insert({
                     "member_id": member_id,
-                    "balance_cents": new_val
-                }, returning="minimal").execute()
-            except Exception:
-                pass
+                    "amount_cents": -used_wallet_cents,  # 負數代表扣款（分）
+                    "reason": "order_checkout",
+                    "related_order_id": order_id,
+                    "note": f"已使用於訂單 #{order_id}",
+                }).execute()
 
-            # 更新 session 徽章（保底 0）
-            try:
-                session['wallet_balance_cents'] = max(
-                    int(session.get('wallet_balance_cents') or 0) - used_wallet_cents, 0
-                )
-            except Exception:
-                pass
-    except Exception:
-        current_app.logger.exception('[wallet] deduct on checkout failed')
+                # ✅ 同步更新 wallet_balances（保底 0）
+                try:
+                    curb = (
+                        supabase.table("wallet_balances")
+                        .select("balance_cents")
+                        .eq("member_id", member_id)
+                        .single()
+                        .execute()
+                        .data or {}
+                    )
+                    cur_val = int(curb.get("balance_cents") or 0)
+                    new_val = max(0, cur_val - used_wallet_cents)
+                    supabase.table("wallet_balances").upsert({
+                        "member_id": member_id,
+                        "balance_cents": new_val
+                    }, returning="minimal").execute()
+                except Exception:
+                    pass
+
+                # 更新 session 徽章（保底 0）
+                try:
+                    session['wallet_balance_cents'] = max(
+                        int(session.get('wallet_balance_cents') or 0) - used_wallet_cents, 0
+                    )
+                except Exception:
+                    pass
+        except Exception:
+            current_app.logger.exception('[wallet] deduct on checkout failed')
 
     # 7) 成功後才累計折扣使用次數
     if discount_code:
@@ -3764,8 +3763,6 @@ if used_wallet_cents > 0:
     # 9) 導向選擇付款頁
     flash("訂單已建立，請選擇付款方式", "success")
     return redirect(f"/choose-payment?order_id={order_id}")
-
-
 
 
 
