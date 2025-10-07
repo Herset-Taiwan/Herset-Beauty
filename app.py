@@ -54,8 +54,18 @@ app.config.update(
     SESSION_COOKIE_HTTPONLY=True,    # JS 不能讀，較安全
     PREFERRED_URL_SCHEME="https",    # url_for 生成 https
 )
-
-
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
+@app.before_request
+def _force_primary_host():
+    # 只允許正式主機，其他一律 301 轉到正式站，避免 session 分裂
+    primary = "herset.co"
+    host = request.host.split(":")[0]
+    if host != primary:
+        url = f"https://{primary}{request.full_path}"
+        # 去掉多餘的 '?'（Flask full_path 可能以 '?' 結尾）
+        if url.endswith("?"):
+            url = url[:-1]
+        return redirect(url, code=301)
 
 # === LINE Pay 設定（正式環境）===
 LINE_PAY_CHANNEL_ID = os.getenv("LINE_PAY_CHANNEL_ID")  # ← 放正式的 Channel ID
@@ -3112,11 +3122,13 @@ def admin_wallet_report():
 
 @app.route('/logout')
 def logout():
-    session.clear()
-    resp = redirect(url_for('index'))
-    # host-only cookie：不必寫 domain；若你曾經發過不同 cookie，可保險刪一次
-    resp.delete_cookie(app.config.get("SESSION_COOKIE_NAME", "herset_session"))
-    return resp
+    # 只清「會員相關」的 session，不動後台登入狀態
+    for k in ['member_id', 'user', 'account', 'wallet_balance_cents',
+              'has_new_reply', 'incomplete_profile', 'cart', 'cart_discount']:
+        session.pop(k, None)
+
+    # 不刪整個 session cookie，避免 admin_logged_in 也被清掉
+    return redirect(url_for('index'))
 
 
 
