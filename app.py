@@ -3689,7 +3689,7 @@ def checkout():
             app.logger.error(f"[checkout stock deduct] pid={pid} qty={qty} error={e}")
 
     # 6.2 若有使用購物金 → 寫入 wallet_credits（分，負數），並刷新 session
-    if used_wallet_cents > 0:
+if used_wallet_cents > 0:
     try:
         # 防呆：避免同張訂單重複扣（不同訂單則可各自扣）
         exists = (
