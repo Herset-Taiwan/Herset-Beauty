@@ -1167,6 +1167,9 @@ function renderOrderPage(pageSize){
     const paid = (o.payment_status||'')==='paid';
     const shipped = o.status==='shipped';
     const statusClass = shipped ? 'ship' : (o.status==='cancelled' ? 'unpay' : 'pending');
+    const cancelText  = (o.cancelled_by==='admin') ? '已取消（後台）'
+                   : (o.cancelled_by==='member') ? '已取消（會員）'
+                   : '已取消';
 
     const card = document.createElement('article');
 card.className = 'order-card';
@@ -1178,7 +1181,14 @@ card.innerHTML = `
     <div class="order-time">${esc(o.created_local||'')}</div>
     <div class="order-chips">
       ${ payBadgeHTML(o) || `<span class="order-chip unpay">未付款</span>` }
-      <span class="order-chip ${statusClass}">${zhStatus(o.status)}</span>
+      <span class="order-chip ${statusClass}">
+  ${o.status==='cancelled' ? cancelText : zhStatus(o.status)}
+</span>
+
+${ (o.status==='cancelled' && o.cancelled_at)
+   ? `<div style="font-size:12px;color:#7a6c66;">取消時間：${esc(o.cancelled_at)}</div>`
+   : '' }
+
       ${o.discount_code ? `<span class="order-chip pending">折扣：${esc(o.discount_code)}</span>` : ''}
     </div>
   </div>

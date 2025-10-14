@@ -204,6 +204,11 @@ const zhStatus = s =>
 
       const paid = (o.payment_status||'') === 'paid';
       const ship = o.status === 'shipped';
+      const statusClass = ship ? 'ship' : (o.status==='cancelled' ? 'unpay' : 'pending');
+      const cancelText  = (o.cancelled_by==='member') ? '已取消（你取消）'
+                   : (o.cancelled_by==='admin') ? '已取消（商家）'
+                   : '已取消';
+
 
       const card = document.createElement('article');
       card.className = 'order';
@@ -213,7 +218,10 @@ const zhStatus = s =>
           <div class="time">${o.created_local || ''}</div>
           <div class="chips">
             <span class="chip ${paid?'pay':'unpay'}">${paid?'已付款':'未付款'}</span>
-            <span class="chip ${ship?'ship':'pending'}">${zhStatus(o.status)}</span>
+            <span class="chip ${statusClass}">
+  ${o.status==='cancelled' ? cancelText : zhStatus(o.status)}
+</span>
+
           </div>
         </div>
 
