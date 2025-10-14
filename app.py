@@ -4382,7 +4382,7 @@ def update_order_status(order_id):
         try:
             cancelled_at_iso = datetime.now(TW).isoformat()
         except NameError:
-            cancelled_at_iso = datetime.now().isoformat()
+            cancelled_at_iso = datetime.now(tw).strftime("%Y-%m-%d %H:%M:%S")
 
         supabase.table("orders").update({
             "status": "cancelled",

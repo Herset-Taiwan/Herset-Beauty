@@ -1136,6 +1136,25 @@ function filterOrders(){
   renderOrderPage(pageSz);
 }
 
+<script>
+  // 將 ISO/UTC 轉成台灣時間並格式化 YYYY-MM-DD HH:mm:ss
+  function formatTW(iso) {
+    try {
+      const dt = new Date(iso);
+      const t = new Date(dt.getTime() + 8 * 60 * 60 * 1000); // +08:00
+      const y  = t.getFullYear();
+      const m  = String(t.getMonth() + 1).padStart(2, '0');
+      const d  = String(t.getDate()).padStart(2, '0');
+      const hh = String(t.getHours()).padStart(2, '0');
+      const mm = String(t.getMinutes()).padStart(2, '0');
+      const ss = String(t.getSeconds()).padStart(2, '0');
+      return `${y}-${m}-${d} ${hh}:${mm}:${ss}`;
+    } catch (e) {
+      return iso || '';
+    }
+  }
+</script>
+
 
 function renderOrderPage(pageSize){
   const box = document.getElementById("order-list");
@@ -1179,15 +1198,13 @@ card.innerHTML = `
   訂單 ${esc(o.order_no || o.MerchantTradeNo || ('#' + o.id))}
 </div>
     <div class="order-time">${esc(o.created_local||'')}</div>
-    <div class="order-chips">
-      ${ payBadgeHTML(o) || `<span class="order-chip unpay">未付款</span>` }
-      <span class="order-chip ${statusClass}">
-  ${o.status==='cancelled' ? cancelText : zhStatus(o.status)}
-</span>
-
-${ (o.status==='cancelled' && o.cancelled_at)
-   ? `<div style="font-size:12px;color:#7a6c66;">取消時間：${esc(o.cancelled_at)}</div>`
-   : '' }
+<div class="order-chips">
+  ${ payBadgeHTML(o) || `<span class="order-chip unpay">未付款</span>` }
+  <span class="order-chip ${statusClass}">${zhStatus(o.status)}</span>
+  ${o.discount_code ? `<span class="order-chip pending">折扣：${esc(o.discount_code)}</span>` : ''}
+  ${ (o.status==='cancelled' && o.cancelled_at)
+      ? `<span class="order-cancel-time" style="font-size:12px;color:#7a6c66;margin-left:8px;">
+           取消時間：${formatTW(o.cancelled_at)}
 
       ${o.discount_code ? `<span class="order-chip pending">折扣：${esc(o.discount_code)}</span>` : ''}
     </div>
