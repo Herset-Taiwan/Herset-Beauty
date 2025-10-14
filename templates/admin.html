@@ -1136,22 +1136,34 @@ function filterOrders(){
   renderOrderPage(pageSz);
 }
 
-// 將 ISO/UTC 轉成台灣時間並格式化 YYYY-MM-DD HH:mm:ss
-function formatTW(iso) {
-  try {
-    const dt = new Date(iso);
-    const t = new Date(dt.getTime() + 8 * 60 * 60 * 1000); // +08:00
-    const y  = t.getFullYear();
-    const m  = String(t.getMonth() + 1).padStart(2, '0');
-    const d  = String(t.getDate()).padStart(2, '0');
-    const hh = String(t.getHours()).padStart(2, '0');
-    const mm = String(t.getMinutes()).padStart(2, '0');
-    const ss = String(t.getSeconds()).padStart(2, '0');
-    return `${y}-${m}-${d} ${hh}:${mm}:${ss}`;
-  } catch (e) {
-    return iso || '';
+// 將時間字串轉成台灣時間並格式化成 YYYY-MM-DD HH:mm:ss
+function formatTW(val) {
+  if (!val) return '';
+  const s = String(val).trim();
+
+  // 判斷是否帶有時區或 ISO 記號（T / Z / ±hh:mm）
+  const hasTZ = /[TtZz]/.test(s) || /[+\-]\d{2}:?\d{2}$/.test(s);
+
+  if (hasTZ) {
+    // 有時區資訊 → 用 Asia/Taipei 輸出
+    const d = new Date(s);
+    const f = new Intl.DateTimeFormat('zh-TW', {
+      timeZone: 'Asia/Taipei',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+      hour12: false
+    }).format(d);
+    // zh-TW 會回傳 2025/10/14 10:41:37 → 換成 YYYY-MM-DD
+    const [date, time] = f.split(' ');
+    return `${date.replaceAll('/', '-') } ${time}`;
+  } else {
+    // 沒有時區（例如 "2025-10-14 10:41:37"）→ 視為已是本地時間，直接回傳到秒
+    const m = s.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})/);
+    if (m) return `${m[1]} ${m[2]}`;
+    return s; // 其他格式維持原樣
   }
 }
+
 
 
 

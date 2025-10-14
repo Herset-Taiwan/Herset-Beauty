@@ -205,8 +205,8 @@ const zhStatus = s =>
       const paid = (o.payment_status||'') === 'paid';
       const ship = o.status === 'shipped';
       const statusClass = ship ? 'ship' : (o.status==='cancelled' ? 'unpay' : 'pending');
-      const cancelText  = (o.cancelled_by==='member') ? '已取消（你取消）'
-                   : (o.cancelled_by==='admin') ? '已取消（商家）'
+      const cancelText  = (o.cancelled_by==='member') ? '已取消（會員）'
+                   : (o.cancelled_by==='admin') ? '已取消（系統）'
                    : '已取消';
 
 
