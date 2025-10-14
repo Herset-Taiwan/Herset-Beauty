@@ -4205,18 +4205,35 @@ def order_cancel(order_id):
     )
     if not o or str(o.get("member_id")) != str(member_id):
         flash("找不到訂單或無權限")
-        return redirect(request.referrer or "/")
+        return redirect(request.referrer or "/order-history")
 
+    # 已付款不可取消
+    if o.get("payment_status") == "paid":
+        flash("此訂單已付款完成，無法取消")
+        return redirect(request.referrer or "/order-history")
+
+    # 已出貨不可取消
     if o.get("status") == "shipped":
         flash("已出貨訂單不可取消")
-        return redirect(request.referrer or "/")
+        return redirect(request.referrer or "/order-history")
 
+    # 已取消直接返回
     if o.get("status") == "cancelled":
         flash("此訂單已取消")
-        return redirect(request.referrer or "/")
+        return redirect(request.referrer or "/order-history")
 
-    # 將訂單標記為取消
-    supabase.table("orders").update({"status": "cancelled"}).eq("id", order_id).execute()
+    # ✅ 將訂單標記為取消（會員）
+    from datetime import datetime
+    try:
+        cancelled_at_iso = datetime.now(TW).isoformat()  # 若你的程式有定義 TW=Asia/Taipei
+    except NameError:
+        cancelled_at_iso = datetime.now().isoformat()
+
+    supabase.table("orders").update({
+        "status": "cancelled",
+        "cancelled_by": "member",
+        "cancelled_at": cancelled_at_iso
+    }).eq("id", order_id).execute()
 
     # 若該訂單曾扣過購物金 → 回補
     try:
@@ -4230,7 +4247,9 @@ def order_cancel(order_id):
             .data or []
         )
         # 把該訂單扣過的負數累計回補為正數
-        used_cents = -sum(int(r.get("amount_cents") or 0) for r in used_rows if int(r.get("amount_cents") or 0) < 0)
+        used_cents = -sum(int(r.get("amount_cents") or 0)
+                          for r in used_rows
+                          if int(r.get("amount_cents") or 0) < 0)
         if used_cents > 0:
             supabase.table("wallet_credits").insert({
                 "member_id": member_id,
@@ -4260,15 +4279,17 @@ def order_cancel(order_id):
 
             # 更新 session 徽章
             try:
-                session["wallet_balance_cents"] = max(int(session.get("wallet_balance_cents") or 0) + used_cents, 0)
+                session["wallet_balance_cents"] = max(
+                    int(session.get("wallet_balance_cents") or 0) + used_cents, 0)
             except Exception:
                 pass
     except Exception:
         current_app.logger.exception("[order_cancel] refund wallet failed")
 
     flash("訂單已取消")
-    # 回到歷史訂單頁（依你的實際路徑調整）
+    # 回到歷史訂單頁
     return redirect("/order-history")
+
 
 
 # 歷史訂單重新付款
@@ -4348,20 +4369,28 @@ def thank_you():
 def update_order_status(order_id):
     new_status_raw = (request.form.get("status") or "").lower()
 
-    # 後台安全檢查（若你已經在別處做了 admin 驗證，可略）
+    # 後台安全檢查
     if not session.get("admin_logged_in"):
         return redirect("/admin0363")
 
     if not new_status_raw:
         return redirect("/admin0363/dashboard?tab=orders")
 
-    # 「未付款，取消訂單」：同時把付款狀態打回 unpaid
+    # 「未付款，取消訂單」：同時把付款狀態打回 unpaid，並記錄取消者與時間
     if new_status_raw == "cancelled_unpaid":
+        from datetime import datetime
+        try:
+            cancelled_at_iso = datetime.now(TW).isoformat()
+        except NameError:
+            cancelled_at_iso = datetime.now().isoformat()
+
         supabase.table("orders").update({
             "status": "cancelled",
             "payment_status": "unpaid",
             "payment_method": None,
-            "paid_at": None
+            "paid_at": None,
+            "cancelled_by": "admin",
+            "cancelled_at": cancelled_at_iso
         }).eq("id", order_id).execute()
         flash(f"訂單 #{order_id} 已標記為『已取消（未付款）』", "success")
         return redirect("/admin0363/dashboard?tab=orders")
@@ -4370,6 +4399,7 @@ def update_order_status(order_id):
     supabase.table("orders").update({"status": new_status_raw}).eq("id", order_id).execute()
     flash(f"訂單 #{order_id} 出貨狀態已修改", "success")
     return redirect("/admin0363/dashboard?tab=orders")
+
 
 
 # 後台付款狀態修改（ATM/匯款人工入帳用）
