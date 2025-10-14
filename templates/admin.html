@@ -479,6 +479,12 @@
   font-weight: bold;
 }
 
+/*取消訂單*/
+.order-chip.cancelled {
+  background-color: #f0f0f0;
+  color: #a33;
+  border: 1px solid #ddd;
+}
 
 
 </style>
@@ -1196,7 +1202,10 @@ function renderOrderPage(pageSize){
 
     const paid = (o.payment_status||'')==='paid';
     const shipped = o.status==='shipped';
-    const statusClass = shipped ? 'ship' : (o.status==='cancelled' ? 'unpay' : 'pending');
+    const statusClass = shipped
+  ? 'ship'
+  : (o.status === 'cancelled' ? 'cancelled' : 'pending');
+
     const cancelText  = (o.cancelled_by==='admin') ? '已取消（後台）'
                    : (o.cancelled_by==='member') ? '已取消（會員）'
                    : '已取消';
