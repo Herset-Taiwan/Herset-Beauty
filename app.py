@@ -829,7 +829,7 @@ def admin_dashboard():
     paged_messages = filtered_messages[msg_start:msg_end]
 
     # === 提示狀態 ===
-    new_order_alert = any(o.get("status") != "shipped" for o in orders)
+    new_order_alert = any(o.get("status") in ("pending", "paid") for o in orders)
     new_message_alert = any(not m.get("is_replied") for m in all_messages)
     show_order_alert = new_order_alert and not session.get("seen_orders")
     show_message_alert = new_message_alert and not session.get("seen_messages")
