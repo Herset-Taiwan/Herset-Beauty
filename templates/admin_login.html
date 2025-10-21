@@ -52,6 +52,15 @@
 <body>
   <div class="login-box">
     <h2>管理員登入</h2>
+
+    {# === 新增：有新訂單時顯示提示（pending/paid） === #}
+    {% if new_order_alert %}
+      <div class="order-alert">
+        <span class="badge">🛎 新訂單</span>
+        目前有 <strong>{{ new_order_count }}</strong> 筆新／未出貨訂單。登入後可至「訂單管理系統」查看。
+      </div>
+    {% endif %}
+
     <form method="post">
       <input type="text" name="username" placeholder="帳號" required>
       <input type="password" name="password" placeholder="密碼" required>

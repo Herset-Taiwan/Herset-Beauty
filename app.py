@@ -612,7 +612,26 @@ def admin_login():
             return redirect("/admin0363/dashboard")
         else:
             return render_template("admin_login.html", error="帳號或密碼錯誤")
-    return render_template("admin_login.html")
+        # GET：顯示登入頁，同時提示是否有新/未出貨訂單
+    try:
+        res = (
+            supabase.table("orders")
+            .select("id", count="exact")
+            .in_("status", ["pending", "paid"])   # 只算新訂單/已付款未出貨
+            .execute()
+        )
+        new_order_count = getattr(res, "count", 0) or 0
+        new_order_alert = new_order_count > 0
+    except Exception:
+        new_order_alert = False
+        new_order_count = 0
+
+    return render_template(
+        "admin_login.html",
+        new_order_alert=new_order_alert,
+        new_order_count=new_order_count
+    )
+
 
 # admin 後台
 @app.route("/admin0363/dashboard")
