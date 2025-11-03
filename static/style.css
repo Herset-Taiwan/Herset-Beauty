@@ -755,42 +755,78 @@ footer {
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
-/* 首頁照片輪播相關 */
-.carousel-container {
-  width: 100%;
+/* 首頁照片輪播相關（新版，固定 1950×630 顯示比例） */
+.carousel-container{
   position: relative;
-  margin: 0 auto 20px;   /* 或視覺上再調整 */
-  padding-bottom: 10px;  /* 改小或設為 0 */
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding-bottom: 0;         /* 不要額外撐高 */
   overflow: hidden;
+
+  /* 固定視覺比例：桌機以 1950×630（約 3:1）為主 */
+  aspect-ratio: 1950 / 630;
+  max-height: 630px;         /* 上限 630px */
 }
 
-
-/* 保險：確保輪播區塊是正常的層級與定位 */
+/* 保險：確保輪播區塊正常層級與定位 */
 .carousel-container{ position: relative; z-index: 1; }
-/* header 本來就有較高 z-index，這裡僅明確化 */
 .main-header{ position: relative; z-index: 10; }
 
-.carousel {
+.carousel{
   position: relative;
   width: 100%;
   height: 100%;
 }
 
-.carousel-img {
-  width: 100%;
-  height: 400px;
-  object-fit: cover;       /* ← 正確值 */
+/* 圖片全都絕對定位覆蓋容器，用透明度切換 */
+.carousel-img{
   position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100% !important;   /* 填滿容器 */
+  object-fit: cover !important;
+  object-position: center;
   opacity: 0;
-  transition: opacity 1s ease-in-out;
+  transition: opacity .45s ease-in-out;
   border-radius: 0;
+  display: block;
 }
 
-
-.carousel-img.active {
+/* 只切換透明度，不改定位，避免高度被撐動 */
+.carousel-img.active{
   opacity: 1;
-  position: relative;
-  z-index: 1;
+}
+
+/* 指示點改為覆蓋在輪播底部，不再推擠版面 */
+.carousel-dots{
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 2;
+  margin-top: 0;
+}
+
+.carousel-dot{
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.55);
+  cursor: pointer;
+  transition: background-color .2s ease;
+}
+.carousel-dot.active{ background: rgba(255,255,255,.95); }
+
+/* 行動裝置：高度再保守些，常見 16:9 */
+@media (max-width: 768px){
+  .carousel-container{
+    aspect-ratio: 16 / 9;
+    max-height: 420px;
+  }
 }
 /* 首頁照片輪播相關結束 */
 
