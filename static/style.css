@@ -763,6 +763,7 @@ footer {
   margin: 0 auto;
   padding-bottom: 0;         /* 不要額外撐高 */
   overflow: hidden;
+  height: clamp(320px, 33vw, 630px);  /* ← 新增這行，當作 fallback / 上限控制 */
 
   /* 固定視覺比例：桌機以 1950×630（約 3:1）為主 */
   aspect-ratio: 1950 / 630;
@@ -869,26 +870,6 @@ footer {
   box-shadow: 0 2px 6px rgba(0,0,0,0.2);
   }
 
-/*輪播圖下方顯示點點指示器*/
-.carousel-dots {
-  text-align: center;
-  margin-top: 16px;
-}
-
-.carousel-dot {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  margin: 0 6px;
-  background-color: #ccc;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.carousel-dot.active {
-  background-color: #C6456C;
-}
 
 /* 商品標籤樣式 - 漸層 + 陰影 + 光澤 */
 .label-badge {
