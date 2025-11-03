@@ -822,11 +822,43 @@ footer {
 }
 .carousel-dot.active{ background: rgba(255,255,255,.95); }
 
+
+/* 輪播點點（覆蓋在圖上，品牌色，支援 active 變色） */
+#carouselDots{
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 3;
+  margin: 0 !important;         /* ← 不佔版面高度 */
+  padding: 0;
+}
+
+#carouselDots .carousel-dot{
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #d8c5bf;          /* 預設淡色 */
+  cursor: pointer;
+  transition: transform .15s, background-color .2s;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.08) inset;
+  opacity: .95;
+}
+
+#carouselDots .carousel-dot.active{
+  background: #C6456C !important;  /* 你的品牌色 */
+  transform: scale(1.12);
+}
+
+
 /* 行動裝置：高度再保守些，常見 16:9 */
 @media (max-width: 768px){
   .carousel-container{
     aspect-ratio: 16 / 9;
     max-height: 420px;
+    height: clamp(300px, 33vw, 630px) !important;
   }
 }
 /* 首頁照片輪播相關結束 */
