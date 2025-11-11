@@ -87,15 +87,16 @@
         <div class="radio-option">
           <label><input type="radio" name="method" value="linepay" checked> LINE Pay</label>
         </div>
+
+<div class="radio-option">
+  <label><input type="radio" name="method" value="credit"> 信用卡（綠界）</label>
+</div>
+
         <div class="radio-option">
           <label><input type="radio" name="method" value="bank"> 轉帳付款（ATM/銀行）</label>
         </div>
-        <!-- 預留其他方式 -->
-        <!--
-        <div class="radio-option">
-          <label><input type="radio" name="method" value="credit"> 信用卡（綠界）</label>
-        </div>
-        -->
+    
+
       </div>
 
       <!-- 後端必用 -->
@@ -117,40 +118,43 @@
       var hint = document.getElementById('hint');
 
       function updateButton() {
-        var method = form.querySelector('input[name="method"]:checked').value;
-        if (method === 'linepay') {
-          btn.textContent = '前往 LINE Pay 付款';
-          hint.textContent = '系統將建立 LINE Pay 付款連結並帶您前往。';
-        } else if (method === 'bank') {
-          btn.textContent = '查看轉帳資訊';
-          hint.textContent = '將顯示銀行帳號與匯款說明。';
-        } else {
-          btn.textContent = '前往付款';
-          hint.textContent = '';
-        }
+      var method = form.querySelector('input[name="method"]:checked').value;
+      if (method === 'linepay') {
+        btn.textContent = '前往 LINE Pay 付款';
+        hint.textContent = '系統將建立 LINE Pay 付款連結並帶您前往。';
+      } else if (method === 'bank') {
+        btn.textContent = '查看轉帳資訊';
+        hint.textContent = '將顯示銀行帳號與匯款說明。';
+      } else if (method === 'credit') {
+        btn.textContent = '前往信用卡付款';
+        hint.textContent = '將連到綠界金流信用卡頁面完成付款。';
+      } else {
+        btn.textContent = '前往付款';
+        hint.textContent = '';
+      }
+    }
+
+    radios.forEach(function (r) { r.addEventListener('change', updateButton); });
+    updateButton();
+
+    form.addEventListener('submit', function () {
+      // 防止重複送出
+      btn.disabled = true;
+
+      var method = form.querySelector('input[name="method"]:checked').value;
+      if (typeof fbq === 'function') {
+        try { fbq('track', 'AddPaymentInfo', { method: method }); } catch (e) {}
       }
 
-      radios.forEach(function (r) { r.addEventListener('change', updateButton); });
-      updateButton();
-
-      form.addEventListener('submit', function () {
-        // 防止重複送出
-        btn.disabled = true;
-
-        var method = form.querySelector('input[name="method"]:checked').value;
-        if (typeof fbq === 'function') {
-          try {
-            fbq('track', 'AddPaymentInfo', { method: method });
-          } catch (e) {}
-        }
-
-        if (method === 'linepay') {
-          btn.textContent = '正在前往 LINE Pay...';
-        } else if (method === 'bank') {
-          btn.textContent = '載入轉帳資訊...';
-        }
-      });
-    })();
+      if (method === 'linepay') {
+        btn.textContent = '正在前往 LINE Pay...';
+      } else if (method === 'bank') {
+        btn.textContent = '載入轉帳資訊...';
+      } else if (method === 'credit') {
+        btn.textContent = '正在前往信用卡付款...';
+      }
+    });
+  })();
   </script>
 </body>
 </html>
