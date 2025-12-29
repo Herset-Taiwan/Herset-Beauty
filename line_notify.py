@@ -45,7 +45,7 @@ def send_line_order_notify(order, event_type="new"):
 def send_line_message_notify(message):
     text = (
         "💬【HERSET 新留言】\n"
-        f"會員ID：{message.get('member_id')}\n"
+        f"會員：{message.get('member_name', '未知會員')}\n"
         f"類型：{message.get('type')}\n"
         f"主旨：{message.get('subject')}\n"
         f"訂單編號：{message.get('order_number') or '—'}\n"
@@ -65,6 +65,12 @@ def send_line_message_notify(message):
         }]
     }
 
-    r = requests.post(LINE_PUSH_API, headers=headers, json=payload, timeout=10)
+    r = requests.post(
+        LINE_PUSH_API,
+        headers=headers,
+        json=payload,
+        timeout=10
+    )
     return r.status_code, r.text
+
 

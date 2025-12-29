@@ -5516,6 +5516,16 @@ def submit_message():
     content = request.form['content']
     order_number = request.form.get('order_number') or None
 
+        # ===== 取得會員姓名（給 LINE 用）=====
+    member_res = (
+        supabase.table("members")
+        .select("name")
+        .eq("id", session['member_id'])
+        .single()
+        .execute()
+    )
+    member_name = member_res.data.get("name") if member_res.data else "未知會員"
+
     file = request.files.get('attachment')
     file_path = None
 
@@ -5530,7 +5540,8 @@ def submit_message():
         except Exception:
             flash("檔案上傳失敗，請確認格式與大小", "danger")
             return redirect('/message')
-
+        
+    # ===== 寫入留言 =====
     supabase.table("messages").insert({
         "id": str(uuid4()),
         "member_id": session['member_id'],
@@ -5542,18 +5553,17 @@ def submit_message():
         "created_at": datetime.utcnow().isoformat()
     }).execute()
 
-    # ===== LINE 留言通知 =====
+  # ===== LINE 留言通知（用姓名，不用 member_id）=====
     try:
         send_line_message_notify({
-            "member_id": session['member_id'],
+            "member_name": member_name,   # ✅ 這裡是關鍵
             "type": type,
             "subject": subject,
             "content": content,
-            "order_number": order_number
+            "order_number": order_number or "—"
         })
     except Exception as e:
         app.logger.error(f"[LINE message notify failed] {e}")
-
 
     flash("留言送出成功，我們將盡快與您聯繫", "success")
     return render_template("message_success.html")
