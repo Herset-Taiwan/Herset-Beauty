@@ -25,6 +25,7 @@ import re, secrets
 from flask import current_app
 from flask import Flask, redirect, url_for, request, session, current_app
 from line_notify import send_line_order_notify
+from line_notify import send_line_message_notify
 
 
 DEFAULT_SHELL_IMAGE = "/static/uploads/logo_0.png"
