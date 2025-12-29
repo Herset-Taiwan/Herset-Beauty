@@ -24,6 +24,7 @@ from flask import abort
 import re, secrets
 from flask import current_app
 from flask import Flask, redirect, url_for, request, session, current_app
+from line_notify import send_line_order_notify
 
 
 DEFAULT_SHELL_IMAGE = "/static/uploads/logo_0.png"
@@ -3676,6 +3677,17 @@ def checkout():
     result = supabase.table('orders').insert(order_data).execute()
     order_id = result.data[0]['id']
 
+    # ===== LINE 訂單通知 =====
+try:
+    send_line_order_notify({
+        "order_no": merchant_trade_no,
+        "name": receiver_name,
+        "phone": receiver_phone,
+        "total": final_total_i_after_wallet
+    })
+except Exception as e:
+    app.logger.error(f"[LINE notify failed] {e}")
+
     # 6) 寫入每筆商品明細
     from uuid import uuid4
     for it in items:
@@ -4039,6 +4051,14 @@ def process_payment():
         session["incomplete_profile"] = True  # 你前端本來就有使用這個 flag
         flash("請先完整填寫會員資料（姓名、電話、地址）再進行結帳", "error")
         return redirect("/cart")
+    
+    # 6-1) 組 LINE 推播用訂單資料（此時 order / prof 都已確認存在）
+    line_order_payload = {
+        "order_no": order.get("order_no") or f"#{order['id']}",
+        "name": prof.get("name"),
+        "phone": prof.get("phone"),
+        "total": order.get("total")
+    }
 
     # 7) 依付款方式分流
     if method == "linepay":
@@ -4089,6 +4109,9 @@ def process_payment():
                 "lp_transaction_id": str(transaction_id) if transaction_id else None
             }).eq("id", order["id"]).execute()
 
+        # （推播到 LINE 群組）
+            send_line_order_notify(line_order_payload)
+
             return redirect(payment_url)
         else:
             supabase.table("orders").update({
@@ -4098,6 +4121,9 @@ def process_payment():
             return f"LINE Pay 建立失敗：{data}", 400
 
     elif method == "bank":
+
+         # 推播到 LINE 群組（銀行轉帳也是訂單成立）
+        send_line_order_notify(line_order_payload)
         # 顯示轉帳資訊頁
         return render_template("bank_transfer.html", order=order)
 
@@ -4109,6 +4135,9 @@ def process_payment():
             "new_trade_no": new_trade_no,
             "order_id": order["id"]
         }).execute()
+
+        #推播到 LINE 群組
+        send_line_order_notify(line_order_payload)
 
         html = generate_ecpay_form(order, trade_no=new_trade_no)
         return Response(html, content_type="text/html; charset=utf-8")
