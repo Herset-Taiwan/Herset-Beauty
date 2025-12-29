@@ -5541,6 +5541,19 @@ def submit_message():
         "created_at": datetime.utcnow().isoformat()
     }).execute()
 
+    # ===== LINE 留言通知 =====
+    try:
+        send_line_message_notify({
+            "member_id": session['member_id'],
+            "type": type,
+            "subject": subject,
+            "content": content,
+            "order_number": order_number
+        })
+    except Exception as e:
+        app.logger.error(f"[LINE message notify failed] {e}")
+
+
     flash("留言送出成功，我們將盡快與您聯繫", "success")
     return render_template("message_success.html")
 
