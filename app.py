@@ -3677,16 +3677,16 @@ def checkout():
     result = supabase.table('orders').insert(order_data).execute()
     order_id = result.data[0]['id']
 
-    # ===== LINE 訂單通知 =====
-try:
-    send_line_order_notify({
-        "order_no": merchant_trade_no,
-        "name": receiver_name,
-        "phone": receiver_phone,
-        "total": final_total_i_after_wallet
-    })
-except Exception as e:
-    app.logger.error(f"[LINE notify failed] {e}")
+       # ===== LINE 訂單通知（一定要在 function 裡）=====
+    try:
+        send_line_order_notify({
+            "order_no": merchant_trade_no,
+            "name": receiver_name,
+            "phone": receiver_phone,
+            "total": final_total_i_after_wallet
+        })
+    except Exception as e:
+        app.logger.error(f"[LINE notify failed] {e}")
 
     # 6) 寫入每筆商品明細
     from uuid import uuid4
