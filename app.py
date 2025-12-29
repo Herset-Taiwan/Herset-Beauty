@@ -3679,12 +3679,13 @@ def checkout():
 
        # ===== LINE 訂單通知（一定要在 function 裡）=====
     try:
-        send_line_order_notify({
-            "order_no": merchant_trade_no,
-            "name": receiver_name,
-            "phone": receiver_phone,
-            "total": final_total_i_after_wallet
-        })
+       send_line_order_notify({
+    "order_no": order["order_no"],
+    "name": order["receiver_name"],
+    "phone": order["receiver_phone"],
+    "total": order["total_amount"]
+}, event_type="paid")
+       
     except Exception as e:
         app.logger.error(f"[LINE notify failed] {e}")
 

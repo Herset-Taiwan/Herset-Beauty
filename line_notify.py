@@ -9,13 +9,19 @@ LINE_PUSH_API = "https://api.line.me/v2/bot/message/push"
 GROUP_ID = "C240965a152796e3e6c79d2816e4d8c65"
 
 
-def send_line_order_notify(order):
+def send_line_order_notify(order, event_type="new"):
+    # ===== 訊息標題依事件類型切換 =====
+    if event_type == "paid":
+        title = "✅【HERSET 已付款完成】"
+    else:
+        title = "🛒【HERSET 新訂單】"
+
     text = (
-        "🛒【HERSET 新訂單】\n"
-        f"訂單編號：{order['order_no']}\n"
-        f"收件人：{order['name']}\n"
-        f"電話：{order['phone']}\n"
-        f"金額：NT${order['total']}\n"
+        f"{title}\n"
+        f"訂單編號：{order.get('order_no')}\n"
+        f"收件人：{order.get('name')}\n"
+        f"電話：{order.get('phone')}\n"
+        f"金額：NT${order.get('total')}\n"
     )
 
     headers = {
@@ -31,5 +37,5 @@ def send_line_order_notify(order):
         }]
     }
 
-    r = requests.post(LINE_PUSH_API, headers=headers, data=json.dumps(payload))
+    r = requests.post(LINE_PUSH_API, headers=headers, json=payload, timeout=10)
     return r.status_code, r.text
