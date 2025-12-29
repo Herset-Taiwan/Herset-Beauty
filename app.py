@@ -3677,17 +3677,17 @@ def checkout():
     result = supabase.table('orders').insert(order_data).execute()
     order_id = result.data[0]['id']
 
-       # ===== LINE 訂單通知（一定要在 function 裡）=====
-    try:
-       send_line_order_notify({
-    "order_no": order["order_no"],
-    "name": order["receiver_name"],
-    "phone": order["receiver_phone"],
-    "total": order["total_amount"]
-}, event_type="paid")
-       
-    except Exception as e:
-        app.logger.error(f"[LINE notify failed] {e}")
+# ===== LINE 新訂單通知（checkout）=====
+try:
+    send_line_order_notify({
+        "order_no": merchant_trade_no,
+        "name": receiver_name,
+        "phone": receiver_phone,
+        "total": final_total_i_after_wallet
+    })
+except Exception as e:
+    app.logger.error(f"[LINE new order notify failed] {e}")
+
 
     # 6) 寫入每筆商品明細
     from uuid import uuid4
@@ -4183,11 +4183,26 @@ def linepay_confirm():
         data = {"http_status": r.status_code, "text": r.text[:1000]}
 
     if data.get("returnCode") == "0000":
+    # 1) 更新訂單狀態
         supabase.table("orders").update({
             "payment_status": "paid",
             "paid_trade_no": str(transaction_id)
         }).eq("id", order_id).execute()
+
+        # 2) 推播「已付款完成」到 LINE（只在首次成功時）
+        try:
+            send_line_order_notify({
+                "order_no": order.get("MerchantTradeNo") or f"#{order_id}",
+                "name": order.get("receiver_name"),
+                "phone": order.get("receiver_phone"),
+                "total": order.get("total_amount")
+            }, event_type="paid")
+        except Exception as e:
+            app.logger.error(f"[LINE paid notify failed] order_id={order_id}, err={e}")
+
+        # 3) 導頁
         return redirect("/thank-you")
+
     else:
         supabase.table("orders").update({
             "payment_status": "pending_confirm_failed",
