@@ -4112,8 +4112,6 @@ def process_payment():
                 "lp_transaction_id": str(transaction_id) if transaction_id else None
             }).eq("id", order["id"]).execute()
 
-        # （推播到 LINE 群組）
-            send_line_order_notify(line_order_payload)
 
             return redirect(payment_url)
         else:
@@ -4125,8 +4123,7 @@ def process_payment():
 
     elif method == "bank":
 
-         # 推播到 LINE 群組（銀行轉帳也是訂單成立）
-        send_line_order_notify(line_order_payload)
+
         # 顯示轉帳資訊頁
         return render_template("bank_transfer.html", order=order)
 
