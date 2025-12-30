@@ -226,21 +226,16 @@ def upsert_member_from_oauth(*, provider: str, sub: str, email: str | None, name
 
 # === Wallet / Credits helpers ===
 def _wallet_settings():
-    """讀取新會員購物金設定"""
     amount_nt = get_setting_num("wallet_signup_amount_nt", 0)
     valid_days = int(get_setting_num("wallet_signup_valid_days", 0))
-    min_order_amount = get_setting_num("wallet_min_order_amount_nt")
+    min_order_amount = get_setting_num("wallet_min_order_amount_nt", 0)
 
     return {
-        # 新會員購物金（分）
         "amount_cents": int(round(float(amount_nt) * 100)),
-
-        # 有效天數
         "valid_days": max(0, valid_days),
-
-        # ⭐ 購物金最低可使用訂單金額（元）
-        "min_order_amount": float(min_order_amount or 0),
+        "min_order_amount": float(min_order_amount),
     }
+
 
 
 def _get_wallet_balance(member_id: str) -> int:
