@@ -2909,7 +2909,7 @@ def admin_wallet_settings():
 
     cfg = _wallet_settings()
 
-    # 補上低消（元）
+    # ★ 把 DB 的低消 key，補進 cfg
     try:
         cfg["min_order_amount"] = float(
             get_setting_num("wallet_min_order_amount_nt") or 0
@@ -2918,6 +2918,7 @@ def admin_wallet_settings():
         cfg["min_order_amount"] = 0.0
 
     return render_template("admin_wallet_settings.html", cfg=cfg)
+
 
 
 
