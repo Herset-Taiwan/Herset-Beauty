@@ -2901,25 +2901,27 @@ def register():
         return render_template("register.html", error="註冊失敗，請稍後再試")
 
 
-
 # === Admin: 購物金設定 ===
 @app.get("/admin0363/wallet/settings")
 def admin_wallet_settings():
     if not session.get("admin_logged_in"):
         return redirect("/admin0363")
 
+    # 原本購物金設定（已整理好的）
     cfg = _wallet_settings()
 
-    # ★ 只補新欄位，不動原本已正常的欄位
+    # ★ 額外讀取「購物金最低可使用訂單金額」
     try:
-        cfg["min_order_amount_nt"] = float(
-            cfg.get("wallet_min_order_amount_nt", 0)
+        min_order_amount_nt = float(
+            get_setting_num("wallet_min_order_amount_nt") or 0
         )
     except Exception:
-        cfg["min_order_amount_nt"] = 0
+        min_order_amount_nt = 0
+
+    # 補進 cfg，給 HTML 用
+    cfg["min_order_amount_nt"] = min_order_amount_nt
 
     return render_template("admin_wallet_settings.html", cfg=cfg)
-
 
 
 @app.post("/admin0363/wallet/settings")
