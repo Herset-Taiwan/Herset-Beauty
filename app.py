@@ -3323,6 +3323,14 @@ def cart():
     # 運費計算（讀 site_settings）
     free_shipping_threshold, default_shipping_fee = get_shipping_rules()
     shipping_fee = 0.0 if total >= free_shipping_threshold else float(default_shipping_fee)
+    # === 購物金最低使用門檻（元）===
+try:
+    wallet_min_order_amount = int(
+        get_setting_num("wallet_min_order_amount_nt", 0)
+    )
+except Exception:
+    wallet_min_order_amount = 0
+
     free_shipping_diff = 0.0 if total >= free_shipping_threshold else (free_shipping_threshold - total)
 
     # ---- 折扣碼（若 session 有暫存，依目前 subtotal 再次檢核並計算折抵）----
