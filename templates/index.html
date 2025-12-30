@@ -198,24 +198,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function filterCategory(category) {
   const all = document.querySelectorAll(".product-card");
+
   all.forEach(el => {
-    const categories = (el.dataset.category || '').split(',').map(s => s.trim());
-    if (category === '全部商品') {
-  el.style.display = 'block';
-} else {
-  if (category === '全部商品' || categories.includes(category)) {
-  el.classList.remove('hidden');
-} else {
-  el.classList.add('hidden');
-}
+    const categories = (el.dataset.category || '')
+      .split(',')
+      .map(s => s.trim());
 
-}
-
+    if (category === '全部商品' || categories.includes(category)) {
+      el.classList.remove('hidden');
+      el.style.display = 'block';
+    } else {
+      el.classList.add('hidden');
+    }
   });
 
+  updateBannerText(category);
+}
+
   // 更新標語文字
+function updateBannerText(category) {
   const bannerTitle = document.getElementById("banner-title");
   const bannerDesc = document.getElementById("banner-desc");
+
+  if (!bannerTitle || !bannerDesc) return;
 
   switch (category) {
     case '全部商品':
