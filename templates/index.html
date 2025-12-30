@@ -115,14 +115,13 @@
   onclick="addToCart(
     event,
     {{ p['id'] }},
-    {{ p['options'] | length }},
+    {{ p.get('has_required_spec', false)|tojson }},
     {{ p['stock'] or 0 }},
-    false,
-    {{ p['options'][0]|tojson if p['options']|length == 1 else 'null' }}
+    false
   )">
   加入購物車
 </button>
-    <a href="/product/{{ p['id'] }}" class="view-btn">查看商品</a>
+<a href="/product/{{ p['id'] }}" class="view-btn">查看商品</a>
   {% endif %}
 </div>
 
@@ -220,83 +219,72 @@ function filterCategory(category) {
 
 
 // 加入購物車功能（加入規格判斷）
+
 function addToCart(
   event,
   productId,
-  optionCount = 0,
+  hasRequiredSpec = false,
   stock = 0,
-  isBundle = false,
-  singleOption = null
+  isBundle = false
 ) {
-
   event.preventDefault();
 
-  // ✅ 套組一律要求進商品頁挑選
+  // 套組一定進商品頁
   if (isBundle) {
     const warning = document.getElementById("spec-warning");
-    const old = warning.textContent;
-    warning.textContent = "請進入商品頁挑選規格";
     warning.style.display = "block";
-    setTimeout(() => {
-      warning.style.display = "none";
-      warning.textContent = old;
-    }, 1500);
+    setTimeout(() => warning.style.display = "none", 1500);
     return;
   }
 
-  // 先檢查庫存
+  // 有必選規格 → 不能首頁加
+  if (hasRequiredSpec) {
+    const warning = document.getElementById("spec-warning");
+    warning.style.display = "block";
+    setTimeout(() => warning.style.display = "none", 1500);
+    return;
+  }
+
+  // 庫存不足
   if (stock <= 0) {
     const warning = document.getElementById("stock-warning");
     warning.style.display = "block";
-    setTimeout(() => { warning.style.display = "none"; }, 1500);
+    setTimeout(() => warning.style.display = "none", 1500);
     return;
   }
 
-// ✅ 只有「多於一個規格 且 沒有自動規格」才擋
-if (optionCount > 1 && !singleOption) {
-  const warning = document.getElementById("spec-warning");
-  warning.style.display = "block";
-  setTimeout(() => { warning.style.display = "none"; }, 1500);
-  return;
-}
+  // ✅ 正常加入購物車
+  fetch('/add_to_cart', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'product_id=' + productId
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      // header 購物車
+      const cartCount = document.getElementById("cart-count");
+      if (cartCount) {
+        cartCount.style.display = 'inline';
+        cartCount.textContent = data.count;
+      }
 
+      // 浮動購物車
+      const fCount = document.getElementById("floating-cart-count");
+      if (fCount) {
+        fCount.textContent = data.count;
+        fCount.style.display = data.count > 0 ? 'flex' : 'none';
+      }
 
-  // 單規格/無規格才允許直接加入購物車（保留原本流程）
-let body = 'product_id=' + productId;
-
-// ✅ 如果只有一個規格，自動帶入
-if (singleOption) {
-  body += '&option=' + encodeURIComponent(singleOption);
-}
-
-fetch('/add_to_cart', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-  body: body
-})
-.then(res => res.json())
-.then(data => {
-  if (data.success) {
-    document.getElementById("cart-count").style.display = 'inline';
-    document.getElementById("cart-count").textContent = data.count;
-
-    // ✅ 同步浮動購物車
-    const fCount = document.getElementById("floating-cart-count");
-    if (fCount) {
-      fCount.textContent = data.count;
-      fCount.style.display = data.count > 0 ? 'flex' : 'none';
+      // 成功提示
+      const box = document.getElementById("add-success");
+      if (box) {
+        box.style.display = 'block';
+        setTimeout(() => box.style.display = 'none', 1500);
+      }
     }
-
-    const box = document.getElementById("add-success");
-    if (box) {
-      box.style.display = 'block';
-      setTimeout(() => { box.style.display = 'none'; }, 1500);
-    }
-  }
-});
+  });
 }
-
-
 
 
 // 輪播圖
