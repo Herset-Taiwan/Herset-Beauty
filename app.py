@@ -5148,36 +5148,36 @@ def add_to_cart():
 
     option_invalid = False
 
-if candidate_options:
-    if not option:
-        # ✅ 只有一個規格 → 自動選
-        if len(candidate_options) == 1:
-            option = candidate_options[0]
+    if candidate_options:
+        if not option:
+            # ✅ 只有一個規格 → 自動選
+            if len(candidate_options) == 1:
+                option = candidate_options[0]
+            else:
+                option_invalid = True
         else:
-            option_invalid = True
-    else:
-        valid = {_norm(x) for x in candidate_options}
-        option_invalid = (_norm(option) not in valid)
+            valid = {_norm(x) for x in candidate_options}
+            option_invalid = (_norm(option) not in valid)
 
-if option_invalid:
-    product_url = f"/product/{product_id}?need_option=1#options"
-    wants_json = (
-        request.is_json
-        or 'application/json' in (request.headers.get('Accept') or '')
-        or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-    )
-    if wants_json:
-        return jsonify(
-            success=False,
-            requires_option=True,
-            product_id=product_id,
-            redirect=product_url
-        ), 200
-    try:
-        flash("此商品需先選擇款式，再加入購物車")
-    except Exception:
-        pass
-    return redirect(product_url)
+    if option_invalid:
+        product_url = f"/product/{product_id}?need_option=1#options"
+        wants_json = (
+            request.is_json
+            or 'application/json' in (request.headers.get('Accept') or '')
+            or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        )
+        if wants_json:
+            return jsonify(
+                success=False,
+                requires_option=True,
+                product_id=product_id,
+                redirect=product_url
+            ), 200
+        try:
+            flash("此商品需先選擇款式，再加入購物車")
+        except Exception:
+            pass
+        return redirect(product_url)
 
     # ---- B) 價格計算（與你原本一致）----
     is_bundle = (product.get('product_type') == 'bundle')
