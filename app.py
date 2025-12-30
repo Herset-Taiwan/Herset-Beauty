@@ -2907,29 +2907,23 @@ def admin_wallet_settings():
     if not session.get("admin_logged_in"):
         return redirect("/admin0363")
 
-    try:
-        signup_amount = float(get_setting_num("wallet_signup_amount_nt") or 0)
-    except Exception:
-        signup_amount = 0.0
+    rows = db.execute(
+        "SELECT key, value FROM site_settings WHERE key IN ("
+        "'wallet_signup_amount_nt', "
+        "'wallet_signup_valid_days', "
+        "'wallet_min_order_amount_nt'"
+        ")"
+    ).fetchall()
 
-    try:
-        signup_valid_days = int(get_setting_num("wallet_signup_valid_days") or 0)
-    except Exception:
-        signup_valid_days = 0
-
-    try:
-        min_order_amount = float(get_setting_num("wallet_min_order_amount_nt") or 0)
-    except Exception:
-        min_order_amount = 0.0
+    data = {row["key"]: row["value"] for row in rows}
 
     cfg = {
-        "signup_amount": signup_amount,
-        "signup_valid_days": signup_valid_days,
-        "min_order_amount": min_order_amount,
+        "signup_amount": float(data.get("wallet_signup_amount_nt", 0) or 0),
+        "signup_valid_days": int(data.get("wallet_signup_valid_days", 0) or 0),
+        "min_order_amount": float(data.get("wallet_min_order_amount_nt", 0) or 0),
     }
 
     return render_template("admin_wallet_settings.html", cfg=cfg)
-
 
 
 
