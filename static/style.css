@@ -328,7 +328,42 @@ footer {
   will-change: transform;
 }
 
+/* ===== 浮動購物車按鈕開始==== */
+.floating-cart {
+  position: fixed;
+  right: 18px;
+  bottom: 90px; /* 在回到最上面上方 */
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #c6456c;
+  color: #fff;
+  font-size: 24px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+}
 
+/* 數量徽章 */
+.floating-cart .cart-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #fff;
+  color: #c6456c;
+  font-size: 12px;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+/* ===== 浮動購物車按鈕結束==== */
 
 
 /* 白邊光暈 */

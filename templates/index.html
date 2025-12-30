@@ -142,6 +142,13 @@
   </svg>
 </button>
 
+<!-- 浮動購物車 -->
+<a href="/cart" id="floatingCart" class="floating-cart" aria-label="前往購物車" title="前往購物車">
+  🛒
+  <span id="floating-cart-count" class="cart-count" style="display:none;">0</span>
+</a>
+
+
 
 {% endblock %}
 
@@ -251,13 +258,27 @@ function addToCart(event, productId, optionCount = 0, stock = 0, isBundle = fals
   })
   .then(res => res.json())
   .then(data => {
-    if (data.success) {
-      document.getElementById("cart-count").style.display = 'inline';
-      document.getElementById("cart-count").textContent = data.count;
-      const box = document.getElementById("add-success");
-      if (box) { box.style.display = 'block'; setTimeout(() => { box.style.display = 'none'; }, 1500); }
+  if (data.success) {
+    // 原本 header 購物車數量
+    document.getElementById("cart-count").style.display = 'inline';
+    document.getElementById("cart-count").textContent = data.count;
+
+    // ✅ 新增：同步浮動購物車數量
+    const fCount = document.getElementById("floating-cart-count");
+    if (fCount) {
+      fCount.style.display = 'flex';
+      fCount.textContent = data.count;
     }
-  });
+
+    // 原本加入成功提示
+    const box = document.getElementById("add-success");
+    if (box) {
+      box.style.display = 'block';
+      setTimeout(() => { box.style.display = 'none'; }, 1500);
+    }
+  }
+});
+
 }
 
 
