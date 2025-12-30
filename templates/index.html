@@ -253,7 +253,7 @@ function addToCart(
   }
 
   // 多規格商品要求進商品頁挑選（保留你原本的規則）
-  if (optionCount > 1) {
+  if (optionCount >= 1) {
     const warning = document.getElementById("spec-warning");
     warning.style.display = "block";
     setTimeout(() => { warning.style.display = "none"; }, 1500);
