@@ -601,6 +601,7 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
   使用購物金（元）：
   <input
     type="number"
+    id="wallet-input"
     name="wallet_amount"
     min="0"
     step="1"
@@ -608,9 +609,16 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
     max="{{ ((wallet_balance_cents or 0) // 100) }}"
     style="width:100px; padding:6px 8px; border:1px solid #ddd; border-radius:6px;">
 </label>
+
+<div id="wallet-hint"
+     style="font-size:13px; color:#c00; margin-top:4px; display:none;">
+  未達最低消費金額，需滿 {{ wallet_min_order_amount }} 元才能使用購物金
+</div>
+
 <div style="font-size:13px; color:#666; margin-top:4px;">
   可用餘額：{{ ((wallet_balance_cents or 0) // 100) }} 元
 </div>
+
 
     </div>
   {% endif %}
@@ -674,6 +682,35 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
   scroller.addEventListener('pointerup', endDrag);
   scroller.addEventListener('pointercancel', endDrag);
   scroller.addEventListener('pointerleave', endDrag);
+})();
+</script>
+
+<script>
+(function(){
+  const cartTotal = {{ total | int }};
+  const minOrderAmount = {{ wallet_min_order_amount | int }};
+
+  const walletInput = document.getElementById("wallet-input");
+  const walletHint  = document.getElementById("wallet-hint");
+
+  if (!walletInput) return;
+
+  function updateWalletState(){
+    if (cartTotal < minOrderAmount){
+      // ❌ 未達低消
+      walletInput.value = 0;
+      walletInput.disabled = true;
+      walletInput.style.background = "#f5f5f5";
+      walletHint.style.display = "block";
+    }else{
+      // ✅ 已達低消
+      walletInput.disabled = false;
+      walletInput.style.background = "";
+      walletHint.style.display = "none";
+    }
+  }
+
+  updateWalletState();
 })();
 </script>
 

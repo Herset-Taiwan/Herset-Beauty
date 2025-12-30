@@ -233,7 +233,8 @@ def _wallet_settings():
     return {
         "amount_cents": int(round(float(amount_nt) * 100)),
         "valid_days": max(0, valid_days),
-        "min_order_amount": float(min_order_amount),
+        "min_order_amount": int(float(min_order_amount)),
+
     }
 
 
@@ -3449,6 +3450,7 @@ def cart():
         member_name=member_name,
         upsell_products=upsell_products,   # ← 帶到模板
         wallet_balance_cents=wallet_balance_cents,  # ← 新增：提供模板即時餘額
+        wallet_min_order_amount=wallet_min_order_amount,
     )
 
 
@@ -5372,6 +5374,12 @@ def order_detail(order_id):
         order['created_local'] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
     except:
         order['created_local'] = order['created_at']
+
+    # === 購物金最低使用門檻（元） ===
+    wallet_min_order_amount = int(
+        get_setting_num("wallet_min_order_amount_nt", 0)
+    )
+
 
     return render_template("order_detail.html", order=order, items=items, member=member)
 
