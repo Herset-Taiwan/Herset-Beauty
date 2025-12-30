@@ -2907,8 +2907,22 @@ def register():
 def admin_wallet_settings():
     if not session.get("admin_logged_in"):
         return redirect("/admin0363")
-    cfg = _wallet_settings()
+
+    raw = _wallet_settings()
+
+    cfg = {
+        # 新會員購物金（元 → cents，給 HTML 用 //100）
+        "amount_cents": int(float(raw.get("wallet_signup_amount_nt", 0)) * 100),
+
+        # 有效天數
+        "valid_days": int(raw.get("wallet_signup_valid_days", 0)),
+
+        # ★ 購物金最低可使用訂單金額（元）
+        "min_order_amount_nt": float(raw.get("wallet_min_order_amount_nt", 0)),
+    }
+
     return render_template("admin_wallet_settings.html", cfg=cfg)
+
 
 @app.post("/admin0363/wallet/settings")
 def admin_wallet_settings_save():
