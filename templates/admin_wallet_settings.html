@@ -94,6 +94,21 @@
           <input type="number" name="signup_valid_days" value="{{ cfg.valid_days or 0 }}" min="0" required>
         </label>
 
+        <label>
+  購物金最低可使用訂單金額（元）
+  <input
+    type="number"
+    name="min_order_amount"
+    value="{{ cfg.min_order_amount_nt or 0 }}"
+    min="0"
+    step="1"
+  >
+  <small style="color:#666;">
+    設為 0 表示不限制使用門檻
+  </small>
+</label>
+
+
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
           <button type="submit" class="btn btn-primary">儲存設定</button>
           <a class="btn" href="/admin0363/features">返回</a>

@@ -2914,23 +2914,35 @@ def admin_wallet_settings():
 def admin_wallet_settings_save():
     if not session.get("admin_logged_in"):
         return redirect("/admin0363")
+
     # 後台以「元」存到 site_settings，顯示也用元
     try:
         signup_amount_nt = max(0.0, float(request.form.get("signup_amount") or 0))
     except Exception:
         signup_amount_nt = 0.0
+
     try:
         signup_valid_days = max(0, int(request.form.get("signup_valid_days") or 0))
     except Exception:
         signup_valid_days = 0
 
+    # 【新增】購物金最低可使用訂單金額（元）
+    try:
+        min_order_amount_nt = max(0.0, float(request.form.get("min_order_amount") or 0))
+    except Exception:
+        min_order_amount_nt = 0.0
+
     ok1 = set_setting_num("wallet_signup_amount_nt", signup_amount_nt)
     ok2 = set_setting_num("wallet_signup_valid_days", signup_valid_days)
+    ok3 = set_setting_num("wallet_min_order_amount_nt", min_order_amount_nt)
 
-    flash("購物金設定已儲存" if (ok1 and ok2) else "儲存失敗，請稍後再試",
-          "success" if (ok1 and ok2) else "error")
+    flash(
+        "購物金設定已儲存" if (ok1 and ok2 and ok3) else "儲存失敗，請稍後再試",
+        "success" if (ok1 and ok2 and ok3) else "error"
+    )
     return redirect("/admin0363/wallet/settings")
-# === Admin: 購物金發放（表單） ===
+
+
 # === Admin: 購物金發放（表單 + 搜尋） ===
 @app.get("/admin0363/wallet/grant")
 def admin_wallet_grant_form():
@@ -3631,6 +3643,18 @@ def checkout():
     except Exception:
         wallet_req_yuan = 0
     wallet_req_yuan = max(wallet_req_yuan, 0)
+
+
+    # === 購物金最低消費金額限制 ===
+    cfg = _wallet_settings()
+    min_order_amount_nt = float(cfg.get("wallet_min_order_amount_nt") or 0)
+
+    # total_i 是「商品小計（元，不含運費、折扣）」
+    if wallet_req_yuan > 0 and min_order_amount_nt > 0:
+        if total_i < min_order_amount_nt:
+            flash(f"購物金需滿 {int(min_order_amount_nt)} 元才可使用")
+            return redirect("/cart")
+
 
     # 目前錢包餘額（分）— 只用 credits 明細計算（並保底 0）
     try:
