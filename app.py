@@ -5148,11 +5148,16 @@ def add_to_cart():
 
     option_invalid = False
     if candidate_options:
-        if not option:
-            option_invalid = True
+    if not option:
+        # ✅ 只有一個規格 → 自動選
+        if len(candidate_options) == 1:
+            option = candidate_options[0]
         else:
-            valid = {_norm(x) for x in candidate_options}
-            option_invalid = (_norm(option) not in valid)
+            option_invalid = True
+    else:
+        valid = {_norm(x) for x in candidate_options}
+        option_invalid = (_norm(option) not in valid)
+
 
     if option_invalid:
         # 指到商品頁並直接定位到選項區塊
