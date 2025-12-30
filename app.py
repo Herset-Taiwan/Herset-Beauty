@@ -4944,7 +4944,7 @@ def edit_product(product_id):
                 "options": request.form.getlist('options[]'),
                 "categories": request.form.getlist('categories[]'),
                 "tags": request.form.getlist('tags'),
-                "is_hidden": bool(request.form.get("is_hidden"))   # 🔻 新增：下架欄位
+                "is_hidden": request.form.get("is_hidden") == "1"  # 🔻 新增：下架欄位
             }
 
             # === 主圖處理（單張） ===

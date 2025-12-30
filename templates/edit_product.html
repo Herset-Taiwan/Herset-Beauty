@@ -268,7 +268,10 @@
   <div class="form-container">
     <h2>編輯商品</h2>
 
-    <!-- 下架（前台隱藏） -->
+    
+    <form method="POST" enctype="multipart/form-data">
+      
+<!-- 下架（前台隱藏） -->
 <div class="form-group" style="margin-top:16px;">
   <label for="is_hidden" style="display:block; margin-bottom:6px;">商品狀態</label>
   <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer;">
@@ -276,7 +279,7 @@
     <span>下架（前台隱藏）</span>
   </label>
 </div>
-    <form method="POST" enctype="multipart/form-data">
+
       <label>商品名稱</label>
       <input type="text" name="name" value="{{ product['name'] }}" required>
 
