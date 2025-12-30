@@ -2,7 +2,6 @@
 
 {% block title %}HERSET 官方網站｜天然保養 × 品味生活{% endblock %}
 
-
 {% block banner %}
 <!-- 首頁輪播圖（後台可管理） -->
 <div class="carousel-container">
@@ -143,23 +142,16 @@
   </svg>
 </button>
 
-<!-- 浮動購物車 -->
-<a href="/cart" id="floatingCart" class="floating-cart" aria-label="前往購物車" title="前往購物車">
+<!-- 浮動購物車（新增） -->
+<a href="/cart" id="floatingCart" class="floating-cart" title="前往購物車">
   🛒
   <span id="floating-cart-count" class="cart-count" style="display:none;">0</span>
 </a>
 
 
-
 {% endblock %}
 
 {% block script %}
-
-<script>
-  // ✅ 全域購物車數量（給浮動購物車 & header 用）
-  window.CART_COUNT = {{ cart_count or 0 }};
-</script>
-
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   // 點擊分類選單的事件綁定
@@ -170,57 +162,31 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+
   // 初始化預設分類
   filterCategory('全部商品');
-
-// ===============================
-// ✅ 浮動購物車初始化（以後端 cart_count 為準）
-// ===============================
-(function () {
-  const floatingCart = document.getElementById('floatingCart');
-  const floatingCount = document.getElementById('floating-cart-count');
-
-  if (!floatingCart || !floatingCount) return;
-
-  const count = Number(window.CART_COUNT || 0);
-
-  if (count > 0) {
-    floatingCount.textContent = count;
-    floatingCount.style.display = 'flex';
-    floatingCart.style.display = 'flex';
-  } else {
-    floatingCount.style.display = 'none';
-    // 若你想「沒商品就整顆隱藏」，打開下面這行
-    floatingCart.style.display = 'none'; // 若想空車隱藏
-  }
-})();
-
+});
 
 function filterCategory(category) {
   const all = document.querySelectorAll(".product-card");
-
   all.forEach(el => {
-    const categories = (el.dataset.category || '')
-      .split(',')
-      .map(s => s.trim());
-
-    if (category === '全部商品' || categories.includes(category)) {
-      el.classList.remove('hidden');
-      el.style.display = 'block';
-    } else {
-      el.classList.add('hidden');
-    }
-  });
-
-  updateBannerText(category);
+    const categories = (el.dataset.category || '').split(',').map(s => s.trim());
+    if (category === '全部商品') {
+  el.style.display = 'block';
+} else {
+  if (category === '全部商品' || categories.includes(category)) {
+  el.classList.remove('hidden');
+} else {
+  el.classList.add('hidden');
 }
 
+}
+
+  });
+
   // 更新標語文字
-function updateBannerText(category) {
   const bannerTitle = document.getElementById("banner-title");
   const bannerDesc = document.getElementById("banner-desc");
-
-  if (!bannerTitle || !bannerDesc) return;
 
   switch (category) {
     case '全部商品':
@@ -291,27 +257,20 @@ function addToCart(event, productId, optionCount = 0, stock = 0, isBundle = fals
   })
   .then(res => res.json())
   .then(data => {
-  if (data.success) {
-    // 原本 header 購物車數量
-    document.getElementById("cart-count").style.display = 'inline';
-    document.getElementById("cart-count").textContent = data.count;
+    if (data.success) {
+      document.getElementById("cart-count").style.display = 'inline';
+      document.getElementById("cart-count").textContent = data.count;
 
-    // ✅ 新增：同步浮動購物車數量
+          // ✅ 同步浮動購物車
     const fCount = document.getElementById("floating-cart-count");
     if (fCount) {
-      fCount.style.display = 'flex';
       fCount.textContent = data.count;
+      fCount.style.display = data.count > 0 ? 'flex' : 'none';
     }
-
-    // 原本加入成功提示
-    const box = document.getElementById("add-success");
-    if (box) {
-      box.style.display = 'block';
-      setTimeout(() => { box.style.display = 'none'; }, 1500);
+      const box = document.getElementById("add-success");
+      if (box) { box.style.display = 'block'; setTimeout(() => { box.style.display = 'none'; }, 1500); }
     }
-  }
-});
-
+  });
 }
 
 

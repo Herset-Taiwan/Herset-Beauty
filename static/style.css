@@ -329,22 +329,33 @@ footer {
 }
 
 /* ===== 浮動購物車按鈕開始==== */
+/* ===== 浮動購物車（HERSET 風格）===== */
 .floating-cart {
   position: fixed;
-  right: 18px;
-  bottom: 90px; /* 在回到最上面上方 */
-  width: 54px;
-  height: 54px;
+  right: 20px;
+  bottom: 96px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  background: #c6456c;
+  background: linear-gradient(135deg, #d8b4a0, #cfa67a);
   color: #fff;
-  font-size: 24px;
+  font-size: 22px;
   text-decoration: none;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+  box-shadow: 
+    0 8px 20px rgba(0,0,0,0.18),
+    inset 0 1px 0 rgba(255,255,255,0.35);
+  transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+}
+
+.floating-cart:hover {
+  transform: translateY(-3px);
+  box-shadow: 
+    0 12px 26px rgba(0,0,0,0.22),
+    inset 0 1px 0 rgba(255,255,255,0.4);
 }
 
 /* 數量徽章 */
@@ -352,17 +363,20 @@ footer {
   position: absolute;
   top: -6px;
   right: -6px;
-  background: #fff;
-  color: #c6456c;
-  font-size: 12px;
   min-width: 20px;
   height: 20px;
-  border-radius: 50%;
+  padding: 0 6px;
+  background: #b94b5a;
+  color: #fff;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
+  box-shadow: 0 2px 6px rgba(0,0,0,.25);
 }
+
 /* ===== 浮動購物車按鈕結束==== */
 
 
