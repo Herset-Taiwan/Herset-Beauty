@@ -2907,16 +2907,29 @@ def admin_wallet_settings():
     if not session.get("admin_logged_in"):
         return redirect("/admin0363")
 
-    raw = _wallet_settings()
+    try:
+        signup_amount = float(get_setting_num("wallet_signup_amount_nt") or 0)
+    except Exception:
+        signup_amount = 0.0
+
+    try:
+        signup_valid_days = int(get_setting_num("wallet_signup_valid_days") or 0)
+    except Exception:
+        signup_valid_days = 0
+
+    try:
+        min_order_amount = float(get_setting_num("wallet_min_order_amount_nt") or 0)
+    except Exception:
+        min_order_amount = 0.0
 
     cfg = {
-        # 全部都用「元」
-        "signup_amount": float(raw.get("wallet_signup_amount_nt", 0)),
-        "signup_valid_days": int(raw.get("wallet_signup_valid_days", 0)),
-        "min_order_amount": float(raw.get("wallet_min_order_amount_nt", 0)),
+        "signup_amount": signup_amount,
+        "signup_valid_days": signup_valid_days,
+        "min_order_amount": min_order_amount,
     }
 
     return render_template("admin_wallet_settings.html", cfg=cfg)
+
 
 
 
