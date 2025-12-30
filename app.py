@@ -229,7 +229,7 @@ def _wallet_settings():
     """讀取新會員購物金設定"""
     amount_nt = get_setting_num("wallet_signup_amount_nt", 0)
     valid_days = int(get_setting_num("wallet_signup_valid_days", 0))
-    min_order_amount = get_setting_num("wallet_min_order_amount_nt", 0)
+    min_order_amount = get_setting_num("wallet_min_order_amount_nt")
 
     return {
         # 新會員購物金（分）
