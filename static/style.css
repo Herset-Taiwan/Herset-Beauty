@@ -332,30 +332,25 @@ footer {
 /* ===== 浮動購物車（HERSET 風格）===== */
 .floating-cart {
   position: fixed;
-  right: 20px;
+  right: 22px;
   bottom: 96px;
-  width: 56px;
-  height: 56px;
+  width: 58px;
+  height: 58px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #d8b4a0, #cfa67a);
-  color: #fff;
+  background: #fff;
+  color: #cfa67a;
   font-size: 22px;
-  text-decoration: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
-  box-shadow: 
-    0 8px 20px rgba(0,0,0,0.18),
-    inset 0 1px 0 rgba(255,255,255,0.35);
-  transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+  border: 1px solid rgba(207,166,122,0.6);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.12);
+  transition: all .25s ease;
 }
 
 .floating-cart:hover {
-  transform: translateY(-3px);
-  box-shadow: 
-    0 12px 26px rgba(0,0,0,0.22),
-    inset 0 1px 0 rgba(255,255,255,0.4);
+  background: #cfa67a;
+  color: #fff;
 }
 
 /* 數量徽章 */
@@ -363,18 +358,15 @@ footer {
   position: absolute;
   top: -6px;
   right: -6px;
+  background: #c6456c;
+  color: #fff;
+  border-radius: 50%;
   min-width: 20px;
   height: 20px;
-  padding: 0 6px;
-  background: #b94b5a;
-  color: #fff;
-  border-radius: 10px;
   font-size: 12px;
-  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 6px rgba(0,0,0,.25);
 }
 
 /* ===== 浮動購物車按鈕結束==== */
