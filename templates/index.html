@@ -1,9 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}HERSET 官方網站｜天然保養 × 品味生活{% endblock %}
-<script>
-  window.CART_COUNT = {{ cart_count or 0 }};
-</script>
+
 
 {% block banner %}
 <!-- 首頁輪播圖（後台可管理） -->
@@ -156,6 +154,12 @@
 {% endblock %}
 
 {% block script %}
+
+<script>
+  // ✅ 全域購物車數量（給浮動購物車 & header 用）
+  window.CART_COUNT = {{ cart_count or 0 }};
+</script>
+
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   // 點擊分類選單的事件綁定
