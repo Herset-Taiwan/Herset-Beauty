@@ -2912,14 +2912,13 @@ def admin_wallet_settings():
     # ★ 把 DB 的低消 key，補進 cfg
     try:
         cfg["min_order_amount"] = float(
-            get_setting_num("wallet_min_order_amount_nt") or 0
-        )
+    get_setting_num("wallet_min_order_amount_nt") or 0
+)
+
     except Exception:
         cfg["min_order_amount"] = 0.0
 
     return render_template("admin_wallet_settings.html", cfg=cfg)
-
-
 
 
 @app.post("/admin0363/wallet/settings")
@@ -2947,6 +2946,7 @@ def admin_wallet_settings_save():
     ok1 = set_setting_num("wallet_signup_amount_nt", signup_amount_nt)
     ok2 = set_setting_num("wallet_signup_valid_days", signup_valid_days)
     ok3 = set_setting_num("wallet_min_order_amount_nt", min_order_amount_nt)
+
 
     flash(
         "購物金設定已儲存" if (ok1 and ok2 and ok3) else "儲存失敗，請稍後再試",
