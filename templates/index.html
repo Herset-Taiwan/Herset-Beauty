@@ -252,13 +252,14 @@ function addToCart(
     return;
   }
 
-  // 多規格商品要求進商品頁挑選（保留你原本的規則）
-  if (optionCount >= 1) {
-    const warning = document.getElementById("spec-warning");
-    warning.style.display = "block";
-    setTimeout(() => { warning.style.display = "none"; }, 1500);
-    return;
-  }
+// ✅ 只有「多於一個規格 且 沒有自動規格」才擋
+if (optionCount > 1 && !singleOption) {
+  const warning = document.getElementById("spec-warning");
+  warning.style.display = "block";
+  setTimeout(() => { warning.style.display = "none"; }, 1500);
+  return;
+}
+
 
   // 單規格/無規格才允許直接加入購物車（保留原本流程）
 let body = 'product_id=' + productId;
