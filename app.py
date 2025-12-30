@@ -2906,25 +2906,8 @@ def register():
 def admin_wallet_settings():
     if not session.get("admin_logged_in"):
         return redirect("/admin0363")
-
-    rows = db.execute(
-        "SELECT key, value FROM site_settings WHERE key IN ("
-        "'wallet_signup_amount_nt', "
-        "'wallet_signup_valid_days', "
-        "'wallet_min_order_amount_nt'"
-        ")"
-    ).fetchall()
-
-    data = {row["key"]: row["value"] for row in rows}
-
-    cfg = {
-        "signup_amount": float(data.get("wallet_signup_amount_nt", 0) or 0),
-        "signup_valid_days": int(data.get("wallet_signup_valid_days", 0) or 0),
-        "min_order_amount": float(data.get("wallet_min_order_amount_nt", 0) or 0),
-    }
-
+    cfg = _wallet_settings()
     return render_template("admin_wallet_settings.html", cfg=cfg)
-
 
 
 @app.post("/admin0363/wallet/settings")
