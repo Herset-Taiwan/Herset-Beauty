@@ -2901,7 +2901,6 @@ def register():
         return render_template("register.html", error="註冊失敗，請稍後再試")
 
 
-
 # === Admin: 購物金設定 ===
 @app.get("/admin0363/wallet/settings")
 def admin_wallet_settings():
@@ -2911,17 +2910,14 @@ def admin_wallet_settings():
     raw = _wallet_settings()
 
     cfg = {
-        # 新會員購物金（元 → cents）
-        "amount_cents": int(float(raw.get("wallet_signup_amount_nt", 0)) * 100),
-
-        # 有效天數
-        "valid_days": int(raw.get("wallet_signup_valid_days", 0)),
-
-        # ★ 購物金最低可使用訂單金額（元）
-        "min_order_amount_nt": float(raw.get("wallet_min_order_amount_nt", 0)),
+        # 全部都用「元」
+        "signup_amount": float(raw.get("wallet_signup_amount_nt", 0)),
+        "signup_valid_days": int(raw.get("wallet_signup_valid_days", 0)),
+        "min_order_amount": float(raw.get("wallet_min_order_amount_nt", 0)),
     }
 
     return render_template("admin_wallet_settings.html", cfg=cfg)
+
 
 
 @app.post("/admin0363/wallet/settings")
