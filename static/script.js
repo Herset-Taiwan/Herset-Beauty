@@ -68,3 +68,22 @@ function confirmCloseProfile() {
 
 let currentCategory = null;
 
+// ===== 初始化浮動購物車數量（從 header 同步）=====
+document.addEventListener("DOMContentLoaded", () => {
+  const headerCount = document.getElementById("cart-count");        // 上方購物車
+  const floatingCount = document.getElementById("floating-cart-count"); // 右下浮動
+
+  if (!floatingCount) return;
+
+  let n = 0;
+  if (headerCount) {
+    n = parseInt(headerCount.textContent || "0", 10);
+  }
+
+  if (n > 0) {
+    floatingCount.textContent = n;
+    floatingCount.style.display = "flex";
+  } else {
+    floatingCount.style.display = "none";
+  }
+});

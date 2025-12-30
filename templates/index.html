@@ -147,8 +147,19 @@
 <!-- 浮動購物車（新增） -->
 <a href="/cart" id="floatingCart" class="floating-cart" title="前往購物車">
   🛒
-  <span id="floating-cart-count" class="cart-count" style="display:none;">0</span>
+  <span
+    id="floating-cart-count"
+    class="cart-count"
+    {% if session.get('cart_count', 0) > 0 %}
+      style="display:flex;"
+    {% else %}
+      style="display:none;"
+    {% endif %}
+  >
+    {{ session.get('cart_count', 0) }}
+  </span>
 </a>
+
 
 
 {% endblock %}
