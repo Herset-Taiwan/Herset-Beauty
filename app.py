@@ -2906,8 +2906,19 @@ def register():
 def admin_wallet_settings():
     if not session.get("admin_logged_in"):
         return redirect("/admin0363")
+
     cfg = _wallet_settings()
+
+    # 補上低消（元）
+    try:
+        cfg["min_order_amount"] = float(
+            get_setting_num("wallet_min_order_amount_nt") or 0
+        )
+    except Exception:
+        cfg["min_order_amount"] = 0.0
+
     return render_template("admin_wallet_settings.html", cfg=cfg)
+
 
 
 @app.post("/admin0363/wallet/settings")
