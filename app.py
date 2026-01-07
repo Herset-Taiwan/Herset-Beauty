@@ -4150,13 +4150,23 @@ def process_payment():
         return render_template("bank_transfer.html", order=order)
 
     elif method == "credit":
-        # 綠界刷卡（支援重送）
+    # 綠界刷卡
         new_trade_no = generate_merchant_trade_no()
+
+    # ⭐【關鍵】先把交易編號寫進 orders
+        supabase.table("orders").update({
+            "paid_trade_no": new_trade_no,
+            "payment_method": "credit",
+            "payment_status": "pending"
+        }).eq("id", order["id"]).execute()
+
+    # 若是補刷才需要記錄（沒有補刷需求可以整段刪掉）
         supabase.table("ecpay_repay_map").insert({
-            "original_trade_no": order.get("MerchantTradeNo"),
+            "original_trade_no": order.get("paid_trade_no"),
             "new_trade_no": new_trade_no,
             "order_id": order["id"]
         }).execute()
+
         html = generate_ecpay_form(order, trade_no=new_trade_no)
         return Response(html, content_type="text/html; charset=utf-8")
 
@@ -4637,41 +4647,37 @@ def ecpay_return():
     if rtn_code != "1":
         return "1|OK"
 
+    # ✅ 直接從 orders 找
     resp = (
-        supabase.table("payment_log")
-        .select("order_id")
-        .eq("merchant_trade_no", merchant_trade_no)
+        supabase.table("orders")
+        .select("id, payment_status")
+        .eq("paid_trade_no", merchant_trade_no)
+        .maybe_single()
         .execute()
     )
 
     if not resp.data:
-        app.logger.error(f"[ECPay] payment_log not found: {merchant_trade_no}")
+        app.logger.error(f"[ECPay] order not found: {merchant_trade_no}")
         return "1|OK"
 
-    order_id = resp.data[0]["order_id"]
+    order = resp.data
 
-    # 更新訂單（避免重複）
+    # 避免綠界重送
+    if order["payment_status"] == "paid":
+        return "1|OK"
+
+    # 更新訂單
     supabase.table("orders").update({
         "payment_status": "paid",
         "payment_method": "credit",
-        "payment_time": payment_date,
-        "paid_trade_no": merchant_trade_no
-    }).eq("id", order_id).neq("payment_status", "paid").execute()
+        "payment_time": payment_date
+    }).eq("id", order["id"]).execute()
 
-    # 確認狀態後再發 LINE（只一次）
-    updated = (
-        supabase.table("orders")
-        .select("payment_status")
-        .eq("id", order_id)
-        .single()
-        .execute()
-        .data
-    )
-
-    if updated and updated["payment_status"] == "paid":
-        send_line_order_notify_by_order_id(order_id, event_type="paid")
+    # LINE 通知（只會一次）
+    send_line_order_notify_by_order_id(order["id"], event_type="paid")
 
     return "1|OK"
+
 
 
 #讓使用者刷完卡回到網站
