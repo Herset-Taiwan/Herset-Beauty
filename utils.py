@@ -74,26 +74,35 @@ def generate_check_mac_value(data: dict, hash_key: str, hash_iv: str) -> str:
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest().upper()
 
 def verify_check_mac_value(data: dict) -> bool:
-    from urllib.parse import quote_plus
-    import hashlib
-
     check_mac_value = data.get("CheckMacValue")
     if not check_mac_value:
         return False
 
-    items = {k: v for k, v in data.items() if k != "CheckMacValue"}
-    items = dict(sorted(items.items()))
+    items = sorted(
+        (k, v) for k, v in data.items()
+        if k != "CheckMacValue"
+    )
 
-    raw = (
-    f"HashKey={HASH_KEY}&"
-    + "&".join(f"{k}={v}" for k, v in items.items())
-    + f"&HashIV={HASH_IV}"
-)
+    raw = "HashKey={}&{}&HashIV={}".format(
+        HASH_KEY,
+        "&".join(f"{k}={v}" for k, v in items),
+        HASH_IV
+    )
 
-    encoded = quote_plus(raw).lower()
+    encoded = urllib.parse.quote_plus(raw)
+    encoded = encoded.lower()
+    encoded = (
+        encoded.replace('%21', '!')
+               .replace('%2a', '*')
+               .replace('%28', '(')
+               .replace('%29', ')')
+               .replace('%20', '+')
+    )
+
     calc = hashlib.sha256(encoded.encode("utf-8")).hexdigest().upper()
 
     return calc == check_mac_value
+
 
 
 # ==============================
