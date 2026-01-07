@@ -4744,12 +4744,12 @@ def handle_ecpay_result():
     if str(rtn_code) == "1":
     supabase.table("orders").update({
         "payment_status": "paid",
-        "payment_method": "credit",   # ⭐ 關鍵
+        "payment_method": "credit",
         "payment_time": payment_date,
         "paid_trade_no": merchant_trade_no
     }).eq("id", order["id"]).execute()
 
-    # ✅ 發 LINE 已付款完成通知（只發一次）
+    # ✅ 發送 LINE 已付款完成通知
     try:
         send_line_order_notify({
             "order_no": order.get("MerchantTradeNo") or f"#{order['id']}",
@@ -4758,7 +4758,10 @@ def handle_ecpay_result():
             "total": order.get("total_amount")
         }, event_type="paid")
     except Exception as e:
-        app.logger.error(f"[ECPay LINE notify failed] order_id={order['id']} err={e}")
+        app.logger.error(
+            f"[ECPay LINE notify failed] order_id={order['id']} err={e}"
+        )
+
 
 
             # 🔻 撈該訂單所有商品項目
