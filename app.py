@@ -4710,7 +4710,7 @@ def ecpay_return():
             "order_no": order.get("order_no") or f"#{order['id']}",
             "name": order.get("receiver_name"),
             "phone": order.get("receiver_phone"),
-            "total": order.get("total")
+            "total": order.get("total_amount")
         }, event_type="paid")
     except Exception as e:
         app.logger.error(f"[ECPay] LINE notify failed: {e}")
