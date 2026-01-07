@@ -819,6 +819,27 @@ footer {
   height: 100%;
 }
 
+.carousel-slide{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .45s ease-in-out;
+}
+
+.carousel-slide.active{
+  opacity: 1;
+  pointer-events: auto;   /* ✅ 只有當前 slide 可點 */
+}
+
+.carousel-slide img{
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* 或 cover，看你之前決定 */
+  display: block;
+}
+
+
 /* 圖片全都絕對定位覆蓋容器，用透明度切換 */
 .carousel-img{
   position: absolute;

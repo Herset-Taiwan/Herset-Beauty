@@ -6,24 +6,19 @@
 <!-- 首頁輪播圖（後台可管理） -->
 <div class="carousel-container">
   <div class="carousel">
-    {% if banners and banners|length > 0 %}
-      {% for b in banners %}
+    {% for b in banners %}
+      <div class="carousel-slide {{ 'active' if loop.first }}">
         {% if b.href %}
           <a href="{{ b.href }}">
-            <img src="{{ b.image_url }}" alt="{{ b.title or ('banner ' ~ loop.index) }}"
-                 class="carousel-img {{ 'active' if loop.first }}">
+            <img src="{{ b.image_url }}"
+                 alt="{{ b.title or ('banner ' ~ loop.index) }}">
           </a>
         {% else %}
-          <img src="{{ b.image_url }}" alt="{{ b.title or ('banner ' ~ loop.index) }}"
-               class="carousel-img {{ 'active' if loop.first }}">
+          <img src="{{ b.image_url }}"
+               alt="{{ b.title or ('banner ' ~ loop.index) }}">
         {% endif %}
-      {% endfor %}
-    {% else %}
-      {# 後備：若資料表還沒建或沒有資料，保留原三張以防空白 #}
-      <img src="{{ url_for('static', filename='uploads/banner1.png') }}" class="carousel-img active">
-      <img src="{{ url_for('static', filename='uploads/banner2.png') }}" class="carousel-img">
-      <img src="{{ url_for('static', filename='uploads/banner3.jpg') }}" class="carousel-img">
-    {% endif %}
+      </div>
+    {% endfor %}
   </div>
   <div class="carousel-dots" id="carouselDots"></div>
 </div>
@@ -301,7 +296,7 @@ function addToCart(
 // 輪播圖
 // ✅ 輪播圖（含點點控制）
 let cur = 0;
-const banners = document.querySelectorAll('.carousel-img');
+const banners = document.querySelectorAll('.carousel-slide');
 const dotContainer = document.getElementById('carouselDots');
 
 function showBanner(index) {
