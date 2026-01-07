@@ -802,13 +802,11 @@ footer {
   width: 100%;
   max-width: 100%;
   margin: 0 auto;
-  padding-bottom: 0;         /* 不要額外撐高 */
   overflow: hidden;
-  height: clamp(320px, 33vw, 630px);  /* ← 新增這行，當作 fallback / 上限控制 */
 
-  /* 固定視覺比例：桌機以 1950×630（約 3:1）為主 */
+  /* 用比例決定高度，不再混用 clamp */
   aspect-ratio: 1950 / 630;
-  max-height: 630px;         /* 上限 630px */
+  max-height: 630px;
 }
 
 /* 保險：確保輪播區塊正常層級與定位 */
@@ -826,13 +824,12 @@ footer {
   position: absolute;
   inset: 0;
   width: 100%;
-  height: 100% !important;   /* 填滿容器 */
-  object-fit: cover !important;
+  height: 100%;
+  object-fit: contain;        /* ← 關鍵改這裡 */
   object-position: center;
+  background: #fff;           /* 防止留黑邊 */
   opacity: 0;
   transition: opacity .45s ease-in-out;
-  border-radius: 0;
-  display: block;
 }
 
 /* 只切換透明度，不改定位，避免高度被撐動 */
@@ -899,7 +896,7 @@ footer {
   .carousel-container{
     aspect-ratio: 16 / 9;
     max-height: 420px;
-    height: clamp(300px, 33vw, 630px) !important;
+    
   }
 }
 /* 首頁照片輪播相關結束 */
