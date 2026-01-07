@@ -1220,16 +1220,21 @@ card.innerHTML = `
     <div class="order-time">${esc(o.created_local||'')}</div>
 <div class="order-chips">
   ${ payBadgeHTML(o) || `<span class="order-chip unpay">未付款</span>` }
+
   <span class="order-chip ${statusClass}">
-  ${o.status === 'cancelled' ? cancelText : zhStatus(o.status)}
-</span>
-  ${o.discount_code ? `<span class="order-chip pending">折扣：${esc(o.discount_code)}</span>` : ''}
-  ${ (o.status==='cancelled' && o.cancelled_at)
-    ? `<span class="order-cancel-time" style="font-size:12px;color:#7a6c66;margin-left:8px;">
+    ${o.status === 'cancelled' ? cancelText : zhStatus(o.status)}
+  </span>
+
+  ${o.discount_code
+    ? `<span class="order-chip pending">折扣：${esc(o.discount_code)}</span>`
+    : ''}
+
+  ${ (o.status === 'cancelled' && o.cancelled_at)
+    ? `<span class="order-cancel-time"
+             style="font-size:12px;color:#7a6c66;margin-left:8px;">
          取消時間：${formatTW(o.cancelled_at)}
        </span>`
     : '' }
-${o.discount_code ? `<span class="order-chip pending">折扣：${esc(o.discount_code)}</span>` : ''}
 </div>
 </div>
 

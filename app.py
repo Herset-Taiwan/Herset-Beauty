@@ -4622,29 +4622,43 @@ def product_detail(product_id):
         dbg_user=session.get("user")
     )
 
-
-
-
 @app.route("/ecpay/return", methods=["POST"])
 def ecpay_return():
     data = request.form.to_dict()
     app.logger.info(f"[ECPay Return] {data}")
 
-    # 1️⃣ 驗證 CheckMacValue
-    if not verify_ecpay_mac(data):
+    # 1️⃣ 驗證 CheckMacValue（一定要存在）
+    from utils import verify_check_mac_value
+    if not verify_check_mac_value(data):
+        app.logger.error("[ECPay] CheckMacValue failed")
         return "0|CheckMacValue Error"
 
-    trade_no = data.get("MerchantTradeNo")
-    rtn_code = data.get("RtnCode")  # 1 = 成功
-
-    if rtn_code != "1":
+    # 2️⃣ 只處理成功
+    if data.get("RtnCode") != "1":
         return "1|OK"
 
-    # 2️⃣ 找訂單
+    trade_no = data.get("MerchantTradeNo")
+
+    # 3️⃣ 從 ecpay_repay_map 找回訂單
+    mapping = (
+        supabase.table("ecpay_repay_map")
+        .select("order_id")
+        .eq("new_trade_no", trade_no)
+        .single()
+        .execute()
+        .data
+    )
+
+    if not mapping:
+        app.logger.warning(f"[ECPay] mapping not found: {trade_no}")
+        return "1|OK"
+
+    order_id = mapping["order_id"]
+
     order = (
         supabase.table("orders")
         .select("*")
-        .eq("MerchantTradeNo", trade_no)
+        .eq("id", order_id)
         .single()
         .execute()
         .data
@@ -4653,31 +4667,29 @@ def ecpay_return():
     if not order:
         return "1|OK"
 
-    # 🛑 冪等：已付款就不要重做
-    if (order.get("payment_status") or "").lower() == "paid":
+    # 4️⃣ 冪等（避免重複通知）
+    if order.get("payment_status") == "paid":
         return "1|OK"
 
-    # 3️⃣ 更新訂單狀態（⚠️ 建議 status 一起更新）
+    # 5️⃣ 更新訂單（⚠️ 用你後台真的在讀的欄位）
     supabase.table("orders").update({
         "payment_status": "paid",
-        "status": "paid",                 # ⭐ 建議補上
-        "payment_method": "credit",        # 綠界刷卡
+        "payment_method": "credit",
         "paid_trade_no": trade_no,
         "paid_at": datetime.now(TW).isoformat()
-    }).eq("id", order["id"]).execute()
+    }).eq("id", order_id).execute()
 
-    # 4️⃣ ✅ 付款完成後 → LINE 推播
-    try:
-        send_line_order_notify({
-            "order_no": order.get("order_no") or trade_no,
-            "name": order.get("receiver_name"),
-            "phone": order.get("receiver_phone"),
-            "total": order.get("total_amount")
-        }, event_type="paid")
-    except Exception as e:
-        app.logger.error(f"[ECPay LINE notify failed] order={order['id']} err={e}")
+    # 6️⃣ 發 LINE（只在這裡）
+    send_line_order_notify({
+        "order_no": order.get("order_no") or f"#{order_id}",
+        "name": order.get("receiver_name"),
+        "phone": order.get("receiver_phone"),
+        "total": order.get("total_amount")
+    }, event_type="paid")
 
     return "1|OK"
+
+
 
 
 #讓使用者刷完卡回到網站
@@ -4687,7 +4699,6 @@ def ecpay_result():
 
 
 #重新付款處理
-@app.route("/ecpay/return", methods=["POST"])
 @app.route("/notify", methods=["POST"])
 def handle_ecpay_result():
     result = request.form.to_dict()
@@ -4731,11 +4742,24 @@ def handle_ecpay_result():
 
     # Step 4: 更新訂單狀態（只有成功才更新）
     if str(rtn_code) == "1":
-        supabase.table("orders").update({
-            "payment_status": "paid",
-            "payment_time": payment_date,
-            "paid_trade_no": merchant_trade_no
-        }).eq("id", order["id"]).execute()
+    supabase.table("orders").update({
+        "payment_status": "paid",
+        "payment_method": "credit",   # ⭐ 關鍵
+        "payment_time": payment_date,
+        "paid_trade_no": merchant_trade_no
+    }).eq("id", order["id"]).execute()
+
+    # ✅ 發 LINE 已付款完成通知（只發一次）
+    try:
+        send_line_order_notify({
+            "order_no": order.get("MerchantTradeNo") or f"#{order['id']}",
+            "name": order.get("receiver_name"),
+            "phone": order.get("receiver_phone"),
+            "total": order.get("total_amount")
+        }, event_type="paid")
+    except Exception as e:
+        app.logger.error(f"[ECPay LINE notify failed] order_id={order['id']} err={e}")
+
 
             # 🔻 撈該訂單所有商品項目
     item_res = supabase.table("order_items").select("*").eq("order_id", order["id"]).execute()
