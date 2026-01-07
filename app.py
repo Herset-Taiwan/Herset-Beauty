@@ -4622,74 +4622,51 @@ def product_detail(product_id):
         dbg_user=session.get("user")
     )
 
+from utils import verify_check_mac_value
+
 @app.route("/ecpay/return", methods=["POST"])
 def ecpay_return():
     data = request.form.to_dict()
-    app.logger.info(f"[ECPay Return] {data}")
 
-    # 1️⃣ 驗證 CheckMacValue（一定要存在）
-    from utils import verify_check_mac_value
+    # 🔒 驗證 CheckMacValue（用 utils.py 的版本）
     if not verify_check_mac_value(data):
         app.logger.error("[ECPay] CheckMacValue failed")
-        return "0|CheckMacValue Error"
+        return "0|FAIL"
 
-    # 2️⃣ 只處理成功
-    if data.get("RtnCode") != "1":
+    # === 到這裡才代表「真的付款成功」===
+    merchant_trade_no = data.get("MerchantTradeNo")
+    payment_date = data.get("PaymentDate")
+    rtn_code = data.get("RtnCode")
+
+    if rtn_code != "1":
         return "1|OK"
 
-    trade_no = data.get("MerchantTradeNo")
-
-    # 3️⃣ 從 ecpay_repay_map 找回訂單
-    mapping = (
-        supabase.table("ecpay_repay_map")
-        .select("order_id")
-        .eq("new_trade_no", trade_no)
-        .single()
-        .execute()
-        .data
-    )
-
-    if not mapping:
-        app.logger.warning(f"[ECPay] mapping not found: {trade_no}")
-        return "1|OK"
-
-    order_id = mapping["order_id"]
-
+    # 依交易編號找訂單
     order = (
-        supabase.table("orders")
-        .select("*")
-        .eq("id", order_id)
+        supabase.table("payment_log")
+        .select("order_id")
+        .eq("merchant_trade_no", merchant_trade_no)
         .single()
         .execute()
         .data
     )
 
     if not order:
+        app.logger.error(f"[ECPay] payment_log not found: {merchant_trade_no}")
         return "1|OK"
 
-    # 4️⃣ 冪等（避免重複通知）
-    if order.get("payment_status") == "paid":
-        return "1|OK"
-
-    # 5️⃣ 更新訂單（⚠️ 用你後台真的在讀的欄位）
+    # 更新訂單
     supabase.table("orders").update({
         "payment_status": "paid",
         "payment_method": "credit",
-        "paid_trade_no": trade_no,
-        "paid_at": datetime.now(TW).isoformat()
-    }).eq("id", order_id).execute()
+        "payment_time": payment_date,
+        "paid_trade_no": merchant_trade_no
+    }).eq("id", order["order_id"]).execute()
 
-    # 6️⃣ 發 LINE（只在這裡）
-    send_line_order_notify({
-        "order_no": order.get("order_no") or f"#{order_id}",
-        "name": order.get("receiver_name"),
-        "phone": order.get("receiver_phone"),
-        "total": order.get("total_amount")
-    }, event_type="paid")
+    # 發 LINE 通知
+    send_line_order_notify_by_order_id(order["order_id"], event_type="paid")
 
     return "1|OK"
-
-
 
 
 #讓使用者刷完卡回到網站
