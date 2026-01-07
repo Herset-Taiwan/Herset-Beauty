@@ -4159,14 +4159,6 @@ def process_payment():
             "payment_method": "credit",
             "payment_status": "pending"
         }).eq("id", order["id"]).execute()
-
-    # 若是補刷才需要記錄（沒有補刷需求可以整段刪掉）
-        supabase.table("ecpay_repay_map").insert({
-            "original_trade_no": order.get("paid_trade_no"),
-            "new_trade_no": new_trade_no,
-            "order_id": order["id"]
-        }).execute()
-
         html = generate_ecpay_form(order, trade_no=new_trade_no)
         return Response(html, content_type="text/html; charset=utf-8")
 
