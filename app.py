@@ -4742,27 +4742,25 @@ def handle_ecpay_result():
 
     # Step 4: 更新訂單狀態（只有成功才更新）
     if str(rtn_code) == "1":
-    supabase.table("orders").update({
-        "payment_status": "paid",
-        "payment_method": "credit",
-        "payment_time": payment_date,
-        "paid_trade_no": merchant_trade_no
-    }).eq("id", order["id"]).execute()
+        supabase.table("orders").update({
+            "payment_status": "paid",
+            "payment_method": "credit",
+            "payment_time": payment_date,
+            "paid_trade_no": merchant_trade_no
+        }).eq("id", order["id"]).execute()
 
     # ✅ 發送 LINE 已付款完成通知
-    try:
-        send_line_order_notify({
-            "order_no": order.get("MerchantTradeNo") or f"#{order['id']}",
-            "name": order.get("receiver_name"),
-            "phone": order.get("receiver_phone"),
-            "total": order.get("total_amount")
-        }, event_type="paid")
-    except Exception as e:
-        app.logger.error(
-            f"[ECPay LINE notify failed] order_id={order['id']} err={e}"
-        )
-
-
+        try:
+            send_line_order_notify({
+                "order_no": order.get("MerchantTradeNo") or f"#{order['id']}",
+                "name": order.get("receiver_name"),
+                "phone": order.get("receiver_phone"),
+                "total": order.get("total_amount")
+            }, event_type="paid")
+        except Exception as e:
+            app.logger.error(
+                f"[ECPay LINE notify failed] order_id={order['id']} err={e}"
+            )
 
             # 🔻 撈該訂單所有商品項目
     item_res = supabase.table("order_items").select("*").eq("order_id", order["id"]).execute()
