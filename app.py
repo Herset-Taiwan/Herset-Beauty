@@ -4629,11 +4629,6 @@ def ecpay_return():
     data = request.form.to_dict()
     app.logger.info(f"[ECPay] return data = {data}")
 
-    # ❗️暫時不要擋（先讓訂單跑通）
-    # if not verify_check_mac_value(data):
-    #     app.logger.error("[ECPay] CheckMacValue failed")
-    #     return "0|FAIL"
-
     merchant_trade_no = data.get("MerchantTradeNo")
     payment_date = data.get("PaymentDate")
     rtn_code = data.get("RtnCode")
@@ -4641,32 +4636,29 @@ def ecpay_return():
     if rtn_code != "1":
         return "1|OK"
 
-    order = (
+    resp = (
         supabase.table("payment_log")
         .select("order_id")
         .eq("merchant_trade_no", merchant_trade_no)
-        .single()
         .execute()
-        .data
     )
 
-    if not order:
+    if not resp.data:
         app.logger.error(f"[ECPay] payment_log not found: {merchant_trade_no}")
         return "1|OK"
+
+    order_id = resp.data[0]["order_id"]
 
     supabase.table("orders").update({
         "payment_status": "paid",
         "payment_method": "credit",
         "payment_time": payment_date,
         "paid_trade_no": merchant_trade_no
-    }).eq("id", order["order_id"]).execute()
+    }).eq("id", order_id).execute()
 
-    send_line_order_notify_by_order_id(order["order_id"], event_type="paid")
+    send_line_order_notify_by_order_id(order_id, event_type="paid")
 
     return "1|OK"
-
-
-
 
 #讓使用者刷完卡回到網站
 @app.route("/ecpay/result", methods=["POST"])

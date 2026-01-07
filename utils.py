@@ -78,19 +78,16 @@ def verify_check_mac_value(data: dict) -> bool:
     if not check_mac_value:
         return False
 
-    items = sorted(
-        (k, v) for k, v in data.items()
-        if k != "CheckMacValue"
+    items = {k: v for k, v in data.items() if k != "CheckMacValue"}
+    items = dict(sorted(items.items()))
+
+    raw = (
+        f"HashKey={HASH_KEY}&"
+        + "&".join(f"{k}={v}" for k, v in items.items())
+        + f"&HashIV={HASH_IV}"
     )
 
-    raw = "HashKey={}&{}&HashIV={}".format(
-        HASH_KEY,
-        "&".join(f"{k}={v}" for k, v in items),
-        HASH_IV
-    )
-
-    encoded = urllib.parse.quote_plus(raw)
-    encoded = encoded.lower()
+    encoded = urllib.parse.quote_plus(raw).lower()
     encoded = (
         encoded.replace('%21', '!')
                .replace('%2a', '*')
@@ -100,7 +97,6 @@ def verify_check_mac_value(data: dict) -> bool:
     )
 
     calc = hashlib.sha256(encoded.encode("utf-8")).hexdigest().upper()
-
     return calc == check_mac_value
 
 
