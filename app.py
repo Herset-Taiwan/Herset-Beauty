@@ -4159,13 +4159,12 @@ def process_payment():
             "payment_method": "credit",
             "payment_status": "pending"
         }).eq("id", order["id"]).execute()
+
         html = generate_ecpay_form(order, trade_no=new_trade_no)
         return Response(html, content_type="text/html; charset=utf-8")
 
     else:
-        return "未知付款方式", 400
-
-
+         return "未知付款方式", 400
 
 # Linepay 付款成功後 confirm
 @app.route("/linepay/confirm")
@@ -4628,71 +4627,112 @@ from utils import verify_check_mac_value
 
 @app.route("/ecpay/return", methods=["POST"])
 def ecpay_return():
-    data = request.form.to_dict()
-    app.logger.info(f"[ECPay] return data = {data}")
+    form = request.form.to_dict()
+    app.logger.info(f"[ECPay] return data = {form}")
 
-    merchant_trade_no = data.get("MerchantTradeNo")
-    payment_date = data.get("PaymentDate")
-    rtn_code = data.get("RtnCode")
+    # === 基本欄位 ===
+    trade_no = form.get("MerchantTradeNo")
+    rtn_code = form.get("RtnCode")
+    payment_date = form.get("PaymentDate")
 
     # 綠界規定：一定要回 1|OK
     if rtn_code != "1":
         return "1|OK"
 
-    # === 1️⃣ 先用 trade_no 查 ecpay_repay_map ===
-    repay_res = (
-        supabase.table("ecpay_repay_map")
-        .select("order_id")
-        .eq("new_trade_no", merchant_trade_no)
-        .maybe_single()
-        .execute()
-    )
+    order = None
+    order_id = None
 
-    repay = repay_res.data if repay_res else None
-    if not repay:
-        app.logger.error(f"[ECPay] repay_map not found: {merchant_trade_no}")
-        return "1|OK"
+    # ======================================================
+    # ① 先查「補刷對照表」ecpay_repay_map（有就一定是補刷）
+    # ======================================================
+    try:
+        repay_res = (
+            supabase.table("ecpay_repay_map")
+            .select("order_id")
+            .eq("new_trade_no", trade_no)
+            .maybe_single()
+            .execute()
+        )
+        if repay_res and repay_res.data:
+            order_id = repay_res.data["order_id"]
+    except Exception as e:
+        app.logger.warning(f"[ECPay] repay_map lookup error: {e}")
 
-    order_id = repay["order_id"]
+    # ======================================================
+    # ② 補刷有找到 → 用 order_id 查訂單
+    # ======================================================
+    if order_id:
+        try:
+            order_res = (
+                supabase.table("orders")
+                .select("*")
+                .eq("id", order_id)
+                .maybe_single()
+                .execute()
+            )
+            order = order_res.data
+        except Exception as e:
+            app.logger.error(f"[ECPay] order lookup by id failed: {e}")
 
-    # === 2️⃣ 再用 order_id 查 orders ===
-    order_res = (
-        supabase.table("orders")
-        .select("*")
-        .eq("id", order_id)
-        .maybe_single()
-        .execute()
-    )
-
-    order = order_res.data if order_res else None
+    # ======================================================
+    # ③ 補刷查不到 → 當成「第一次刷卡」
+    # ======================================================
     if not order:
-        app.logger.error(f"[ECPay] order not found: id={order_id}")
+        try:
+            order_res = (
+                supabase.table("orders")
+                .select("*")
+                .eq("MerchantTradeNo", trade_no)
+                .maybe_single()
+                .execute()
+            )
+            order = order_res.data
+        except Exception as e:
+            app.logger.error(f"[ECPay] order lookup by trade_no failed: {e}")
+
+    # ======================================================
+    # ④ 最終保護（一定不能炸）
+    # ======================================================
+    if not order:
+        app.logger.error(f"[ECPay] order not found, trade_no={trade_no}")
         return "1|OK"
 
-    # === 3️⃣ 冪等處理 ===
+    # ======================================================
+    # ⑤ 已付款 → 冪等處理（避免重送）
+    # ======================================================
     if order.get("payment_status") == "paid":
         return "1|OK"
 
-    # === 4️⃣ 更新訂單 ===
-    supabase.table("orders").update({
-        "payment_status": "paid",
-        "payment_method": "credit",
-        "payment_time": payment_date,
-        "paid_trade_no": merchant_trade_no
-    }).eq("id", order_id).execute()
+    # ======================================================
+    # ⑥ 更新訂單為已付款
+    # ======================================================
+    try:
+        supabase.table("orders").update({
+            "payment_status": "paid",
+            "payment_method": "credit",
+            "payment_time": payment_date,
+            "paid_trade_no": trade_no
+        }).eq("id", order["id"]).execute()
+    except Exception as e:
+        app.logger.error(f"[ECPay] order update failed: order_id={order['id']}, err={e}")
+        return "1|OK"
 
-    # === 5️⃣ 用你「LINE Pay 已在用」的函式發通知 ===
+    # ======================================================
+    # ⑦ 發 LINE 通知（沿用你 LINE Pay 成功用的函式）
+    # ======================================================
     try:
         send_line_order_notify({
-            "order_no": order.get("MerchantTradeNo") or f"#{order_id}",
+            "order_no": order.get("order_no") or trade_no,
             "name": order.get("receiver_name"),
             "phone": order.get("receiver_phone"),
-            "total": order.get("total_amount")
+            "total": order.get("total_amount") or order.get("total")
         }, event_type="paid")
     except Exception as e:
-        app.logger.error(f"[LINE notify failed][ECPay] order_id={order_id}, err={e}")
+        app.logger.error(f"[LINE notify failed] order_id={order['id']}, err={e}")
 
     return "1|OK"
+
+
 
 #讓使用者刷完卡回到網站
 @app.route("/ecpay/result", methods=["POST"])
