@@ -4633,6 +4633,7 @@ def ecpay_return():
     payment_date = data.get("PaymentDate")
     rtn_code = data.get("RtnCode")
 
+    # 綠界規定：一定要回 1|OK
     if rtn_code != "1":
         return "1|OK"
 
@@ -4649,16 +4650,29 @@ def ecpay_return():
 
     order_id = resp.data[0]["order_id"]
 
+    # 更新訂單（避免重複）
     supabase.table("orders").update({
         "payment_status": "paid",
         "payment_method": "credit",
         "payment_time": payment_date,
         "paid_trade_no": merchant_trade_no
-    }).eq("id", order_id).execute()
+    }).eq("id", order_id).neq("payment_status", "paid").execute()
 
-    send_line_order_notify_by_order_id(order_id, event_type="paid")
+    # 確認狀態後再發 LINE（只一次）
+    updated = (
+        supabase.table("orders")
+        .select("payment_status")
+        .eq("id", order_id)
+        .single()
+        .execute()
+        .data
+    )
+
+    if updated and updated["payment_status"] == "paid":
+        send_line_order_notify_by_order_id(order_id, event_type="paid")
 
     return "1|OK"
+
 
 #讓使用者刷完卡回到網站
 @app.route("/ecpay/result", methods=["POST"])
