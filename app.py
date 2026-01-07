@@ -3860,30 +3860,6 @@ def choose_payment():
     order = res.data[0]
     return render_template("choose_payment.html", order=order)
 
-
-#執行付款動作
-@app.route('/pay', methods=['POST'])
-def pay():
-    method = request.form.get("method")
-    trade_no = session.get("current_trade_no")
-
-    res = supabase.table("orders").select("*").eq("MerchantTradeNo", trade_no).execute()
-    if not res.data:
-        return "找不到訂單", 404
-
-    order = res.data[0]
-
-    if method == "credit":
-        from utils import generate_ecpay_form
-        return generate_ecpay_form(order, trade_no)
-    elif method == "bank":
-        return render_template("bank_transfer.html", order=order)
-    elif method == "linepay":
-        return "Line Pay 尚未整合"
-    else:
-        return "付款方式錯誤", 400
-    
-
 # === LINE Pay 金額/幣別 helper（缺它會造成 NameError）===
 def _order_amount_currency(order):
     """
