@@ -4631,6 +4631,7 @@ def ecpay_return():
     data = request.form.to_dict()
     app.logger.info(f"[ECPay] return data = {data}")
 
+    # === 1. 驗證成功才處理（你如果已有 verify，可加回） ===
     merchant_trade_no = data.get("MerchantTradeNo")
     payment_date = data.get("PaymentDate")
     rtn_code = data.get("RtnCode")
@@ -4639,36 +4640,45 @@ def ecpay_return():
     if rtn_code != "1":
         return "1|OK"
 
-    # ✅ 直接從 orders 找
-    resp = (
+    # === 2. 直接用 orders 找訂單（不再用 payment_log）===
+    order_res = (
         supabase.table("orders")
-        .select("id, payment_status")
-        .eq("paid_trade_no", merchant_trade_no)
+        .select("*")
+        .eq("MerchantTradeNo", merchant_trade_no)
         .maybe_single()
         .execute()
     )
+    order = order_res.data
 
-    if not resp.data:
+    if not order:
         app.logger.error(f"[ECPay] order not found: {merchant_trade_no}")
         return "1|OK"
 
-    order = resp.data
-
-    # 避免綠界重送
-    if order["payment_status"] == "paid":
+    # === 3. 冪等：已付款就不再處理 ===
+    if order.get("payment_status") == "paid":
         return "1|OK"
 
-    # 更新訂單
+    # === 4. 更新訂單為已付款 ===
     supabase.table("orders").update({
         "payment_status": "paid",
         "payment_method": "credit",
-        "payment_time": payment_date
+        "payment_time": payment_date,
+        "paid_trade_no": merchant_trade_no
     }).eq("id", order["id"]).execute()
 
-    # LINE 通知（只會一次）
-    send_line_order_notify_by_order_id(order["id"], event_type="paid")
+    # === 5. 用「你 LINE Pay 已在用的函式」發通知 ===
+    try:
+        send_line_order_notify({
+            "order_no": order.get("MerchantTradeNo") or f"#{order['id']}",
+            "name": order.get("receiver_name"),
+            "phone": order.get("receiver_phone"),
+            "total": order.get("total_amount")
+        }, event_type="paid")
+    except Exception as e:
+        app.logger.error(f"[LINE paid notify failed][ECPay] order_id={order['id']}, err={e}")
 
     return "1|OK"
+
 
 
 
