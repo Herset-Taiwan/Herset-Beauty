@@ -14,6 +14,7 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL") or "https://bwxvuvutmexzbynzhvsd.s
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY") or "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+
 # ==============================
 # ECPay 設定：環境變數切換
 # ==============================
@@ -73,14 +74,27 @@ def generate_check_mac_value(data: dict, hash_key: str, hash_iv: str) -> str:
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest().upper()
 
 def verify_check_mac_value(data: dict) -> bool:
-    received = data.get("CheckMacValue", "")
-    calculated = generate_check_mac_value(
-        data,
-        ECPAY_HASH_KEY.strip(),
-        ECPAY_HASH_IV.strip()
-    )
+    from urllib.parse import quote_plus
+    import hashlib
 
-    return received == calculated
+    check_mac_value = data.get("CheckMacValue")
+    if not check_mac_value:
+        return False
+
+    items = {k: v for k, v in data.items() if k != "CheckMacValue"}
+    items = dict(sorted(items.items()))
+
+    raw = (
+    f"HashKey={HASH_KEY}&"
+    + "&".join(f"{k}={v}" for k, v in items.items())
+    + f"&HashIV={HASH_IV}"
+)
+
+    encoded = quote_plus(raw).lower()
+    calc = hashlib.sha256(encoded.encode("utf-8")).hexdigest().upper()
+
+    return calc == check_mac_value
+
 
 # ==============================
 # 表單產生（信用卡）
