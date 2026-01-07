@@ -45,27 +45,42 @@ def _assert_ecpay_config():
 # 簽章工具
 # ==============================
 def generate_check_mac_value(data: dict, hash_key: str, hash_iv: str) -> str:
-    # 依鍵名升冪排序
-    sorted_items = sorted(data.items())
-    # 按照綠界規則組字串
-    raw = f"HashKey={hash_key}&" + "&".join(f"{k}={v}" for k, v in sorted_items) + f"&HashIV={hash_iv}"
-    # URL encode（+ 例外字符處理）→ 小寫 → SHA256 → 大寫
-    safe = urllib.parse.quote_plus(raw).lower()
-    safe = (
-        safe.replace('%21', '!')
-            .replace('%2a', '*')
-            .replace('%28', '(')
-            .replace('%29', ')')
-            .replace('%20', '+')
+    # 1️⃣ 移除 CheckMacValue
+    items = sorted(
+        (k, v) for k, v in data.items()
+        if k != "CheckMacValue"
     )
-    return hashlib.sha256(safe.encode('utf-8')).hexdigest().upper()
 
-def verify_check_mac_value(result: dict) -> bool:
-    """驗證綠界回傳的 CheckMacValue。"""
-    _assert_ecpay_config()
-    data = {k: v for k, v in result.items() if k != "CheckMacValue"}
-    expected = generate_check_mac_value(data, HASH_KEY, HASH_IV)
-    return expected == result.get("CheckMacValue")
+    # 2️⃣ 組字串
+    raw = "HashKey={}&{}&HashIV={}".format(
+        hash_key,
+        "&".join(f"{k}={v}" for k, v in items),
+        hash_iv
+    )
+
+    # 3️⃣ URL encode（官方規定）
+    encoded = urllib.parse.quote_plus(raw)
+    encoded = encoded.lower()
+    encoded = (
+        encoded.replace('%21', '!')
+               .replace('%2a', '*')
+               .replace('%28', '(')
+               .replace('%29', ')')
+               .replace('%20', '+')
+    )
+
+    # 4️⃣ SHA256
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest().upper()
+
+def verify_check_mac_value(data: dict) -> bool:
+    received = data.get("CheckMacValue", "")
+    calculated = generate_check_mac_value(
+        data,
+        ECPAY_HASH_KEY.strip(),
+        ECPAY_HASH_IV.strip()
+    )
+
+    return received == calculated
 
 # ==============================
 # 表單產生（信用卡）
