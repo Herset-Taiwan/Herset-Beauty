@@ -4157,10 +4157,6 @@ def process_payment():
             "new_trade_no": new_trade_no,
             "order_id": order["id"]
         }).execute()
-
-        #推播到 LINE 群組
-        send_line_order_notify(line_order_payload)
-
         html = generate_ecpay_form(order, trade_no=new_trade_no)
         return Response(html, content_type="text/html; charset=utf-8")
 
@@ -4629,15 +4625,66 @@ def product_detail(product_id):
 
 
 
-#綠界付款成功回傳處理
-@app.route('/ecpay/return', methods=['POST'])
+@app.route("/ecpay/return", methods=["POST"])
 def ecpay_return():
     data = request.form.to_dict()
-    if data.get('RtnCode') == '1':
-        supabase.table("orders").update({'status': 'paid'}).eq('MerchantTradeNo', data['MerchantTradeNo']).execute()
-        return '1|OK'
-    return '0|Fail'
-#綠界付款成功回傳處理
+    app.logger.info(f"[ECPay Return] {data}")
+
+    # 1️⃣ 驗證 CheckMacValue
+    if not verify_ecpay_mac(data):
+        return "0|CheckMacValue Error"
+
+    trade_no = data.get("MerchantTradeNo")
+    rtn_code = data.get("RtnCode")  # 1 = 成功
+
+    if rtn_code != "1":
+        return "1|OK"
+
+    # 2️⃣ 找訂單
+    order = (
+        supabase.table("orders")
+        .select("*")
+        .eq("MerchantTradeNo", trade_no)
+        .single()
+        .execute()
+        .data
+    )
+
+    if not order:
+        return "1|OK"
+
+    # 🛑 冪等：已付款就不要重做
+    if (order.get("payment_status") or "").lower() == "paid":
+        return "1|OK"
+
+    # 3️⃣ 更新訂單狀態（⚠️ 建議 status 一起更新）
+    supabase.table("orders").update({
+        "payment_status": "paid",
+        "status": "paid",                 # ⭐ 建議補上
+        "payment_method": "credit",        # 綠界刷卡
+        "paid_trade_no": trade_no,
+        "paid_at": datetime.now(TW).isoformat()
+    }).eq("id", order["id"]).execute()
+
+    # 4️⃣ ✅ 付款完成後 → LINE 推播
+    try:
+        send_line_order_notify({
+            "order_no": order.get("order_no") or trade_no,
+            "name": order.get("receiver_name"),
+            "phone": order.get("receiver_phone"),
+            "total": order.get("total_amount")
+        }, event_type="paid")
+    except Exception as e:
+        app.logger.error(f"[ECPay LINE notify failed] order={order['id']} err={e}")
+
+    return "1|OK"
+
+
+#讓使用者刷完卡回到網站
+@app.route("/ecpay/result", methods=["POST"])
+def ecpay_result():
+    return redirect("/thank-you")
+
 
 #重新付款處理
 @app.route("/ecpay/return", methods=["POST"])
