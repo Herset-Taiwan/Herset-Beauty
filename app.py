@@ -523,6 +523,19 @@ def index():
     if category and category != '全部':
         products = [p for p in products if category in (p.get('categories') or [])]
 
+        # ✅ 排序：有「主打商品」tag 的商品排在最前面（其餘維持原本順序）
+    for idx, p in enumerate(products):
+        p["_orig_idx"] = idx  # 記住原本順序，做穩定排序用
+
+    def is_featured(prod):
+        return "主打商品" in (prod.get("tags") or [])
+
+    products.sort(key=lambda p: (0 if is_featured(p) else 1, p.get("_orig_idx", 0)))
+
+    # 清掉暫存欄位，避免影響前端或存回資料庫
+    for p in products:
+        p.pop("_orig_idx", None)
+
     cart = session.get('cart', [])
     cart_count = sum(item.get('qty', 0) for item in cart)
     return render_template("index.html", products=products, cart_count=cart_count, banners=get_active_banners())
@@ -4716,9 +4729,6 @@ def ecpay_return():
         app.logger.error(f"[ECPay] LINE notify failed: {e}")
 
     return "1|OK"
-
-
-
 
 #讓使用者刷完卡回到網站
 @app.route("/ecpay/result", methods=["POST"])
