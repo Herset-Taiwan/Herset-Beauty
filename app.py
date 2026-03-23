@@ -4836,6 +4836,7 @@ def product_detail(product_id):
     ref = (request.args.get("ref") or "").strip()
     if ref:
         session["affiliate_ref"] = ref
+
     affiliate_name = None
     affiliate_code = ref or session.get("affiliate_ref") or ""
 
@@ -4867,9 +4868,8 @@ def product_detail(product_id):
         return "找不到商品", 404
 
     if not product:
-        # 不存在 → 回 404（不要 500）
         return "找不到商品", 404
-    
+
     # 🔻 若商品已下架，前台直接回 404（避免被看到）
     if product.get('is_hidden') is True:
         return "找不到商品", 404
@@ -4928,7 +4928,7 @@ def product_detail(product_id):
                 app.logger.warning(f"⚠️ 讀取套組可選池失敗 bundle_id={bundle.get('id')}: {e}")
                 pool_products = []
 
-        return render_template(
+    return render_template(
         "product.html",
         product=product,
         cart_count=cart_count,
