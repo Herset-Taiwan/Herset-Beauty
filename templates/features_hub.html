@@ -51,7 +51,12 @@
 .feature-btn:hover{
   opacity:.92;
 }
-  
+ .feature-btn-group{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:14px;
+} 
   
   </style>
 </head>
@@ -108,9 +113,13 @@
       </div>
 
         <div class="feature-card">
-  <h3>團購主管理</h3>
-  <p>新增團購主、設定專屬推薦碼、抽成比例與啟用狀態。</p>
-  <a href="/admin0363/affiliates" class="feature-btn">管理團購主 →</a>
+  <h3>團購 / 分潤</h3>
+  <p>管理團購主資料、專屬代碼、抽成比例，並查看已付款訂單的分潤報表。</p>
+
+  <div class="feature-btn-group">
+    <a href="/admin0363/affiliates" class="feature-btn">團購主管理 →</a>
+    <a href="/admin0363/affiliates/report" class="feature-btn">團購報表 →</a>
+  </div>
 </div>
 
       <!-- 之後要新增功能，只要複製一張卡片 -->

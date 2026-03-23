@@ -3172,7 +3172,6 @@ def admin_wallet_report():
         reason=reason,
     )
 
-# === 團購主管理 ===
 # ===== 團購主管理 =====
 @app.get("/admin0363/affiliates")
 def admin_affiliates():
@@ -3260,8 +3259,126 @@ def admin_affiliates_update(aid):
         flash("更新失敗", "error")
 
     return redirect("/admin0363/affiliates")
+# ===== 團購主管理-報表管理 =====
+@app.get("/admin0363/affiliates/report")
+def admin_affiliates_report():
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
+
+    q_code = (request.args.get("code") or "").strip()
+    date_from = (request.args.get("date_from") or "").strip()
+    date_to = (request.args.get("date_to") or "").strip()
+
+    # 1) 撈團購主
+    try:
+        aff_res = (
+            supabase.table("affiliates")
+            .select("*")
+            .order("created_at", desc=True)
+            .execute()
+        )
+        affiliates = aff_res.data or []
+    except Exception as e:
+        app.logger.exception("[affiliate report] load affiliates failed: %s", e)
+        affiliates = []
+
+    aff_map = {str(a.get("code") or ""): a for a in affiliates}
+
+    # 2) 撈已付款訂單（只有付款完成才算佣金）
+    try:
+        order_q = (
+            supabase.table("orders")
+            .select("id, affiliate_code, commission_amount, total_amount, payment_status, status, created_at, paid_at, order_no, MerchantTradeNo, payment_method, member_id")
+            .eq("payment_status", "paid")
+            .not_.is_("affiliate_code", "null")
+            .neq("status", "cancelled")
+            .order("paid_at", desc=True)
+        )
+
+        if q_code:
+            order_q = order_q.eq("affiliate_code", q_code)
+
+        if date_from:
+            order_q = order_q.gte("paid_at", f"{date_from}T00:00:00")
+        if date_to:
+            order_q = order_q.lte("paid_at", f"{date_to}T23:59:59")
+
+        order_res = order_q.execute()
+        paid_orders = order_res.data or []
+    except Exception as e:
+        app.logger.exception("[affiliate report] load orders failed: %s", e)
+        paid_orders = []
+
+    # 3) 補會員資訊
+    member_ids = list({o.get("member_id") for o in paid_orders if o.get("member_id")})
+    member_map = {}
+    if member_ids:
+        try:
+            mem_res = (
+                supabase.table("members")
+                .select("id, account, name")
+                .in_("id", member_ids)
+                .execute()
+            )
+            member_map = {m["id"]: m for m in (mem_res.data or [])}
+        except Exception:
+            member_map = {}
+
+    # 4) 分組統計
+    summary_map = {}
+    for o in paid_orders:
+        code = str(o.get("affiliate_code") or "").strip()
+        if not code:
+            continue
+
+        row = summary_map.setdefault(code, {
+            "affiliate_code": code,
+            "affiliate_name": (aff_map.get(code) or {}).get("name") or code,
+            "commission_rate": (aff_map.get(code) or {}).get("commission_rate") or 0,
+            "order_count": 0,
+            "sales_total": 0,
+            "commission_total": 0,
+            "orders": []
+        })
+
+        total_amount = int(o.get("total_amount") or 0)
+        commission_amount = int(o.get("commission_amount") or 0)
+        member = member_map.get(o.get("member_id")) or {}
+
+        row["order_count"] += 1
+        row["sales_total"] += total_amount
+        row["commission_total"] += commission_amount
+        row["orders"].append({
+            "id": o.get("id"),
+            "order_no": o.get("order_no") or o.get("MerchantTradeNo") or o.get("id"),
+            "paid_at": o.get("paid_at") or o.get("created_at"),
+            "payment_method": o.get("payment_method") or "",
+            "member_name": member.get("name") or member.get("account") or "—",
+            "total_amount": total_amount,
+            "commission_amount": commission_amount
+        })
+
+    summary_rows = list(summary_map.values())
+    summary_rows.sort(key=lambda x: x["commission_total"], reverse=True)
+
+    grand_order_count = sum(r["order_count"] for r in summary_rows)
+    grand_sales_total = sum(r["sales_total"] for r in summary_rows)
+    grand_commission_total = sum(r["commission_total"] for r in summary_rows)
+
+    return render_template(
+        "admin_affiliate_report.html",
+        rows=summary_rows,
+        affiliates=affiliates,
+        q_code=q_code,
+        date_from=date_from,
+        date_to=date_to,
+        grand_order_count=grand_order_count,
+        grand_sales_total=grand_sales_total,
+        grand_commission_total=grand_commission_total
+    )
 
 
+# ===== 登出 =====
 @app.route('/logout')
 def logout():
     # 只清「會員相關」的 session，不動後台登入狀態
@@ -3800,6 +3917,34 @@ def checkout():
     # 扣完錢包後的訂單總金額（元）
     final_total_i_after_wallet = max(final_total_i - wallet_used_yuan, 0)
 
+    # ===== 團購分潤計算 =====
+affiliate_code = request.form.get("affiliate_code") or session.get("affiliate_ref")
+
+commission_amount = 0
+
+if affiliate_code:
+    try:
+        res = (
+            supabase.table("affiliates")
+            .select("code, commission_rate, is_active")
+            .eq("code", affiliate_code)
+            .eq("is_active", True)
+            .limit(1)
+            .execute()
+        )
+
+        aff = (res.data or [])
+        if aff:
+            rate = float(aff[0].get("commission_rate") or 0)
+            commission_amount = int(final_total_i_after_wallet * rate / 100)
+        else:
+            affiliate_code = None  # 找不到就清掉
+
+    except Exception as e:
+        app.logger.error(f"[affiliate error] {e}")
+        affiliate_code = None
+        commission_amount = 0
+
     # 5) 建立訂單
     from pytz import timezone
     from datetime import datetime
@@ -3810,6 +3955,8 @@ def checkout():
     order_data = {
         'member_id': member_id,
         'total_amount':   final_total_i_after_wallet,   # ✅ 已扣完購物金
+        'affiliate_code': affiliate_code,
+        'commission_amount': commission_amount,
         'shipping_fee':   shipping_fee_i,
         'discount_code':  discount_code,
         'discount_amount': discount_amount_i,

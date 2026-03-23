@@ -594,6 +594,7 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
 
 
       <form method="POST" action="/checkout" style="margin-top:20px;">
+  <input type="hidden" name="affiliate_code" id="affiliate_code" value="">
   <!-- 購物金輸入區 -->
   {% if session.get('member_id') %}
     <div style="margin-bottom:14px; text-align:right;">
@@ -713,7 +714,15 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
   updateWalletState();
 })();
 </script>
-
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+  const ref = localStorage.getItem("affiliate_ref");
+  const input = document.getElementById("affiliate_code");
+  if (ref && input) {
+    input.value = ref;
+  }
+});
+</script>
 
 </body>
 </html>

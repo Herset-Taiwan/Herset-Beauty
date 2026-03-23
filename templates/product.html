@@ -1265,6 +1265,16 @@ document.addEventListener('DOMContentLoaded', function () {
 })();
 </script>
 
+<script>
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  const ref = params.get("ref");
+  if (ref) {
+    localStorage.setItem("affiliate_ref", ref);
+  }
+})();
+</script>
+
 
 </body>
 </html>
