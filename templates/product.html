@@ -563,12 +563,15 @@ body.product-page .tab-btn.active {
 .flash-msg.warn::before{ content: "⚠ "; }
 /* 團購主專屬賣場 */
 .affiliate-banner{
-  display:inline-block;
-  padding:6px 12px;
-  font-size:13px;
-  background:#ffe4ec;
-  border-radius:999px;
-  margin:10px auto;
+  display:block;
+  max-width:900px;
+  margin:12px auto 0;
+  text-align:center;
+
+  padding:12px 20px;
+  background: linear-gradient(135deg,#ffe4ec,#ffd6e3);
+  border-radius:14px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.05);
 }
 
 .affiliate-banner-title{
@@ -650,7 +653,8 @@ fbq('track', 'PageView');
 </div>
 
 {% if affiliate_name %}
-  <div class="affiliate-banner">
+  <div style="max-width:900px;margin:0 auto;">
+    <div class="affiliate-banner">
     <div class="affiliate-banner-title">{{ affiliate_name }} 專屬賣場</div>
     <div class="affiliate-banner-sub">您目前從合作團購主專屬連結進入此商品頁</div>
   </div>
