@@ -3173,58 +3173,91 @@ def admin_wallet_report():
     )
 
 # === 團購主管理 ===
-@app.route("/admin0363/affiliates")
+# ===== 團購主管理 =====
+@app.get("/admin0363/affiliates")
 def admin_affiliates():
-    conn = get_conn()
-    cur = conn.cursor()
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
 
-    cur.execute("SELECT * FROM affiliates ORDER BY id DESC")
-    rows = cur.fetchall()
+    try:
+        res = (
+            supabase.table("affiliates")
+            .select("*")
+            .order("created_at", desc=True)
+            .execute()
+        )
+        affiliates = res.data or []
+    except Exception as e:
+        app.logger.exception("[affiliates] load failed: %s", e)
+        affiliates = []
 
-    affiliates = [dict(r) for r in rows]
-
-    conn.close()
     return render_template("admin_affiliates.html", affiliates=affiliates)
 
 
-@app.route("/admin0363/affiliates/create", methods=["POST"])
-def create_affiliate():
-    name = request.form["name"]
-    code = request.form["code"]
-    commission = request.form.get("commission", 10)
+@app.post("/admin0363/affiliates/create")
+def admin_affiliates_create():
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
 
-    conn = get_conn()
-    cur = conn.cursor()
+    name = (request.form.get("name") or "").strip()
+    code = (request.form.get("code") or "").strip()
+    commission_rate = request.form.get("commission_rate")
+    is_active = bool(request.form.get("is_active"))
 
-    cur.execute("""
-        INSERT INTO affiliates (name, code, commission, active)
-        VALUES (?, ?, ?, 1)
-    """, (name, code, commission))
+    if not name or not code:
+        flash("請填寫團購主名稱與代碼", "error")
+        return redirect("/admin0363/affiliates")
 
-    conn.commit()
-    conn.close()
+    try:
+        commission_rate = float(commission_rate or 0)
+    except Exception:
+        commission_rate = 0
+
+    try:
+        supabase.table("affiliates").insert({
+            "name": name,
+            "code": code,
+            "commission_rate": commission_rate,
+            "is_active": is_active
+        }).execute()
+        flash("團購主已新增", "success")
+    except Exception as e:
+        app.logger.exception("[affiliates] create failed: %s", e)
+        flash("新增失敗，請確認 code 是否重複或欄位名稱是否正確", "error")
 
     return redirect("/admin0363/affiliates")
 
 
-@app.route("/admin0363/affiliates/update/<int:id>", methods=["POST"])
-def update_affiliate(id):
-    name = request.form["name"]
-    code = request.form["code"]
-    commission = request.form["commission"]
-    active = request.form["active"]
+@app.post("/admin0363/affiliates/update/<aid>")
+def admin_affiliates_update(aid):
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
 
-    conn = get_conn()
-    cur = conn.cursor()
+    name = (request.form.get("name") or "").strip()
+    code = (request.form.get("code") or "").strip()
+    commission_rate = request.form.get("commission_rate")
+    is_active = request.form.get("is_active") == "true"
 
-    cur.execute("""
-        UPDATE affiliates
-        SET name=?, code=?, commission=?, active=?
-        WHERE id=?
-    """, (name, code, commission, active, id))
+    if not name or not code:
+        flash("名稱與代碼不可空白", "error")
+        return redirect("/admin0363/affiliates")
 
-    conn.commit()
-    conn.close()
+    try:
+        commission_rate = float(commission_rate or 0)
+    except Exception:
+        commission_rate = 0
+
+    try:
+        supabase.table("affiliates").update({
+            "name": name,
+            "code": code,
+            "commission_rate": commission_rate,
+            "is_active": is_active
+        }).eq("id", aid).execute()
+        flash("團購主已更新", "success")
+    except Exception as e:
+        app.logger.exception("[affiliates] update failed: %s", e)
+        flash("更新失敗", "error")
 
     return redirect("/admin0363/affiliates")
 
