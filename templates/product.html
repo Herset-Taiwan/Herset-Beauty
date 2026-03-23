@@ -1270,7 +1270,13 @@ document.addEventListener('DOMContentLoaded', function () {
   const params = new URLSearchParams(window.location.search);
   const ref = params.get("ref");
   if (ref) {
-    localStorage.setItem("affiliate_ref", ref);
+    if (ref) {
+  localStorage.setItem("affiliate_ref", ref);
+
+  const d = new Date();
+  d.setTime(d.getTime() + (7 * 24 * 60 * 60 * 1000));
+  document.cookie = "affiliate_ref=" + ref + ";expires=" + d.toUTCString() + ";path=/";
+}
   }
 })();
 </script>

@@ -716,7 +716,11 @@ src="https://www.facebook.com/tr?id=2160093911138296&ev=PageView&noscript=1"
 </script>
 <script>
 document.addEventListener("DOMContentLoaded", function(){
-  const ref = localStorage.getItem("affiliate_ref");
+function getCookie(name){
+  return document.cookie.split('; ').find(row => row.startsWith(name+'='))?.split('=')[1];
+}
+
+const ref = localStorage.getItem("affiliate_ref") || getCookie("affiliate_ref");
   const input = document.getElementById("affiliate_code");
   if (ref && input) {
     input.value = ref;

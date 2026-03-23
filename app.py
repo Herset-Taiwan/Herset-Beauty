@@ -3931,7 +3931,10 @@ def checkout():
     final_total_i_after_wallet = max(final_total_i - wallet_used_yuan, 0)
 
     # ===== 團購分潤計算 =====
-    affiliate_code = request.form.get("affiliate_code") or session.get("affiliate_ref")
+    affiliate_code = (request.form.get("affiliate_code") or session.get("affiliate_ref") or "").strip()
+
+    if affiliate_code == "":
+        affiliate_code = None
 
     commission_amount = 0
 
@@ -4800,6 +4803,10 @@ def update_order_payment(order_id):
 # 取代整段：商品詳情（同時支援單品 & 套組）
 @app.route('/product/<product_id>')
 def product_detail(product_id):
+    ref = (request.args.get("ref") or "").strip()
+    if ref:
+        session["affiliate_ref"] = ref
+
     try:
         # ⚠️ 避免 .single() 遇到 0 筆/多筆直接丟 PGRST116
         res = supabase.table("products").select("*").eq("id", product_id).limit(1).execute()
@@ -4812,10 +4819,9 @@ def product_detail(product_id):
         # 不存在 → 回 404（不要 500）
         return "找不到商品", 404
     
-        # 🔻 若商品已下架，前台直接回 404（避免被看到）
+    # 🔻 若商品已下架，前台直接回 404（避免被看到）
     if product.get('is_hidden') is True:
         return "找不到商品", 404
-
 
     cart = session.get('cart', [])
     cart_count = sum(item.get('qty', 0) for item in cart)

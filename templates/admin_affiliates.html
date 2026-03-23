@@ -95,6 +95,33 @@
     @media (max-width: 900px){
       .grid{ grid-template-columns:1fr; }
     }
+
+    .link-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-top:10px;
+}
+
+.link-text{
+  word-break:break-all;
+  flex:1;
+}
+
+.copy-btn{
+  background:#111827;
+  color:#fff;
+  border:none;
+  padding:6px 12px;
+  border-radius:8px;
+  cursor:pointer;
+  white-space:nowrap;
+}
+
+.copy-btn:hover{
+  opacity:.85;
+}
   </style>
 </head>
 <body>
@@ -152,9 +179,17 @@
               </div>
             </form>
 
-            <div class="link-box">
-              專屬連結：
-              https://herset.co/product/你的商品ID?ref={{ a.code }}
+           <div class="link-box">
+  <div class="link-row">
+    <span class="link-text" id="link-{{ a.id }}">
+      https://herset.co/product/你的商品ID?ref={{ a.code }}
+    </span>
+
+    <button type="button" class="copy-btn" onclick="copyLink('link-{{ a.id }}', this)">
+      複製
+    </button>
+  </div>
+</div>
             </div>
           </div>
         {% endfor %}
@@ -163,5 +198,22 @@
       {% endif %}
     </div>
   </div>
+
+<script>
+function copyLink(id, btn){
+  const text = document.getElementById(id).innerText;
+
+  navigator.clipboard.writeText(text).then(() => {
+    const original = btn.innerText;
+    btn.innerText = "已複製";
+    setTimeout(() => {
+      btn.innerText = original;
+    }, 1500);
+  }).catch(() => {
+    alert("複製失敗，請手動複製");
+  });
+}
+</script>
+
 </body>
 </html>
