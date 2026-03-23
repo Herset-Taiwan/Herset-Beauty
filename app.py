@@ -4837,15 +4837,16 @@ def product_detail(product_id):
     if ref:
         session["affiliate_ref"] = ref
 
-    affiliate_name = None
-    affiliate_code = ref or session.get("affiliate_ref") or ""
+        affiliate_name = None
+    affiliate_code = None
 
-    if affiliate_code:
+    # 這裡只用「當前網址的 ref」來決定要不要顯示 banner
+    if ref:
         try:
             aff_res = (
                 supabase.table("affiliates")
                 .select("name, code, is_active")
-                .eq("code", affiliate_code)
+                .eq("code", ref)
                 .eq("is_active", True)
                 .limit(1)
                 .execute()
@@ -4853,11 +4854,14 @@ def product_detail(product_id):
             aff_row = (aff_res.data or [None])[0]
             if aff_row:
                 affiliate_name = aff_row.get("name")
+                affiliate_code = aff_row.get("code")
             else:
                 affiliate_name = None
+                affiliate_code = None
         except Exception as e:
-            app.logger.warning(f"⚠️ 讀取團購主失敗 code={affiliate_code}: {e}")
+            app.logger.warning(f"⚠️ 讀取團購主失敗 code={ref}: {e}")
             affiliate_name = None
+            affiliate_code = None
 
     try:
         # ⚠️ 避免 .single() 遇到 0 筆/多筆直接丟 PGRST116
