@@ -4834,10 +4834,8 @@ def update_order_payment(order_id):
 @app.route('/product/<product_id>')
 def product_detail(product_id):
     ref = (request.args.get("ref") or "").strip()
-    if ref:
-        session["affiliate_ref"] = ref
 
-        affiliate_name = None
+    affiliate_name = None
     affiliate_code = None
 
     # 這裡只用「當前網址的 ref」來決定要不要顯示 banner
