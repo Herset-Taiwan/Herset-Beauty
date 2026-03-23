@@ -3781,8 +3781,6 @@ def cart_address_update():
 
     return jsonify({"ok": True})
 
-
-# 結帳
 @app.route('/checkout', methods=['POST'])
 def checkout():
     if 'member_id' not in session:
@@ -3918,32 +3916,32 @@ def checkout():
     final_total_i_after_wallet = max(final_total_i - wallet_used_yuan, 0)
 
     # ===== 團購分潤計算 =====
-affiliate_code = request.form.get("affiliate_code") or session.get("affiliate_ref")
+    affiliate_code = request.form.get("affiliate_code") or session.get("affiliate_ref")
 
-commission_amount = 0
+    commission_amount = 0
 
-if affiliate_code:
-    try:
-        res = (
-            supabase.table("affiliates")
-            .select("code, commission_rate, is_active")
-            .eq("code", affiliate_code)
-            .eq("is_active", True)
-            .limit(1)
-            .execute()
-        )
+    if affiliate_code:
+        try:
+            res = (
+                supabase.table("affiliates")
+                .select("code, commission_rate, is_active")
+                .eq("code", affiliate_code)
+                .eq("is_active", True)
+                .limit(1)
+                .execute()
+            )
 
-        aff = (res.data or [])
-        if aff:
-            rate = float(aff[0].get("commission_rate") or 0)
-            commission_amount = int(final_total_i_after_wallet * rate / 100)
-        else:
-            affiliate_code = None  # 找不到就清掉
+            aff = (res.data or [])
+            if aff:
+                rate = float(aff[0].get("commission_rate") or 0)
+                commission_amount = int(final_total_i_after_wallet * rate / 100)
+            else:
+                affiliate_code = None
 
-    except Exception as e:
-        app.logger.error(f"[affiliate error] {e}")
-        affiliate_code = None
-        commission_amount = 0
+        except Exception as e:
+            app.logger.error(f"[affiliate error] {e}")
+            affiliate_code = None
+            commission_amount = 0
 
     # 5) 建立訂單
     from pytz import timezone
