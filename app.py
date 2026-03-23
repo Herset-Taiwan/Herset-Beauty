@@ -3263,8 +3263,38 @@ def admin_affiliates_update(aid):
 # ===== 團購主管理-報表管理 =====
 @app.get("/admin0363/affiliates/report")
 def admin_affiliates_report():
+    from dateutil import parser
+    from pytz import timezone
+
     if not session.get("admin_logged_in"):
         return redirect("/admin0363")
+
+    tw = timezone("Asia/Taipei")
+
+    def format_tw_datetime(val):
+        if not val:
+            return "—"
+        try:
+            dt = parser.parse(str(val))
+            return dt.astimezone(tw).strftime("%Y-%m-%d %H:%M:%S")
+        except Exception:
+            return str(val)
+
+    def format_payment_method(order_row):
+        method = (
+            (order_row.get("payment_method") or "").strip().lower()
+            or (order_row.get("intended_payment_method") or "").strip().lower()
+        )
+
+        if method in ("transfer", "bank", "bank_transfer", "atm"):
+            return "轉帳付款"
+        if method in ("linepay", "line_pay", "line"):
+            return "LINE Pay 付款"
+        if method in ("ecpay", "credit", "credit_card"):
+            return "綠界付款"
+        if method:
+            return method
+        return "—"
 
     q_code = (request.args.get("code") or "").strip()
     date_from = (request.args.get("date_from") or "").strip()
@@ -3285,11 +3315,11 @@ def admin_affiliates_report():
 
     aff_map = {str(a.get("code") or ""): a for a in affiliates}
 
-    # 2) 訂單（只抓目前你確定有的欄位）
+    # 2) 訂單
     try:
         order_res = (
             supabase.table("orders")
-            .select("id, affiliate_code, commission_amount, total_amount, payment_status, status, created_at, MerchantTradeNo, intended_payment_method, member_id")
+            .select("*")
             .eq("payment_status", "paid")
             .neq("status", "cancelled")
             .order("created_at", desc=True)
@@ -3300,7 +3330,7 @@ def admin_affiliates_report():
         app.logger.exception("[affiliate report] load orders failed: %s", e)
         orders = []
 
-    # 3) Python 端過濾，避免 DB 欄位或 not null 語法出錯
+    # 3) Python 端過濾
     filtered_orders = []
     for o in orders:
         aff_code = str(o.get("affiliate_code") or "").strip()
@@ -3310,11 +3340,11 @@ def admin_affiliates_report():
         if q_code and aff_code != q_code:
             continue
 
-        created_at = str(o.get("created_at") or "")
+        filter_date = str(o.get("paid_at") or o.get("created_at") or "")
 
-        if date_from and created_at[:10] < date_from:
+        if date_from and filter_date[:10] < date_from:
             continue
-        if date_to and created_at[:10] > date_to:
+        if date_to and filter_date[:10] > date_to:
             continue
 
         filtered_orders.append(o)
@@ -3365,9 +3395,9 @@ def admin_affiliates_report():
 
         row["orders"].append({
             "id": o.get("id"),
-            "order_no": o.get("MerchantTradeNo") or o.get("id"),
-            "paid_at": o.get("created_at") or "",
-            "payment_method": o.get("intended_payment_method") or "",
+            "order_no": o.get("order_no") or o.get("MerchantTradeNo") or o.get("id"),
+            "paid_at": format_tw_datetime(o.get("paid_at") or o.get("created_at")),
+            "payment_method": format_payment_method(o),
             "member_name": member.get("name") or member.get("account") or "—",
             "total_amount": total_amount,
             "commission_amount": commission_amount
@@ -4806,6 +4836,27 @@ def product_detail(product_id):
     ref = (request.args.get("ref") or "").strip()
     if ref:
         session["affiliate_ref"] = ref
+    affiliate_name = None
+    affiliate_code = ref or session.get("affiliate_ref") or ""
+
+    if affiliate_code:
+        try:
+            aff_res = (
+                supabase.table("affiliates")
+                .select("name, code, is_active")
+                .eq("code", affiliate_code)
+                .eq("is_active", True)
+                .limit(1)
+                .execute()
+            )
+            aff_row = (aff_res.data or [None])[0]
+            if aff_row:
+                affiliate_name = aff_row.get("name")
+            else:
+                affiliate_name = None
+        except Exception as e:
+            app.logger.warning(f"⚠️ 讀取團購主失敗 code={affiliate_code}: {e}")
+            affiliate_name = None
 
     try:
         # ⚠️ 避免 .single() 遇到 0 筆/多筆直接丟 PGRST116
@@ -4877,7 +4928,7 @@ def product_detail(product_id):
                 app.logger.warning(f"⚠️ 讀取套組可選池失敗 bundle_id={bundle.get('id')}: {e}")
                 pool_products = []
 
-    return render_template(
+        return render_template(
         "product.html",
         product=product,
         cart_count=cart_count,
@@ -4887,6 +4938,8 @@ def product_detail(product_id):
         slot_allowed=slot_allowed,
         total_mode=total_mode,
         required_total=required_total,
+        affiliate_name=affiliate_name,
+        affiliate_code=affiliate_code,
         dbg_user=session.get("user")
     )
 

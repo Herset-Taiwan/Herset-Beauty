@@ -561,7 +561,47 @@ body.product-page .tab-btn.active {
   transition: opacity .4s ease;
 }
 .flash-msg.warn::before{ content: "⚠ "; }
+/* 團購主專屬賣場 */
+.affiliate-banner{
+  max-width: 900px;
+  margin: 18px auto 0;
+  padding: 18px 22px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #fff2f7, #ffe7ef);
+  border: 2px solid #f3bfd0;
+  box-shadow: 0 8px 20px rgba(233,30,99,.08);
+  text-align: center;
+}
 
+.affiliate-banner-title{
+  font-size: 30px;
+  font-weight: 900;
+  color: #c2185b;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+.affiliate-banner-sub{
+  font-size: 15px;
+  color: #7a4b5c;
+  font-weight: 600;
+}
+
+@media (max-width: 768px){
+  .affiliate-banner{
+    margin: 14px 16px 0;
+    padding: 14px 16px;
+  }
+
+  .affiliate-banner-title{
+    font-size: 22px;
+    line-height: 1.4;
+  }
+
+  .affiliate-banner-sub{
+    font-size: 13px;
+  }
+}
 
   </style>
 
@@ -604,6 +644,13 @@ fbq('track', 'PageView');
 <div class="header-bar">
   <a href="/" class="back-btn">← 返回首頁</a>
   <a href="/cart" class="cart-indicator">
+
+    {% if affiliate_name %}
+  <div class="affiliate-banner">
+    <div class="affiliate-banner-title">{{ affiliate_name }} 專屬賣場</div>
+    <div class="affiliate-banner-sub">您目前從合作團購主專屬連結進入此商品頁</div>
+  </div>
+{% endif %}
   <span class="cart-icon">🛒</span>
   <span class="cart-text">購物車</span>
   <span class="cart-count" id="cart-count" {% if not cart_count or cart_count == 0 %}style="display:none"{% endif %}>
