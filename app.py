@@ -3259,6 +3259,7 @@ def admin_affiliates_update(aid):
         flash("更新失敗", "error")
 
     return redirect("/admin0363/affiliates")
+
 # ===== 團購主管理-報表管理 =====
 @app.get("/admin0363/affiliates/report")
 def admin_affiliates_report():
@@ -3269,7 +3270,7 @@ def admin_affiliates_report():
     date_from = (request.args.get("date_from") or "").strip()
     date_to = (request.args.get("date_to") or "").strip()
 
-    # 1) 撈團購主
+    # 1) 團購主
     try:
         aff_res = (
             supabase.table("affiliates")
@@ -3284,33 +3285,42 @@ def admin_affiliates_report():
 
     aff_map = {str(a.get("code") or ""): a for a in affiliates}
 
-    # 2) 撈已付款訂單（只有付款完成才算佣金）
+    # 2) 訂單（只抓目前你確定有的欄位）
     try:
-        order_q = (
+        order_res = (
             supabase.table("orders")
-            .select("id, affiliate_code, commission_amount, total_amount, payment_status, status, created_at, paid_at, order_no, MerchantTradeNo, payment_method, member_id")
+            .select("id, affiliate_code, commission_amount, total_amount, payment_status, status, created_at, MerchantTradeNo, intended_payment_method, member_id")
             .eq("payment_status", "paid")
-            .not_.is_("affiliate_code", "null")
             .neq("status", "cancelled")
-            .order("paid_at", desc=True)
+            .order("created_at", desc=True)
+            .execute()
         )
-
-        if q_code:
-            order_q = order_q.eq("affiliate_code", q_code)
-
-        if date_from:
-            order_q = order_q.gte("paid_at", f"{date_from}T00:00:00")
-        if date_to:
-            order_q = order_q.lte("paid_at", f"{date_to}T23:59:59")
-
-        order_res = order_q.execute()
-        paid_orders = order_res.data or []
+        orders = order_res.data or []
     except Exception as e:
         app.logger.exception("[affiliate report] load orders failed: %s", e)
-        paid_orders = []
+        orders = []
 
-    # 3) 補會員資訊
-    member_ids = list({o.get("member_id") for o in paid_orders if o.get("member_id")})
+    # 3) Python 端過濾，避免 DB 欄位或 not null 語法出錯
+    filtered_orders = []
+    for o in orders:
+        aff_code = str(o.get("affiliate_code") or "").strip()
+        if not aff_code:
+            continue
+
+        if q_code and aff_code != q_code:
+            continue
+
+        created_at = str(o.get("created_at") or "")
+
+        if date_from and created_at[:10] < date_from:
+            continue
+        if date_to and created_at[:10] > date_to:
+            continue
+
+        filtered_orders.append(o)
+
+    # 4) 補會員
+    member_ids = list({o.get("member_id") for o in filtered_orders if o.get("member_id")})
     member_map = {}
     if member_ids:
         try:
@@ -3321,20 +3331,24 @@ def admin_affiliates_report():
                 .execute()
             )
             member_map = {m["id"]: m for m in (mem_res.data or [])}
-        except Exception:
+        except Exception as e:
+            app.logger.exception("[affiliate report] load members failed: %s", e)
             member_map = {}
 
-    # 4) 分組統計
+    # 5) 分組統計
     summary_map = {}
-    for o in paid_orders:
+
+    for o in filtered_orders:
         code = str(o.get("affiliate_code") or "").strip()
         if not code:
             continue
 
+        aff = aff_map.get(code) or {}
+
         row = summary_map.setdefault(code, {
             "affiliate_code": code,
-            "affiliate_name": (aff_map.get(code) or {}).get("name") or code,
-            "commission_rate": (aff_map.get(code) or {}).get("commission_rate") or 0,
+            "affiliate_name": aff.get("name") or code,
+            "commission_rate": aff.get("commission_rate") or 0,
             "order_count": 0,
             "sales_total": 0,
             "commission_total": 0,
@@ -3348,26 +3362,27 @@ def admin_affiliates_report():
         row["order_count"] += 1
         row["sales_total"] += total_amount
         row["commission_total"] += commission_amount
+
         row["orders"].append({
             "id": o.get("id"),
-            "order_no": o.get("order_no") or o.get("MerchantTradeNo") or o.get("id"),
-            "paid_at": o.get("paid_at") or o.get("created_at"),
-            "payment_method": o.get("payment_method") or "",
+            "order_no": o.get("MerchantTradeNo") or o.get("id"),
+            "paid_at": o.get("created_at") or "",
+            "payment_method": o.get("intended_payment_method") or "",
             "member_name": member.get("name") or member.get("account") or "—",
             "total_amount": total_amount,
             "commission_amount": commission_amount
         })
 
-    summary_rows = list(summary_map.values())
-    summary_rows.sort(key=lambda x: x["commission_total"], reverse=True)
+    rows = list(summary_map.values())
+    rows.sort(key=lambda x: x["commission_total"], reverse=True)
 
-    grand_order_count = sum(r["order_count"] for r in summary_rows)
-    grand_sales_total = sum(r["sales_total"] for r in summary_rows)
-    grand_commission_total = sum(r["commission_total"] for r in summary_rows)
+    grand_order_count = sum(r["order_count"] for r in rows)
+    grand_sales_total = sum(r["sales_total"] for r in rows)
+    grand_commission_total = sum(r["commission_total"] for r in rows)
 
     return render_template(
         "admin_affiliate_report.html",
-        rows=summary_rows,
+        rows=rows,
         affiliates=affiliates,
         q_code=q_code,
         date_from=date_from,
