@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>團購報表 - HERSET BEAUTY</title>
+  <style>
+    body{
+      font-family:"Segoe UI","Noto Sans TC",sans-serif;
+      background:#f6f7f9;
+      margin:0;
+      padding:30px;
+      color:#333;
+    }
+    .wrap{
+      max-width:1200px;
+      margin:0 auto;
+    }
+    .top{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:20px;
+    }
+    .back{
+      background:#9ca3af;
+      color:#fff;
+      text-decoration:none;
+      padding:10px 14px;
+      border-radius:10px;
+    }
+    .card{
+      background:#fff;
+      border:1px solid #e5e7eb;
+      border-radius:16px;
+      padding:20px;
+      margin-bottom:18px;
+      box-shadow:0 8px 20px rgba(0,0,0,.06);
+    }
+    .filter-row{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .filter-row input,.filter-row select{
+      padding:10px;
+      border:1px solid #d1d5db;
+      border-radius:10px;
+    }
+    .btn{
+      background:#e91e63;
+      color:#fff;
+      border:none;
+      padding:10px 16px;
+      border-radius:10px;
+      cursor:pointer;
+      font-weight:bold;
+      text-decoration:none;
+      display:inline-block;
+    }
+    .stats{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .badge{
+      background:#f3f4f6;
+      border:1px solid #e5e7eb;
+      border-radius:999px;
+      padding:8px 12px;
+      font-weight:600;
+    }
+    .summary{
+      border-top:1px solid #eee;
+      padding-top:16px;
+      margin-top:16px;
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:12px;
+    }
+    th,td{
+      border-bottom:1px solid #eee;
+      padding:10px;
+      text-align:left;
+      vertical-align:top;
+    }
+    details{
+      margin-top:10px;
+    }
+    details summary{
+      cursor:pointer;
+      font-weight:700;
+      color:#e91e63;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <h2>團購報表</h2>
+      <div>
+        <a class="back" href="/admin0363/affiliates">← 返回團購主管理</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <form method="GET" action="/admin0363/affiliates/report">
+        <div class="filter-row">
+          <select name="code">
+            <option value="">全部團購主</option>
+            {% for a in affiliates %}
+              <option value="{{ a.code }}" {% if q_code == a.code %}selected{% endif %}>
+                {{ a.name }}（{{ a.code }}）
+              </option>
+            {% endfor %}
+          </select>
+
+          <label>付款日期起</label>
+          <input type="date" name="date_from" value="{{ date_from }}">
+
+          <label>付款日期迄</label>
+          <input type="date" name="date_to" value="{{ date_to }}">
+
+          <button type="submit" class="btn">查詢報表</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="stats">
+        <div class="badge">付款完成訂單：{{ grand_order_count }} 筆</div>
+        <div class="badge">付款完成銷售額：$ {{ '{:,.0f}'.format(grand_sales_total) }}</div>
+        <div class="badge">應計佣金總額：$ {{ '{:,.0f}'.format(grand_commission_total) }}</div>
+      </div>
+    </div>
+
+    {% if rows %}
+      {% for r in rows %}
+        <div class="card">
+          <h3>{{ r.affiliate_name }}（{{ r.affiliate_code }}）</h3>
+          <div class="stats">
+            <div class="badge">抽成比例：{{ r.commission_rate }}%</div>
+            <div class="badge">付款完成訂單：{{ r.order_count }} 筆</div>
+            <div class="badge">銷售額：$ {{ '{:,.0f}'.format(r.sales_total) }}</div>
+            <div class="badge">佣金：$ {{ '{:,.0f}'.format(r.commission_total) }}</div>
+          </div>
+
+          <details class="summary">
+            <summary>查看訂單明細</summary>
+            <table>
+              <thead>
+                <tr>
+                  <th>訂單編號</th>
+                  <th>會員</th>
+                  <th>付款時間</th>
+                  <th>付款方式</th>
+                  <th>訂單金額</th>
+                  <th>佣金</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for o in r.orders %}
+                <tr>
+                  <td>{{ o.order_no }}</td>
+                  <td>{{ o.member_name }}</td>
+                  <td>{{ o.paid_at }}</td>
+                  <td>{{ o.payment_method or '—' }}</td>
+                  <td>$ {{ '{:,.0f}'.format(o.total_amount) }}</td>
+                  <td>$ {{ '{:,.0f}'.format(o.commission_amount) }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </details>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="card">目前查無符合條件的付款完成團購訂單。</div>
+    {% endif %}
+  </div>
+</body>
+</html>
