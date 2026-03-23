@@ -643,23 +643,21 @@ fbq('track', 'PageView');
 
 <div class="header-bar">
   <a href="/" class="back-btn">← 返回首頁</a>
-  <a href="/cart" class="cart-indicator">
-
-    {% if affiliate_name %}
-  <div class="affiliate-banner">
-    <div class="affiliate-banner-title">{{ affiliate_name }} 專屬賣場</div>
-    <div class="affiliate-banner-sub">您目前從合作團購主專屬連結進入此商品頁</div>
-  </div>
-{% endif %}
+  <a href="/cart" class="cart-indicator"> 
   <span class="cart-icon">🛒</span>
   <span class="cart-text">購物車</span>
   <span class="cart-count" id="cart-count" {% if not cart_count or cart_count == 0 %}style="display:none"{% endif %}>
   {{ cart_count or 0 }}
 </span>
-
 </a>
-
 </div>
+
+{% if affiliate_name %}
+  <div class="affiliate-banner">
+    <div class="affiliate-banner-title">{{ affiliate_name }} 專屬賣場</div>
+    <div class="affiliate-banner-sub">您目前從合作團購主專屬連結進入此商品頁</div>
+  </div>
+{% endif %}
 
 <div class="product-container">
   <!-- 左側圖片區塊 -->
