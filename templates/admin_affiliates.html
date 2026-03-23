@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>團購主管理</title>
+
+<style>
+body {
+    font-family: "Segoe UI","Noto Sans TC";
+    background: #f6f7f9;
+    padding: 30px;
+}
+
+.container {
+    max-width: 1000px;
+    margin: auto;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+input, select {
+    padding: 6px;
+    margin: 5px;
+}
+
+button {
+    background: #e91e63;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<h2>團購主管理</h2>
+
+<!-- 新增 -->
+<div class="card">
+<form method="POST" action="/admin0363/affiliates/create">
+    名稱：<input name="name" required>
+    代碼：<input name="code" required>
+    抽成%：<input name="commission" type="number" value="10">
+    <button type="submit">新增</button>
+</form>
+</div>
+
+<!-- 列表 -->
+{% for a in affiliates %}
+<div class="card">
+<form method="POST" action="/admin0363/affiliates/update/{{ a.id }}">
+    名稱：<input name="name" value="{{ a.name }}">
+    代碼：<input name="code" value="{{ a.code }}">
+    抽成%：<input name="commission" type="number" value="{{ a.commission }}">
+
+    狀態：
+    <select name="active">
+        <option value="1" {% if a.active %}selected{% endif %}>啟用</option>
+        <option value="0" {% if not a.active %}selected{% endif %}>停用</option>
+    </select>
+
+    <button type="submit">儲存</button>
+</form>
+
+<p>
+專屬連結：
+<b>https://你的網址/?ref={{ a.code }}</b>
+</p>
+
+</div>
+{% endfor %}
+
+</div>
+</body>
+</html>

@@ -3172,6 +3172,61 @@ def admin_wallet_report():
         reason=reason,
     )
 
+# === 團購主管理 ===
+@app.route("/admin0363/affiliates")
+def admin_affiliates():
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute("SELECT * FROM affiliates ORDER BY id DESC")
+    rows = cur.fetchall()
+
+    affiliates = [dict(r) for r in rows]
+
+    conn.close()
+    return render_template("admin_affiliates.html", affiliates=affiliates)
+
+
+@app.route("/admin0363/affiliates/create", methods=["POST"])
+def create_affiliate():
+    name = request.form["name"]
+    code = request.form["code"]
+    commission = request.form.get("commission", 10)
+
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute("""
+        INSERT INTO affiliates (name, code, commission, active)
+        VALUES (?, ?, ?, 1)
+    """, (name, code, commission))
+
+    conn.commit()
+    conn.close()
+
+    return redirect("/admin0363/affiliates")
+
+
+@app.route("/admin0363/affiliates/update/<int:id>", methods=["POST"])
+def update_affiliate(id):
+    name = request.form["name"]
+    code = request.form["code"]
+    commission = request.form["commission"]
+    active = request.form["active"]
+
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute("""
+        UPDATE affiliates
+        SET name=?, code=?, commission=?, active=?
+        WHERE id=?
+    """, (name, code, commission, active, id))
+
+    conn.commit()
+    conn.close()
+
+    return redirect("/admin0363/affiliates")
 
 
 @app.route('/logout')
