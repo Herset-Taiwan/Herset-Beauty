@@ -563,15 +563,15 @@ body.product-page .tab-btn.active {
 .flash-msg.warn::before{ content: "⚠ "; }
 /* 團購主專屬賣場 */
 .affiliate-banner{
-  display:block;
-  max-width:900px;
-  margin:12px auto 0;
-  text-align:center;
+  display: block;              /* ⭐ 改成 block */
+  max-width: 900px;            /* ⭐ 跟商品寬度一致 */
+  margin: 12px auto 0;         /* ⭐ 置中 */
+  text-align: center;          /* ⭐ 文字置中 */
 
-  padding:12px 20px;
-  background: linear-gradient(135deg,#ffe4ec,#ffd6e3);
-  border-radius:14px;
-  box-shadow:0 4px 12px rgba(0,0,0,0.05);
+  padding: 10px 16px;
+  font-size: 13px;
+  background: #ffe4ec;
+  border-radius: 12px;
 }
 
 .affiliate-banner-title{
