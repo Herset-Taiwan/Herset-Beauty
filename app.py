@@ -27,7 +27,19 @@ from flask import Flask, redirect, url_for, request, session, current_app
 from line_notify import send_line_order_notify
 from line_notify import send_line_message_notify
 
+# ===== Supabase execute() 相容補丁 =====
+try:
+    from postgrest import SyncRequestBuilder
 
+    if not hasattr(SyncRequestBuilder, "execute"):
+        def _execute(self):
+            return self  # 直接回傳自己（讓 .data 可用）
+
+        SyncRequestBuilder.execute = _execute
+except Exception as e:
+    print("execute patch fail:", e)
+
+    
 DEFAULT_SHELL_IMAGE = "/static/uploads/logo_0.png"
 # （刪掉重複的 import traceback；上面第一行已經有了）
 TW = pytz_timezone("Asia/Taipei")
