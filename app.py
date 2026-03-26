@@ -339,38 +339,29 @@ def _auto_grant_signup_wallet(member_id: str):
     if ok:
         current_app.logger.info("[wallet] signup bonus granted to %s, %s cents", member_id, amt)
 
-# === Wallet helpers: 取餘額（從 table 或用 SUM 計算，擇一，依你現在 DB 為準） ===
+# === Wallet helpers: 統一取「可用購物金」===
 def _get_wallet_balance_cents(member_id: str) -> int:
     """
-    回傳會員當前購物金（cents）。
-    若你的 wallet_balances 是 table → 走 table；
-    若它是 VIEW（不能寫入）→ 直接從 wallet_credits 加總。
+    一律用 wallet_credits 明細計算目前可用購物金（cents），
+    避免 header / cart / wallet 頁面顯示不一致。
     """
     try:
-        # 如果你已把 wallet_balances 改成「table」，用這段：
-        res = (supabase.table("wallet_balances")
-               .select("balance_cents")
-               .eq("member_id", member_id)
-               .limit(1).execute())
-        return max(int((res.data or [{}])[0].get("balance_cents") or 0), 0)
-    except Exception:
-        # 若上面失敗（或你保留 balances 為 VIEW），退回用 credits 加總
         res = (supabase.table("wallet_credits")
-               .select("amount_cents")
-               .eq("member_id", member_id).execute())
-        return max(sum(int(r.get("amount_cents") or 0) for r in (res.data or [])), 0)
+               .select("amount_cents, expires_at")
+               .eq("member_id", member_id)
+               .execute())
+        rows = res.data or []
+        return max(_calc_available_wallet_cents(rows), 0)
+    except Exception:
+        return 0
 
 
 def _refresh_wallet_badge(member_id: str) -> None:
-    """把最新餘額塞回 session，給頁首徽章使用。"""
+    """把最新可用餘額塞回 session，給頁首徽章使用。"""
     try:
         session["wallet_balance_cents"] = _get_wallet_balance_cents(member_id)
     except Exception:
         session["wallet_balance_cents"] = 0
-
-
-# ★ 保險：每個請求若已登入但 session 沒該值，就補一次
-from time import time
 
 @app.before_request
 def _ensure_wallet_badge():
@@ -381,21 +372,18 @@ def _ensure_wallet_badge():
         _refresh_wallet_badge(mid)
         session["wallet_last_fetch"] = time.time()
 
-#刷新購物金到 session
+# 刷新購物金到 session（統一用可用購物金邏輯）
 def _refresh_wallet_session(member_id: str) -> int:
     """
-    從 DB 讀取最新餘額（分），寫回 session['wallet_balance_cents']，並回傳整數分。
+    用 wallet_credits 計算目前可用購物金（分），
+    寫回 session['wallet_balance_cents']，並回傳整數分。
     """
     try:
-        r = (supabase.table('wallet_balances')
-             .select('balance_cents')
-             .eq('member_id', member_id)
-             .single()
-             .execute())
-        bal = int((r.data or {}).get('balance_cents') or 0)
+        bal = _get_wallet_balance_cents(member_id)
     except Exception:
         current_app.logger.exception('[wallet] refresh balance failed')
         bal = 0
+
     session['wallet_balance_cents'] = bal
     return bal
 
@@ -2534,12 +2522,9 @@ def login():
             except Exception:
                 current_app.logger.exception("[wallet] auto grant (platform login) failed")
 
-            # ★ 新增：立即刷新頁首購物金徽章（用 credits 加總，兼容你目前 DB）
+            # ★ 統一刷新頁首購物金徽章
             try:
-                bres = (supabase.table("wallet_credits")
-                        .select("amount_cents")
-                        .eq("member_id", session['member_id']).execute())
-                session['wallet_balance_cents'] = sum(int(r.get('amount_cents') or 0) for r in (bres.data or []))
+                session['wallet_balance_cents'] = _get_wallet_balance_cents(session['member_id'])
             except Exception:
                 session['wallet_balance_cents'] = 0
 
@@ -2557,9 +2542,6 @@ def login():
             return render_template("login.html", error="帳號或密碼錯誤")
 
     return render_template("login.html")
-
-
-
 
 # === 第三方登入：導向同意頁開始 ===
 
