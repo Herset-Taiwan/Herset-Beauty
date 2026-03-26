@@ -871,7 +871,12 @@ fbq('track', 'PageView');
   }
 
   function handleAddToCart(productId){
-  const qty = parseInt(document.getElementById('qty').value) || 1;
+  if (typeof gtag === 'function') {
+    gtag('event', 'add_to_cart', {
+      product_id: productId
+    });
+  }
+    const qty = parseInt(document.getElementById('qty').value) || 1;
 
   const isBundle = {{ 'true' if product.get('product_type') == 'bundle' else 'false' }};
   let optionToSend = "";
@@ -1326,10 +1331,12 @@ document.addEventListener('DOMContentLoaded', function () {
 document.addEventListener('DOMContentLoaded', function () {
   if (typeof gtag === 'function') {
     gtag('event', 'product_view', {
-      product_id: "{{ product['id'] }}",
-      product_name: "{{ product['name'] }}",
-      page_path: window.location.pathname
-    });
+  product_id: "{{ product['id'] }}",
+  product_name: "{{ product['name'] }}",
+  price: "{{ product['price'] }}",
+  category: "{{ product.get('category', '') }}",
+  page_path: window.location.pathname
+});
   }
 });
 </script>
