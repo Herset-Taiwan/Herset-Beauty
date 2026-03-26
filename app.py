@@ -27,6 +27,35 @@ from flask import Flask, redirect, url_for, request, session, current_app
 from line_notify import send_line_order_notify
 from line_notify import send_line_message_notify
 
+_banner_cache = {
+    "data": None,
+    "ts": 0
+}
+
+# ===== Supabase execute() 相容補丁（完整版）=====
+try:
+    from postgrest import SyncRequestBuilder
+
+    if not hasattr(SyncRequestBuilder, "execute"):
+        def _execute(self):
+            return self
+
+        SyncRequestBuilder.execute = _execute
+
+    if not hasattr(SyncRequestBuilder, "data"):
+        @property
+        def _data(self):
+            try:
+                res = self.perform()
+                return res.data if hasattr(res, "data") else res
+            except Exception:
+                return []
+
+        SyncRequestBuilder.data = _data
+
+except Exception as e:
+    print("execute patch fail:", e)
+
 
 DEFAULT_SHELL_IMAGE = "/static/uploads/logo_0.png"
 # （刪掉重複的 import traceback；上面第一行已經有了）
@@ -268,9 +297,8 @@ def _grant_wallet(member_id: str, amount_cents: int, *, reason: str,
             "issued_by_admin": issued_by_admin,
             "note": note
     }, returning="minimal").execute()
-        # 2) 更新餘額（簡單兩段式；若要完全避免競爭以 SQL function 取代）
-        cur = _get_wallet_balance(member_id)
-        new_balance = cur + amount_cents
+        # 2) 更新餘額：統一用 wallet_credits 可用金額邏輯計算
+        new_balance = _get_wallet_balance_cents(member_id)
         supabase.table("wallet_balances").upsert({
             "member_id": member_id,
             "balance_cents": new_balance
@@ -310,58 +338,50 @@ def _auto_grant_signup_wallet(member_id: str):
     if ok:
         current_app.logger.info("[wallet] signup bonus granted to %s, %s cents", member_id, amt)
 
-# === Wallet helpers: 取餘額（從 table 或用 SUM 計算，擇一，依你現在 DB 為準） ===
+# === Wallet helpers: 統一取「可用購物金」===
 def _get_wallet_balance_cents(member_id: str) -> int:
     """
-    回傳會員當前購物金（cents）。
-    若你的 wallet_balances 是 table → 走 table；
-    若它是 VIEW（不能寫入）→ 直接從 wallet_credits 加總。
+    一律用 wallet_credits 明細計算目前可用購物金（cents），
+    避免 header / cart / wallet 頁面顯示不一致。
     """
     try:
-        # 如果你已把 wallet_balances 改成「table」，用這段：
-        res = (supabase.table("wallet_balances")
-               .select("balance_cents")
-               .eq("member_id", member_id)
-               .limit(1).execute())
-        return max(int((res.data or [{}])[0].get("balance_cents") or 0), 0)
-    except Exception:
-        # 若上面失敗（或你保留 balances 為 VIEW），退回用 credits 加總
         res = (supabase.table("wallet_credits")
-               .select("amount_cents")
-               .eq("member_id", member_id).execute())
-        return max(sum(int(r.get("amount_cents") or 0) for r in (res.data or [])), 0)
+               .select("amount_cents, expires_at")
+               .eq("member_id", member_id)
+               .execute())
+        rows = res.data or []
+        return max(_calc_available_wallet_cents(rows), 0)
+    except Exception:
+        return 0
 
 
 def _refresh_wallet_badge(member_id: str) -> None:
-    """把最新餘額塞回 session，給頁首徽章使用。"""
+    """把最新可用餘額塞回 session，給頁首徽章使用。"""
     try:
         session["wallet_balance_cents"] = _get_wallet_balance_cents(member_id)
     except Exception:
         session["wallet_balance_cents"] = 0
 
-
-# ★ 保險：每個請求若已登入但 session 沒該值，就補一次
 @app.before_request
 def _ensure_wallet_badge():
     mid = session.get("member_id")
-    if mid and "wallet_balance_cents" not in session:
+    if mid:
         _refresh_wallet_badge(mid)
+    else:
+        session["wallet_balance_cents"] = 0
 
-#刷新購物金到 session
+# 刷新購物金到 session（統一用可用購物金邏輯）
 def _refresh_wallet_session(member_id: str) -> int:
     """
-    從 DB 讀取最新餘額（分），寫回 session['wallet_balance_cents']，並回傳整數分。
+    用 wallet_credits 計算目前可用購物金（分），
+    寫回 session['wallet_balance_cents']，並回傳整數分。
     """
     try:
-        r = (supabase.table('wallet_balances')
-             .select('balance_cents')
-             .eq('member_id', member_id)
-             .single()
-             .execute())
-        bal = int((r.data or {}).get('balance_cents') or 0)
+        bal = _get_wallet_balance_cents(member_id)
     except Exception:
         current_app.logger.exception('[wallet] refresh balance failed')
         bal = 0
+
     session['wallet_balance_cents'] = bal
     return bal
 
@@ -394,20 +414,24 @@ SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY") or os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 # ===== Banners helpers =====
+import time
+
 def get_active_banners():
-    """
-    從 banners 資料表取出啟用中的輪播，依 sort_order 正序。
-    """
-    try:
-        res = (supabase.table("banners")
-               .select("*")
-               .eq("is_active", True)
-               .order("sort_order", desc=False)
-               .order("id", desc=False)
-               .execute())
-        return res.data or []
-    except Exception:
-        return []
+    global _banner_cache
+
+    if _banner_cache["data"] and time.time() - _banner_cache["ts"] < 300:
+        return _banner_cache["data"]
+
+    res = (supabase.table("banners")
+           .select("*")
+           .eq("is_active", True)
+           .order("sort_order")
+           .execute())
+
+    _banner_cache["data"] = res.data or []
+    _banner_cache["ts"] = time.time()
+
+    return _banner_cache["data"]
 
 
 # ✅ 郵件設定
@@ -551,6 +575,8 @@ def index():
         cart_count=cart_count,
         banners=get_active_banners()
     )
+
+
 # ✅ SEO相關
 @app.route('/robots.txt')
 def robots():
@@ -2494,12 +2520,9 @@ def login():
             except Exception:
                 current_app.logger.exception("[wallet] auto grant (platform login) failed")
 
-            # ★ 新增：立即刷新頁首購物金徽章（用 credits 加總，兼容你目前 DB）
+            # ★ 統一刷新頁首購物金徽章
             try:
-                bres = (supabase.table("wallet_credits")
-                        .select("amount_cents")
-                        .eq("member_id", session['member_id']).execute())
-                session['wallet_balance_cents'] = sum(int(r.get('amount_cents') or 0) for r in (bres.data or []))
+                session['wallet_balance_cents'] = _get_wallet_balance_cents(session['member_id'])
             except Exception:
                 session['wallet_balance_cents'] = 0
 
@@ -2517,9 +2540,6 @@ def login():
             return render_template("login.html", error="帳號或密碼錯誤")
 
     return render_template("login.html")
-
-
-
 
 # === 第三方登入：導向同意頁開始 ===
 
@@ -3704,22 +3724,17 @@ def cart():
         except Exception as e:
             print('[upsell] error:', e)
 
-        # === 立即查詢購物金餘額（以 wallet_credits 明細加總） ===
+    # === 統一用可用購物金邏輯，避免和 header / 錢包頁不一致 ===
     wallet_balance_cents = 0
     mid = session.get("member_id")
     if mid:
         try:
-            r = (supabase.table("wallet_credits")
-                 .select("amount_cents")
-                 .eq("member_id", mid)
-                 .execute())
-            wallet_balance_cents = max(
-    0,
-    sum(int(x.get("amount_cents") or 0) for x in (r.data or []))
-)
+            wallet_balance_cents = _get_wallet_balance_cents(mid)
+            session["wallet_balance_cents"] = wallet_balance_cents
         except Exception:
             current_app.logger.exception("[cart] load wallet balance failed")
             wallet_balance_cents = 0
+            session["wallet_balance_cents"] = 0
 
 
     return render_template(
@@ -5715,6 +5730,8 @@ def update_profile():
 
 @app.route('/profile-data')
 def profile_data():
+    if 'profile_cache' in session:
+        return jsonify(success=True, data=session['profile_cache'])
     if 'member_id' not in session:
         return jsonify(success=False, message="Not logged in")
 
@@ -5819,9 +5836,17 @@ def order_history():
            .execute())
     orders_raw = res.data or []
 
-    # 查詢所有訂單項目（一次撈取）
-    res = supabase.table("order_items").select("*").execute()
-    items = res.data or []
+
+    # ✅ 只撈該會員的 order_id
+    order_ids = [o['id'] for o in orders_raw]
+
+    items = []
+    if order_ids:
+        res = (supabase.table("order_items")
+           .select("*")
+           .in_("order_id", order_ids)
+           .execute())
+        items = res.data or []
     item_group = {}
     for item in items:
         item_group.setdefault(item['order_id'], []).append(item)
@@ -5874,31 +5899,46 @@ def order_history():
 # 會員重新下單路由
 @app.route('/reorder/<int:order_id>')
 def reorder(order_id):
-    # 查詢訂單商品
+    # ===== 1. 查訂單商品 =====
     res = supabase.table("order_items").select("*").eq("order_id", order_id).execute()
     items = res.data or []
 
-    # 初始化購物車
+    if not items:
+        return redirect('/cart')
+
+    # ===== 2. 一次撈所有商品（重點優化）=====
+    product_ids = list({i['product_id'] for i in items if i.get('product_id')})
+
+    product_map = {}
+    if product_ids:
+        pres = (supabase.table('products')
+                .select('*')
+                .in_('id', product_ids)
+                .execute())
+        for p in pres.data or []:
+            product_map[p['id']] = p
+
+    # ===== 3. 組 cart =====
     cart = []
     for item in items:
         product_id = item['product_id']
         qty = item['qty']
 
-        # 查詢商品
-        product_res = supabase.table('products').select('*').eq('id', product_id).single().execute()
-        if not product_res.data:
+        product = product_map.get(product_id)
+        if not product:
             continue
-        product = product_res.data
 
         cart.append({
             'product_id': product_id,
             'name': product['name'],
             'price': product['price'],
-            'images': product['images'],
+            'images': product['images'][0] if isinstance(product['images'], list) else product['images'],
             'qty': qty
         })
 
+    # ===== 4. 寫入 session =====
     session['cart'] = cart
+
     return redirect('/cart')
 
 # 首頁最下方關於我、付款方式、配送方式等路由
