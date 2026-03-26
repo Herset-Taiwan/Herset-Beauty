@@ -341,11 +341,16 @@ def _refresh_wallet_badge(member_id: str) -> None:
 
 
 # ★ 保險：每個請求若已登入但 session 沒該值，就補一次
+from time import time
+
 @app.before_request
 def _ensure_wallet_badge():
     mid = session.get("member_id")
-    if mid and "wallet_balance_cents" not in session:
+    last = session.get("wallet_last_fetch", 0)
+
+    if mid and (time() - last > 600):
         _refresh_wallet_badge(mid)
+        session["wallet_last_fetch"] = time()
 
 #刷新購物金到 session
 def _refresh_wallet_session(member_id: str) -> int:
@@ -394,20 +399,24 @@ SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY") or os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 # ===== Banners helpers =====
+import time
+
 def get_active_banners():
-    """
-    從 banners 資料表取出啟用中的輪播，依 sort_order 正序。
-    """
-    try:
-        res = (supabase.table("banners")
-               .select("*")
-               .eq("is_active", True)
-               .order("sort_order", desc=False)
-               .order("id", desc=False)
-               .execute())
-        return res.data or []
-    except Exception:
-        return []
+    global _banner_cache
+
+    if time.time() - _banner_cache["ts"] < 300:
+        return _banner_cache["data"]
+
+    res = (supabase.table("banners")
+           .select("*")
+           .eq("is_active", True)
+           .order("sort_order")
+           .execute())
+
+    _banner_cache["data"] = res.data or []
+    _banner_cache["ts"] = time.time()
+
+    return _banner_cache["data"]
 
 
 # ✅ 郵件設定
@@ -5717,6 +5726,8 @@ def update_profile():
 
 @app.route('/profile-data')
 def profile_data():
+    if 'profile_cache' in session:
+        return jsonify(success=True, data=session['profile_cache'])
     if 'member_id' not in session:
         return jsonify(success=False, message="Not logged in")
 
@@ -5821,9 +5832,17 @@ def order_history():
            .execute())
     orders_raw = res.data or []
 
-    # 查詢所有訂單項目（一次撈取）
-    res = supabase.table("order_items").select("*").execute()
-    items = res.data or []
+
+    # ✅ 只撈該會員的 order_id
+    order_ids = [o['id'] for o in orders_raw]
+
+    items = []
+    if order_ids:
+        res = (supabase.table("order_items")
+           .select("*")
+           .in_("order_id", order_ids)
+           .execute())
+        items = res.data or []
     item_group = {}
     for item in items:
         item_group.setdefault(item['order_id'], []).append(item)
@@ -5876,31 +5895,46 @@ def order_history():
 # 會員重新下單路由
 @app.route('/reorder/<int:order_id>')
 def reorder(order_id):
-    # 查詢訂單商品
+    # ===== 1. 查訂單商品 =====
     res = supabase.table("order_items").select("*").eq("order_id", order_id).execute()
     items = res.data or []
 
-    # 初始化購物車
+    if not items:
+        return redirect('/cart')
+
+    # ===== 2. 一次撈所有商品（重點優化）=====
+    product_ids = list({i['product_id'] for i in items if i.get('product_id')})
+
+    product_map = {}
+    if product_ids:
+        pres = (supabase.table('products')
+                .select('*')
+                .in_('id', product_ids)
+                .execute())
+        for p in pres.data or []:
+            product_map[p['id']] = p
+
+    # ===== 3. 組 cart =====
     cart = []
     for item in items:
         product_id = item['product_id']
         qty = item['qty']
 
-        # 查詢商品
-        product_res = supabase.table('products').select('*').eq('id', product_id).single().execute()
-        if not product_res.data:
+        product = product_map.get(product_id)
+        if not product:
             continue
-        product = product_res.data
 
         cart.append({
             'product_id': product_id,
             'name': product['name'],
             'price': product['price'],
-            'images': product['images'],
+            'images': product['images'][0] if isinstance(product['images'], list) else product['images'],
             'qty': qty
         })
 
+    # ===== 4. 寫入 session =====
     session['cart'] = cart
+
     return redirect('/cart')
 
 # 首頁最下方關於我、付款方式、配送方式等路由
