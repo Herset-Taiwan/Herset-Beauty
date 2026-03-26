@@ -1322,7 +1322,17 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 })();
 </script>
-
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (typeof gtag === 'function') {
+    gtag('event', 'product_view', {
+      product_id: "{{ product['id'] }}",
+      product_name: "{{ product['name'] }}",
+      page_path: window.location.pathname
+    });
+  }
+});
+</script>
 
 </body>
 </html>
