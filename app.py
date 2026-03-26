@@ -39,7 +39,7 @@ try:
 except Exception as e:
     print("execute patch fail:", e)
 
-    
+
 DEFAULT_SHELL_IMAGE = "/static/uploads/logo_0.png"
 # （刪掉重複的 import traceback；上面第一行已經有了）
 TW = pytz_timezone("Asia/Taipei")
@@ -360,9 +360,9 @@ def _ensure_wallet_badge():
     mid = session.get("member_id")
     last = session.get("wallet_last_fetch", 0)
 
-    if mid and (time() - last > 600):
+    if mid and (time.time() - last > 600):
         _refresh_wallet_badge(mid)
-        session["wallet_last_fetch"] = time()
+        session["wallet_last_fetch"] = time.time()
 
 #刷新購物金到 session
 def _refresh_wallet_session(member_id: str) -> int:
