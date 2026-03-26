@@ -27,15 +27,32 @@ from flask import Flask, redirect, url_for, request, session, current_app
 from line_notify import send_line_order_notify
 from line_notify import send_line_message_notify
 
-# ===== Supabase execute() 相容補丁 =====
+_banner_cache = {
+    "data": None,
+    "ts": 0
+}
+
+# ===== Supabase execute() 相容補丁（完整版）=====
 try:
     from postgrest import SyncRequestBuilder
 
     if not hasattr(SyncRequestBuilder, "execute"):
         def _execute(self):
-            return self  # 直接回傳自己（讓 .data 可用）
+            return self
 
         SyncRequestBuilder.execute = _execute
+
+    if not hasattr(SyncRequestBuilder, "data"):
+        @property
+        def _data(self):
+            try:
+                res = self.perform()
+                return res.data if hasattr(res, "data") else res
+            except Exception:
+                return []
+
+        SyncRequestBuilder.data = _data
+
 except Exception as e:
     print("execute patch fail:", e)
 
@@ -416,7 +433,7 @@ import time
 def get_active_banners():
     global _banner_cache
 
-    if time.time() - _banner_cache["ts"] < 300:
+    if _banner_cache["data"] and time.time() - _banner_cache["ts"] < 300:
         return _banner_cache["data"]
 
     res = (supabase.table("banners")
