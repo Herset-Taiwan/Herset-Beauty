@@ -498,20 +498,22 @@ def index():
     category = request.args.get('category')
 
     # 先抓全部商品
-try:
-    res = supabase.table("products").select("*").execute()
-    products = res.data or []
-except Exception as e:
-    app.logger.error(f"[index] products error: {e}")
-    products = []
+    try:
+        res = supabase.table("products").select("*").execute()
+        products = res.data or []
+    except Exception as e:
+        app.logger.error(f"[index] products error: {e}")
+        products = []
 
-        # 🔻 過濾：前台只顯示未下架的商品
+    # 🔻 過濾：前台只顯示未下架的商品
     products = [p for p in products if not (p.get('is_hidden') is True)]
 
     # 撈出所有套組，做 (shell_product_id -> bundle資料) 對照
-    bres = supabase.table("bundles") \
-        .select("id, price, compare_at, shell_product_id") \
+    bres = (
+        supabase.table("bundles")
+        .select("id, price, compare_at, shell_product_id")
         .execute()
+    )
     bundles = bres.data or []
     shell_to_bundle = {b["shell_product_id"]: b for b in bundles if b.get("shell_product_id")}
 
@@ -520,16 +522,16 @@ except Exception as e:
         if p.get("product_type") == "bundle":
             b = shell_to_bundle.get(p.get("id"))
             if b:
-                p["bundle_price"] = b.get("price")          # 現價
-                p["bundle_compare"] = b.get("compare_at")   # 原價(用來算折數)
+                p["bundle_price"] = b.get("price")
+                p["bundle_compare"] = b.get("compare_at")
 
     # 分類篩選（若有帶 category）
     if category and category != '全部':
         products = [p for p in products if category in (p.get('categories') or [])]
 
-        # ✅ 排序：有「主打商品」tag 的商品排在最前面（其餘維持原本順序）
+    # ✅ 排序：有「主打商品」tag 的商品排在最前面（其餘維持原本順序）
     for idx, p in enumerate(products):
-        p["_orig_idx"] = idx  # 記住原本順序，做穩定排序用
+        p["_orig_idx"] = idx
 
     def is_featured(prod):
         return "主打商品" in (prod.get("tags") or [])
@@ -542,7 +544,13 @@ except Exception as e:
 
     cart = session.get('cart', [])
     cart_count = sum(item.get('qty', 0) for item in cart)
-    return render_template("index.html", products=products, cart_count=cart_count, banners=get_active_banners())
+
+    return render_template(
+        "index.html",
+        products=products,
+        cart_count=cart_count,
+        banners=get_active_banners()
+    )
 
 
 # ✅ SEO相關
