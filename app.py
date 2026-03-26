@@ -393,21 +393,94 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY") or os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-# ===== Banners helpers =====
-def get_active_banners():
-    """
-    從 banners 資料表取出啟用中的輪播，依 sort_order 正序。
-    """
+# ===== Simple in-memory cache =====
+_HOME_CACHE = {
+    "expires": 0,
+    "products": [],
+    "banners": [],
+}
+
+def _now_ts():
+    return time.time()
+
+def _get_home_cached_data():
+    global _HOME_CACHE
+
+    if _HOME_CACHE["expires"] > _now_ts():
+        return _HOME_CACHE["products"], _HOME_CACHE["banners"]
+
+    # 只抓前台需要的欄位，不要 select("*")
     try:
-        res = (supabase.table("banners")
-               .select("*")
-               .eq("is_active", True)
-               .order("sort_order", desc=False)
-               .order("id", desc=False)
-               .execute())
-        return res.data or []
+        res = (
+            supabase.table("products")
+            .select("id,name,price,discount_price,image,images,categories,tags,product_type,is_hidden")
+            .execute()
+        )
+        products = res.data or []
+    except Exception as e:
+        app.logger.error(f"[home cache] products error: {e}")
+        products = []
+
+    products = [p for p in products if not (p.get("is_hidden") is True)]
+
+    try:
+        bres = (
+            supabase.table("bundles")
+            .select("id,price,compare_at,shell_product_id")
+            .execute()
+        )
+        bundles = bres.data or []
+    except Exception as e:
+        app.logger.error(f"[home cache] bundles error: {e}")
+        bundles = []
+
+    shell_to_bundle = {
+        b["shell_product_id"]: b for b in bundles if b.get("shell_product_id")
+    }
+
+    for p in products:
+        if p.get("product_type") == "bundle":
+            b = shell_to_bundle.get(p.get("id"))
+            if b:
+                p["bundle_price"] = b.get("price")
+                p["bundle_compare"] = b.get("compare_at")
+
+    banners = get_active_banners_cached()
+
+    _HOME_CACHE["products"] = products
+    _HOME_CACHE["banners"] = banners
+    _HOME_CACHE["expires"] = _now_ts() + 300   # 快取 5 分鐘
+
+    return products, banners
+
+# ===== Banners helpers =====
+_BANNER_CACHE = {
+    "expires": 0,
+    "rows": []
+}
+
+def get_active_banners_cached():
+    global _BANNER_CACHE
+
+    if _BANNER_CACHE["expires"] > _now_ts():
+        return _BANNER_CACHE["rows"]
+
+    try:
+        res = (
+            supabase.table("banners")
+            .select("*")
+            .eq("is_active", True)
+            .order("sort_order", desc=False)
+            .order("id", desc=False)
+            .execute()
+        )
+        rows = res.data or []
     except Exception:
-        return []
+        rows = []
+
+    _BANNER_CACHE["rows"] = rows
+    _BANNER_CACHE["expires"] = _now_ts() + 300
+    return rows
 
 
 # ✅ 郵件設定
@@ -497,48 +570,28 @@ def nl2br_filter(s):
 def index():
     category = request.args.get('category')
 
-    # 先抓全部商品
-    res = supabase.table("products").select("*").execute()
-    products = res.data or []
+    products, banners = _get_home_cached_data()
 
-        # 🔻 過濾：前台只顯示未下架的商品
-    products = [p for p in products if not (p.get('is_hidden') is True)]
+    # 避免直接改到 cache 內原資料
+    products = [dict(p) for p in products]
 
-    # 撈出所有套組，做 (shell_product_id -> bundle資料) 對照
-    bres = supabase.table("bundles") \
-        .select("id, price, compare_at, shell_product_id") \
-        .execute()
-    bundles = bres.data or []
-    shell_to_bundle = {b["shell_product_id"]: b for b in bundles if b.get("shell_product_id")}
-
-    # 把套組價資訊加到對應殼商品上，給前端好判斷
-    for p in products:
-        if p.get("product_type") == "bundle":
-            b = shell_to_bundle.get(p.get("id"))
-            if b:
-                p["bundle_price"] = b.get("price")          # 現價
-                p["bundle_compare"] = b.get("compare_at")   # 原價(用來算折數)
-
-    # 分類篩選（若有帶 category）
     if category and category != '全部':
         products = [p for p in products if category in (p.get('categories') or [])]
 
-        # ✅ 排序：有「主打商品」tag 的商品排在最前面（其餘維持原本順序）
     for idx, p in enumerate(products):
-        p["_orig_idx"] = idx  # 記住原本順序，做穩定排序用
+        p["_orig_idx"] = idx
 
     def is_featured(prod):
         return "主打商品" in (prod.get("tags") or [])
 
     products.sort(key=lambda p: (0 if is_featured(p) else 1, p.get("_orig_idx", 0)))
 
-    # 清掉暫存欄位，避免影響前端或存回資料庫
     for p in products:
         p.pop("_orig_idx", None)
 
     cart = session.get('cart', [])
     cart_count = sum(item.get('qty', 0) for item in cart)
-    return render_template("index.html", products=products, cart_count=cart_count, banners=get_active_banners())
+    return render_template("index.html", products=products, cart_count=cart_count, banners=banners)
 
 
 # ✅ SEO相關
@@ -3505,7 +3558,23 @@ def cart():
 
         # 其他未知 action：直接回購物車
         return redirect(url_for('cart'))
+    
+    product_ids = [item.get('product_id') for item in cart_items if item.get('product_id')]
+    product_map = {}
 
+    if product_ids:
+        try:
+            pres = (
+                supabase.table("products")
+                .select("id,name,image,images,product_type,price,discount_price")
+                .in_("id", product_ids)
+                .execute()
+            )
+            rows = pres.data or []
+            product_map = {str(r["id"]): r for r in rows}
+        except Exception as e:
+            app.logger.error(f"[cart] batch load products error: {e}")
+            product_map = {}
     # ---- GET：顯示購物車 ----
     products = []
     total = 0.0
@@ -3522,9 +3591,7 @@ def cart():
         qty = int(item.get('qty') or 1)
 
         # 從 DB 取補充資訊（不覆寫價格）
-        db = supabase.table("products").select("name,image,images,product_type") \
-                     .eq("id", pid).single().execute()
-        dbp = db.data or {}
+        dbp = product_map.get(str(pid), {})
 
         images = item.get('images') or dbp.get('images') or []
         image = item.get('image') or dbp.get('image') \
@@ -6323,14 +6390,12 @@ def member_messages():
 #全站共用留言has_new_reply
 @app.context_processor
 def inject_has_new_reply():
-    has_reply = False
-    if 'member_id' in session:
-        res = supabase.table("messages") \
-            .select("id") \
-            .eq("member_id", session['member_id']) \
-            .eq("is_replied", True) \
-            .eq("is_read", False) \
-            .execute()
+    try:
+        res = supabase.table(...).execute()
+        return {"has_new_reply": bool(res.data)}
+    except Exception as e:
+        app.logger.error(f"[inject_has_new_reply] error: {e}")
+        return {"has_new_reply": False}
         has_reply = len(res.data) > 0
 
     return dict(has_new_reply=has_reply)
