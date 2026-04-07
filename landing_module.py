@@ -1,6 +1,8 @@
 import json
+import os
 import re
 import random
+import unicodedata
 from datetime import datetime
 from flask import render_template, request, jsonify, session, redirect, flash
 
@@ -381,32 +383,72 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
             )
 
         page_data = parse_landing_page_form(request.form)
-        # ===== 圖片上傳 =====
+
+    # ===== 圖片上傳 =====
         hero_file = request.files.get("hero_image_file")
         mobile_file = request.files.get("hero_image_mobile_file")
+
+        def safe_filename(name):
+            name = os.path.basename(name or "").strip()
+            if not name:
+                return "image"
+
+            normalized = unicodedata.normalize("NFKD", name)
+            ascii_name = normalized.encode("ascii", "ignore").decode("ascii")
+
+            if "." in ascii_name:
+                base, ext = ascii_name.rsplit(".", 1)
+                ext = "." + ext.lower()
+            else:
+                base, ext = ascii_name, ""
+
+            base = base.lower().strip()
+            base = re.sub(r"[^a-z0-9._-]+", "_", base)
+            base = re.sub(r"_+", "_", base)
+            base = base.strip("._-")
+
+            if not base:
+                base = "image"
+
+            return base + ext
 
         def upload_image(file):
             if not file or file.filename == "":
                 return None
 
-            filename = f"landing/{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}"
+            safe_name = safe_filename(file.filename)
+            filename = "landing/{0}_{1}".format(
+                datetime.now(TW).strftime("%Y%m%d%H%M%S"),
+                safe_name
+            )
 
-            res = supabase.storage.from_("images").upload(filename, file.read())
+            try:
+                file_bytes = file.read()
+                if not file_bytes:
+                    return None
 
-            if hasattr(res, "error") and res.error:
+                res = supabase.storage.from_("images").upload(filename, file_bytes)
+
+                if hasattr(res, "error") and res.error:
+                    print("UPLOAD ERROR:", res.error)
+                    return None
+
+                return supabase.storage.from_("images").get_public_url(filename)
+
+            except Exception as e:
+                print("UPLOAD ERROR:", str(e))
                 return None
 
-            return supabase.storage.from_("images").get_public_url(filename)
-
-        # 主圖
+    # 主圖
         uploaded_hero = upload_image(hero_file)
         if uploaded_hero:
             page_data["hero_image"] = uploaded_hero
 
-        # 手機圖
+    # 手機圖
         uploaded_mobile = upload_image(mobile_file)
         if uploaded_mobile:
             page_data["hero_image_mobile"] = uploaded_mobile
+
         page_data["created_at"] = datetime.now(TW).isoformat()
 
         if not page_data["name"] or not page_data["slug"]:
@@ -471,25 +513,60 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
 
         page_data = parse_landing_page_form(request.form)
 
-        # ===== 圖片上傳處理 =====
+    # ===== 圖片上傳處理 =====
         hero_file = request.files.get("hero_image_file")
         mobile_file = request.files.get("hero_image_mobile_file")
+
+        def safe_filename(name):
+            name = os.path.basename(name or "").strip()
+            if not name:
+                return "image"
+
+            normalized = unicodedata.normalize("NFKD", name)
+            ascii_name = normalized.encode("ascii", "ignore").decode("ascii")
+
+            if "." in ascii_name:
+                base, ext = ascii_name.rsplit(".", 1)
+                ext = "." + ext.lower()
+            else:
+                base, ext = ascii_name, ""
+
+            base = base.lower().strip()
+            base = re.sub(r"[^a-z0-9._-]+", "_", base)
+            base = re.sub(r"_+", "_", base)
+            base = base.strip("._-")
+
+            if not base:
+                base = "image"
+
+            return base + ext
 
         def upload_image(file):
             if not file or file.filename == "":
                 return None
 
+            safe_name = safe_filename(file.filename)
             filename = "landing/{0}_{1}".format(
                 datetime.now(TW).strftime("%Y%m%d%H%M%S"),
-                file.filename
+                safe_name
             )
 
-            res = supabase.storage.from_("images").upload(filename, file.read())
+            try:
+                file_bytes = file.read()
+                if not file_bytes:
+                    return None
 
-            if hasattr(res, "error") and res.error:
+                res = supabase.storage.from_("images").upload(filename, file_bytes)
+
+                if hasattr(res, "error") and res.error:
+                    print("UPLOAD ERROR:", res.error)
+                    return None
+
+                return supabase.storage.from_("images").get_public_url(filename)
+
+            except Exception as e:
+                print("UPLOAD ERROR:", str(e))
                 return None
-
-            return supabase.storage.from_("images").get_public_url(filename)
 
         uploaded_hero = upload_image(hero_file)
         if uploaded_hero:
