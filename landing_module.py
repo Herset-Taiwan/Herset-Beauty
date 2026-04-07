@@ -1,8 +1,11 @@
 import json
 import os
 import re
+import io
 import random
+import uuid
 import unicodedata
+from PIL import Image, ImageOps
 from datetime import datetime
 from flask import render_template, request, jsonify, session, redirect, flash
 
@@ -11,6 +14,119 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
     # ======================================================
     # Helpers
     # ======================================================
+    
+    def safe_filename(name):
+        name = os.path.basename(name or "").strip()
+        if not name:
+            return "image"
+
+        normalized = unicodedata.normalize("NFKD", name)
+        ascii_name = normalized.encode("ascii", "ignore").decode("ascii")
+
+        if "." in ascii_name:
+            base, ext = ascii_name.rsplit(".", 1)
+            ext = "." + ext.lower()
+        else:
+            base, ext = ascii_name, ".jpg"
+
+        base = base.lower().strip()
+        base = re.sub(r"[^a-z0-9._-]+", "_", base)
+        base = re.sub(r"_+", "_", base)
+        base = base.strip("._-")
+
+        if not base:
+            base = "image"
+
+        return base + ext
+
+    def crop_and_resize_image(file_bytes, target_width, target_height, quality=88):
+        img = Image.open(io.BytesIO(file_bytes)).convert("RGB")
+        img = ImageOps.exif_transpose(img)
+        img = ImageOps.fit(
+            img,
+            (target_width, target_height),
+            method=Image.Resampling.LANCZOS,
+            centering=(0.5, 0.5)
+        )
+
+        output = io.BytesIO()
+        img.save(output, format="JPEG", quality=quality, optimize=True)
+        output.seek(0)
+        return output.read()
+
+
+    def upload_bytes_to_supabase(file_bytes, original_name, folder="landing"):
+        safe_name = safe_filename(original_name)
+        base_name = safe_name.rsplit(".", 1)[0]
+
+        filename = "{0}/{1}_{2}.jpg".format(
+            folder,
+            datetime.now(TW).strftime("%Y%m%d%H%M%S"),
+            base_name + "_" + uuid.uuid4().hex[:6]
+        )
+
+        try:
+            res = supabase.storage.from_("images").upload(
+                filename,
+                file_bytes,
+                {"content-type": "image/jpeg"}
+            )
+
+            if hasattr(res, "error") and res.error:
+                print("UPLOAD ERROR:", res.error)
+                return None
+
+            return supabase.storage.from_("images").get_public_url(filename)
+
+        except Exception as e:
+            print("UPLOAD ERROR:", str(e))
+            return None
+
+
+    def build_hero_images(file):
+        if not file or file.filename == "":
+            return None, None
+
+        raw = file.read()
+        if not raw:
+            return None, None
+
+        desktop = crop_and_resize_image(raw, 1920, 900)
+        mobile = crop_and_resize_image(raw, 900, 1200)
+
+        desktop_url = upload_bytes_to_supabase(desktop, "desktop_" + file.filename)
+        mobile_url = upload_bytes_to_supabase(mobile, "mobile_" + file.filename)
+
+        return desktop_url, mobile_url
+
+
+    def upload_secondary_images(files):
+        urls = []
+
+        for f in files:
+            if not f or not f.filename:
+                continue
+
+            try:
+                raw = f.read()
+                if not raw:
+                    continue
+
+                img = crop_and_resize_image(raw, 1200, 1200)
+                url = upload_bytes_to_supabase(
+                    img,
+                    "secondary_" + f.filename,
+                    folder="landing/secondary"
+                )
+
+                if url:
+                    urls.append(url)
+
+            except Exception as e:
+                print("SECONDARY ERROR:", str(e))
+
+        return urls
+    
     def safe_json_loads(value, default):
         if value is None or value == "":
             return default
@@ -99,6 +215,7 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
         }
 
         slug = slugify(form.get("slug") or form.get("name") or "")
+        secondary_urls = [x.strip() for x in form.getlist("secondary_images[]") if x.strip()]
 
         return {
             "name": (form.get("name") or "").strip(),
@@ -115,7 +232,8 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
             "sections_json": sections_json,
             "theme_json": theme_json,
             "is_active": form.get("is_active") == "1",
-            "updated_at": datetime.now(TW).isoformat()
+            "updated_at": datetime.now(TW).isoformat(),
+            "secondary_images_json": secondary_urls,
         }
 
     def parse_landing_offers_form(form, landing_page_id):
@@ -176,7 +294,7 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
             offers.append(offer)
 
         return offers
-
+    
     # ======================================================
     # 前台：Landing Page
     # ======================================================
@@ -384,70 +502,22 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
 
         page_data = parse_landing_page_form(request.form)
 
-    # ===== 圖片上傳 =====
+    # ===== 主圖：一張 → 自動產生桌面 + 手機 =====
         hero_file = request.files.get("hero_image_file")
-        mobile_file = request.files.get("hero_image_mobile_file")
+        desktop_url, mobile_url = build_hero_images(hero_file)
 
-        def safe_filename(name):
-            name = os.path.basename(name or "").strip()
-            if not name:
-                return "image"
+        if desktop_url:
+            page_data["hero_image"] = desktop_url
+        if mobile_url:
+            page_data["hero_image_mobile"] = mobile_url
 
-            normalized = unicodedata.normalize("NFKD", name)
-            ascii_name = normalized.encode("ascii", "ignore").decode("ascii")
+    # ===== 副圖 =====
+        secondary_files = request.files.getlist("secondary_image_files")
+        uploaded_secondary = upload_secondary_images(secondary_files)
 
-            if "." in ascii_name:
-                base, ext = ascii_name.rsplit(".", 1)
-                ext = "." + ext.lower()
-            else:
-                base, ext = ascii_name, ""
-
-            base = base.lower().strip()
-            base = re.sub(r"[^a-z0-9._-]+", "_", base)
-            base = re.sub(r"_+", "_", base)
-            base = base.strip("._-")
-
-            if not base:
-                base = "image"
-
-            return base + ext
-
-        def upload_image(file):
-            if not file or file.filename == "":
-                return None
-
-            safe_name = safe_filename(file.filename)
-            filename = "landing/{0}_{1}".format(
-                datetime.now(TW).strftime("%Y%m%d%H%M%S"),
-                safe_name
-            )
-
-            try:
-                file_bytes = file.read()
-                if not file_bytes:
-                    return None
-
-                res = supabase.storage.from_("images").upload(filename, file_bytes)
-
-                if hasattr(res, "error") and res.error:
-                    print("UPLOAD ERROR:", res.error)
-                    return None
-
-                return supabase.storage.from_("images").get_public_url(filename)
-
-            except Exception as e:
-                print("UPLOAD ERROR:", str(e))
-                return None
-
-    # 主圖
-        uploaded_hero = upload_image(hero_file)
-        if uploaded_hero:
-            page_data["hero_image"] = uploaded_hero
-
-    # 手機圖
-        uploaded_mobile = upload_image(mobile_file)
-        if uploaded_mobile:
-            page_data["hero_image_mobile"] = uploaded_mobile
+        existing = page_data.get("secondary_images_json") or []
+        if uploaded_secondary:
+            page_data["secondary_images_json"] = existing + uploaded_secondary
 
         page_data["created_at"] = datetime.now(TW).isoformat()
 
@@ -478,6 +548,7 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
 
         page_res = supabase.table("landing_pages").insert(page_data).execute()
         page_row = (page_res.data or [None])[0]
+
         if not page_row:
             flash("建立頁面失敗", "error")
             return redirect("/admin0363/landing-pages")
@@ -503,6 +574,7 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
             page["faq_json"] = safe_json_loads(page.get("faq_json"), [])
             page["sections_json"] = safe_json_loads(page.get("sections_json"), {})
             page["theme_json"] = safe_json_loads(page.get("theme_json"), {})
+            page["secondary_images_json"] = safe_json_loads(page.get("secondary_images_json"), [])
 
             return render_template(
                 "admin_landing_page_form.html",
@@ -513,68 +585,32 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
 
         page_data = parse_landing_page_form(request.form)
 
-    # ===== 圖片上傳處理 =====
+        # ===== 主圖：一張 → 自動產生桌面 + 手機 =====
         hero_file = request.files.get("hero_image_file")
-        mobile_file = request.files.get("hero_image_mobile_file")
+        desktop_url, mobile_url = build_hero_images(hero_file)
 
-        def safe_filename(name):
-            name = os.path.basename(name or "").strip()
-            if not name:
-                return "image"
+        if desktop_url:
+            page_data["hero_image"] = desktop_url
+        else:
+            page_data["hero_image"] = (page.get("hero_image") or "").strip()
 
-            normalized = unicodedata.normalize("NFKD", name)
-            ascii_name = normalized.encode("ascii", "ignore").decode("ascii")
+        if mobile_url:
+            page_data["hero_image_mobile"] = mobile_url
+        else:
+            page_data["hero_image_mobile"] = (page.get("hero_image_mobile") or "").strip()
 
-            if "." in ascii_name:
-                base, ext = ascii_name.rsplit(".", 1)
-                ext = "." + ext.lower()
-            else:
-                base, ext = ascii_name, ""
+        # ===== 副圖：保留原本 + 新增上傳 =====
+        existing_secondary = page_data.get("secondary_images_json") or []
+        if not existing_secondary:
+            existing_secondary = safe_json_loads(page.get("secondary_images_json"), [])
 
-            base = base.lower().strip()
-            base = re.sub(r"[^a-z0-9._-]+", "_", base)
-            base = re.sub(r"_+", "_", base)
-            base = base.strip("._-")
+        secondary_files = request.files.getlist("secondary_image_files")
+        uploaded_secondary = upload_secondary_images(secondary_files)
 
-            if not base:
-                base = "image"
-
-            return base + ext
-
-        def upload_image(file):
-            if not file or file.filename == "":
-                return None
-
-            safe_name = safe_filename(file.filename)
-            filename = "landing/{0}_{1}".format(
-                datetime.now(TW).strftime("%Y%m%d%H%M%S"),
-                safe_name
-            )
-
-            try:
-                file_bytes = file.read()
-                if not file_bytes:
-                    return None
-
-                res = supabase.storage.from_("images").upload(filename, file_bytes)
-
-                if hasattr(res, "error") and res.error:
-                    print("UPLOAD ERROR:", res.error)
-                    return None
-
-                return supabase.storage.from_("images").get_public_url(filename)
-
-            except Exception as e:
-                print("UPLOAD ERROR:", str(e))
-                return None
-
-        uploaded_hero = upload_image(hero_file)
-        if uploaded_hero:
-            page_data["hero_image"] = uploaded_hero
-
-        uploaded_mobile = upload_image(mobile_file)
-        if uploaded_mobile:
-            page_data["hero_image_mobile"] = uploaded_mobile
+        if uploaded_secondary:
+            page_data["secondary_images_json"] = existing_secondary + uploaded_secondary
+        else:
+            page_data["secondary_images_json"] = existing_secondary
 
         if not page_data["name"] or not page_data["slug"]:
             flash("請填寫頁面名稱與 slug", "error")
@@ -603,6 +639,8 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
                 page=page_data,
                 offers=offers
             )
+
+        page_data["updated_at"] = datetime.now(TW).isoformat()
 
         supabase.table("landing_pages").update(page_data).eq("id", page_id).execute()
         supabase.table("landing_page_offers").delete().eq("landing_page_id", page_id).execute()

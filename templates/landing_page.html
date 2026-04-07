@@ -5,46 +5,378 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ page.title or page.name }}</title>
     <style>
-        body { margin:0; font-family:Arial, "Noto Sans TC", sans-serif; color:#222; background:#fff; }
-        .wrap { max-width:1200px; margin:0 auto; padding:0 16px; }
-        .hero { padding:48px 0; background:#f8f5f2; }
-        .hero-grid { display:grid; grid-template-columns:1fr 1fr; gap:32px; align-items:center; }
-        .hero img { width:100%; border-radius:16px; }
-        .hero h1 { font-size:42px; margin:0 0 12px; }
-        .hero p { font-size:18px; line-height:1.7; color:#555; }
-        .cta-btn { display:inline-block; padding:14px 24px; background:#222; color:#fff; text-decoration:none; border-radius:10px; }
-        .section { padding:48px 0; }
-        .offers { display:grid; grid-template-columns:repeat(3, 1fr); gap:20px; }
-        .offer-card { border:1px solid #eee; border-radius:16px; padding:20px; cursor:pointer; }
-        .offer-card.active { border:2px solid #222; }
-        .offer-badge { display:inline-block; margin-bottom:10px; font-size:12px; padding:4px 10px; background:#222; color:#fff; border-radius:999px; }
-        .offer-title { font-size:24px; font-weight:bold; margin-bottom:6px; }
-        .offer-subtitle { color:#777; margin-bottom:12px; }
-        .offer-price { font-size:28px; font-weight:bold; }
-        .offer-compare { color:#999; text-decoration:line-through; margin-left:8px; }
-        .buy-box { background:#fafafa; border:1px solid #eee; border-radius:16px; padding:24px; }
-        .buy-box input, .buy-box select, .buy-box textarea { width:100%; padding:12px; margin-top:6px; margin-bottom:14px; border:1px solid #ddd; border-radius:10px; box-sizing:border-box; }
-        .buy-btn { width:100%; border:none; background:#111; color:#fff; padding:14px; border-radius:10px; cursor:pointer; font-size:16px; }
-        .faq-item { border-bottom:1px solid #eee; padding:16px 0; }
-        .faq-q { font-weight:bold; margin-bottom:8px; }
-        .summary { font-size:15px; color:#555; margin-top:12px; }
+        :root{
+            --bg:#fff;
+            --soft:#f8f5f2;
+            --line:#eee;
+            --text:#222;
+            --muted:#666;
+            --brand:#111;
+            --brand-2:#e91e63;
+        }
+
+        *{ box-sizing:border-box; }
+
+        body{
+            margin:0;
+            font-family:Arial, "Noto Sans TC", sans-serif;
+            color:var(--text);
+            background:var(--bg);
+        }
+
+        .wrap{
+            max-width:1200px;
+            margin:0 auto;
+            padding:0 16px;
+        }
+
+        .hero{
+            padding:48px 0;
+            background:var(--soft);
+        }
+
+        .hero-grid{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:40px;
+            align-items:center;
+        }
+
+        .hero-copy h1{
+            font-size:42px;
+            margin:0 0 12px;
+            line-height:1.2;
+        }
+
+        .hero-copy p{
+            font-size:18px;
+            line-height:1.8;
+            color:#555;
+            margin:0 0 20px;
+            white-space:pre-line;
+        }
+
+        .cta-btn{
+            display:inline-block;
+            padding:14px 24px;
+            background:#222;
+            color:#fff;
+            text-decoration:none;
+            border-radius:10px;
+            font-weight:700;
+        }
+
+        .landing-gallery{
+            display:flex;
+            flex-direction:column;
+            gap:14px;
+        }
+
+        .landing-main-slider{
+            position:relative;
+            overflow:hidden;
+            border-radius:20px;
+            background:#f3efec;
+            border:1px solid #ece6e2;
+        }
+
+        .landing-slide{
+            display:none;
+        }
+
+        .landing-slide.is-active{
+            display:block;
+        }
+
+        .landing-main-slider img,
+        .landing-main-slider picture img{
+            width:100%;
+            display:block;
+            aspect-ratio:1 / 1;
+            object-fit:cover;
+        }
+
+        .slider-arrow{
+            position:absolute;
+            top:50%;
+            transform:translateY(-50%);
+            width:42px;
+            height:42px;
+            border:none;
+            border-radius:999px;
+            background:rgba(255,255,255,.92);
+            box-shadow:0 4px 12px rgba(0,0,0,.12);
+            cursor:pointer;
+            z-index:5;
+            font-size:20px;
+            font-weight:700;
+            color:#222;
+        }
+
+        .slider-arrow.prev{ left:12px; }
+        .slider-arrow.next{ right:12px; }
+
+        .landing-thumbs{
+            display:flex;
+            gap:10px;
+            flex-wrap:wrap;
+        }
+
+        .landing-thumb{
+            border:none;
+            background:none;
+            padding:0;
+            width:74px;
+            height:74px;
+            border-radius:14px;
+            overflow:hidden;
+            cursor:pointer;
+            border:2px solid transparent;
+            opacity:.86;
+            transition:.18s ease;
+        }
+
+        .landing-thumb:hover{
+            opacity:1;
+            transform:translateY(-1px);
+        }
+
+        .landing-thumb.is-active{
+            border-color:var(--brand-2);
+            opacity:1;
+        }
+
+        .landing-thumb img{
+            width:100%;
+            height:100%;
+            object-fit:cover;
+            display:block;
+        }
+
+        .section{
+            padding:48px 0;
+        }
+
+        .section h2{
+            margin:0 0 22px;
+            font-size:30px;
+        }
+
+        .offers{
+            display:grid;
+            grid-template-columns:repeat(3, 1fr);
+            gap:20px;
+        }
+
+        .offer-card{
+            border:1px solid #eee;
+            border-radius:16px;
+            padding:20px;
+            cursor:pointer;
+            transition:.18s ease;
+            background:#fff;
+        }
+
+        .offer-card:hover{
+            transform:translateY(-2px);
+            box-shadow:0 8px 20px rgba(0,0,0,.05);
+        }
+
+        .offer-card.active{
+            border:2px solid #222;
+        }
+
+        .offer-badge{
+            display:inline-block;
+            margin-bottom:10px;
+            font-size:12px;
+            padding:4px 10px;
+            background:#222;
+            color:#fff;
+            border-radius:999px;
+        }
+
+        .offer-title{
+            font-size:24px;
+            font-weight:bold;
+            margin-bottom:6px;
+        }
+
+        .offer-subtitle{
+            color:#777;
+            margin-bottom:12px;
+            min-height:24px;
+        }
+
+        .offer-price{
+            font-size:28px;
+            font-weight:bold;
+        }
+
+        .offer-compare{
+            color:#999;
+            text-decoration:line-through;
+            margin-left:8px;
+        }
+
+        .buy-box{
+            background:#fafafa;
+            border:1px solid #eee;
+            border-radius:16px;
+            padding:24px;
+        }
+
+        .buy-box h3{
+            margin-top:0;
+        }
+
+        .buy-box input,
+        .buy-box select,
+        .buy-box textarea{
+            width:100%;
+            padding:12px;
+            margin-top:6px;
+            margin-bottom:14px;
+            border:1px solid #ddd;
+            border-radius:10px;
+            box-sizing:border-box;
+            font:inherit;
+        }
+
+        .buy-btn{
+            width:100%;
+            border:none;
+            background:#111;
+            color:#fff;
+            padding:14px;
+            border-radius:10px;
+            cursor:pointer;
+            font-size:16px;
+            font-weight:700;
+        }
+
+        .buy-btn:disabled{
+            opacity:.7;
+            cursor:not-allowed;
+        }
+
+        .faq-item{
+            border-bottom:1px solid #eee;
+            padding:16px 0;
+        }
+
+        .faq-q{
+            font-weight:bold;
+            margin-bottom:8px;
+        }
+
+        .summary{
+            font-size:15px;
+            color:#555;
+            margin-top:12px;
+            margin-bottom:16px;
+            line-height:1.7;
+        }
+
+        .desc-box{
+            line-height:1.9;
+            white-space:pre-line;
+            color:#444;
+        }
+
         @media (max-width: 900px) {
-            .hero-grid, .offers { grid-template-columns:1fr; }
-            .hero h1 { font-size:32px; }
+            .hero-grid,
+            .offers{
+                grid-template-columns:1fr;
+            }
+
+            .hero-copy h1{
+                font-size:32px;
+            }
+
+            .hero{
+                padding:32px 0;
+            }
+
+            .landing-thumb{
+                width:62px;
+                height:62px;
+            }
+
+            .slider-arrow{
+                width:38px;
+                height:38px;
+            }
         }
     </style>
 </head>
 <body>
+    {% set secondary_images = page.secondary_images_json or [] %}
+
     <section class="hero">
         <div class="wrap hero-grid">
-            <div>
+            <div class="hero-copy">
                 <h1>{{ page.title or page.name }}</h1>
                 <p>{{ page.subtitle or '' }}</p>
                 <a href="{{ page.cta_anchor or '#buy' }}" class="cta-btn">{{ page.cta_text or '立即下單' }}</a>
             </div>
+
             <div>
                 {% if page.hero_image %}
-                <img src="{{ page.hero_image }}" alt="{{ page.name }}">
+                <div class="landing-gallery">
+                    <div class="landing-main-slider" id="landingMainSlider">
+                        <button type="button" class="slider-arrow prev" id="sliderPrev" aria-label="上一張">‹</button>
+                        <button type="button" class="slider-arrow next" id="sliderNext" aria-label="下一張">›</button>
+
+                        <div class="landing-slide is-active">
+                            <picture>
+                                {% if page.hero_image_mobile %}
+                                <source media="(max-width: 768px)" srcset="{{ page.hero_image_mobile }}">
+                                {% endif %}
+                                <img
+                                    src="{{ page.hero_image }}"
+                                    alt="{{ page.name }}"
+                                    loading="eager"
+                                    decoding="async"
+                                    fetchpriority="high"
+                                >
+                            </picture>
+                        </div>
+
+                        {% for img in secondary_images %}
+                        <div class="landing-slide">
+                            <img
+                                src="{{ img }}"
+                                alt="{{ page.name }} 副圖 {{ loop.index }}"
+                                loading="lazy"
+                                decoding="async"
+                            >
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="landing-thumbs" id="landingThumbs">
+                        <button type="button" class="landing-thumb is-active" data-index="0">
+                            <img
+                                src="{{ page.hero_image }}"
+                                alt="主圖"
+                                loading="eager"
+                                decoding="async"
+                            >
+                        </button>
+
+                        {% for img in secondary_images %}
+                        <button type="button" class="landing-thumb" data-index="{{ loop.index }}">
+                            <img
+                                src="{{ img }}"
+                                alt="副圖 {{ loop.index }}"
+                                loading="lazy"
+                                decoding="async"
+                            >
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
                 {% endif %}
             </div>
         </div>
@@ -53,7 +385,7 @@
     {% if page.description %}
     <section class="section">
         <div class="wrap">
-            <div style="line-height:1.9; white-space:pre-line;">{{ page.description }}</div>
+            <div class="desc-box">{{ page.description }}</div>
         </div>
     </section>
     {% endif %}
@@ -61,6 +393,7 @@
     <section class="section" id="buy">
         <div class="wrap">
             <h2>選擇方案</h2>
+
             <div class="offers" id="offerList">
                 {% for offer in offers %}
                 <div class="offer-card {% if loop.first %}active{% endif %}"
@@ -70,8 +403,10 @@
                     {% if offer.badge %}
                     <div class="offer-badge">{{ offer.badge }}</div>
                     {% endif %}
+
                     <div class="offer-title">{{ offer.offer_name }}</div>
                     <div class="offer-subtitle">{{ offer.subtitle or '' }}</div>
+
                     <div>
                         <span class="offer-price">NT$ {{ offer.price|int }}</span>
                         {% if offer.compare_at_price %}
@@ -86,6 +421,7 @@
 
             <div class="buy-box">
                 <h3>直接下單</h3>
+
                 <form id="landingOrderForm">
                     <input type="hidden" name="slug" value="{{ page.slug }}">
                     <input type="hidden" name="offer_id" id="offerId" value="{{ offers[0].id if offers else '' }}">
@@ -119,7 +455,7 @@
 
                     <div class="summary" id="summaryText"></div>
 
-                    <button type="submit" class="buy-btn">立即下單</button>
+                    <button type="submit" class="buy-btn" id="submitBtn">立即下單</button>
                 </form>
             </div>
         </div>
@@ -129,6 +465,7 @@
     <section class="section">
         <div class="wrap">
             <h2>常見問題</h2>
+
             {% for faq in page.faq_json %}
             <div class="faq-item">
                 <div class="faq-q">{{ faq.q }}</div>
@@ -145,14 +482,16 @@
         const qtySelect = document.getElementById("qty");
         const summaryText = document.getElementById("summaryText");
         const form = document.getElementById("landingOrderForm");
+        const submitBtn = document.getElementById("submitBtn");
 
         let currentOffer = {
-            id: offerIdInput.value,
+            id: offerIdInput ? offerIdInput.value : "",
             name: "",
             price: 0
         };
 
         function refreshSummary() {
+            if (!summaryText || !qtySelect) return;
             const qty = parseInt(qtySelect.value || "1", 10);
             const total = (currentOffer.price || 0) * qty;
             summaryText.innerText = `已選方案：${currentOffer.name || ""}｜數量：${qty}｜總金額：NT$ ${total}`;
@@ -173,32 +512,101 @@
                 currentOffer.name = card.dataset.offerName;
                 currentOffer.price = parseInt(card.dataset.offerPrice || "0", 10);
 
-                offerIdInput.value = currentOffer.id;
+                if (offerIdInput) {
+                    offerIdInput.value = currentOffer.id;
+                }
+
                 refreshSummary();
             });
         });
 
-        qtySelect.addEventListener("change", refreshSummary);
+        if (qtySelect) {
+            qtySelect.addEventListener("change", refreshSummary);
+        }
         refreshSummary();
 
-        form.addEventListener("submit", async function (e) {
-            e.preventDefault();
+        if (form) {
+            form.addEventListener("submit", async function (e) {
+                e.preventDefault();
 
-            const fd = new FormData(form);
+                const fd = new FormData(form);
 
-            const res = await fetch("/api/landing-order", {
-                method: "POST",
-                body: fd
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = "送出中...";
+                }
+
+                try {
+                    const res = await fetch("/api/landing-order", {
+                        method: "POST",
+                        body: fd
+                    });
+
+                    const data = await res.json();
+
+                    if (!data.ok) {
+                        alert(data.error || "下單失敗");
+                        return;
+                    }
+
+                    window.location.href = data.redirect_url;
+                } catch (err) {
+                    alert("下單失敗，請稍後再試");
+                } finally {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = "立即下單";
+                    }
+                }
             });
+        }
 
-            const data = await res.json();
-            if (!data.ok) {
-                alert(data.error || "下單失敗");
-                return;
+        // ===== 圖片輪播 =====
+        (function () {
+            const slides = document.querySelectorAll("#landingMainSlider .landing-slide");
+            const thumbs = document.querySelectorAll("#landingThumbs .landing-thumb");
+            const prevBtn = document.getElementById("sliderPrev");
+            const nextBtn = document.getElementById("sliderNext");
+
+            if (!slides.length || !thumbs.length) return;
+
+            let currentIndex = 0;
+
+            function showSlide(index) {
+                if (index < 0) index = slides.length - 1;
+                if (index >= slides.length) index = 0;
+                currentIndex = index;
+
+                slides.forEach(function (slide, i) {
+                    slide.classList.toggle("is-active", i === index);
+                });
+
+                thumbs.forEach(function (thumb, i) {
+                    thumb.classList.toggle("is-active", i === index);
+                });
             }
 
-            window.location.href = data.redirect_url;
-        });
+            thumbs.forEach(function (btn) {
+                btn.addEventListener("click", function () {
+                    const index = Number(btn.dataset.index || 0);
+                    showSlide(index);
+                });
+            });
+
+            if (prevBtn) {
+                prevBtn.addEventListener("click", function () {
+                    showSlide(currentIndex - 1);
+                });
+            }
+
+            if (nextBtn) {
+                nextBtn.addEventListener("click", function () {
+                    showSlide(currentIndex + 1);
+                });
+            }
+
+            showSlide(0);
+        })();
     </script>
 </body>
 </html>

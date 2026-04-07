@@ -91,6 +91,12 @@
             box-shadow:0 10px 20px rgba(233,30,99,.22);
         }
 
+        .btn-danger{
+            background:#fff1f2;
+            color:#c2185b;
+            border:1px solid #f2c8d5;
+        }
+
         .layout{
             display:grid;
             grid-template-columns:minmax(0, 1fr) 320px;
@@ -218,12 +224,6 @@
             margin:0 0 10px;
         }
 
-        .subsection-title{
-            margin:0 0 14px;
-            font-size:18px;
-            font-weight:800;
-        }
-
         .repeat-list{
             display:flex;
             flex-direction:column;
@@ -336,16 +336,153 @@
             font-weight:700;
         }
 
-        .back-link{
-            display:inline-block;
-            margin-bottom:16px;
-            color:var(--brand-dark);
-            text-decoration:none;
+        .upload-box{
+            border:2px dashed #e7c7d3;
+            background:linear-gradient(180deg,#fff8fb 0%, #fff 100%);
+            border-radius:18px;
+            padding:16px;
+            transition:.18s ease;
+        }
+
+        .upload-box.dragover{
+            border-color:var(--brand);
+            background:#fff1f6;
+            box-shadow:0 0 0 4px rgba(233,30,99,.08);
+        }
+
+        .upload-top{
+            display:flex;
+            flex-direction:column;
+            gap:10px;
+        }
+
+        .upload-note{
+            color:var(--muted);
+            font-size:13px;
+            line-height:1.6;
+        }
+
+        .upload-status{
+            margin-top:10px;
+            font-size:13px;
+            font-weight:700;
+            color:#2e7d32;
+            display:none;
+        }
+
+        .upload-preview{
+            margin-top:12px;
+            display:none;
+        }
+
+        .upload-preview img{
+            max-width:220px;
+            max-height:220px;
+            border-radius:14px;
+            border:1px solid #eadfda;
+            box-shadow:0 6px 14px rgba(0,0,0,.08);
+            object-fit:cover;
+        }
+
+        .file-input{
+            width:100%;
+            border:1px solid #dccfc8;
+            background:#fff;
+            border-radius:14px;
+            padding:12px;
+            font-size:14px;
+            color:var(--text);
+        }
+
+        .secondary-toolbar{
+            display:flex;
+            gap:10px;
+            flex-wrap:wrap;
+            margin-top:8px;
+        }
+
+        .secondary-grid{
+            margin-top:14px;
+            display:grid;
+            grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+            gap:14px;
+        }
+
+        .secondary-item{
+            position:relative;
+            border:1px solid #eadfda;
+            background:#fff;
+            border-radius:16px;
+            padding:10px;
+            box-shadow:0 6px 12px rgba(0,0,0,.04);
+            cursor:grab;
+        }
+
+        .secondary-item.dragging{
+            opacity:.45;
+        }
+
+        .secondary-thumb{
+            width:100%;
+            aspect-ratio:1/1;
+            border-radius:12px;
+            overflow:hidden;
+            background:#f5efec;
+            margin-bottom:10px;
+        }
+
+        .secondary-thumb img{
+            width:100%;
+            height:100%;
+            object-fit:cover;
+            display:block;
+        }
+
+        .secondary-meta{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:8px;
+        }
+
+        .secondary-order{
+            font-size:12px;
+            color:var(--muted);
             font-weight:700;
         }
 
-        .back-link:hover{
-            text-decoration:underline;
+        .drag-handle{
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            width:34px;
+            height:34px;
+            border-radius:10px;
+            background:#f7f1ef;
+            border:1px solid #eadfda;
+            color:#8a7c76;
+            font-weight:900;
+            cursor:grab;
+            user-select:none;
+        }
+
+        .or-line{
+            text-align:center;
+            font-size:12px;
+            font-weight:800;
+            color:#9a8a84;
+            margin:10px 0;
+        }
+
+        .lazy-note{
+            margin-top:10px;
+            padding:10px 12px;
+            border-radius:12px;
+            font-size:12px;
+            color:#6a5a54;
+            background:#fcf7f5;
+            border:1px solid #eadfda;
+            line-height:1.6;
         }
 
         @media (max-width:1100px){
@@ -358,72 +495,6 @@
             }
         }
 
-.upload-box{
-    border:2px dashed #e7c7d3;
-    background:linear-gradient(180deg,#fff8fb 0%, #fff 100%);
-    border-radius:18px;
-    padding:16px;
-    transition:.18s ease;
-}
-
-.upload-box.dragover{
-    border-color:var(--brand);
-    background:#fff1f6;
-    box-shadow:0 0 0 4px rgba(233,30,99,.08);
-}
-
-.upload-top{
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-}
-
-.upload-note{
-    color:var(--muted);
-    font-size:13px;
-    line-height:1.6;
-}
-
-.upload-status{
-    margin-top:10px;
-    font-size:13px;
-    font-weight:700;
-    color:#2e7d32;
-    display:none;
-}
-
-.upload-preview{
-    margin-top:12px;
-    display:none;
-}
-
-.upload-preview img{
-    max-width:160px;
-    max-height:160px;
-    border-radius:14px;
-    border:1px solid #eadfda;
-    box-shadow:0 6px 14px rgba(0,0,0,.08);
-    object-fit:cover;
-}
-
-.file-input{
-    width:100%;
-    border:1px solid #dccfc8;
-    background:#fff;
-    border-radius:14px;
-    padding:12px;
-    font-size:14px;
-    color:var(--text);
-}
-
-.or-line{
-    text-align:center;
-    font-size:12px;
-    font-weight:800;
-    color:#9a8a84;
-    margin:10px 0;
-}
-        
         @media (max-width:760px){
             .grid-2,
             .grid-3,
@@ -474,7 +545,7 @@
 
     <div class="layout">
         <div class="main-col">
-           <form id="landingForm" method="post" enctype="multipart/form-data">
+            <form id="landingForm" method="post" enctype="multipart/form-data">
                 <div class="card">
                     <div class="card-header">
                         <h2>基本資料</h2>
@@ -503,39 +574,71 @@
                             <textarea name="subtitle" rows="3" placeholder="補充主標題，讓使用者更快理解這頁在賣什麼">{{ page.subtitle or '' }}</textarea>
                         </div>
 
-<div class="grid-2">
-    <div class="field">
-        <label>主圖（可拖拉 / 上傳 / 貼網址）</label>
-        <div class="upload-box" id="heroUploadBox">
-            <div class="upload-top">
-                <input class="file-input" type="file" name="hero_image_file" id="hero_image_file" accept="image/*">
-                <div class="upload-note">可直接拖曳圖片到這個區塊，或從電腦選擇圖片。</div>
-                <div class="or-line">或貼上圖片網址</div>
-                <input type="text" name="hero_image" id="hero_image" value="{{ page.hero_image or '' }}" placeholder="https://...">
-                <div class="upload-status" id="heroUploadStatus">已選取圖片，儲存後會上傳成功</div>
-                <div class="upload-preview" id="heroPreviewWrap">
-                    <img id="heroPreview" src="{{ page.hero_image or '' }}" alt="">
-                </div>
-            </div>
-        </div>
-    </div>
+                        <div class="grid-2">
+                            <div class="field">
+                                <label>主圖（上傳一張，自動產生桌機版＋手機版）</label>
+                                <div class="upload-box" id="heroUploadBox">
+                                    <div class="upload-top">
+                                        <input class="file-input" type="file" name="hero_image_file" id="hero_image_file" accept="image/*">
+                                        <div class="upload-note">
+                                            只要上傳一張，後端會自動裁切成：
+                                            <br>桌機版：1920 × 900
+                                            <br>手機版：900 × 1200
+                                        </div>
+                                        <div class="upload-status" id="heroUploadStatus">已選取圖片，儲存後會自動產生桌機版與手機版</div>
+                                        <div class="upload-preview" id="heroPreviewWrap" {% if page.hero_image %}style="display:block;"{% endif %}>
+                                            <img id="heroPreview" src="{{ page.hero_image or '' }}" alt="">
+                                        </div>
+                                        {% if page.hero_image %}
+                                        <span class="hint">目前已存在主圖，若重新上傳會覆蓋桌機版與手機版。</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
 
-    <div class="field">
-        <label>手機主圖（可拖拉 / 上傳 / 貼網址）</label>
-        <div class="upload-box" id="heroMobileUploadBox">
-            <div class="upload-top">
-                <input class="file-input" type="file" name="hero_image_mobile_file" id="hero_image_mobile_file" accept="image/*">
-                <div class="upload-note">可直接拖曳手機版圖片到這個區塊，也可以先留空。</div>
-                <div class="or-line">或貼上圖片網址</div>
-                <input type="text" name="hero_image_mobile" id="hero_image_mobile" value="{{ page.hero_image_mobile or '' }}" placeholder="https://...">
-                <div class="upload-status" id="heroMobileUploadStatus">已選取圖片，儲存後會上傳成功</div>
-                <div class="upload-preview" id="heroMobilePreviewWrap">
-                    <img id="heroMobilePreview" src="{{ page.hero_image_mobile or '' }}" alt="">
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+                            <div class="field">
+                                <label>副圖（可多張上傳，可拖曳排序）</label>
+                                <div class="upload-box" id="secondaryUploadBox">
+                                    <div class="upload-top">
+                                        <input class="file-input" type="file" name="secondary_image_files" id="secondary_image_files" accept="image/*" multiple>
+                                        <div class="upload-note">
+                                            可上傳產品圖、情境圖、細節圖。支援多張上傳，下面可直接拖曳排序。
+                                        </div>
+                                        <div class="upload-status" id="secondaryUploadStatus">已選取副圖，儲存後會加入目前列表</div>
+
+                                        {% set secondary_images = page.secondary_images_json or [] %}
+                                        <div class="secondary-toolbar">
+                                            <button type="button" class="btn btn-light" id="clearNewSecondaryBtn">清空本次新增</button>
+                                        </div>
+
+                                        <div class="secondary-grid" id="secondaryGrid">
+                                            {% for img in secondary_images %}
+                                            <div class="secondary-item" draggable="true" data-url="{{ img }}">
+                                                <div class="secondary-thumb">
+                                                    <img src="{{ img }}" alt="副圖 {{ loop.index }}">
+                                                </div>
+                                                <div class="secondary-meta">
+                                                    <span class="secondary-order">排序 {{ loop.index }}</span>
+                                                    <div style="display:flex;gap:8px;align-items:center;">
+                                                        <span class="drag-handle">☰</span>
+                                                        <button type="button" class="btn btn-danger remove-secondary-btn" style="min-width:auto;height:34px;padding:0 10px;">刪除</button>
+                                                    </div>
+                                                </div>
+                                                <input type="hidden" name="secondary_images[]" value="{{ img }}">
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+
+                                        <div class="lazy-note">
+                                            前台建議會搭配：
+                                            <br>1. 輪播顯示
+                                            <br>2. lazy loading
+                                            <br>3. CDN 圖片參數最佳化
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
                         <div class="field">
                             <label>頁面說明</label>
@@ -799,7 +902,8 @@
                     <strong>小提醒：</strong><br>
                     1. Slug 不要重複。<br>
                     2. 方案價格不要留 0。<br>
-                    3. 若要前台正常顯示，頁面要上架、方案也要啟用。
+                    3. 若要前台正常顯示，頁面要上架、方案也要啟用。<br>
+                    4. 副圖順序就是前台顯示順序。
                 </div>
             </div>
         </div>
@@ -807,26 +911,21 @@
 </div>
 
 <script>
-function bindImageUploader(boxId, fileInputId, urlInputId, previewWrapId, previewImgId, statusId){
-    const box = document.getElementById(boxId);
-    const fileInput = document.getElementById(fileInputId);
-    const urlInput = document.getElementById(urlInputId);
-    const previewWrap = document.getElementById(previewWrapId);
-    const previewImg = document.getElementById(previewImgId);
-    const status = document.getElementById(statusId);
+function bindHeroUploader(){
+    const box = document.getElementById("heroUploadBox");
+    const fileInput = document.getElementById("hero_image_file");
+    const previewWrap = document.getElementById("heroPreviewWrap");
+    const previewImg = document.getElementById("heroPreview");
+    const status = document.getElementById("heroUploadStatus");
 
-    if (!box || !fileInput || !urlInput || !previewWrap || !previewImg || !status) return;
+    if (!box || !fileInput || !previewWrap || !previewImg || !status) return;
 
-    function showPreview(src, isFile){
+    function showPreview(src){
         if (!src) return;
         previewImg.src = src;
         previewWrap.style.display = "block";
         status.style.display = "block";
-        status.textContent = isFile ? "已選取圖片，儲存後會上傳成功" : "已載入圖片網址預覽";
-    }
-
-    if (urlInput.value.trim()){
-        showPreview(urlInput.value.trim(), false);
+        status.textContent = "已選取圖片，儲存後會自動產生桌機版與手機版";
     }
 
     fileInput.addEventListener("change", function(){
@@ -835,17 +934,9 @@ function bindImageUploader(boxId, fileInputId, urlInputId, previewWrapId, previe
 
         const reader = new FileReader();
         reader.onload = function(e){
-            showPreview(e.target.result, true);
+            showPreview(e.target.result);
         };
         reader.readAsDataURL(file);
-    });
-
-    urlInput.addEventListener("input", function(){
-        const url = this.value.trim();
-        if (!url){
-            return;
-        }
-        showPreview(url, false);
     });
 
     ["dragenter","dragover"].forEach(function(evtName){
@@ -872,31 +963,147 @@ function bindImageUploader(boxId, fileInputId, urlInputId, previewWrapId, previe
 
             const reader = new FileReader();
             reader.onload = function(ev){
-                showPreview(ev.target.result, true);
+                showPreview(ev.target.result);
             };
             reader.readAsDataURL(file);
         }
     });
 }
 
-bindImageUploader(
-    "heroUploadBox",
-    "hero_image_file",
-    "hero_image",
-    "heroPreviewWrap",
-    "heroPreview",
-    "heroUploadStatus"
-);
+function createSecondaryItem(src){
+    const wrapper = document.createElement("div");
+    wrapper.className = "secondary-item";
+    wrapper.setAttribute("draggable", "true");
+    wrapper.setAttribute("data-url", src);
 
-bindImageUploader(
-    "heroMobileUploadBox",
-    "hero_image_mobile_file",
-    "hero_image_mobile",
-    "heroMobilePreviewWrap",
-    "heroMobilePreview",
-    "heroMobileUploadStatus"
-);
+    wrapper.innerHTML = `
+        <div class="secondary-thumb">
+            <img src="${src}" alt="副圖">
+        </div>
+        <div class="secondary-meta">
+            <span class="secondary-order">排序</span>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <span class="drag-handle">☰</span>
+                <button type="button" class="btn btn-danger remove-secondary-btn" style="min-width:auto;height:34px;padding:0 10px;">刪除</button>
+            </div>
+        </div>
+        <input type="hidden" name="secondary_images[]" value="${src}">
+    `;
+    return wrapper;
+}
+
+function refreshSecondaryOrder(){
+    const items = document.querySelectorAll("#secondaryGrid .secondary-item");
+    items.forEach(function(item, index){
+        const label = item.querySelector(".secondary-order");
+        if (label){
+            label.textContent = "排序 " + (index + 1);
+        }
+    });
+}
+
+function bindSecondaryRemove(){
+    document.querySelectorAll(".remove-secondary-btn").forEach(function(btn){
+        btn.onclick = function(){
+            const item = btn.closest(".secondary-item");
+            if (item){
+                item.remove();
+                refreshSecondaryOrder();
+            }
+        };
+    });
+}
+
+function bindSecondarySort(){
+    const grid = document.getElementById("secondaryGrid");
+    if (!grid) return;
+
+    let draggingItem = null;
+
+    grid.querySelectorAll(".secondary-item").forEach(function(item){
+        item.addEventListener("dragstart", function(){
+            draggingItem = item;
+            item.classList.add("dragging");
+        });
+
+        item.addEventListener("dragend", function(){
+            item.classList.remove("dragging");
+            draggingItem = null;
+            refreshSecondaryOrder();
+        });
+
+        item.addEventListener("dragover", function(e){
+            e.preventDefault();
+            if (!draggingItem || draggingItem === item) return;
+
+            const rect = item.getBoundingClientRect();
+            const offset = e.clientY - rect.top;
+            const insertAfter = offset > rect.height / 2;
+
+            if (insertAfter){
+                if (item.nextSibling !== draggingItem){
+                    grid.insertBefore(draggingItem, item.nextSibling);
+                }
+            } else {
+                if (item !== draggingItem.nextSibling){
+                    grid.insertBefore(draggingItem, item);
+                }
+            }
+        });
+    });
+}
+
+function bindSecondaryUploader(){
+    const input = document.getElementById("secondary_image_files");
+    const grid = document.getElementById("secondaryGrid");
+    const status = document.getElementById("secondaryUploadStatus");
+    const clearBtn = document.getElementById("clearNewSecondaryBtn");
+
+    if (!input || !grid || !status || !clearBtn) return;
+
+    let newlyAddedItems = [];
+
+    input.addEventListener("change", function(){
+        const files = Array.from(input.files || []);
+        if (!files.length) return;
+
+        status.style.display = "block";
+        status.textContent = "已選取 " + files.length + " 張副圖，儲存後會加入列表";
+
+        files.forEach(function(file){
+            const reader = new FileReader();
+            reader.onload = function(e){
+                const item = createSecondaryItem(e.target.result);
+                item.setAttribute("data-new-upload", "1");
+                grid.appendChild(item);
+                newlyAddedItems.push(item);
+                bindSecondaryRemove();
+                bindSecondarySort();
+                refreshSecondaryOrder();
+            };
+            reader.readAsDataURL(file);
+        });
+    });
+
+    clearBtn.addEventListener("click", function(){
+        newlyAddedItems.forEach(function(item){
+            if (item && item.parentNode){
+                item.parentNode.removeChild(item);
+            }
+        });
+        newlyAddedItems = [];
+        input.value = "";
+        status.style.display = "none";
+        refreshSecondaryOrder();
+    });
+
+    bindSecondaryRemove();
+    bindSecondarySort();
+    refreshSecondaryOrder();
+}
+
+bindHeroUploader();
+bindSecondaryUploader();
 </script>
-
 </body>
 </html>
