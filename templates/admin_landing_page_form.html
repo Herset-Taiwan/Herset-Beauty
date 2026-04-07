@@ -997,55 +997,59 @@
                 </div>
 
                 <div class="card">
-                    <div class="card-header">
-                        <h2>FAQ</h2>
-                        <p>建議至少放 2～3 題，減少使用者購買疑慮。</p>
+    <div class="card-header">
+        <h2>FAQ</h2>
+        <p>建議至少放 2～3 題，減少使用者購買疑慮。</p>
+    </div>
+    <div class="card-body">
+
+        <div class="secondary-toolbar" style="margin-bottom:16px;">
+            <button type="button" class="btn btn-light" id="addFaqBtn">＋ 新增 FAQ</button>
+        </div>
+
+        <div class="repeat-list" id="faqList">
+            {% set faqs = page.faq_json or [] %}
+
+            {% if faqs %}
+                {% for faq in faqs %}
+                <div class="repeat-card faq-item">
+                    <div class="repeat-head">
+                        <div class="repeat-title">FAQ {{ loop.index }}</div>
+                        <button type="button" class="btn btn-danger removeFaqBtn" style="min-width:auto;height:36px;">刪除</button>
                     </div>
-                    <div class="card-body">
-                        <div class="repeat-list">
-                            {% set faqs = page.faq_json or [] %}
-                            {% if faqs %}
-                                {% for faq in faqs %}
-                                <div class="repeat-card">
-                                    <div class="repeat-head">
-                                        <div class="repeat-title">FAQ {{ loop.index }}</div>
-                                        <span class="tag">問答區</span>
-                                    </div>
 
-                                    <div class="field">
-                                        <label>問題</label>
-                                        <input type="text" name="faq_q[]" value="{{ faq.q or '' }}" placeholder="例如：可以不登入直接購買嗎？">
-                                    </div>
+                    <div class="field">
+                        <label>問題</label>
+                        <input type="text" name="faq_q[]" value="{{ faq.q or '' }}">
+                    </div>
 
-                                    <div class="field">
-                                        <label>答案</label>
-                                        <textarea name="faq_a[]" rows="4" placeholder="輸入回答內容">{{ faq.a or '' }}</textarea>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            {% else %}
-                                {% for i in range(3) %}
-                                <div class="repeat-card">
-                                    <div class="repeat-head">
-                                        <div class="repeat-title">FAQ {{ i + 1 }}</div>
-                                        <span class="tag">問答區</span>
-                                    </div>
-
-                                    <div class="field">
-                                        <label>問題</label>
-                                        <input type="text" name="faq_q[]" value="">
-                                    </div>
-
-                                    <div class="field">
-                                        <label>答案</label>
-                                        <textarea name="faq_a[]" rows="4"></textarea>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            {% endif %}
-                        </div>
+                    <div class="field">
+                        <label>答案</label>
+                        <textarea name="faq_a[]" rows="4">{{ faq.a or '' }}</textarea>
                     </div>
                 </div>
+                {% endfor %}
+            {% else %}
+                <div class="repeat-card faq-item">
+                    <div class="repeat-head">
+                        <div class="repeat-title">FAQ 1</div>
+                        <button type="button" class="btn btn-danger removeFaqBtn" style="min-width:auto;height:36px;">刪除</button>
+                    </div>
+
+                    <div class="field">
+                        <label>問題</label>
+                        <input type="text" name="faq_q[]">
+                    </div>
+
+                    <div class="field">
+                        <label>答案</label>
+                        <textarea name="faq_a[]" rows="4"></textarea>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
             </form>
         </div>
 
@@ -1330,6 +1334,7 @@ if (secondaryColorPicker) secondaryColorPicker.addEventListener("input", updateT
 updateThemePreview();
 
 
+
 function bindColorSync(pickerId, textId, defaultColor){
     const picker = document.getElementById(pickerId);
     const text = document.getElementById(textId);
@@ -1367,6 +1372,76 @@ function bindColorSync(pickerId, textId, defaultColor){
 // 初始化
 bindColorSync("primary_color_picker", "primary_color_text", "#e91e63");
 bindColorSync("secondary_color_picker", "secondary_color_text", "#f7d7e3");
+
+
+function refreshFaqIndex(){
+    document.querySelectorAll("#faqList .faq-item").forEach(function(el, i){
+        const title = el.querySelector(".repeat-title");
+        if (title){
+            title.innerText = "FAQ " + (i + 1);
+        }
+    });
+}
+
+function bindFaqDelete(){
+    document.querySelectorAll(".removeFaqBtn").forEach(function(btn){
+        btn.onclick = function(){
+            const items = document.querySelectorAll("#faqList .faq-item");
+
+            if (items.length <= 1){
+                const card = btn.closest(".faq-item");
+                card.querySelector("input").value = "";
+                card.querySelector("textarea").value = "";
+                return;
+            }
+
+            btn.closest(".faq-item").remove();
+            refreshFaqIndex();
+        };
+    });
+}
+
+function createFaqItem(){
+    const div = document.createElement("div");
+    div.className = "repeat-card faq-item";
+
+    div.innerHTML = `
+        <div class="repeat-head">
+            <div class="repeat-title">FAQ</div>
+            <button type="button" class="btn btn-danger removeFaqBtn" style="min-width:auto;height:36px;">刪除</button>
+        </div>
+
+        <div class="field">
+            <label>問題</label>
+            <input type="text" name="faq_q[]">
+        </div>
+
+        <div class="field">
+            <label>答案</label>
+            <textarea name="faq_a[]" rows="4"></textarea>
+        </div>
+    `;
+
+    return div;
+}
+
+function bindFaqAdd(){
+    const btn = document.getElementById("addFaqBtn");
+    const list = document.getElementById("faqList");
+
+    if (!btn || !list) return;
+
+    btn.addEventListener("click", function(){
+        const item = createFaqItem();
+        list.appendChild(item);
+        bindFaqDelete();
+        refreshFaqIndex();
+    });
+}
+
+bindFaqAdd();
+bindFaqDelete();
+refreshFaqIndex();
 </script>
 </body>
 </html>
