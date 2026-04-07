@@ -416,7 +416,7 @@
 
     <div class="layout">
         <div class="main-col">
-            <form id="landingForm" method="post">
+           <form id="landingForm" method="post" enctype="multipart/form-data">
                 <div class="card">
                     <div class="card-header">
                         <h2>基本資料</h2>
@@ -445,16 +445,36 @@
                             <textarea name="subtitle" rows="3" placeholder="補充主標題，讓使用者更快理解這頁在賣什麼">{{ page.subtitle or '' }}</textarea>
                         </div>
 
-                        <div class="grid-2">
-                            <div class="field">
-                                <label>主圖</label>
-                                <input type="text" name="hero_image" value="{{ page.hero_image or '' }}" placeholder="貼上圖片網址">
-                            </div>
-                            <div class="field">
-                                <label>手機主圖</label>
-                                <input type="text" name="hero_image_mobile" value="{{ page.hero_image_mobile or '' }}" placeholder="手機版圖片網址，可留空">
-                            </div>
-                        </div>
+<div class="grid-2">
+    <!-- 主圖 -->
+    <div class="field">
+        <label>主圖（上傳或網址）</label>
+
+        <!-- 上傳 -->
+        <input type="file" name="hero_image_file" accept="image/*">
+
+        <!-- 或網址 -->
+        <input type="text" name="hero_image" value="{{ page.hero_image or '' }}" placeholder="或貼上圖片網址">
+
+        <!-- 預覽 -->
+        {% if page.hero_image %}
+            <img src="{{ page.hero_image }}" style="margin-top:10px;max-width:120px;border-radius:10px;">
+        {% endif %}
+    </div>
+
+    <!-- 手機主圖 -->
+    <div class="field">
+        <label>手機主圖（上傳或網址）</label>
+
+        <input type="file" name="hero_image_mobile_file" accept="image/*">
+
+        <input type="text" name="hero_image_mobile" value="{{ page.hero_image_mobile or '' }}" placeholder="可留空">
+
+        {% if page.hero_image_mobile %}
+            <img src="{{ page.hero_image_mobile }}" style="margin-top:10px;max-width:120px;border-radius:10px;">
+        {% endif %}
+    </div>
+</div>
 
                         <div class="field">
                             <label>頁面說明</label>

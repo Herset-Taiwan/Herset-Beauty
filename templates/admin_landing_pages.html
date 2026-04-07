@@ -342,6 +342,15 @@
             margin:0;
         }
 
+        .op-delete{
+    background:#fde8e8;
+    color:#b42318;
+}
+
+.op-delete:hover{
+    background:#fbd5d5;
+}
+
         @media (max-width:960px){
             .summary-row{
                 grid-template-columns:repeat(2,minmax(0,1fr));
@@ -476,6 +485,13 @@
                                             {% if p.is_active %}下架{% else %}上架{% endif %}
                                         </button>
                                     </form>
+
+                                    <form method="post"
+      action="/admin0363/landing-pages/{{ p.id }}/delete"
+      class="inline"
+      onsubmit="return confirm('確定要刪除這個頁面嗎？此動作無法復原！');">
+    <button type="submit" class="op-btn op-delete">刪除</button>
+</form>
                                 </div>
                             </td>
                         </tr>

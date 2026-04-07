@@ -381,6 +381,32 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
             )
 
         page_data = parse_landing_page_form(request.form)
+        # ===== 圖片上傳 =====
+        hero_file = request.files.get("hero_image_file")
+        mobile_file = request.files.get("hero_image_mobile_file")
+
+        def upload_image(file):
+            if not file or file.filename == "":
+                return None
+
+            filename = f"landing/{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}"
+
+            res = supabase.storage.from_("images").upload(filename, file.read())
+
+            if hasattr(res, "error") and res.error:
+                return None
+
+            return supabase.storage.from_("images").get_public_url(filename)
+
+        # 主圖
+        uploaded_hero = upload_image(hero_file)
+        if uploaded_hero:
+            page_data["hero_image"] = uploaded_hero
+
+        # 手機圖
+        uploaded_mobile = upload_image(mobile_file)
+        if uploaded_mobile:
+            page_data["hero_image_mobile"] = uploaded_mobile
         page_data["created_at"] = datetime.now(TW).isoformat()
 
         if not page_data["name"] or not page_data["slug"]:
@@ -445,12 +471,40 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
 
         page_data = parse_landing_page_form(request.form)
 
+        # ===== 圖片上傳處理 =====
+        hero_file = request.files.get("hero_image_file")
+        mobile_file = request.files.get("hero_image_mobile_file")
+
+        def upload_image(file):
+            if not file or file.filename == "":
+                return None
+
+            filename = "landing/{0}_{1}".format(
+                datetime.now(TW).strftime("%Y%m%d%H%M%S"),
+                file.filename
+            )
+
+            res = supabase.storage.from_("images").upload(filename, file.read())
+
+            if hasattr(res, "error") and res.error:
+                return None
+
+            return supabase.storage.from_("images").get_public_url(filename)
+
+        uploaded_hero = upload_image(hero_file)
+        if uploaded_hero:
+            page_data["hero_image"] = uploaded_hero
+
+        uploaded_mobile = upload_image(mobile_file)
+        if uploaded_mobile:
+            page_data["hero_image_mobile"] = uploaded_mobile
+
         if not page_data["name"] or not page_data["slug"]:
             flash("請填寫頁面名稱與 slug", "error")
             offers = parse_landing_offers_form(request.form, page_id)
             return render_template(
                 "admin_landing_page_form.html",
-                mode="edit",
+                mode="edit"
                 page=page_data,
                 offers=offers
             )
@@ -561,3 +615,26 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
 
         flash("狀態已更新", "success")
         return redirect("/admin0363/landing-pages")
+    
+    # ======================================================
+# 刪除 Landing Page
+# ======================================================
+@app.route("/admin0363/landing-pages/<int:page_id>/delete", methods=["POST"])
+def admin_landing_page_delete(page_id):
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
+
+    # 先刪子資料（方案）
+    supabase.table("landing_page_offers") \
+        .delete() \
+        .eq("landing_page_id", page_id) \
+        .execute()
+
+    # 再刪主表
+    supabase.table("landing_pages") \
+        .delete() \
+        .eq("id", page_id) \
+        .execute()
+
+    flash("已刪除一頁式頁面", "success")
+    return redirect("/admin0363/landing-pages")
