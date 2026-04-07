@@ -615,26 +615,20 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
 
         flash("狀態已更新", "success")
         return redirect("/admin0363/landing-pages")
-    
-    # ======================================================
-# 刪除 Landing Page
-# ======================================================
-@app.route("/admin0363/landing-pages/<int:page_id>/delete", methods=["POST"])
-def admin_landing_page_delete(page_id):
-    if not session.get("admin_logged_in"):
-        return redirect("/admin0363")
+    @app.route("/admin0363/landing-pages/<int:page_id>/delete", methods=["POST"])
+    def admin_landing_page_delete(page_id):
+        if not session.get("admin_logged_in"):
+            return redirect("/admin0363")
 
-    # 先刪子資料（方案）
-    supabase.table("landing_page_offers") \
-        .delete() \
-        .eq("landing_page_id", page_id) \
-        .execute()
+        supabase.table("landing_page_offers") \
+            .delete() \
+            .eq("landing_page_id", page_id) \
+            .execute()
 
-    # 再刪主表
-    supabase.table("landing_pages") \
-        .delete() \
-        .eq("id", page_id) \
-        .execute()
+        supabase.table("landing_pages") \
+            .delete() \
+            .eq("id", page_id) \
+            .execute()
 
-    flash("已刪除一頁式頁面", "success")
-    return redirect("/admin0363/landing-pages")
+        flash("已刪除一頁式頁面", "success")
+        return redirect("/admin0363/landing-pages")
