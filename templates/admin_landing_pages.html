@@ -183,6 +183,15 @@
             z-index:1;
         }
 
+.actions-col{
+    text-align:right;
+    white-space:nowrap;
+}
+
+tbody td.actions-col{
+    text-align:right;
+}
+        
         tbody td{
             padding:18px 16px;
             border-bottom:1px solid #f1e7e2;
@@ -272,25 +281,39 @@
         }
 
         .op-group{
-            display:flex;
-            flex-wrap:wrap;
-            gap:8px;
-        }
+    display:flex;
+    flex-wrap:nowrap;
+    gap:6px;
+    justify-content:flex-end;
+    align-items:center;
+}
 
-        .op-btn{
-            display:inline-flex;
-            align-items:center;
-            justify-content:center;
-            height:38px;
-            padding:0 14px;
-            border:none;
-            border-radius:12px;
-            font-size:14px;
-            font-weight:700;
-            cursor:pointer;
-            text-decoration:none;
-            transition:.18s ease;
-        }
+    .op-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    height:32px;
+    padding:0 10px;
+    border:none;
+    border-radius:10px;
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+    text-decoration:none;
+    transition:transform .18s ease, box-shadow .18s ease, background-color .18s ease, color .18s ease;
+    white-space:nowrap;
+    box-shadow:0 2px 6px rgba(0,0,0,.04);
+}
+
+.op-btn:hover{
+    transform:translateY(-2px);
+    box-shadow:0 8px 16px rgba(0,0,0,.10);
+}
+
+.op-btn:active{
+    transform:translateY(0);
+    box-shadow:0 2px 6px rgba(0,0,0,.06);
+}
 
         .op-btn:hover{
             transform:translateY(-1px);
@@ -315,6 +338,17 @@
             background:#e9f7ec;
             color:var(--success);
         }
+
+        .op-delete{
+    background:#fde8e8;
+    color:#b42318;
+    border:1px solid #f3b3b3;
+}
+
+.op-delete:hover{
+    background:#f9d6d6;
+    color:#8f1d1d;
+}
 
         .empty-state{
             padding:56px 24px 64px;
@@ -441,7 +475,7 @@
                             <th style="width:120px;">方案數</th>
                             <th style="width:140px;">狀態</th>
                             <th style="width:220px;">前台網址</th>
-                            <th style="width:280px;">操作</th>
+                            操作<th style="width:320px;" class="actions-col">操作</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -472,8 +506,8 @@
                                     /landing/{{ p.slug }}
                                 </a>
                             </td>
-                            <td>
-                                <div class="op-group">
+                            <td class="actions-col">
+    <div class="op-group">
                                     <a href="/admin0363/landing-pages/{{ p.id }}/edit" class="op-btn op-edit">編輯</a>
 
                                     <form method="post" action="/admin0363/landing-pages/{{ p.id }}/clone" class="inline">

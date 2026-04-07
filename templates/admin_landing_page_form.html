@@ -358,6 +358,72 @@
             }
         }
 
+.upload-box{
+    border:2px dashed #e7c7d3;
+    background:linear-gradient(180deg,#fff8fb 0%, #fff 100%);
+    border-radius:18px;
+    padding:16px;
+    transition:.18s ease;
+}
+
+.upload-box.dragover{
+    border-color:var(--brand);
+    background:#fff1f6;
+    box-shadow:0 0 0 4px rgba(233,30,99,.08);
+}
+
+.upload-top{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.upload-note{
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.6;
+}
+
+.upload-status{
+    margin-top:10px;
+    font-size:13px;
+    font-weight:700;
+    color:#2e7d32;
+    display:none;
+}
+
+.upload-preview{
+    margin-top:12px;
+    display:none;
+}
+
+.upload-preview img{
+    max-width:160px;
+    max-height:160px;
+    border-radius:14px;
+    border:1px solid #eadfda;
+    box-shadow:0 6px 14px rgba(0,0,0,.08);
+    object-fit:cover;
+}
+
+.file-input{
+    width:100%;
+    border:1px solid #dccfc8;
+    background:#fff;
+    border-radius:14px;
+    padding:12px;
+    font-size:14px;
+    color:var(--text);
+}
+
+.or-line{
+    text-align:center;
+    font-size:12px;
+    font-weight:800;
+    color:#9a8a84;
+    margin:10px 0;
+}
+        
         @media (max-width:760px){
             .grid-2,
             .grid-3,
@@ -446,33 +512,36 @@
                         </div>
 
 <div class="grid-2">
-    <!-- 主圖 -->
     <div class="field">
-        <label>主圖（上傳或網址）</label>
-
-        <!-- 上傳 -->
-        <input type="file" name="hero_image_file" accept="image/*">
-
-        <!-- 或網址 -->
-        <input type="text" name="hero_image" value="{{ page.hero_image or '' }}" placeholder="或貼上圖片網址">
-
-        <!-- 預覽 -->
-        {% if page.hero_image %}
-            <img src="{{ page.hero_image }}" style="margin-top:10px;max-width:120px;border-radius:10px;">
-        {% endif %}
+        <label>主圖（可拖拉 / 上傳 / 貼網址）</label>
+        <div class="upload-box" id="heroUploadBox">
+            <div class="upload-top">
+                <input class="file-input" type="file" name="hero_image_file" id="hero_image_file" accept="image/*">
+                <div class="upload-note">可直接拖曳圖片到這個區塊，或從電腦選擇圖片。</div>
+                <div class="or-line">或貼上圖片網址</div>
+                <input type="text" name="hero_image" id="hero_image" value="{{ page.hero_image or '' }}" placeholder="https://...">
+                <div class="upload-status" id="heroUploadStatus">已選取圖片，儲存後會上傳成功</div>
+                <div class="upload-preview" id="heroPreviewWrap">
+                    <img id="heroPreview" src="{{ page.hero_image or '' }}" alt="">
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- 手機主圖 -->
     <div class="field">
-        <label>手機主圖（上傳或網址）</label>
-
-        <input type="file" name="hero_image_mobile_file" accept="image/*">
-
-        <input type="text" name="hero_image_mobile" value="{{ page.hero_image_mobile or '' }}" placeholder="可留空">
-
-        {% if page.hero_image_mobile %}
-            <img src="{{ page.hero_image_mobile }}" style="margin-top:10px;max-width:120px;border-radius:10px;">
-        {% endif %}
+        <label>手機主圖（可拖拉 / 上傳 / 貼網址）</label>
+        <div class="upload-box" id="heroMobileUploadBox">
+            <div class="upload-top">
+                <input class="file-input" type="file" name="hero_image_mobile_file" id="hero_image_mobile_file" accept="image/*">
+                <div class="upload-note">可直接拖曳手機版圖片到這個區塊，也可以先留空。</div>
+                <div class="or-line">或貼上圖片網址</div>
+                <input type="text" name="hero_image_mobile" id="hero_image_mobile" value="{{ page.hero_image_mobile or '' }}" placeholder="https://...">
+                <div class="upload-status" id="heroMobileUploadStatus">已選取圖片，儲存後會上傳成功</div>
+                <div class="upload-preview" id="heroMobilePreviewWrap">
+                    <img id="heroMobilePreview" src="{{ page.hero_image_mobile or '' }}" alt="">
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -744,5 +813,98 @@
         </div>
     </div>
 </div>
+
+<script>
+function bindImageUploader(boxId, fileInputId, urlInputId, previewWrapId, previewImgId, statusId){
+    const box = document.getElementById(boxId);
+    const fileInput = document.getElementById(fileInputId);
+    const urlInput = document.getElementById(urlInputId);
+    const previewWrap = document.getElementById(previewWrapId);
+    const previewImg = document.getElementById(previewImgId);
+    const status = document.getElementById(statusId);
+
+    if (!box || !fileInput || !urlInput || !previewWrap || !previewImg || !status) return;
+
+    function showPreview(src, isFile){
+        if (!src) return;
+        previewImg.src = src;
+        previewWrap.style.display = "block";
+        status.style.display = "block";
+        status.textContent = isFile ? "已選取圖片，儲存後會上傳成功" : "已載入圖片網址預覽";
+    }
+
+    if (urlInput.value.trim()){
+        showPreview(urlInput.value.trim(), false);
+    }
+
+    fileInput.addEventListener("change", function(){
+        const file = this.files && this.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e){
+            showPreview(e.target.result, true);
+        };
+        reader.readAsDataURL(file);
+    });
+
+    urlInput.addEventListener("input", function(){
+        const url = this.value.trim();
+        if (!url){
+            return;
+        }
+        showPreview(url, false);
+    });
+
+    ["dragenter","dragover"].forEach(function(evtName){
+        box.addEventListener(evtName, function(e){
+            e.preventDefault();
+            e.stopPropagation();
+            box.classList.add("dragover");
+        });
+    });
+
+    ["dragleave","drop"].forEach(function(evtName){
+        box.addEventListener(evtName, function(e){
+            e.preventDefault();
+            e.stopPropagation();
+            box.classList.remove("dragover");
+        });
+    });
+
+    box.addEventListener("drop", function(e){
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0){
+            fileInput.files = files;
+            const file = files[0];
+
+            const reader = new FileReader();
+            reader.onload = function(ev){
+                showPreview(ev.target.result, true);
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+}
+
+bindImageUploader(
+    "heroUploadBox",
+    "hero_image_file",
+    "hero_image",
+    "heroPreviewWrap",
+    "heroPreview",
+    "heroUploadStatus"
+);
+
+bindImageUploader(
+    "heroMobileUploadBox",
+    "hero_image_mobile_file",
+    "hero_image_mobile",
+    "heroMobilePreviewWrap",
+    "heroMobilePreview",
+    "heroMobileUploadStatus"
+);
+</script>
+
 </body>
 </html>
