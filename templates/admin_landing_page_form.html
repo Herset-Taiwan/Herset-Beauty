@@ -2,239 +2,727 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ "新增" if mode == "new" else "編輯" }}一頁式頁面</title>
     <style>
-        body { font-family:Arial, "Noto Sans TC", sans-serif; padding:24px; }
-        .box { max-width:1200px; margin:0 auto; }
-        label { display:block; margin-top:14px; font-weight:bold; }
-        input, textarea, select { width:100%; padding:10px; margin-top:6px; box-sizing:border-box; }
-        .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-        .offer-row, .faq-row { border:1px solid #ddd; padding:16px; border-radius:10px; margin-top:16px; }
-        .btn { padding:10px 16px; border:none; background:#111; color:#fff; border-radius:8px; cursor:pointer; }
-        .btn-light { background:#eee; color:#111; }
+        :root{
+            --bg:#f8f5f4;
+            --card:#ffffff;
+            --line:#eadfda;
+            --text:#3f342f;
+            --muted:#8a7c76;
+            --brand:#e91e63;
+            --brand-dark:#c2185b;
+            --soft:#fff1f6;
+            --soft-2:#f6f1ef;
+            --shadow:0 10px 25px rgba(60,40,30,.08);
+            --radius:18px;
+        }
+
+        *{box-sizing:border-box}
+
+        body{
+            margin:0;
+            font-family:"Segoe UI","Noto Sans TC",Arial,sans-serif;
+            background:linear-gradient(180deg,#fbf8f7 0%, #f6f1ef 100%);
+            color:var(--text);
+        }
+
+        .page-wrap{
+            max-width:1320px;
+            margin:0 auto;
+            padding:28px 22px 56px;
+        }
+
+        .topbar{
+            display:flex;
+            justify-content:space-between;
+            align-items:flex-start;
+            gap:18px;
+            margin-bottom:20px;
+        }
+
+        .title-block h1{
+            margin:0;
+            font-size:40px;
+            line-height:1.2;
+        }
+
+        .title-block p{
+            margin:10px 0 0;
+            color:var(--muted);
+            font-size:15px;
+        }
+
+        .top-actions{
+            display:flex;
+            gap:12px;
+            flex-wrap:wrap;
+        }
+
+        .btn{
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            min-width:110px;
+            height:46px;
+            padding:0 18px;
+            border:none;
+            border-radius:14px;
+            text-decoration:none;
+            cursor:pointer;
+            font-size:15px;
+            font-weight:700;
+            transition:.18s ease;
+        }
+
+        .btn:hover{
+            transform:translateY(-1px);
+        }
+
+        .btn-light{
+            background:#f1ebe8;
+            color:var(--text);
+        }
+
+        .btn-primary{
+            background:linear-gradient(135deg,var(--brand),var(--brand-dark));
+            color:#fff;
+            box-shadow:0 10px 20px rgba(233,30,99,.22);
+        }
+
+        .layout{
+            display:grid;
+            grid-template-columns:minmax(0, 1fr) 320px;
+            gap:20px;
+            align-items:start;
+        }
+
+        .main-col{
+            display:flex;
+            flex-direction:column;
+            gap:20px;
+        }
+
+        .side-col{
+            position:sticky;
+            top:20px;
+        }
+
+        .card{
+            background:var(--card);
+            border:1px solid var(--line);
+            border-radius:22px;
+            box-shadow:var(--shadow);
+            overflow:hidden;
+        }
+
+        .card-header{
+            padding:20px 24px;
+            border-bottom:1px solid var(--line);
+            background:linear-gradient(180deg,#fff7fa 0%, #fff 100%);
+        }
+
+        .card-header h2{
+            margin:0;
+            font-size:22px;
+        }
+
+        .card-header p{
+            margin:6px 0 0;
+            color:var(--muted);
+            font-size:14px;
+        }
+
+        .card-body{
+            padding:24px;
+        }
+
+        .grid-2{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:16px;
+        }
+
+        .grid-3{
+            display:grid;
+            grid-template-columns:repeat(3,1fr);
+            gap:16px;
+        }
+
+        .field{
+            margin-bottom:18px;
+        }
+
+        .field:last-child{
+            margin-bottom:0;
+        }
+
+        label{
+            display:block;
+            margin-bottom:8px;
+            font-size:14px;
+            font-weight:800;
+            color:#4d403a;
+        }
+
+        .hint{
+            display:block;
+            margin-top:6px;
+            color:var(--muted);
+            font-size:12px;
+            line-height:1.5;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        textarea,
+        select{
+            width:100%;
+            border:1px solid #dccfc8;
+            background:#fff;
+            border-radius:14px;
+            padding:13px 14px;
+            font-size:15px;
+            color:var(--text);
+            outline:none;
+            transition:.18s ease;
+        }
+
+        textarea{
+            resize:vertical;
+            min-height:110px;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus{
+            border-color:#de7b9c;
+            box-shadow:0 0 0 4px rgba(233,30,99,.08);
+        }
+
+        .toggle-grid{
+            display:grid;
+            grid-template-columns:repeat(2,1fr);
+            gap:14px;
+        }
+
+        .toggle-box{
+            border:1px solid #eadfda;
+            background:#fcf9f8;
+            border-radius:16px;
+            padding:14px 16px;
+        }
+
+        .toggle-box label{
+            margin:0 0 10px;
+        }
+
+        .subsection-title{
+            margin:0 0 14px;
+            font-size:18px;
+            font-weight:800;
+        }
+
+        .repeat-list{
+            display:flex;
+            flex-direction:column;
+            gap:16px;
+        }
+
+        .repeat-card{
+            border:1px solid #ecdeda;
+            background:linear-gradient(180deg,#fff 0%, #fdf9f8 100%);
+            border-radius:18px;
+            padding:18px;
+        }
+
+        .repeat-head{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:12px;
+            margin-bottom:14px;
+        }
+
+        .repeat-title{
+            font-size:17px;
+            font-weight:800;
+        }
+
+        .tag{
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            padding:6px 10px;
+            border-radius:999px;
+            background:var(--soft);
+            color:var(--brand-dark);
+            font-size:12px;
+            font-weight:800;
+        }
+
+        .check-row{
+            display:flex;
+            align-items:center;
+            gap:18px;
+            flex-wrap:wrap;
+            margin-top:8px;
+        }
+
+        .check-item{
+            display:flex;
+            align-items:center;
+            gap:8px;
+            font-size:14px;
+            font-weight:700;
+            color:#5b4d47;
+        }
+
+        .check-item input{
+            width:18px;
+            height:18px;
+            accent-color:var(--brand);
+        }
+
+        .side-box{
+            background:var(--card);
+            border:1px solid var(--line);
+            border-radius:22px;
+            box-shadow:var(--shadow);
+            padding:22px;
+        }
+
+        .side-box h3{
+            margin:0 0 10px;
+            font-size:20px;
+        }
+
+        .side-box p{
+            margin:0 0 18px;
+            color:var(--muted);
+            line-height:1.7;
+            font-size:14px;
+        }
+
+        .action-stack{
+            display:flex;
+            flex-direction:column;
+            gap:12px;
+        }
+
+        .action-stack .btn{
+            width:100%;
+        }
+
+        .mini-note{
+            margin-top:16px;
+            padding:14px;
+            border-radius:16px;
+            background:#fcf7f5;
+            border:1px dashed #e6d8d1;
+            color:#6d5e58;
+            line-height:1.7;
+            font-size:13px;
+        }
+
+        .flash{
+            margin-bottom:18px;
+            padding:14px 16px;
+            border-radius:14px;
+            background:#fff1f6;
+            border:1px solid #f1c7d6;
+            color:#b21f57;
+            font-weight:700;
+        }
+
+        .back-link{
+            display:inline-block;
+            margin-bottom:16px;
+            color:var(--brand-dark);
+            text-decoration:none;
+            font-weight:700;
+        }
+
+        .back-link:hover{
+            text-decoration:underline;
+        }
+
+        @media (max-width:1100px){
+            .layout{
+                grid-template-columns:1fr;
+            }
+
+            .side-col{
+                position:static;
+            }
+        }
+
+        @media (max-width:760px){
+            .grid-2,
+            .grid-3,
+            .toggle-grid{
+                grid-template-columns:1fr;
+            }
+
+            .page-wrap{
+                padding:18px 14px 40px;
+            }
+
+            .title-block h1{
+                font-size:30px;
+            }
+
+            .topbar{
+                flex-direction:column;
+                align-items:flex-start;
+            }
+
+            .top-actions{
+                width:100%;
+            }
+
+            .top-actions .btn{
+                width:100%;
+            }
+
+            .card-body{
+                padding:18px;
+            }
+        }
     </style>
 </head>
 <body>
-<div class="box">
-    <h1>{{ "新增" if mode == "new" else "編輯" }}一頁式頁面</h1>
-    <p><a href="/admin0363/landing-pages">← 回列表</a></p>
-
-    <form method="post">
-        <div class="grid-2">
-            <div>
-                <label>頁面名稱</label>
-                <input type="text" name="name" value="{{ page.name or '' }}" required>
-            </div>
-            <div>
-                <label>Slug</label>
-                <input type="text" name="slug" value="{{ page.slug or '' }}" required>
-            </div>
+<div class="page-wrap">
+    <div class="topbar">
+        <div class="title-block">
+            <h1>{{ "新增" if mode == "new" else "編輯" }}一頁式頁面</h1>
+            <p>這裡可以設定頁面文案、主圖、購買方案與 FAQ，之後前台會自動套進對應的 Landing Page。</p>
         </div>
 
-        <label>標題</label>
-        <input type="text" name="title" value="{{ page.title or '' }}">
+        <div class="top-actions">
+            <a href="/admin0363/landing-pages" class="btn btn-light">回列表</a>
+            <button type="submit" form="landingForm" class="btn btn-primary">儲存頁面</button>
+        </div>
+    </div>
 
-        <label>副標題</label>
-        <textarea name="subtitle">{{ page.subtitle or '' }}</textarea>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
 
-        <label>主圖</label>
-        <input type="text" name="hero_image" value="{{ page.hero_image or '' }}">
+    <div class="layout">
+        <div class="main-col">
+            <form id="landingForm" method="post">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>基本資料</h2>
+                        <p>先設定頁面名稱、網址、標題與主要視覺。</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="grid-2">
+                            <div class="field">
+                                <label>頁面名稱</label>
+                                <input type="text" name="name" value="{{ page.name or '' }}" placeholder="例如：HERSET 夏季主打頁面" required>
+                            </div>
+                            <div class="field">
+                                <label>Slug</label>
+                                <input type="text" name="slug" value="{{ page.slug or '' }}" placeholder="例如：herset-summer" required>
+                                <span class="hint">前台網址會是：/landing/你的-slug</span>
+                            </div>
+                        </div>
 
-        <label>手機主圖</label>
-        <input type="text" name="hero_image_mobile" value="{{ page.hero_image_mobile or '' }}">
+                        <div class="field">
+                            <label>標題</label>
+                            <input type="text" name="title" value="{{ page.title or '' }}" placeholder="例如：私密保養，不需要複雜，只需要更對">
+                        </div>
 
-        <label>頁面說明</label>
-        <textarea name="description" rows="6">{{ page.description or '' }}</textarea>
+                        <div class="field">
+                            <label>副標題</label>
+                            <textarea name="subtitle" rows="3" placeholder="補充主標題，讓使用者更快理解這頁在賣什麼">{{ page.subtitle or '' }}</textarea>
+                        </div>
 
-        <div class="grid-2">
-            <div>
-                <label>CTA 文字</label>
-                <input type="text" name="cta_text" value="{{ page.cta_text or '立即下單' }}">
-            </div>
-            <div>
-                <label>CTA Anchor</label>
-                <input type="text" name="cta_anchor" value="{{ page.cta_anchor or '#buy' }}">
-            </div>
+                        <div class="grid-2">
+                            <div class="field">
+                                <label>主圖</label>
+                                <input type="text" name="hero_image" value="{{ page.hero_image or '' }}" placeholder="貼上圖片網址">
+                            </div>
+                            <div class="field">
+                                <label>手機主圖</label>
+                                <input type="text" name="hero_image_mobile" value="{{ page.hero_image_mobile or '' }}" placeholder="手機版圖片網址，可留空">
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label>頁面說明</label>
+                            <textarea name="description" rows="6" placeholder="可輸入賣點、品牌說明、活動資訊">{{ page.description or '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2>按鈕與顯示設定</h2>
+                        <p>控制 CTA、頁面狀態與區塊顯示。</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="grid-3">
+                            <div class="field">
+                                <label>CTA 文字</label>
+                                <input type="text" name="cta_text" value="{{ page.cta_text or '立即下單' }}">
+                            </div>
+                            <div class="field">
+                                <label>CTA Anchor</label>
+                                <input type="text" name="cta_anchor" value="{{ page.cta_anchor or '#buy' }}">
+                            </div>
+                            <div class="field">
+                                <label>Affiliate Code</label>
+                                <input type="text" name="affiliate_code" value="{{ page.affiliate_code or '' }}">
+                            </div>
+                        </div>
+
+                        {% set sections = page.sections_json or {} %}
+                        {% set theme = page.theme_json or {} %}
+
+                        <div class="toggle-grid">
+                            <div class="toggle-box">
+                                <label>顯示賣點區</label>
+                                <select name="show_features">
+                                    <option value="1" {% if sections.show_features %}selected{% endif %}>顯示</option>
+                                    <option value="0" {% if not sections.show_features %}selected{% endif %}>隱藏</option>
+                                </select>
+                            </div>
+
+                            <div class="toggle-box">
+                                <label>顯示 FAQ</label>
+                                <select name="show_faq">
+                                    <option value="1" {% if sections.show_faq or sections == {} %}selected{% endif %}>顯示</option>
+                                    <option value="0" {% if sections and not sections.show_faq %}selected{% endif %}>隱藏</option>
+                                </select>
+                            </div>
+
+                            <div class="toggle-box">
+                                <label>主色</label>
+                                <input type="text" name="primary_color" value="{{ theme.primary_color or '' }}" placeholder="#e91e63">
+                            </div>
+
+                            <div class="toggle-box">
+                                <label>輔色</label>
+                                <input type="text" name="secondary_color" value="{{ theme.secondary_color or '' }}" placeholder="#f7d7e3">
+                            </div>
+                        </div>
+
+                        <div class="field" style="margin-top:18px;">
+                            <label>是否上架</label>
+                            <select name="is_active">
+                                <option value="1" {% if page.is_active %}selected{% endif %}>上架</option>
+                                <option value="0" {% if page.is_active is defined and not page.is_active %}selected{% endif %}>下架</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2>購買方案</h2>
+                        <p>這裡設定單品、雙拼組、三瓶組等方案內容。</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="repeat-list">
+                            {% if offers %}
+                                {% for offer in offers %}
+                                <div class="repeat-card">
+                                    <div class="repeat-head">
+                                        <div class="repeat-title">方案 {{ loop.index }}</div>
+                                        <span class="tag">{{ offer.offer_name or '未命名方案' }}</span>
+                                    </div>
+
+                                    <div class="grid-2">
+                                        <div class="field">
+                                            <label>方案名稱</label>
+                                            <input type="text" name="offer_name[]" value="{{ offer.offer_name or '' }}" placeholder="例如：單品 / 雙拼組 / 三瓶組">
+                                        </div>
+                                        <div class="field">
+                                            <label>副標</label>
+                                            <input type="text" name="offer_subtitle[]" value="{{ offer.subtitle or '' }}" placeholder="例如：首次體驗最適合">
+                                        </div>
+                                    </div>
+
+                                    <div class="grid-3">
+                                        <div class="field">
+                                            <label>Badge</label>
+                                            <input type="text" name="offer_badge[]" value="{{ offer.badge or '' }}" placeholder="例如：熱銷推薦">
+                                        </div>
+                                        <div class="field">
+                                            <label>價格</label>
+                                            <input type="number" name="offer_price[]" value="{{ offer.price or 0 }}">
+                                        </div>
+                                        <div class="field">
+                                            <label>原價</label>
+                                            <input type="number" name="offer_compare_at_price[]" value="{{ offer.compare_at_price or '' }}">
+                                        </div>
+                                    </div>
+
+                                    <div class="grid-2">
+                                        <div class="field">
+                                            <label>綁定商品 Product ID</label>
+                                            <input type="text" name="offer_product_id[]" value="{{ offer.product_id or '' }}">
+                                        </div>
+                                        <div class="field">
+                                            <label>綁定 Bundle ID</label>
+                                            <input type="text" name="offer_bundle_id[]" value="{{ offer.bundle_id or '' }}">
+                                        </div>
+                                    </div>
+
+                                    <div class="check-row">
+                                        <label class="check-item">
+                                            <input type="checkbox" name="offer_is_default[]" value="{{ loop.index0 }}" {% if offer.is_default %}checked{% endif %}>
+                                            設為預設方案
+                                        </label>
+                                        <label class="check-item">
+                                            <input type="checkbox" name="offer_is_active[]" value="{{ loop.index0 }}" {% if offer.is_active %}checked{% endif %}>
+                                            啟用此方案
+                                        </label>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                {% for i in range(3) %}
+                                <div class="repeat-card">
+                                    <div class="repeat-head">
+                                        <div class="repeat-title">方案 {{ i + 1 }}</div>
+                                        <span class="tag">{{ ['單品','雙拼組','三瓶組'][i] }}</span>
+                                    </div>
+
+                                    <div class="grid-2">
+                                        <div class="field">
+                                            <label>方案名稱</label>
+                                            <input type="text" name="offer_name[]" value="{{ ['單品','雙拼組','三瓶組'][i] }}">
+                                        </div>
+                                        <div class="field">
+                                            <label>副標</label>
+                                            <input type="text" name="offer_subtitle[]" value="">
+                                        </div>
+                                    </div>
+
+                                    <div class="grid-3">
+                                        <div class="field">
+                                            <label>Badge</label>
+                                            <input type="text" name="offer_badge[]" value="">
+                                        </div>
+                                        <div class="field">
+                                            <label>價格</label>
+                                            <input type="number" name="offer_price[]" value="0">
+                                        </div>
+                                        <div class="field">
+                                            <label>原價</label>
+                                            <input type="number" name="offer_compare_at_price[]" value="">
+                                        </div>
+                                    </div>
+
+                                    <div class="grid-2">
+                                        <div class="field">
+                                            <label>綁定商品 Product ID</label>
+                                            <input type="text" name="offer_product_id[]" value="">
+                                        </div>
+                                        <div class="field">
+                                            <label>綁定 Bundle ID</label>
+                                            <input type="text" name="offer_bundle_id[]" value="">
+                                        </div>
+                                    </div>
+
+                                    <div class="check-row">
+                                        <label class="check-item">
+                                            <input type="checkbox" name="offer_is_default[]" value="{{ i }}" {% if i == 0 %}checked{% endif %}>
+                                            設為預設方案
+                                        </label>
+                                        <label class="check-item">
+                                            <input type="checkbox" name="offer_is_active[]" value="{{ i }}" checked>
+                                            啟用此方案
+                                        </label>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2>FAQ</h2>
+                        <p>建議至少放 2～3 題，減少使用者購買疑慮。</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="repeat-list">
+                            {% set faqs = page.faq_json or [] %}
+                            {% if faqs %}
+                                {% for faq in faqs %}
+                                <div class="repeat-card">
+                                    <div class="repeat-head">
+                                        <div class="repeat-title">FAQ {{ loop.index }}</div>
+                                        <span class="tag">問答區</span>
+                                    </div>
+
+                                    <div class="field">
+                                        <label>問題</label>
+                                        <input type="text" name="faq_q[]" value="{{ faq.q or '' }}" placeholder="例如：可以不登入直接購買嗎？">
+                                    </div>
+
+                                    <div class="field">
+                                        <label>答案</label>
+                                        <textarea name="faq_a[]" rows="4" placeholder="輸入回答內容">{{ faq.a or '' }}</textarea>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                {% for i in range(3) %}
+                                <div class="repeat-card">
+                                    <div class="repeat-head">
+                                        <div class="repeat-title">FAQ {{ i + 1 }}</div>
+                                        <span class="tag">問答區</span>
+                                    </div>
+
+                                    <div class="field">
+                                        <label>問題</label>
+                                        <input type="text" name="faq_q[]" value="">
+                                    </div>
+
+                                    <div class="field">
+                                        <label>答案</label>
+                                        <textarea name="faq_a[]" rows="4"></textarea>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </form>
         </div>
 
-        <div class="grid-2">
-            <div>
-                <label>Affiliate Code</label>
-                <input type="text" name="affiliate_code" value="{{ page.affiliate_code or '' }}">
-            </div>
-            <div>
-                <label>是否上架</label>
-                <select name="is_active">
-                    <option value="1" {% if page.is_active %}selected{% endif %}>上架</option>
-                    <option value="0" {% if page.is_active is defined and not page.is_active %}selected{% endif %}>下架</option>
-                </select>
+        <div class="side-col">
+            <div class="side-box">
+                <h3>操作面板</h3>
+                <p>儲存後就能從前台網址預覽，建議先下架編輯，確認內容後再上架。</p>
+
+                <div class="action-stack">
+                    <button type="submit" form="landingForm" class="btn btn-primary">儲存頁面</button>
+                    <a href="/admin0363/landing-pages" class="btn btn-light">取消返回</a>
+                </div>
+
+                <div class="mini-note">
+                    <strong>小提醒：</strong><br>
+                    1. Slug 不要重複。<br>
+                    2. 方案價格不要留 0。<br>
+                    3. 若要前台正常顯示，頁面要上架、方案也要啟用。
+                </div>
             </div>
         </div>
-
-        {% set sections = page.sections_json or {} %}
-        <div class="grid-2">
-            <div>
-                <label>顯示賣點區</label>
-                <select name="show_features">
-                    <option value="1" {% if sections.show_features %}selected{% endif %}>是</option>
-                    <option value="0" {% if not sections.show_features %}selected{% endif %}>否</option>
-                </select>
-            </div>
-            <div>
-                <label>顯示 FAQ</label>
-                <select name="show_faq">
-                    <option value="1" {% if sections.show_faq or sections == {} %}selected{% endif %}>是</option>
-                    <option value="0" {% if sections and not sections.show_faq %}selected{% endif %}>否</option>
-                </select>
-            </div>
-        </div>
-
-        {% set theme = page.theme_json or {} %}
-        <div class="grid-2">
-            <div>
-                <label>主色</label>
-                <input type="text" name="primary_color" value="{{ theme.primary_color or '' }}">
-            </div>
-            <div>
-                <label>輔色</label>
-                <input type="text" name="secondary_color" value="{{ theme.secondary_color or '' }}">
-            </div>
-        </div>
-
-        <h2 style="margin-top:30px;">購買方案</h2>
-
-        {% if offers %}
-            {% for offer in offers %}
-            <div class="offer-row">
-                <div class="grid-2">
-                    <div>
-                        <label>方案名稱</label>
-                        <input type="text" name="offer_name[]" value="{{ offer.offer_name or '' }}">
-                    </div>
-                    <div>
-                        <label>副標</label>
-                        <input type="text" name="offer_subtitle[]" value="{{ offer.subtitle or '' }}">
-                    </div>
-                </div>
-
-                <div class="grid-2">
-                    <div>
-                        <label>Badge</label>
-                        <input type="text" name="offer_badge[]" value="{{ offer.badge or '' }}">
-                    </div>
-                    <div>
-                        <label>價格</label>
-                        <input type="number" name="offer_price[]" value="{{ offer.price or 0 }}">
-                    </div>
-                </div>
-
-                <div class="grid-2">
-                    <div>
-                        <label>原價</label>
-                        <input type="number" name="offer_compare_at_price[]" value="{{ offer.compare_at_price or '' }}">
-                    </div>
-                    <div>
-                        <label>綁定商品 Product ID</label>
-                        <input type="text" name="offer_product_id[]" value="{{ offer.product_id or '' }}">
-                    </div>
-                </div>
-
-                <div class="grid-2">
-                    <div>
-                        <label>綁定 Bundle ID</label>
-                        <input type="text" name="offer_bundle_id[]" value="{{ offer.bundle_id or '' }}">
-                    </div>
-                    <div>
-                        <label>預設方案</label>
-                        <input type="checkbox" name="offer_is_default[]" value="{{ loop.index0 }}" {% if offer.is_default %}checked{% endif %}>
-                    </div>
-                </div>
-
-                <label>是否啟用</label>
-                <input type="checkbox" name="offer_is_active[]" value="{{ loop.index0 }}" {% if offer.is_active %}checked{% endif %}>
-            </div>
-            {% endfor %}
-        {% else %}
-            {% for i in range(3) %}
-            <div class="offer-row">
-                <div class="grid-2">
-                    <div>
-                        <label>方案名稱</label>
-                        <input type="text" name="offer_name[]" value="{{ ['單品','雙拼組','三瓶組'][i] }}">
-                    </div>
-                    <div>
-                        <label>副標</label>
-                        <input type="text" name="offer_subtitle[]" value="">
-                    </div>
-                </div>
-
-                <div class="grid-2">
-                    <div>
-                        <label>Badge</label>
-                        <input type="text" name="offer_badge[]" value="">
-                    </div>
-                    <div>
-                        <label>價格</label>
-                        <input type="number" name="offer_price[]" value="0">
-                    </div>
-                </div>
-
-                <div class="grid-2">
-                    <div>
-                        <label>原價</label>
-                        <input type="number" name="offer_compare_at_price[]" value="">
-                    </div>
-                    <div>
-                        <label>綁定商品 Product ID</label>
-                        <input type="text" name="offer_product_id[]" value="">
-                    </div>
-                </div>
-
-                <div class="grid-2">
-                    <div>
-                        <label>綁定 Bundle ID</label>
-                        <input type="text" name="offer_bundle_id[]" value="">
-                    </div>
-                    <div>
-                        <label>預設方案</label>
-                        <input type="checkbox" name="offer_is_default[]" value="{{ i }}" {% if i == 0 %}checked{% endif %}>
-                    </div>
-                </div>
-
-                <label>是否啟用</label>
-                <input type="checkbox" name="offer_is_active[]" value="{{ i }}" checked>
-            </div>
-            {% endfor %}
-        {% endif %}
-
-        <h2 style="margin-top:30px;">FAQ</h2>
-
-        {% set faqs = page.faq_json or [] %}
-        {% if faqs %}
-            {% for faq in faqs %}
-            <div class="faq-row">
-                <label>問題</label>
-                <input type="text" name="faq_q[]" value="{{ faq.q or '' }}">
-                <label>答案</label>
-                <textarea name="faq_a[]">{{ faq.a or '' }}</textarea>
-            </div>
-            {% endfor %}
-        {% else %}
-            {% for i in range(3) %}
-            <div class="faq-row">
-                <label>問題</label>
-                <input type="text" name="faq_q[]" value="">
-                <label>答案</label>
-                <textarea name="faq_a[]"></textarea>
-            </div>
-            {% endfor %}
-        {% endif %}
-
-        <div style="margin-top:24px;">
-            <button type="submit" class="btn">儲存</button>
-            <a href="/admin0363/landing-pages" class="btn btn-light">取消</a>
-        </div>
-    </form>
+    </div>
 </div>
 </body>
 </html>

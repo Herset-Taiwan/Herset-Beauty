@@ -2,58 +2,496 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>一頁式頁面管理</title>
     <style>
-        body { font-family:Arial, "Noto Sans TC", sans-serif; padding:24px; }
-        table { width:100%; border-collapse:collapse; margin-top:20px; }
-        th, td { border:1px solid #ddd; padding:10px; text-align:left; }
-        .topbar { display:flex; justify-content:space-between; align-items:center; }
-        .btn { display:inline-block; padding:8px 14px; border-radius:8px; text-decoration:none; background:#111; color:#fff; border:none; cursor:pointer; }
-        .btn-light { background:#eee; color:#111; }
+        :root{
+            --bg:#f8f5f4;
+            --card:#ffffff;
+            --line:#eadfda;
+            --text:#3f342f;
+            --muted:#8a7c76;
+            --brand:#e91e63;
+            --brand-dark:#c2185b;
+            --soft:#fff1f6;
+            --soft-2:#f3ece8;
+            --success:#2e7d32;
+            --warning:#b26a00;
+            --shadow:0 10px 25px rgba(60,40,30,.08);
+            --radius:18px;
+        }
+
+        *{box-sizing:border-box}
+
+        body{
+            margin:0;
+            font-family:"Segoe UI","Noto Sans TC",Arial,sans-serif;
+            background:linear-gradient(180deg,#fbf8f7 0%, #f6f1ef 100%);
+            color:var(--text);
+        }
+
+        .page-wrap{
+            max-width:1280px;
+            margin:0 auto;
+            padding:32px 24px 56px;
+        }
+
+        .topbar{
+            display:flex;
+            justify-content:space-between;
+            align-items:flex-start;
+            gap:20px;
+            margin-bottom:24px;
+        }
+
+        .title-block h1{
+            margin:0;
+            font-size:42px;
+            line-height:1.2;
+            letter-spacing:1px;
+        }
+
+        .title-block p{
+            margin:10px 0 0;
+            color:var(--muted);
+            font-size:15px;
+        }
+
+        .actions{
+            display:flex;
+            gap:12px;
+            flex-wrap:wrap;
+        }
+
+        .btn{
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            gap:8px;
+            min-width:110px;
+            height:46px;
+            padding:0 18px;
+            border:none;
+            border-radius:14px;
+            text-decoration:none;
+            cursor:pointer;
+            font-size:15px;
+            font-weight:700;
+            transition:.18s ease;
+        }
+
+        .btn:hover{
+            transform:translateY(-1px);
+        }
+
+        .btn-light{
+            background:#f1ebe8;
+            color:var(--text);
+            box-shadow:0 4px 10px rgba(0,0,0,.04);
+        }
+
+        .btn-light:hover{
+            background:#e9dfda;
+        }
+
+        .btn-primary{
+            background:linear-gradient(135deg,var(--brand),var(--brand-dark));
+            color:#fff;
+            box-shadow:0 10px 20px rgba(233,30,99,.22);
+        }
+
+        .btn-primary:hover{
+            filter:brightness(.98);
+        }
+
+        .summary-row{
+            display:grid;
+            grid-template-columns:repeat(4, minmax(0,1fr));
+            gap:16px;
+            margin-bottom:24px;
+        }
+
+        .summary-card{
+            background:var(--card);
+            border:1px solid var(--line);
+            border-radius:var(--radius);
+            box-shadow:var(--shadow);
+            padding:18px 20px;
+        }
+
+        .summary-label{
+            font-size:13px;
+            color:var(--muted);
+            margin-bottom:8px;
+        }
+
+        .summary-value{
+            font-size:30px;
+            font-weight:800;
+        }
+
+        .main-card{
+            background:var(--card);
+            border:1px solid var(--line);
+            border-radius:22px;
+            box-shadow:var(--shadow);
+            overflow:hidden;
+        }
+
+        .card-header{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:16px;
+            padding:20px 24px;
+            background:linear-gradient(180deg,#fff6fa 0%, #fff 100%);
+            border-bottom:1px solid var(--line);
+        }
+
+        .card-header h2{
+            margin:0;
+            font-size:22px;
+        }
+
+        .card-header p{
+            margin:6px 0 0;
+            font-size:14px;
+            color:var(--muted);
+        }
+
+        .table-wrap{
+            overflow:auto;
+        }
+
+        table{
+            width:100%;
+            border-collapse:separate;
+            border-spacing:0;
+            min-width:980px;
+        }
+
+        thead th{
+            text-align:left;
+            font-size:15px;
+            font-weight:800;
+            color:#4a3f3a;
+            padding:18px 16px;
+            background:#fcf9f8;
+            border-bottom:1px solid var(--line);
+            position:sticky;
+            top:0;
+            z-index:1;
+        }
+
+        tbody td{
+            padding:18px 16px;
+            border-bottom:1px solid #f1e7e2;
+            vertical-align:middle;
+            font-size:15px;
+        }
+
+        tbody tr:hover{
+            background:#fff8fb;
+        }
+
+        .id-chip{
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            min-width:52px;
+            padding:8px 12px;
+            border-radius:999px;
+            background:var(--soft);
+            color:var(--brand-dark);
+            font-weight:800;
+        }
+
+        .page-name{
+            font-size:16px;
+            font-weight:800;
+            margin-bottom:6px;
+        }
+
+        .page-sub{
+            font-size:13px;
+            color:var(--muted);
+            line-height:1.6;
+            max-width:320px;
+        }
+
+        .slug-pill{
+            display:inline-block;
+            padding:8px 12px;
+            border-radius:999px;
+            background:#f3ece8;
+            color:#5c4e49;
+            font-family:Consolas, monospace;
+            font-size:13px;
+        }
+
+        .offer-pill{
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            min-width:42px;
+            padding:8px 12px;
+            border-radius:999px;
+            background:#fff4df;
+            color:var(--warning);
+            font-weight:800;
+        }
+
+        .status-badge{
+            display:inline-flex;
+            align-items:center;
+            gap:6px;
+            padding:8px 12px;
+            border-radius:999px;
+            font-weight:800;
+            font-size:13px;
+        }
+
+        .status-on{
+            background:#e8f6ea;
+            color:var(--success);
+        }
+
+        .status-off{
+            background:#f5f1ef;
+            color:#8a7c76;
+        }
+
+        .front-link{
+            color:var(--brand-dark);
+            text-decoration:none;
+            font-weight:700;
+        }
+
+        .front-link:hover{
+            text-decoration:underline;
+        }
+
+        .op-group{
+            display:flex;
+            flex-wrap:wrap;
+            gap:8px;
+        }
+
+        .op-btn{
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            height:38px;
+            padding:0 14px;
+            border:none;
+            border-radius:12px;
+            font-size:14px;
+            font-weight:700;
+            cursor:pointer;
+            text-decoration:none;
+            transition:.18s ease;
+        }
+
+        .op-btn:hover{
+            transform:translateY(-1px);
+        }
+
+        .op-edit{
+            background:#f3ece8;
+            color:var(--text);
+        }
+
+        .op-clone{
+            background:#fff1f6;
+            color:var(--brand-dark);
+        }
+
+        .op-toggle-on{
+            background:#ffe9ee;
+            color:#bf1f57;
+        }
+
+        .op-toggle-off{
+            background:#e9f7ec;
+            color:var(--success);
+        }
+
+        .empty-state{
+            padding:56px 24px 64px;
+            text-align:center;
+        }
+
+        .empty-icon{
+            font-size:48px;
+            margin-bottom:14px;
+        }
+
+        .empty-title{
+            font-size:22px;
+            font-weight:800;
+            margin-bottom:8px;
+        }
+
+        .empty-text{
+            color:var(--muted);
+            margin-bottom:20px;
+        }
+
+        form.inline{
+            display:inline;
+            margin:0;
+        }
+
+        @media (max-width:960px){
+            .summary-row{
+                grid-template-columns:repeat(2,minmax(0,1fr));
+            }
+
+            .topbar{
+                flex-direction:column;
+                align-items:flex-start;
+            }
+
+            .title-block h1{
+                font-size:34px;
+            }
+        }
+
+        @media (max-width:640px){
+            .page-wrap{
+                padding:20px 14px 40px;
+            }
+
+            .summary-row{
+                grid-template-columns:1fr;
+            }
+
+            .btn{
+                width:100%;
+            }
+
+            .actions{
+                width:100%;
+            }
+
+            .title-block h1{
+                font-size:30px;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="topbar">
-        <h1>一頁式頁面管理</h1>
-        <div>
-            <a href="/admin0363/dashboard" class="btn btn-light">回後台</a>
-            <a href="/admin0363/landing-pages/new" class="btn">新增頁面</a>
+    <div class="page-wrap">
+        <div class="topbar">
+            <div class="title-block">
+                <h1>一頁式頁面管理</h1>
+                <p>建立、編輯、複製與上下架你的 Landing Page，之後活動頁就能直接從這裡管理。</p>
+            </div>
+
+            <div class="actions">
+                <a href="/admin0363/dashboard" class="btn btn-light">回後台</a>
+                <a href="/admin0363/landing-pages/new" class="btn btn-primary">＋ 新增頁面</a>
+            </div>
+        </div>
+
+        <div class="summary-row">
+            <div class="summary-card">
+                <div class="summary-label">總頁面數</div>
+                <div class="summary-value">{{ pages|length }}</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">上架中頁面</div>
+                <div class="summary-value">{{ pages | selectattr('is_active') | list | length }}</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">未上架頁面</div>
+                <div class="summary-value">{{ pages | rejectattr('is_active') | list | length }}</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">全部方案總數</div>
+                <div class="summary-value">{{ pages | sum(attribute='offer_count') }}</div>
+            </div>
+        </div>
+
+        <div class="main-card">
+            <div class="card-header">
+                <div>
+                    <h2>頁面列表</h2>
+                    <p>建議先複製現有頁面再改文案與價格，速度會比較快。</p>
+                </div>
+            </div>
+
+            {% if pages %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:90px;">ID</th>
+                            <th style="width:320px;">頁面名稱</th>
+                            <th style="width:180px;">Slug</th>
+                            <th style="width:120px;">方案數</th>
+                            <th style="width:140px;">狀態</th>
+                            <th style="width:220px;">前台網址</th>
+                            <th style="width:280px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in pages %}
+                        <tr>
+                            <td><span class="id-chip">#{{ p.id }}</span></td>
+                            <td>
+                                <div class="page-name">{{ p.name }}</div>
+                                <div class="page-sub">
+                                    {{ p.title or '尚未設定標題' }}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="slug-pill">{{ p.slug }}</span>
+                            </td>
+                            <td>
+                                <span class="offer-pill">{{ p.offer_count }}</span>
+                            </td>
+                            <td>
+                                {% if p.is_active %}
+                                    <span class="status-badge status-on">● 上架中</span>
+                                {% else %}
+                                    <span class="status-badge status-off">● 未上架</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="/landing/{{ p.slug }}" target="_blank" class="front-link">
+                                    /landing/{{ p.slug }}
+                                </a>
+                            </td>
+                            <td>
+                                <div class="op-group">
+                                    <a href="/admin0363/landing-pages/{{ p.id }}/edit" class="op-btn op-edit">編輯</a>
+
+                                    <form method="post" action="/admin0363/landing-pages/{{ p.id }}/clone" class="inline">
+                                        <button type="submit" class="op-btn op-clone">複製</button>
+                                    </form>
+
+                                    <form method="post" action="/admin0363/landing-pages/{{ p.id }}/toggle" class="inline">
+                                        <button type="submit" class="op-btn {% if p.is_active %}op-toggle-on{% else %}op-toggle-off{% endif %}">
+                                            {% if p.is_active %}下架{% else %}上架{% endif %}
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">🪄</div>
+                <div class="empty-title">目前還沒有一頁式頁面</div>
+                <div class="empty-text">先新增第一個頁面，之後活動頁、團購頁、促銷頁都可以從這裡複製出來。</div>
+                <a href="/admin0363/landing-pages/new" class="btn btn-primary">立即新增第一頁</a>
+            </div>
+            {% endif %}
         </div>
     </div>
-
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>頁面名稱</th>
-                <th>Slug</th>
-                <th>方案數</th>
-                <th>狀態</th>
-                <th>前台網址</th>
-                <th>操作</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for p in pages %}
-            <tr>
-                <td>{{ p.id }}</td>
-                <td>{{ p.name }}</td>
-                <td>{{ p.slug }}</td>
-                <td>{{ p.offer_count }}</td>
-                <td>{{ "上架中" if p.is_active else "未上架" }}</td>
-                <td><a href="/landing/{{ p.slug }}" target="_blank">/landing/{{ p.slug }}</a></td>
-                <td>
-                    <a href="/admin0363/landing-pages/{{ p.id }}/edit" class="btn btn-light">編輯</a>
-                    <form method="post" action="/admin0363/landing-pages/{{ p.id }}/clone" style="display:inline;">
-                        <button type="submit" class="btn btn-light">複製</button>
-                    </form>
-                    <form method="post" action="/admin0363/landing-pages/{{ p.id }}/toggle" style="display:inline;">
-                        <button type="submit" class="btn">{{ "下架" if p.is_active else "上架" }}</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
 </body>
 </html>
