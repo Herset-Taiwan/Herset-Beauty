@@ -596,52 +596,91 @@
             });
         }
 
-        // ===== 圖片輪播 =====
-        (function () {
-            const slides = document.querySelectorAll("#landingMainSlider .landing-slide");
-            const thumbs = document.querySelectorAll("#landingThumbs .landing-thumb");
-            const prevBtn = document.getElementById("sliderPrev");
-            const nextBtn = document.getElementById("sliderNext");
+// ===== 圖片輪播（含自動輪播）=====
+(function () {
+    const slider = document.getElementById("landingMainSlider");
+    const slides = document.querySelectorAll("#landingMainSlider .landing-slide");
+    const thumbs = document.querySelectorAll("#landingThumbs .landing-thumb");
+    const prevBtn = document.getElementById("sliderPrev");
+    const nextBtn = document.getElementById("sliderNext");
 
-            if (!slides.length || !thumbs.length) return;
+    if (!slider || !slides.length || !thumbs.length) return;
 
-            let currentIndex = 0;
+    let currentIndex = 0;
+    let autoTimer = null;
+    const AUTO_MS = 2000;
 
-            function showSlide(index) {
-                if (index < 0) index = slides.length - 1;
-                if (index >= slides.length) index = 0;
-                currentIndex = index;
+    function showSlide(index) {
+        if (index < 0) index = slides.length - 1;
+        if (index >= slides.length) index = 0;
+        currentIndex = index;
 
-                slides.forEach(function (slide, i) {
-                    slide.classList.toggle("is-active", i === index);
-                });
+        slides.forEach(function (slide, i) {
+            slide.classList.toggle("is-active", i === index);
+        });
 
-                thumbs.forEach(function (thumb, i) {
-                    thumb.classList.toggle("is-active", i === index);
-                });
-            }
+        thumbs.forEach(function (thumb, i) {
+            thumb.classList.toggle("is-active", i === index);
+        });
+    }
 
-            thumbs.forEach(function (btn) {
-                btn.addEventListener("click", function () {
-                    const index = Number(btn.dataset.index || 0);
-                    showSlide(index);
-                });
-            });
+    function nextSlide() {
+        showSlide(currentIndex + 1);
+    }
 
-            if (prevBtn) {
-                prevBtn.addEventListener("click", function () {
-                    showSlide(currentIndex - 1);
-                });
-            }
+    function startAutoPlay() {
+        stopAutoPlay();
+        if (slides.length <= 1) return;
+        autoTimer = setInterval(function () {
+            nextSlide();
+        }, AUTO_MS);
+    }
 
-            if (nextBtn) {
-                nextBtn.addEventListener("click", function () {
-                    showSlide(currentIndex + 1);
-                });
-            }
+    function stopAutoPlay() {
+        if (autoTimer) {
+            clearInterval(autoTimer);
+            autoTimer = null;
+        }
+    }
 
-            showSlide(0);
-        })();
+    thumbs.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            const index = Number(btn.dataset.index || 0);
+            showSlide(index);
+            startAutoPlay();
+        });
+    });
+
+    if (prevBtn) {
+        prevBtn.addEventListener("click", function () {
+            showSlide(currentIndex - 1);
+            startAutoPlay();
+        });
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener("click", function () {
+            showSlide(currentIndex + 1);
+            startAutoPlay();
+        });
+    }
+
+    slider.addEventListener("mouseenter", stopAutoPlay);
+    slider.addEventListener("mouseleave", startAutoPlay);
+    slider.addEventListener("touchstart", stopAutoPlay, { passive: true });
+    slider.addEventListener("touchend", startAutoPlay, { passive: true });
+
+    document.addEventListener("visibilitychange", function () {
+        if (document.hidden) {
+            stopAutoPlay();
+        } else {
+            startAutoPlay();
+        }
+    });
+
+    showSlide(0);
+    startAutoPlay();
+})();
     </script>
 </body>
 </html>
