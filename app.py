@@ -27,6 +27,8 @@ from flask import Flask, redirect, url_for, request, session, current_app
 from line_notify import send_line_order_notify
 from line_notify import send_line_message_notify
 
+from landing_module import register_landing_module
+
 _banner_cache = {
     "data": None,
     "ts": 0
@@ -839,9 +841,9 @@ def admin_dashboard():
         member = member_dict.get(o["member_id"])
         o["member"] = {
             "account": member["account"] if member else "guest",
-            "name": member.get("name") if member else "訪客",
-            "phone": member.get("phone") if member else "—",
-            "address": member.get("address") if member else "—",
+            "name": member.get("name") if member else (o.get("guest_name") or "訪客"),
+            "phone": member.get("phone") if member else (o.get("guest_phone") or "—"),
+            "address": member.get("address") if member else (o.get("guest_address") or "—"),
         }
         o["is_new"] = bool(o.get("status") != "shipped" and not session.get("seen_orders"))
         try:
@@ -4167,16 +4169,36 @@ def checkout():
 
 @app.route('/choose-payment')
 def choose_payment():
-    if 'current_trade_no' not in session:
-        return redirect('/cart')
+    order_id = request.args.get("order_id", "").strip()
 
-    trade_no = session['current_trade_no']
-    res = supabase.table("orders").select("*").eq("MerchantTradeNo", trade_no).execute()
+    order = None
 
-    if not res.data:
+    if order_id.isdigit():
+        res = (
+            supabase.table("orders")
+            .select("*")
+            .eq("id", int(order_id))
+            .limit(1)
+            .execute()
+        )
+        rows = res.data or []
+        order = rows[0] if rows else None
+
+    if not order and 'current_trade_no' in session:
+        trade_no = session['current_trade_no']
+        res = (
+            supabase.table("orders")
+            .select("*")
+            .eq("MerchantTradeNo", trade_no)
+            .limit(1)
+            .execute()
+        )
+        rows = res.data or []
+        order = rows[0] if rows else None
+
+    if not order:
         return "找不到訂單", 404
 
-    order = res.data[0]
     return render_template("choose_payment.html", order=order)
 
 # === LINE Pay 金額/幣別 helper（缺它會造成 NameError）===
@@ -6383,7 +6405,8 @@ def inject_has_new_reply():
 
     return dict(has_new_reply=has_reply)
 
-
+register_landing_module(app, supabase, TW, generate_merchant_trade_no)
 
 if __name__ == '__main__':
     app.run(debug=True)
+

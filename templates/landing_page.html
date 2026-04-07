@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page.title or page.name }}</title>
+    <style>
+        body { margin:0; font-family:Arial, "Noto Sans TC", sans-serif; color:#222; background:#fff; }
+        .wrap { max-width:1200px; margin:0 auto; padding:0 16px; }
+        .hero { padding:48px 0; background:#f8f5f2; }
+        .hero-grid { display:grid; grid-template-columns:1fr 1fr; gap:32px; align-items:center; }
+        .hero img { width:100%; border-radius:16px; }
+        .hero h1 { font-size:42px; margin:0 0 12px; }
+        .hero p { font-size:18px; line-height:1.7; color:#555; }
+        .cta-btn { display:inline-block; padding:14px 24px; background:#222; color:#fff; text-decoration:none; border-radius:10px; }
+        .section { padding:48px 0; }
+        .offers { display:grid; grid-template-columns:repeat(3, 1fr); gap:20px; }
+        .offer-card { border:1px solid #eee; border-radius:16px; padding:20px; cursor:pointer; }
+        .offer-card.active { border:2px solid #222; }
+        .offer-badge { display:inline-block; margin-bottom:10px; font-size:12px; padding:4px 10px; background:#222; color:#fff; border-radius:999px; }
+        .offer-title { font-size:24px; font-weight:bold; margin-bottom:6px; }
+        .offer-subtitle { color:#777; margin-bottom:12px; }
+        .offer-price { font-size:28px; font-weight:bold; }
+        .offer-compare { color:#999; text-decoration:line-through; margin-left:8px; }
+        .buy-box { background:#fafafa; border:1px solid #eee; border-radius:16px; padding:24px; }
+        .buy-box input, .buy-box select, .buy-box textarea { width:100%; padding:12px; margin-top:6px; margin-bottom:14px; border:1px solid #ddd; border-radius:10px; box-sizing:border-box; }
+        .buy-btn { width:100%; border:none; background:#111; color:#fff; padding:14px; border-radius:10px; cursor:pointer; font-size:16px; }
+        .faq-item { border-bottom:1px solid #eee; padding:16px 0; }
+        .faq-q { font-weight:bold; margin-bottom:8px; }
+        .summary { font-size:15px; color:#555; margin-top:12px; }
+        @media (max-width: 900px) {
+            .hero-grid, .offers { grid-template-columns:1fr; }
+            .hero h1 { font-size:32px; }
+        }
+    </style>
+</head>
+<body>
+    <section class="hero">
+        <div class="wrap hero-grid">
+            <div>
+                <h1>{{ page.title or page.name }}</h1>
+                <p>{{ page.subtitle or '' }}</p>
+                <a href="{{ page.cta_anchor or '#buy' }}" class="cta-btn">{{ page.cta_text or '立即下單' }}</a>
+            </div>
+            <div>
+                {% if page.hero_image %}
+                <img src="{{ page.hero_image }}" alt="{{ page.name }}">
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    {% if page.description %}
+    <section class="section">
+        <div class="wrap">
+            <div style="line-height:1.9; white-space:pre-line;">{{ page.description }}</div>
+        </div>
+    </section>
+    {% endif %}
+
+    <section class="section" id="buy">
+        <div class="wrap">
+            <h2>選擇方案</h2>
+            <div class="offers" id="offerList">
+                {% for offer in offers %}
+                <div class="offer-card {% if loop.first %}active{% endif %}"
+                     data-offer-id="{{ offer.id }}"
+                     data-offer-name="{{ offer.offer_name }}"
+                     data-offer-price="{{ offer.price|int }}">
+                    {% if offer.badge %}
+                    <div class="offer-badge">{{ offer.badge }}</div>
+                    {% endif %}
+                    <div class="offer-title">{{ offer.offer_name }}</div>
+                    <div class="offer-subtitle">{{ offer.subtitle or '' }}</div>
+                    <div>
+                        <span class="offer-price">NT$ {{ offer.price|int }}</span>
+                        {% if offer.compare_at_price %}
+                        <span class="offer-compare">NT$ {{ offer.compare_at_price|int }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div style="height:24px;"></div>
+
+            <div class="buy-box">
+                <h3>直接下單</h3>
+                <form id="landingOrderForm">
+                    <input type="hidden" name="slug" value="{{ page.slug }}">
+                    <input type="hidden" name="offer_id" id="offerId" value="{{ offers[0].id if offers else '' }}">
+
+                    <label>收件人姓名</label>
+                    <input type="text" name="name" required>
+
+                    <label>手機</label>
+                    <input type="text" name="phone" required>
+
+                    <label>Email（可不填）</label>
+                    <input type="email" name="email">
+
+                    <label>地址</label>
+                    <textarea name="address" required></textarea>
+
+                    <label>數量</label>
+                    <select name="qty" id="qty">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                    </select>
+
+                    <label>付款方式</label>
+                    <select name="payment_method">
+                        <option value="linepay">Line Pay</option>
+                        <option value="credit">信用卡</option>
+                        <option value="bank">銀行轉帳</option>
+                    </select>
+
+                    <div class="summary" id="summaryText"></div>
+
+                    <button type="submit" class="buy-btn">立即下單</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    {% if page.faq_json %}
+    <section class="section">
+        <div class="wrap">
+            <h2>常見問題</h2>
+            {% for faq in page.faq_json %}
+            <div class="faq-item">
+                <div class="faq-q">{{ faq.q }}</div>
+                <div>{{ faq.a }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <script>
+        const offerCards = document.querySelectorAll(".offer-card");
+        const offerIdInput = document.getElementById("offerId");
+        const qtySelect = document.getElementById("qty");
+        const summaryText = document.getElementById("summaryText");
+        const form = document.getElementById("landingOrderForm");
+
+        let currentOffer = {
+            id: offerIdInput.value,
+            name: "",
+            price: 0
+        };
+
+        function refreshSummary() {
+            const qty = parseInt(qtySelect.value || "1", 10);
+            const total = (currentOffer.price || 0) * qty;
+            summaryText.innerText = `已選方案：${currentOffer.name || ""}｜數量：${qty}｜總金額：NT$ ${total}`;
+        }
+
+        offerCards.forEach(card => {
+            if (card.classList.contains("active")) {
+                currentOffer.id = card.dataset.offerId;
+                currentOffer.name = card.dataset.offerName;
+                currentOffer.price = parseInt(card.dataset.offerPrice || "0", 10);
+            }
+
+            card.addEventListener("click", function () {
+                offerCards.forEach(x => x.classList.remove("active"));
+                card.classList.add("active");
+
+                currentOffer.id = card.dataset.offerId;
+                currentOffer.name = card.dataset.offerName;
+                currentOffer.price = parseInt(card.dataset.offerPrice || "0", 10);
+
+                offerIdInput.value = currentOffer.id;
+                refreshSummary();
+            });
+        });
+
+        qtySelect.addEventListener("change", refreshSummary);
+        refreshSummary();
+
+        form.addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const fd = new FormData(form);
+
+            const res = await fetch("/api/landing-order", {
+                method: "POST",
+                body: fd
+            });
+
+            const data = await res.json();
+            if (!data.ok) {
+                alert(data.error || "下單失敗");
+                return;
+            }
+
+            window.location.href = data.redirect_url;
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ "新增" if mode == "new" else "編輯" }}一頁式頁面</title>
+    <style>
+        body { font-family:Arial, "Noto Sans TC", sans-serif; padding:24px; }
+        .box { max-width:1200px; margin:0 auto; }
+        label { display:block; margin-top:14px; font-weight:bold; }
+        input, textarea, select { width:100%; padding:10px; margin-top:6px; box-sizing:border-box; }
+        .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+        .offer-row, .faq-row { border:1px solid #ddd; padding:16px; border-radius:10px; margin-top:16px; }
+        .btn { padding:10px 16px; border:none; background:#111; color:#fff; border-radius:8px; cursor:pointer; }
+        .btn-light { background:#eee; color:#111; }
+    </style>
+</head>
+<body>
+<div class="box">
+    <h1>{{ "新增" if mode == "new" else "編輯" }}一頁式頁面</h1>
+    <p><a href="/admin0363/landing-pages">← 回列表</a></p>
+
+    <form method="post">
+        <div class="grid-2">
+            <div>
+                <label>頁面名稱</label>
+                <input type="text" name="name" value="{{ page.name or '' }}" required>
+            </div>
+            <div>
+                <label>Slug</label>
+                <input type="text" name="slug" value="{{ page.slug or '' }}" required>
+            </div>
+        </div>
+
+        <label>標題</label>
+        <input type="text" name="title" value="{{ page.title or '' }}">
+
+        <label>副標題</label>
+        <textarea name="subtitle">{{ page.subtitle or '' }}</textarea>
+
+        <label>主圖</label>
+        <input type="text" name="hero_image" value="{{ page.hero_image or '' }}">
+
+        <label>手機主圖</label>
+        <input type="text" name="hero_image_mobile" value="{{ page.hero_image_mobile or '' }}">
+
+        <label>頁面說明</label>
+        <textarea name="description" rows="6">{{ page.description or '' }}</textarea>
+
+        <div class="grid-2">
+            <div>
+                <label>CTA 文字</label>
+                <input type="text" name="cta_text" value="{{ page.cta_text or '立即下單' }}">
+            </div>
+            <div>
+                <label>CTA Anchor</label>
+                <input type="text" name="cta_anchor" value="{{ page.cta_anchor or '#buy' }}">
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div>
+                <label>Affiliate Code</label>
+                <input type="text" name="affiliate_code" value="{{ page.affiliate_code or '' }}">
+            </div>
+            <div>
+                <label>是否上架</label>
+                <select name="is_active">
+                    <option value="1" {% if page.is_active %}selected{% endif %}>上架</option>
+                    <option value="0" {% if page.is_active is defined and not page.is_active %}selected{% endif %}>下架</option>
+                </select>
+            </div>
+        </div>
+
+        {% set sections = page.sections_json or {} %}
+        <div class="grid-2">
+            <div>
+                <label>顯示賣點區</label>
+                <select name="show_features">
+                    <option value="1" {% if sections.show_features %}selected{% endif %}>是</option>
+                    <option value="0" {% if not sections.show_features %}selected{% endif %}>否</option>
+                </select>
+            </div>
+            <div>
+                <label>顯示 FAQ</label>
+                <select name="show_faq">
+                    <option value="1" {% if sections.show_faq or sections == {} %}selected{% endif %}>是</option>
+                    <option value="0" {% if sections and not sections.show_faq %}selected{% endif %}>否</option>
+                </select>
+            </div>
+        </div>
+
+        {% set theme = page.theme_json or {} %}
+        <div class="grid-2">
+            <div>
+                <label>主色</label>
+                <input type="text" name="primary_color" value="{{ theme.primary_color or '' }}">
+            </div>
+            <div>
+                <label>輔色</label>
+                <input type="text" name="secondary_color" value="{{ theme.secondary_color or '' }}">
+            </div>
+        </div>
+
+        <h2 style="margin-top:30px;">購買方案</h2>
+
+        {% if offers %}
+            {% for offer in offers %}
+            <div class="offer-row">
+                <div class="grid-2">
+                    <div>
+                        <label>方案名稱</label>
+                        <input type="text" name="offer_name[]" value="{{ offer.offer_name or '' }}">
+                    </div>
+                    <div>
+                        <label>副標</label>
+                        <input type="text" name="offer_subtitle[]" value="{{ offer.subtitle or '' }}">
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div>
+                        <label>Badge</label>
+                        <input type="text" name="offer_badge[]" value="{{ offer.badge or '' }}">
+                    </div>
+                    <div>
+                        <label>價格</label>
+                        <input type="number" name="offer_price[]" value="{{ offer.price or 0 }}">
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div>
+                        <label>原價</label>
+                        <input type="number" name="offer_compare_at_price[]" value="{{ offer.compare_at_price or '' }}">
+                    </div>
+                    <div>
+                        <label>綁定商品 Product ID</label>
+                        <input type="text" name="offer_product_id[]" value="{{ offer.product_id or '' }}">
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div>
+                        <label>綁定 Bundle ID</label>
+                        <input type="text" name="offer_bundle_id[]" value="{{ offer.bundle_id or '' }}">
+                    </div>
+                    <div>
+                        <label>預設方案</label>
+                        <input type="checkbox" name="offer_is_default[]" value="{{ loop.index0 }}" {% if offer.is_default %}checked{% endif %}>
+                    </div>
+                </div>
+
+                <label>是否啟用</label>
+                <input type="checkbox" name="offer_is_active[]" value="{{ loop.index0 }}" {% if offer.is_active %}checked{% endif %}>
+            </div>
+            {% endfor %}
+        {% else %}
+            {% for i in range(3) %}
+            <div class="offer-row">
+                <div class="grid-2">
+                    <div>
+                        <label>方案名稱</label>
+                        <input type="text" name="offer_name[]" value="{{ ['單品','雙拼組','三瓶組'][i] }}">
+                    </div>
+                    <div>
+                        <label>副標</label>
+                        <input type="text" name="offer_subtitle[]" value="">
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div>
+                        <label>Badge</label>
+                        <input type="text" name="offer_badge[]" value="">
+                    </div>
+                    <div>
+                        <label>價格</label>
+                        <input type="number" name="offer_price[]" value="0">
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div>
+                        <label>原價</label>
+                        <input type="number" name="offer_compare_at_price[]" value="">
+                    </div>
+                    <div>
+                        <label>綁定商品 Product ID</label>
+                        <input type="text" name="offer_product_id[]" value="">
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div>
+                        <label>綁定 Bundle ID</label>
+                        <input type="text" name="offer_bundle_id[]" value="">
+                    </div>
+                    <div>
+                        <label>預設方案</label>
+                        <input type="checkbox" name="offer_is_default[]" value="{{ i }}" {% if i == 0 %}checked{% endif %}>
+                    </div>
+                </div>
+
+                <label>是否啟用</label>
+                <input type="checkbox" name="offer_is_active[]" value="{{ i }}" checked>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <h2 style="margin-top:30px;">FAQ</h2>
+
+        {% set faqs = page.faq_json or [] %}
+        {% if faqs %}
+            {% for faq in faqs %}
+            <div class="faq-row">
+                <label>問題</label>
+                <input type="text" name="faq_q[]" value="{{ faq.q or '' }}">
+                <label>答案</label>
+                <textarea name="faq_a[]">{{ faq.a or '' }}</textarea>
+            </div>
+            {% endfor %}
+        {% else %}
+            {% for i in range(3) %}
+            <div class="faq-row">
+                <label>問題</label>
+                <input type="text" name="faq_q[]" value="">
+                <label>答案</label>
+                <textarea name="faq_a[]"></textarea>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <div style="margin-top:24px;">
+            <button type="submit" class="btn">儲存</button>
+            <a href="/admin0363/landing-pages" class="btn btn-light">取消</a>
+        </div>
+    </form>
+</div>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>一頁式頁面管理</title>
+    <style>
+        body { font-family:Arial, "Noto Sans TC", sans-serif; padding:24px; }
+        table { width:100%; border-collapse:collapse; margin-top:20px; }
+        th, td { border:1px solid #ddd; padding:10px; text-align:left; }
+        .topbar { display:flex; justify-content:space-between; align-items:center; }
+        .btn { display:inline-block; padding:8px 14px; border-radius:8px; text-decoration:none; background:#111; color:#fff; border:none; cursor:pointer; }
+        .btn-light { background:#eee; color:#111; }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <h1>一頁式頁面管理</h1>
+        <div>
+            <a href="/admin0363/dashboard" class="btn btn-light">回後台</a>
+            <a href="/admin0363/landing-pages/new" class="btn">新增頁面</a>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>頁面名稱</th>
+                <th>Slug</th>
+                <th>方案數</th>
+                <th>狀態</th>
+                <th>前台網址</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in pages %}
+            <tr>
+                <td>{{ p.id }}</td>
+                <td>{{ p.name }}</td>
+                <td>{{ p.slug }}</td>
+                <td>{{ p.offer_count }}</td>
+                <td>{{ "上架中" if p.is_active else "未上架" }}</td>
+                <td><a href="/landing/{{ p.slug }}" target="_blank">/landing/{{ p.slug }}</a></td>
+                <td>
+                    <a href="/admin0363/landing-pages/{{ p.id }}/edit" class="btn btn-light">編輯</a>
+                    <form method="post" action="/admin0363/landing-pages/{{ p.id }}/clone" style="display:inline;">
+                        <button type="submit" class="btn btn-light">複製</button>
+                    </form>
+                    <form method="post" action="/admin0363/landing-pages/{{ p.id }}/toggle" style="display:inline;">
+                        <button type="submit" class="btn">{{ "下架" if p.is_active else "上架" }}</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
