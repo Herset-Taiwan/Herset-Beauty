@@ -767,6 +767,15 @@
                                 <label>Affiliate Code(分潤代碼)</label>
                                 <input type="text" name="affiliate_code" value="{{ page.affiliate_code or '' }}">
                             </div>
+
+                            <div class="field">
+    <label>輪播秒數（毫秒）</label>
+    <input type="number"
+           name="slider_interval"
+           value="{{ page.slider_interval or 3000 }}"
+           placeholder="例如 3000">
+    <span class="hint">1000 = 1秒，建議 3000～5000</span>
+</div>
                         </div>
 
                         {% set sections = page.sections_json or {} %}

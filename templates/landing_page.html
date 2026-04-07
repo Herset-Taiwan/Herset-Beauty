@@ -608,7 +608,7 @@
 
     let currentIndex = 0;
     let autoTimer = null;
-    const AUTO_MS = 2000;
+    const AUTO_MS = Number({{ page.slider_interval or 3000 }});
 
     function showSlide(index) {
         if (index < 0) index = slides.length - 1;

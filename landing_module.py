@@ -234,6 +234,7 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
             "is_active": form.get("is_active") == "1",
             "updated_at": datetime.now(TW).isoformat(),
             "secondary_images_json": secondary_urls,
+            "slider_interval": int(form.get("slider_interval") or 3000) if str(form.get("slider_interval") or "").isdigit() else 3000,
         }
 
     def parse_landing_offers_form(form, landing_page_id):
