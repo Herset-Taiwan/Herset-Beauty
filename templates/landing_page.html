@@ -4,15 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ page.title or page.name }}</title>
+    {% set theme = page.theme_json or {} %}
     <style>
         :root{
-            --bg:#fff;
-            --soft:#f8f5f2;
-            --line:#eee;
-            --text:#222;
-            --muted:#666;
-            --brand:#111;
-            --brand-2:#e91e63;
+            --bg:#ffffff;
+            --text:#222222;
+            --muted:#666666;
+            --line:#eee7e4;
+
+            --primary: {{ theme.primary_color or "#e91e63" }};
+            --secondary: {{ theme.secondary_color or "#f8f5f2" }};
+            --accent: {{ theme.accent_color or theme.primary_color or "#111111" }};
+
+            --primary-soft: color-mix(in srgb, var(--primary) 12%, white);
+            --secondary-soft: color-mix(in srgb, var(--secondary) 72%, white);
+            --accent-soft: color-mix(in srgb, var(--accent) 10%, white);
         }
 
         *{ box-sizing:border-box; }
@@ -32,7 +38,7 @@
 
         .hero{
             padding:48px 0;
-            background:var(--soft);
+            background:var(--secondary);
         }
 
         .hero-grid{
@@ -46,12 +52,13 @@
             font-size:42px;
             margin:0 0 12px;
             line-height:1.2;
+            color:var(--accent);
         }
 
         .hero-copy p{
             font-size:18px;
             line-height:1.8;
-            color:#555;
+            color:var(--muted);
             margin:0 0 20px;
             white-space:pre-line;
         }
@@ -59,11 +66,18 @@
         .cta-btn{
             display:inline-block;
             padding:14px 24px;
-            background:#222;
+            background:var(--primary);
             color:#fff;
             text-decoration:none;
             border-radius:10px;
             font-weight:700;
+            box-shadow:0 10px 20px color-mix(in srgb, var(--primary) 28%, transparent);
+            transition:.18s ease;
+        }
+
+        .cta-btn:hover{
+            transform:translateY(-1px);
+            filter:brightness(.96);
         }
 
         .landing-gallery{
@@ -76,8 +90,8 @@
             position:relative;
             overflow:hidden;
             border-radius:20px;
-            background:#f3efec;
-            border:1px solid #ece6e2;
+            background:var(--secondary-soft);
+            border:1px solid color-mix(in srgb, var(--secondary) 40%, #ddd);
         }
 
         .landing-slide{
@@ -110,7 +124,7 @@
             z-index:5;
             font-size:20px;
             font-weight:700;
-            color:#222;
+            color:var(--accent);
         }
 
         .slider-arrow.prev{ left:12px; }
@@ -142,7 +156,7 @@
         }
 
         .landing-thumb.is-active{
-            border-color:var(--brand-2);
+            border-color:var(--primary);
             opacity:1;
         }
 
@@ -160,6 +174,7 @@
         .section h2{
             margin:0 0 22px;
             font-size:30px;
+            color:var(--accent);
         }
 
         .offers{
@@ -169,7 +184,7 @@
         }
 
         .offer-card{
-            border:1px solid #eee;
+            border:1px solid var(--line);
             border-radius:16px;
             padding:20px;
             cursor:pointer;
@@ -183,7 +198,9 @@
         }
 
         .offer-card.active{
-            border:2px solid #222;
+            border:2px solid var(--primary);
+            box-shadow:0 10px 24px color-mix(in srgb, var(--primary) 12%, transparent);
+            background:var(--primary-soft);
         }
 
         .offer-badge{
@@ -191,7 +208,7 @@
             margin-bottom:10px;
             font-size:12px;
             padding:4px 10px;
-            background:#222;
+            background:var(--accent);
             color:#fff;
             border-radius:999px;
         }
@@ -200,6 +217,7 @@
             font-size:24px;
             font-weight:bold;
             margin-bottom:6px;
+            color:var(--accent);
         }
 
         .offer-subtitle{
@@ -211,6 +229,7 @@
         .offer-price{
             font-size:28px;
             font-weight:bold;
+            color:var(--primary);
         }
 
         .offer-compare{
@@ -220,14 +239,15 @@
         }
 
         .buy-box{
-            background:#fafafa;
-            border:1px solid #eee;
+            background:var(--secondary-soft);
+            border:1px solid color-mix(in srgb, var(--secondary) 45%, #ddd);
             border-radius:16px;
             padding:24px;
         }
 
         .buy-box h3{
             margin-top:0;
+            color:var(--accent);
         }
 
         .buy-box input,
@@ -241,18 +261,32 @@
             border-radius:10px;
             box-sizing:border-box;
             font:inherit;
+            background:#fff;
+        }
+
+        .buy-box input:focus,
+        .buy-box select:focus,
+        .buy-box textarea:focus{
+            outline:none;
+            border-color:var(--primary);
+            box-shadow:0 0 0 4px color-mix(in srgb, var(--primary) 14%, transparent);
         }
 
         .buy-btn{
             width:100%;
             border:none;
-            background:#111;
+            background:var(--primary);
             color:#fff;
             padding:14px;
             border-radius:10px;
             cursor:pointer;
             font-size:16px;
             font-weight:700;
+            transition:.18s ease;
+        }
+
+        .buy-btn:hover{
+            filter:brightness(.96);
         }
 
         .buy-btn:disabled{
@@ -261,18 +295,19 @@
         }
 
         .faq-item{
-            border-bottom:1px solid #eee;
+            border-bottom:1px solid var(--line);
             padding:16px 0;
         }
 
         .faq-q{
             font-weight:bold;
             margin-bottom:8px;
+            color:var(--accent);
         }
 
         .summary{
             font-size:15px;
-            color:#555;
+            color:var(--muted);
             margin-top:12px;
             margin-bottom:16px;
             line-height:1.7;

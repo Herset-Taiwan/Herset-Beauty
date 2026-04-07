@@ -485,6 +485,107 @@
             line-height:1.6;
         }
 
+        .theme-preview-card{
+    --preview-primary: #e91e63;
+    --preview-secondary: #f7d7e3;
+    --preview-accent: #111111;
+
+    border:1px solid #eadfda;
+    border-radius:18px;
+    overflow:hidden;
+    background:#fff;
+    box-shadow:0 8px 20px rgba(0,0,0,.05);
+}
+
+.theme-preview-hero{
+    padding:20px;
+    background:var(--preview-secondary);
+}
+
+.theme-preview-badge{
+    display:inline-block;
+    margin-bottom:10px;
+    padding:5px 10px;
+    border-radius:999px;
+    background:var(--preview-accent);
+    color:#fff;
+    font-size:12px;
+    font-weight:700;
+}
+
+.theme-preview-title{
+    font-size:24px;
+    font-weight:800;
+    color:var(--preview-accent);
+    margin-bottom:8px;
+}
+
+.theme-preview-subtitle{
+    font-size:14px;
+    color:#5b5b5b;
+    line-height:1.7;
+    margin-bottom:14px;
+}
+
+.theme-preview-btn{
+    border:none;
+    border-radius:10px;
+    background:var(--preview-primary);
+    color:#fff;
+    font-size:14px;
+    font-weight:700;
+    padding:12px 18px;
+    cursor:default;
+}
+
+.theme-preview-body{
+    padding:18px;
+    background:#fff;
+}
+
+.theme-preview-offer{
+    border:2px solid var(--preview-primary);
+    background:color-mix(in srgb, var(--preview-primary) 8%, white);
+    border-radius:14px;
+    padding:14px;
+    margin-bottom:14px;
+}
+
+.theme-preview-offer-name{
+    font-size:16px;
+    font-weight:700;
+    color:var(--preview-accent);
+    margin-bottom:6px;
+}
+
+.theme-preview-offer-price{
+    font-size:24px;
+    font-weight:800;
+    color:var(--preview-primary);
+}
+
+.theme-preview-input-wrap{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+}
+
+.theme-preview-input-wrap input{
+    width:100%;
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:10px 12px;
+    background:#fff;
+    color:#666;
+    font-size:13px;
+}
+
+@media (max-width:760px){
+    .theme-preview-input-wrap{
+        grid-template-columns:1fr;
+    }
+}
+
         @media (max-width:1100px){
             .layout{
                 grid-template-columns:1fr;
@@ -659,11 +760,11 @@
                                 <input type="text" name="cta_text" value="{{ page.cta_text or '立即下單' }}">
                             </div>
                             <div class="field">
-                                <label>CTA Anchor</label>
+                                <label>CTA Anchor(控制按鈕點下去要跳去哪裡)</label>
                                 <input type="text" name="cta_anchor" value="{{ page.cta_anchor or '#buy' }}">
                             </div>
                             <div class="field">
-                                <label>Affiliate Code</label>
+                                <label>Affiliate Code(分潤代碼)</label>
                                 <input type="text" name="affiliate_code" value="{{ page.affiliate_code or '' }}">
                             </div>
                         </div>
@@ -690,12 +791,38 @@
 
                             <div class="toggle-box">
                                 <label>主色</label>
-                                <input type="text" name="primary_color" value="{{ theme.primary_color or '' }}" placeholder="#e91e63">
+<div style="display:flex;gap:10px;align-items:center;">
+    <input type="color"
+           id="primary_color_picker"
+           value="{{ theme.primary_color or '#e91e63' }}"
+           style="width:50px;height:44px;padding:4px;border-radius:10px;border:1px solid #ddd;cursor:pointer;">
+
+    <input type="text"
+           name="primary_color"
+           id="primary_color_text"
+           value="{{ theme.primary_color or '' }}"
+           placeholder="#e91e63"
+           style="flex:1;">
+</div>
+<span class="hint">可點選顏色或輸入 HEX（例如 #e91e63）</span>
                             </div>
 
                             <div class="toggle-box">
                                 <label>輔色</label>
-                                <input type="text" name="secondary_color" value="{{ theme.secondary_color or '' }}" placeholder="#f7d7e3">
+<div style="display:flex;gap:10px;align-items:center;">
+    <input type="color"
+           id="secondary_color_picker"
+           value="{{ theme.secondary_color or '#f7d7e3' }}"
+           style="width:50px;height:44px;padding:4px;border-radius:10px;border:1px solid #ddd;cursor:pointer;">
+
+    <input type="text"
+           name="secondary_color"
+           id="secondary_color_text"
+           value="{{ theme.secondary_color or '' }}"
+           placeholder="#f7d7e3"
+           style="flex:1;">
+</div>
+<span class="hint">建議用淡色，會用在背景</span>
                             </div>
                         </div>
 
@@ -706,6 +833,31 @@
                                 <option value="0" {% if page.is_active is defined and not page.is_active %}selected{% endif %}>下架</option>
                             </select>
                         </div>
+
+                        <div class="field" style="margin-top:18px;">
+    <label>色系即時預覽</label>
+    <div class="theme-preview-card" id="themePreviewCard">
+        <div class="theme-preview-hero" id="themePreviewHero">
+            <div class="theme-preview-badge" id="themePreviewBadge">熱銷推薦</div>
+            <div class="theme-preview-title" id="themePreviewTitle">HERSET 私密潔淨慕斯</div>
+            <div class="theme-preview-subtitle" id="themePreviewSubtitle">溫柔潔淨，舒適安心的每日保養</div>
+            <button type="button" class="theme-preview-btn" id="themePreviewBtn">立即下單</button>
+        </div>
+
+        <div class="theme-preview-body">
+            <div class="theme-preview-offer active" id="themePreviewOffer">
+                <div class="theme-preview-offer-name">單品方案</div>
+                <div class="theme-preview-offer-price">NT$ 680</div>
+            </div>
+
+            <div class="theme-preview-input-wrap">
+                <input type="text" value="收件人姓名" readonly>
+                <input type="text" value="手機號碼" readonly>
+            </div>
+        </div>
+    </div>
+    <span class="hint">修改主色 / 輔色後，這裡會即時顯示前台大致風格。</span>
+</div>
                     </div>
                 </div>
 
@@ -1102,8 +1254,110 @@ function bindSecondaryUploader(){
     refreshSecondaryOrder();
 }
 
+function getSafeThemeColor(value, defaultColor){
+    const v = (value || "").trim();
+    return /^#([0-9A-Fa-f]{6})$/.test(v) ? v : defaultColor;
+}
+
+function updateThemePreview(){
+    const primaryText = document.getElementById("primary_color_text");
+    const secondaryText = document.getElementById("secondary_color_text");
+
+    const previewCard = document.getElementById("themePreviewCard");
+    const previewHero = document.getElementById("themePreviewHero");
+    const previewBadge = document.getElementById("themePreviewBadge");
+    const previewTitle = document.getElementById("themePreviewTitle");
+    const previewBtn = document.getElementById("themePreviewBtn");
+    const previewOffer = document.getElementById("themePreviewOffer");
+    const previewPrice = previewOffer ? previewOffer.querySelector(".theme-preview-offer-price") : null;
+
+    if (!primaryText || !secondaryText || !previewCard) return;
+
+    const primary = getSafeThemeColor(primaryText.value, "#e91e63");
+    const secondary = getSafeThemeColor(secondaryText.value, "#f7d7e3");
+    const accent = "#111111";
+
+    previewCard.style.setProperty("--preview-primary", primary);
+    previewCard.style.setProperty("--preview-secondary", secondary);
+    previewCard.style.setProperty("--preview-accent", accent);
+
+    if (previewHero) {
+        previewHero.style.background = secondary;
+    }
+    if (previewBadge) {
+        previewBadge.style.background = accent;
+    }
+    if (previewTitle) {
+        previewTitle.style.color = accent;
+    }
+    if (previewBtn) {
+        previewBtn.style.background = primary;
+    }
+    if (previewOffer) {
+        previewOffer.style.borderColor = primary;
+        previewOffer.style.background = "color-mix(in srgb, " + primary + " 8%, white)";
+    }
+    if (previewPrice) {
+        previewPrice.style.color = primary;
+    }
+}
+
 bindHeroUploader();
 bindSecondaryUploader();
+
+bindColorSync("primary_color_picker", "primary_color_text", "#e91e63");
+bindColorSync("secondary_color_picker", "secondary_color_text", "#f7d7e3");
+
+const primaryColorText = document.getElementById("primary_color_text");
+const secondaryColorText = document.getElementById("secondary_color_text");
+const primaryColorPicker = document.getElementById("primary_color_picker");
+const secondaryColorPicker = document.getElementById("secondary_color_picker");
+
+if (primaryColorText) primaryColorText.addEventListener("input", updateThemePreview);
+if (secondaryColorText) secondaryColorText.addEventListener("input", updateThemePreview);
+if (primaryColorPicker) primaryColorPicker.addEventListener("input", updateThemePreview);
+if (secondaryColorPicker) secondaryColorPicker.addEventListener("input", updateThemePreview);
+
+updateThemePreview();
+
+
+function bindColorSync(pickerId, textId, defaultColor){
+    const picker = document.getElementById(pickerId);
+    const text = document.getElementById(textId);
+
+    if (!picker || !text) return;
+
+    // 👉 初始化
+    if (!text.value){
+        text.value = "";
+        picker.value = defaultColor;
+    } else {
+        picker.value = text.value;
+    }
+
+    // 👉 點色票 → 同步文字
+    picker.addEventListener("input", function(){
+        text.value = picker.value;
+    });
+
+    // 👉 輸入文字 → 同步色票
+    text.addEventListener("input", function(){
+        if (/^#([0-9A-Fa-f]{6})$/.test(text.value)){
+            picker.value = text.value;
+        }
+    });
+
+    // 👉 清空 → 不送值（讓前台吃預設）
+    text.addEventListener("blur", function(){
+        if (!text.value.trim()){
+            picker.value = defaultColor;
+        }
+    });
+}
+
+// 初始化
+bindColorSync("primary_color_picker", "primary_color_text", "#e91e63");
+bindColorSync("secondary_color_picker", "secondary_color_text", "#f7d7e3");
 </script>
 </body>
 </html>
