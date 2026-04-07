@@ -504,7 +504,7 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
             offers = parse_landing_offers_form(request.form, page_id)
             return render_template(
                 "admin_landing_page_form.html",
-                mode="edit"
+                mode="edit",
                 page=page_data,
                 offers=offers
             )
