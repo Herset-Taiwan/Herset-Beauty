@@ -138,6 +138,16 @@
             overflow:hidden;
         }
 
+        .flash{
+            margin-bottom:18px;
+            padding:14px 16px;
+            border-radius:14px;
+            background:#fff1f6;
+            border:1px solid #f1c7d6;
+            color:#b21f57;
+            font-weight:700;
+        }
+
         .card-header{
             display:flex;
             justify-content:space-between;
@@ -186,10 +196,16 @@
 .actions-col{
     text-align:right;
     white-space:nowrap;
+    min-width:300px;
+}
+
+thead th.actions-col{
+    text-align:right;
 }
 
 tbody td.actions-col{
     text-align:right;
+    min-width:300px;
 }
         
         tbody td{
@@ -280,12 +296,13 @@ tbody td.actions-col{
             text-decoration:underline;
         }
 
-        .op-group{
+.op-group{
     display:flex;
     flex-wrap:nowrap;
     gap:6px;
     justify-content:flex-end;
     align-items:center;
+    width:100%;
 }
 
     .op-btn{
@@ -436,7 +453,13 @@ tbody td.actions-col{
                 <a href="/admin0363/landing-pages/new" class="btn btn-primary">＋ 新增頁面</a>
             </div>
         </div>
-
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="flash">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
         <div class="summary-row">
             <div class="summary-card">
                 <div class="summary-label">總頁面數</div>
@@ -475,7 +498,7 @@ tbody td.actions-col{
                             <th style="width:120px;">方案數</th>
                             <th style="width:140px;">狀態</th>
                             <th style="width:220px;">前台網址</th>
-                            操作<th style="width:320px;" class="actions-col">操作</th>
+                            <th style="width:320px;" class="actions-col">操作</th>
                         </tr>
                     </thead>
                     <tbody>
