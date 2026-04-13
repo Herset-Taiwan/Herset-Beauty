@@ -616,33 +616,6 @@
       gap: 24px;
     }
 
-    .feature-strip {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 16px;
-    }
-
-    .feature-pill {
-      padding: 20px 18px;
-      border-radius: 22px;
-      background: rgba(255, 255, 255, 0.82);
-      border: 1px solid rgba(234, 223, 216, 0.9);
-      box-shadow: 0 16px 36px rgba(90, 60, 44, 0.06);
-    }
-
-    .feature-pill strong {
-      display: block;
-      margin-bottom: 8px;
-      font-size: 15px;
-      color: var(--brand-deep);
-    }
-
-    .feature-pill span {
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.7;
-    }
-
     .detail-card { padding: 22px; }
 
     .product-tabs {
@@ -793,7 +766,6 @@
     @media (max-width: 1100px) {
       .product-hero { grid-template-columns: 1fr; }
       .purchase-panel { position: static; }
-      .feature-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
 
     @media (max-width: 768px) {
@@ -817,8 +789,7 @@
       .product-tab-content { padding: 16px; }
 
       .purchase-meta,
-      .assurance-list,
-      .feature-strip { grid-template-columns: 1fr; }
+      .assurance-list { grid-template-columns: 1fr; }
 
       .qty-wrap,
       .actions { grid-template-columns: 1fr; }
@@ -1086,25 +1057,6 @@
     </section>
 
     <section class="detail-sections">
-      <div class="feature-strip">
-        <div class="feature-pill">
-          <strong>清楚的購買資訊</strong>
-          <span>價格、規格與結帳操作集中在右側，降低購買猶豫。</span>
-        </div>
-        <div class="feature-pill">
-          <strong>圖庫先看再決定</strong>
-          <span>主圖放大、縮圖明確，讓商品細節和情境照更容易被看到。</span>
-        </div>
-        <div class="feature-pill">
-          <strong>更像標準電商頁</strong>
-          <span>用優惠卡、信任資訊與按鈕階層，提升成交感與熟悉度。</span>
-        </div>
-        <div class="feature-pill">
-          <strong>手機版同步優化</strong>
-          <span>行動裝置改成直式堆疊，資訊順序更符合滑動閱讀習慣。</span>
-        </div>
-      </div>
-
       <div class="detail-card">
         <div class="product-tabs">
           <button class="product-tab-btn active" data-tab="intro">商品介紹</button>
