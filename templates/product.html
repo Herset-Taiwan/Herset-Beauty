@@ -5,6 +5,82 @@
   <title>{{ product['name'] }} - HERSET BEAUTY</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
+    /* ✅ 商品頁專用樣式 */
+    body.product-page {
+      background: white;
+      padding-bottom: 60px;
+    }
+
+body.product-page .tab-content {
+  border: 1px solid #ccc;
+  border-top: none;
+  padding: 20px;
+  margin-top: 0;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+  background: white;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 0 6px rgba(0,0,0,0.05);
+}
+body.product-page .tabs {
+  display: flex;
+  margin: 40px auto 0;
+  max-width: 900px;
+  border: 1px solid #ccc;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  background: white;
+}
+
+
+body.product-page .tab-btn.active {
+  background: white;
+  border: none;
+  font-weight: bold;
+  z-index: 2;
+}
+
+
+    .product-container {
+      display: flex;
+      max-width: 900px;
+      margin: 20px auto 0;
+      gap: 40px;
+      background: white;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .gallery {
+      flex: 1;
+    }
+
+    .gallery-main img {
+      width: 100%;
+      border-radius: 10px;
+    }
+
+    .gallery-thumbs {
+      display: flex;
+      margin-top: 10px;
+      gap: 10px;
+    }
+
+    .gallery-thumbs img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border: 2px solid #ccc;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    .info {
+      flex: 1;
+    }
+
 
 /* 主視圖媒體共用樣式 */
 .gallery-main .media-item{
@@ -62,6 +138,9 @@
   box-shadow: 0 0 0 3px #f5eae7;
 }
 
+
+
+    .info h2 { margin-top: 0; }
  /* 商品頁縮圖樣式 */
 .thumbnail.selected {
   border: 2px solid #C7A7A3;
@@ -84,415 +163,11 @@
   box-shadow: 0 0 0 3px #f5eae7;
 }
 
-/* ✅ 商品頁專用樣式 */
-body.product-page {
-  background:
-    radial-gradient(circle at top, #fff7f4 0%, #fff 38%),
-    linear-gradient(to bottom, #fffaf8 0%, #ffffff 100%);
-  padding-bottom: 100px;
-  color: #2f241f;
-}
 
-/* 頁面共用容器 */
-.product-shell {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 0 20px 40px;
-}
+/* 價格樣式 */
 
-.header-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  max-width: 1180px;
-  margin: 20px auto 18px;
-  padding: 0 20px;
-}
-
-.back-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 700;
-  font-size: 14px;
-  padding: 10px 18px;
-  border-radius: 999px;
-  border: 1px solid #dcc8bf;
-  background: rgba(255,255,255,0.92);
-  color: #6a4a3c;
-  text-decoration: none;
-  transition: all 0.25s ease;
-  box-shadow: 0 8px 22px rgba(94, 60, 44, 0.08);
-}
-
-.back-btn:hover {
-  background: #fff4ef;
-  color: #4b3128;
-  transform: translateY(-1px);
-}
-
-.cart-indicator {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  background: linear-gradient(135deg, #fff5f1 0%, #f7e7e0 100%);
-  color: #3c3c3c;
-  padding: 10px 16px;
-  border-radius: 999px;
-  text-decoration: none;
-  font-weight: 700;
-  box-shadow: 0 10px 24px rgba(94, 60, 44, 0.10);
-  transition: all 0.25s ease;
-}
-
-.cart-indicator:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 14px 28px rgba(94, 60, 44, 0.14);
-}
-
-.cart-icon {
-  font-size: 18px;
-}
-
-.cart-text {
-  font-size: 15px;
-}
-
-.cart-count {
-  background: linear-gradient(135deg, #d94c55 0%, #b8323a 100%);
-  color: #fff;
-  padding: 3px 9px;
-  border-radius: 999px;
-  font-size: 12px;
-  min-width: 22px;
-  text-align: center;
-  box-shadow: 0 4px 10px rgba(185, 50, 58, 0.25);
-}
-
-/* 團購主專屬賣場 */
-.affiliate-banner {
-  display: block;
-  max-width: 1180px;
-  margin: 10px auto 0;
-  text-align: center;
-  padding: 12px 18px;
-  font-size: 13px;
-  background: linear-gradient(135deg, #ffe7ef 0%, #ffeef4 100%);
-  border: 1px solid #f6cad8;
-  border-radius: 16px;
-  box-shadow: 0 12px 24px rgba(194, 24, 91, 0.06);
-}
-
-.affiliate-banner-title {
-  font-size: 18px;
-  font-weight: 800;
-  color: #c2185b;
-  margin-bottom: 4px;
-}
-
-.affiliate-banner-sub {
-  font-size: 12px;
-  color: #7a4b5c;
-  font-weight: 500;
-}
-
-/* 主區塊 */
-.product-container {
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
-  align-items: start;
-  max-width: 1180px;
-  margin: 22px auto 0;
-  gap: 32px;
-}
-
-.gallery-panel,
-.info-panel {
-  background: rgba(255,255,255,0.96);
-  border: 1px solid #f0dfd7;
-  border-radius: 28px;
-  box-shadow: 0 22px 50px rgba(94, 60, 44, 0.08);
-}
-
-/* 左側相簿 */
-.gallery-panel {
-  padding: 22px;
-  position: sticky;
-  top: 18px;
-}
-
-.gallery {
-  width: 100%;
-}
-
-.gallery-main {
-  position: relative;
-  border-radius: 24px;
-  overflow: hidden;
-  background: linear-gradient(180deg, #fffaf7 0%, #fff 100%);
-  min-height: 520px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.gallery-main img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 24px;
-}
-
-.gallery-main .media-item {
-  display: none;
-  width: 100%;
-  border-radius: 24px;
-}
-
-.gallery-main .media-item.active {
-  display: block;
-  animation: fadeSlideIn 0.35s ease;
-}
-
-@keyframes fadeSlideIn {
-  from {
-    opacity: 0;
-    transform: scale(0.985);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* 左右箭頭 */
-.gallery-nav {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.gallery-arrow {
-  pointer-events: auto;
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 42px;
-  height: 42px;
-  border: none;
-  border-radius: 50%;
-  background: rgba(34, 24, 19, 0.42);
-  color: #fff;
-  font-size: 22px;
-  cursor: pointer;
-  backdrop-filter: blur(4px);
-  transition: all 0.2s ease;
-  z-index: 15;
-}
-
-.gallery-arrow:hover {
-  background: rgba(34, 24, 19, 0.62);
-  transform: translateY(-50%) scale(1.05);
-}
-
-.gallery-arrow.prev {
-  left: 14px;
-}
-
-.gallery-arrow.next {
-  right: 14px;
-}
-
-/* 影片 iframe 包裝 */
-.media-iframe-wrap {
-  position: relative;
-  width: 100%;
-  padding-top: 56.25%;
-  border-radius: 24px;
-  overflow: hidden;
-}
-.media-iframe-wrap iframe {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-}
-
-/* 標籤 */
-.label-group {
-  position: absolute;
-  top: 14px;
-  left: 14px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  z-index: 20;
-}
-
-.label-badge {
-  padding: 8px 14px;
-  font-size: 13px;
-  font-weight: 800;
-  border-radius: 999px;
-  color: #fff;
-  background: linear-gradient(to bottom, #f75a5a, #c62828);
-  box-shadow:
-    inset 0 -1px 0 rgba(255,255,255,0.2),
-    inset 0 1px 1px rgba(255,255,255,0.15),
-    0 6px 14px rgba(0,0,0,0.18);
-  text-shadow: 0 1px 1px rgba(0,0,0,0.25);
-  white-space: nowrap;
-  animation: popIn 0.35s ease;
-}
-
-.badge-sale {
-  background: linear-gradient(to bottom, #ff6c6c, #d63838);
-}
-.badge-hot {
-  background: linear-gradient(to bottom, #ffb25f, #e07c00);
-}
-.badge-limited {
-  background: linear-gradient(to bottom, #9b7ae4, #5c39bb);
-}
-.badge-recommend {
-  background: linear-gradient(to bottom, #56c067, #348c42);
-}
-.badge-natural {
-  background: linear-gradient(to bottom, #95cf57, #6c9b38);
-}
-
-@keyframes popIn {
-  0% {
-    transform: scale(0.65);
-    opacity: 0;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-/* 縮圖 */
-.gallery-thumbs {
-  display: flex;
-  gap: 10px;
-  margin-top: 14px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-}
-
-.gallery-thumbs img,
-.gallery-thumbs .thumb-video {
-  width: 72px;
-  height: 72px;
-  flex: 0 0 auto;
-  object-fit: cover;
-  border: 2px solid #ead7cf;
-  cursor: pointer;
-  border-radius: 14px;
-  background: #fff8f5;
-  transition: all 0.25s ease;
-}
-
-.gallery-thumbs img:hover,
-.gallery-thumbs .thumb-video:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 18px rgba(94, 60, 44, 0.12);
-}
-
-.gallery-thumbs .thumbnail.selected,
-.gallery-thumbs .thumb-video.selected {
-  border: 2px solid #c7a7a3;
-  box-shadow: 0 0 0 4px #f8ece8;
-}
-
-.gallery-thumbs .thumb-video {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  color: #6c4c3c;
-  font-size: 18px;
-}
-
-/* 右側資訊 */
-.info-panel {
-  padding: 28px 28px 24px;
-}
-
-.info {
-  width: 100%;
-}
-
-.product-badges-top {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-
-.product-mini-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: #fff4ee;
-  color: #9a4d3d;
-  border: 1px solid #f0d2c6;
-  border-radius: 999px;
-  padding: 7px 12px;
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.info h1.product-title {
-  margin: 0;
-  font-size: 32px;
-  line-height: 1.25;
-  letter-spacing: 0.4px;
-  color: #2f241f;
-}
-
-.product-sub-meta {
-  display: flex;
-  gap: 14px;
-  align-items: center;
-  flex-wrap: wrap;
-  margin-top: 10px;
-  color: #8b6a5b;
-  font-size: 14px;
-}
-
-.rating-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 14px;
-}
-
-.rating-stars {
-  color: #f5a623;
-  letter-spacing: 1px;
-  font-size: 15px;
-}
-
-.rating-text {
-  color: #6f5a50;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-/* 價格區 */
-.price-card {
-  margin-top: 20px;
-  background: linear-gradient(135deg, #fff7f3 0%, #fff1ed 100%);
-  border: 1px solid #f2d7cf;
-  border-radius: 22px;
-  padding: 18px 20px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.55);
-}
-
-.price-box {
+  .price-box {
+  margin-top: 16px;
   display: flex;
   align-items: flex-end;
   gap: 12px;
@@ -502,669 +177,11 @@ body.product-page {
 
 .price-discount {
   font-family: 'DM Sans', sans-serif;
-  font-weight: 800;
-  color: #c04848;
+  font-weight: 700;
+  color: #C04848;
   letter-spacing: 0.5px;
 }
 
-.price-discount .currency {
-  font-size: 18px;
-  vertical-align: baseline;
-}
-
-.price-discount .amount {
-  font-size: 34px;
-  margin-left: 2px;
-}
-
-.price-original {
-  font-size: 16px;
-  color: #a68f86;
-  text-decoration: line-through;
-  font-weight: 600;
-}
-
-.price-regular {
-  font-size: 32px;
-  font-weight: 800;
-  color: #2f241f;
-}
-
-.discount-tag {
-  background: linear-gradient(135deg, #d94c55 0%, #bc2d3b 100%);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 800;
-  padding: 6px 12px;
-  border-radius: 999px;
-  display: inline-block;
-  line-height: 1;
-  box-shadow: 0 8px 18px rgba(188, 45, 59, 0.22);
-}
-
-.price-caption {
-  margin-top: 10px;
-  font-size: 13px;
-  color: #866657;
-}
-
-/* 信任區塊 */
-.usp-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 18px;
-}
-
-.usp-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: #fff;
-  border: 1px solid #f0e0da;
-  border-radius: 16px;
-  padding: 12px 14px;
-  color: #5d493f;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.usp-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 12px;
-  background: #fff3ed;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 34px;
-}
-
-/* 售完提示 */
-.stock-out-box {
-  margin-top: 16px;
-  background: #fff0f0;
-  color: #b30000;
-  font-weight: 800;
-  padding: 12px 14px;
-  border-radius: 14px;
-  border: 1px solid #f1c3c3;
-}
-
-.stock-live-box {
-  margin-top: 16px;
-  background: linear-gradient(135deg, #fff8f0 0%, #fff1e8 100%);
-  color: #b55f1d;
-  font-weight: 800;
-  padding: 12px 14px;
-  border-radius: 14px;
-  border: 1px solid #f5d1b3;
-}
-
-/* 選項 / 數量 / 按鈕 */
-.options,
-.qty,
-.actions {
-  margin-top: 22px;
-}
-
-.section-title {
-  display: block;
-  margin-bottom: 10px;
-  font-size: 15px;
-  font-weight: 800;
-  color: #3c2d27;
-}
-
-.options button {
-  background: #fff;
-  border: 1px solid #dec9c0;
-  border-radius: 999px;
-  padding: 10px 16px;
-  margin: 6px 6px 0 0;
-  cursor: pointer;
-  color: #5e3c2c;
-  font-weight: 700;
-  transition: all 0.2s ease;
-}
-
-.options button:hover {
-  background: #fff5f1;
-  border-color: #c9a59a;
-  transform: translateY(-1px);
-}
-
-.options button.selected {
-  background: linear-gradient(135deg, #5e3c2c 0%, #7a4f3d 100%);
-  color: #fff;
-  border-color: #5e3c2c;
-  box-shadow: 0 10px 20px rgba(94, 60, 44, 0.15);
-}
-
-.qty-box {
-  display: inline-flex;
-  align-items: center;
-  border: 1px solid #e0cbc2;
-  border-radius: 999px;
-  overflow: hidden;
-  background: #fff;
-  box-shadow: 0 10px 20px rgba(94, 60, 44, 0.06);
-}
-
-.qty button {
-  width: 42px;
-  height: 42px;
-  padding: 0;
-  font-size: 20px;
-  border: none;
-  background: #fff;
-  color: #5e3c2c;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.qty button:hover {
-  background: #fbf2ee;
-}
-
-.qty input {
-  width: 62px;
-  height: 42px;
-  text-align: center;
-  border: none;
-  outline: none;
-  font-size: 16px;
-  font-weight: 700;
-  color: #3f2d24;
-  background: #fff;
-}
-
-/* 行銷提醒 */
-.marketing-note {
-  margin-top: 16px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #fff6ef 0%, #fffaf7 100%);
-  border: 1px dashed #e9c7b5;
-  color: #8c5a3a;
-  font-size: 13px;
-  line-height: 1.7;
-  font-weight: 700;
-}
-
-/* CTA */
-.actions {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
-  gap: 12px;
-}
-
-.actions button,
-.actions form button {
-  width: 100%;
-  min-height: 54px;
-  padding: 14px 16px;
-  border: none;
-  border-radius: 16px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.2s ease;
-}
-
-.actions button:hover,
-.actions form button:hover {
-  transform: translateY(-1px);
-}
-
-.btn-add-cart {
-  background: #fff;
-  color: #5e3c2c;
-  border: 1px solid #d8bfb3 !important;
-  box-shadow: 0 12px 22px rgba(94, 60, 44, 0.08);
-}
-
-.btn-buy-now {
-  background: linear-gradient(135deg, #d94c55 0%, #bb2e3d 100%);
-  color: #fff;
-  box-shadow: 0 16px 28px rgba(188, 45, 59, 0.24);
-}
-
-.btn-buy-now:hover {
-  box-shadow: 0 18px 32px rgba(188, 45, 59, 0.28);
-}
-
-/* 保證區 */
-.guarantee-strip {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 20px;
-}
-
-.guarantee-item {
-  background: #fff;
-  border: 1px solid #efdfd8;
-  border-radius: 16px;
-  padding: 14px 12px;
-  text-align: center;
-  color: #5d493f;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-/* 套組逐步挑選模式 */
-#bundle-steps .step {
-  border: 1px solid #ead8d1;
-  border-radius: 18px;
-  padding: 14px 16px;
-  background: linear-gradient(135deg, #fffaf7 0%, #fff 100%);
-  margin-top: 14px;
-}
-#bundle-steps .step .slot-title {
-  font-weight: 800;
-  color: #5E3C2C;
-}
-#bundle-steps .step select {
-  width: 100%;
-  padding: 12px 14px;
-  border-radius: 14px;
-  border: 1px solid #dbc7bf;
-  margin-top: 10px;
-  font-size: 14px;
-  color: #4b352c;
-  background: #fff;
-}
-#bundle-steps .step .step-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
-}
-#bundle-steps .step .step-options button {
-  border: 1px solid #d9c9c2;
-  background: #fff;
-  border-radius: 999px;
-  padding: 9px 14px;
-  cursor: pointer;
-  color: #5e3c2c;
-  font-weight: 700;
-}
-#bundle-steps .step .step-options button.selected {
-  background: linear-gradient(135deg, #5E3C2C 0%, #7A4F3D 100%);
-  color: #fff;
-  border-color: #5E3C2C;
-}
-
-/* 商品下方 tabs 區 */
-.product-detail-section {
-  max-width: 1180px;
-  margin: 34px auto 0;
-}
-
-.product-tabs {
-  display: flex;
-  justify-content: center;
-  max-width: 1180px;
-  margin: 0 auto;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.product-tab-btn {
-  min-width: 160px;
-  padding: 14px 22px;
-  background: #f8efea;
-  color: #6c4c3c;
-  border: 1px solid #e5d3ca;
-  font-weight: 800;
-  font-size: 15px;
-  letter-spacing: 0.6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border-radius: 999px;
-}
-
-.product-tab-btn:hover {
-  background: #fff6f2;
-}
-
-.product-tab-btn.active {
-  background: linear-gradient(135deg, #5e3c2c 0%, #7a4f3d 100%);
-  color: #fff;
-  border-color: #5e3c2c;
-  box-shadow: 0 14px 26px rgba(94, 60, 44, 0.18);
-}
-
-.product-tab-content {
-  background: rgba(255,255,255,0.96);
-  border: 1px solid #f0dfd7;
-  border-radius: 26px;
-  max-width: 1180px;
-  margin: 18px auto 60px;
-  padding: 34px;
-  font-size: 15px;
-  line-height: 1.95;
-  color: #3b3b3b;
-  font-family: "Noto Sans TC", sans-serif;
-  box-shadow: 0 22px 50px rgba(94, 60, 44, 0.08);
-}
-
-.product-tab-content > div {
-  display: none;
-}
-
-.product-tab-content > div.active {
-  display: block;
-  animation: fadeSlideIn 0.28s ease;
-}
-
-/* 編輯器內容 */
-.rich-content {
-  display: block;
-}
-.rich-content > * {
-  margin-left: auto;
-  margin-right: auto;
-}
-.rich-content p {
-  margin: 0 0 1em;
-  line-height: 1.95;
-}
-.rich-content ul,
-.rich-content ol {
-  margin: 0.7em 0 1em 1.4em;
-}
-.rich-content h1,
-.rich-content h2,
-.rich-content h3 {
-  margin: 1.1em 0 0.55em;
-  line-height: 1.35;
-  color: #2f241f;
-}
-.rich-content img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 14px;
-  box-shadow: 0 10px 24px rgba(0,0,0,0.08);
-}
-.rich-content table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 1em 0;
-  overflow: hidden;
-  border-radius: 14px;
-}
-.rich-content table th,
-.rich-content table td {
-  border: 1px solid #e9ddd7;
-  padding: 0.75em 0.9em;
-}
-.rich-content video,
-.rich-content iframe {
-  display: block;
-  width: 100%;
-  max-width: 820px;
-  aspect-ratio: 16 / 9;
-  height: auto;
-  background: #000;
-  border-radius: 16px;
-  box-shadow: 0 8px 22px rgba(0,0,0,.08);
-  margin: 18px 0 22px;
-}
-
-/* ====== 商品頁即時提醒（flash） ====== */
-.flash-msg {
-  max-width: 1180px;
-  margin: 12px auto 18px;
-  padding: 13px 16px;
-  border-radius: 16px;
-  background: #fdecea;
-  color: #8a1c1c;
-  border: 1px solid #f5c2c0;
-  font-weight: 800;
-  transition: opacity .4s ease;
-}
-.flash-msg.warn::before {
-  content: "⚠ ";
-}
-
-/* cart tip */
-#cart-tip {
-  position: fixed;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  background: linear-gradient(135deg, #cdafa1 0%, #b99385 100%);
-  color: white;
-  padding: 13px 24px;
-  border-radius: 0 0 14px 14px;
-  font-weight: 800;
-  display: none;
-  z-index: 999;
-  box-shadow: 0 12px 28px rgba(94, 60, 44, 0.18);
-}
-
-/* 右邊懸浮Top */
-.to-top {
-  position: fixed;
-  right: 22px;
-  bottom: 24px;
-  width: 54px;
-  height: 54px;
-  border: none;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #5E3C2C 0%, #7A4F3D 100%);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 14px 30px rgba(0,0,0,.16);
-  cursor: pointer;
-  z-index: 1000;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(10px);
-  transition: opacity .25s ease, transform .25s ease, visibility 0s .25s;
-}
-.to-top.show {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-  transition: opacity .25s ease, transform .25s ease;
-}
-.to-top:hover {
-  transform: translateY(0) scale(1.04);
-}
-.to-top svg {
-  width: 22px;
-  height: 22px;
-}
-
-/* 手機底部 sticky CTA */
-.mobile-buybar {
-  display: none;
-}
-
-@media (max-width: 980px) {
-  .product-container {
-    grid-template-columns: 1fr;
-  }
-
-  .gallery-panel {
-    position: relative;
-    top: auto;
-  }
-
-  .gallery-main {
-    min-height: 420px;
-  }
-
-  .info h1.product-title {
-    font-size: 28px;
-  }
-
-  .usp-list {
-    grid-template-columns: 1fr;
-  }
-
-  .guarantee-strip {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  body.product-page {
-    padding-bottom: 140px;
-  }
-
-  .header-bar {
-    padding: 0 14px;
-    margin-top: 14px;
-  }
-
-  .product-shell {
-    padding: 0 14px 30px;
-  }
-
-  .product-container {
-    gap: 18px;
-    margin-top: 16px;
-  }
-
-  .gallery-panel,
-  .info-panel,
-  .product-tab-content {
-    border-radius: 22px;
-  }
-
-  .gallery-panel {
-    padding: 14px;
-  }
-
-  .gallery-main {
-    min-height: 320px;
-    border-radius: 18px;
-  }
-
-  .gallery-main img,
-  .gallery-main .media-item,
-  .media-iframe-wrap {
-    border-radius: 18px;
-  }
-
-  .info-panel {
-    padding: 20px 16px 18px;
-  }
-
-  .info h1.product-title {
-    font-size: 24px;
-  }
-
-  .price-discount .amount,
-  .price-regular {
-    font-size: 28px;
-  }
-
-  .actions {
-    grid-template-columns: 1fr;
-  }
-
-  .product-tabs {
-    justify-content: flex-start;
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    padding-bottom: 4px;
-  }
-
-  .product-tab-btn {
-    min-width: 132px;
-    white-space: nowrap;
-  }
-
-  .product-tab-content {
-    padding: 20px 16px;
-    margin-bottom: 34px;
-  }
-
-  .affiliate-banner {
-    margin: 14px 14px 0;
-    padding: 14px 16px;
-  }
-
-  .affiliate-banner-title {
-    font-size: 20px;
-    line-height: 1.4;
-  }
-
-  .affiliate-banner-sub {
-    font-size: 13px;
-  }
-
-  .to-top {
-    right: 14px;
-    bottom: 92px;
-  }
-
-  .mobile-buybar {
-    display: grid;
-    grid-template-columns: 1fr 1.2fr;
-    gap: 10px;
-    position: fixed;
-    left: 10px;
-    right: 10px;
-    bottom: 10px;
-    z-index: 1200;
-    background: rgba(255,255,255,0.94);
-    backdrop-filter: blur(12px);
-    border: 1px solid #f0ddd6;
-    box-shadow: 0 16px 34px rgba(94, 60, 44, 0.14);
-    border-radius: 18px;
-    padding: 10px;
-  }
-
-  .mobile-buybar button,
-  .mobile-buybar .mobile-buy-submit {
-    min-height: 48px;
-    border: none;
-    border-radius: 14px;
-    font-size: 15px;
-    font-weight: 800;
-    cursor: pointer;
-  }
-
-  .mobile-buybar .mobile-add-cart {
-    background: #fff;
-    color: #5e3c2c;
-    border: 1px solid #d8bfb3;
-  }
-
-  .mobile-buybar .mobile-buy-submit {
-    background: linear-gradient(135deg, #d94c55 0%, #bb2e3d 100%);
-    color: #fff;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    text-decoration: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .to-top,
-  .gallery-main .media-item,
-  .product-tab-content > div,
-  .gallery-arrow,
-  .actions button,
-  .actions form button,
-  .options button,
-  .cart-indicator,
-  .back-btn {
-    transition: none !important;
-    animation: none !important;
-  }
-}
-/* 價格樣式 */
 .price-discount .currency {
   font-size: 18px;
   vertical-align: baseline;
@@ -1175,11 +192,64 @@ body.product-page {
   margin-left: 2px;
 }
 
+.price-original {
+  font-size: 16px;
+  color: #999;
+  text-decoration: line-through;
+  font-weight: 500;
+}
+
+.price-regular {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+}
+.discount-tag {
+  background: #C04848;
+  color: white;
+  font-size: 13px;
+  font-weight: bold;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-block;
+  line-height: 1;
+}
+
+    .options, .qty, .actions { margin-top: 20px; }
+
+    .options button {
+      background: #f5f5f5;
+      border: 1px solid #ccc;
+      border-radius: 20px;
+      padding: 6px 14px;
+      margin: 6px 4px;
+      cursor: pointer;
+    }
 
     .options button:hover {
       background: #eee;
     }
 
+    .qty button {
+      padding: 0 10px;
+      font-size: 18px;
+    }
+
+    .qty input {
+      width: 50px;
+      text-align: center;
+      margin: 0 10px;
+    }
+
+    .actions button {
+      padding: 10px 20px;
+      margin-right: 10px;
+      background-color: #5E3C2C;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
 
     .actions button:hover {
       background-color: #7A4F3D;
@@ -1257,7 +327,40 @@ body.product-page {
 .product-tab-content > div.active {
   display: block;
 }
-  
+    .tabs button {
+      padding: 10px 20px;
+      margin-right: 10px;
+      border: 1px solid #ccc;
+      background: #f0eae6;
+      border-radius: 6px 6px 0 0;
+      cursor: pointer;
+    }
+
+    .tabs button.active {
+  background: white;
+  font-weight: bold;
+  position: relative;
+  top: 1px;         /* ✅ 往下蓋住 tab-content 的邊界 */
+  z-index: 2;       /* ✅ 確保在 tab-content 上層 */
+  border: 1px solid #ccc;
+  border-bottom: none;  /* ✅ 重點！取消底線，讓它銜接 tab-content */
+  border-radius: 6px 6px 0 0;
+}
+
+    .tab-content {
+      border: 1px solid #ccc;
+      padding: 20px;
+      margin-top: -1px;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+      background: white;
+      border-radius: 0 0 8px 8px;
+      box-shadow: 0 0 6px rgba(0,0,0,0.05);
+    }
+
+    .tab-content > div { display: none; }
+    .tab-content > div.active { display: block; }
 
     .header-bar {
       display: flex;
@@ -1557,272 +660,200 @@ fbq('track', 'PageView');
   </div>
 {% endif %}
 
-<div class="product-shell">
-  <div class="product-container">
+<div class="product-container">
+  <!-- 左側圖片區塊 -->
+  <div class="gallery">
+  {% set gallery = [] %}
+  {% if product['image'] %}
+    {% set _ = gallery.append({"type":"image","src": product['image']}) %}
+  {% endif %}
+  {% for img in product['images'] %}
+    {% set _ = gallery.append({"type":"image","src": img}) %}
+  {% endfor %}
+  {% for v in (product.get('videos') or []) %}
+    {% set _ = gallery.append({"type":"video","src": v}) %}
+  {% endfor %}
 
-    <!-- 左側圖片區塊 -->
-    <div class="gallery-panel">
-      <div class="gallery">
-        {% set gallery = [] %}
-        {% if product['image'] %}
-          {% set _ = gallery.append({"type":"image","src": product['image']}) %}
-        {% endif %}
-        {% for img in product['images'] %}
-          {% set _ = gallery.append({"type":"image","src": img}) %}
-        {% endfor %}
-        {% for v in (product.get('videos') or []) %}
-          {% set _ = gallery.append({"type":"video","src": v}) %}
-        {% endfor %}
-
-        <div class="gallery-main" style="position: relative;">
-          <div class="label-group">
-            {% for tag in product['tags'] %}
-              <div class="label-badge
-                          {% if tag == '新品優惠' %}badge-sale{% endif %}
-                          {% if tag == '主打商品' %}badge-hot{% endif %}
-                          {% if tag == '限量販售' %}badge-limited{% endif %}
-                          {% if tag == '熱銷推薦' %}badge-recommend{% endif %}
-                          {% if tag == '天然成分' %}badge-natural{% endif %}">
-                {{ tag }}
-              </div>
-            {% endfor %}
-          </div>
-
-          {% if gallery|length == 0 %}
-            <img class="media-item active" src="{{ url_for('static', filename='noimage.png') }}" alt="{{ product['name'] }}">
-          {% else %}
-            {% for m in gallery %}
-              {% set is_yt = ('youtube.com' in m.src) or ('youtu.be' in m.src) %}
-              {% if m.type == 'image' %}
-                <img class="media-item {% if loop.first %}active{% endif %}" src="{{ m.src }}" alt="{{ product['name'] }}">
-              {% elif is_yt %}
-                {% set yt_id = m.src.split('v=')[-1].split('&')[0] if 'v=' in m.src else m.src.split('/')[-1] %}
-                <div class="media-item {% if loop.first %}active{% endif %} media-iframe-wrap">
-                  <iframe src="https://www.youtube.com/embed/{{ yt_id }}" frameborder="0" allowfullscreen loading="lazy"></iframe>
-                </div>
-              {% else %}
-                <video class="media-item {% if loop.first %}active{% endif %}"
-                       controls playsinline preload="metadata" muted
-                       poster="{{ product['image'] or (product['images'][0] if product['images'] else '') }}">
-                  <source src="{{ m.src }}">
-                  您的瀏覽器不支援影片播放
-                </video>
-              {% endif %}
-            {% endfor %}
-          {% endif %}
-
-          <div class="gallery-nav">
-            <button type="button" class="gallery-arrow prev" aria-label="上一張">‹</button>
-            <button type="button" class="gallery-arrow next" aria-label="下一張">›</button>
-          </div>
+  <div class="gallery-main" style="position: relative;">
+    <div class="label-group">
+      {% for tag in product['tags'] %}
+        <div class="label-badge
+                    {% if tag == '新品優惠' %}badge-sale{% endif %}
+                    {% if tag == '主打商品' %}badge-hot{% endif %}
+                    {% if tag == '限量販售' %}badge-limited{% endif %}
+                    {% if tag == '熱銷推薦' %}badge-recommend{% endif %}
+                    {% if tag == '天然成分' %}badge-natural{% endif %}">
+          {{ tag }}
         </div>
-
-        <div class="gallery-thumbs" id="thumbs">
-          {% for m in gallery %}
-            {% set is_yt = ('youtube.com' in m.src) or ('youtu.be' in m.src) %}
-            {% if m.type == 'image' %}
-              <img data-index="{{ loop.index0 }}" src="{{ m.src }}" class="thumbnail {% if loop.first %}selected{% endif %}">
-            {% elif is_yt %}
-              <div data-index="{{ loop.index0 }}" class="thumb-video thumbnail {% if loop.first %}selected{% endif %}" title="影片">
-                ▶
-              </div>
-            {% else %}
-              <div data-index="{{ loop.index0 }}" class="thumb-video thumbnail {% if loop.first %}selected{% endif %}" title="影片">
-                ▶
-              </div>
-            {% endif %}
-          {% endfor %}
-        </div>
-      </div>
+      {% endfor %}
     </div>
 
-    <!-- 右側商品資訊 -->
-    <div class="info-panel">
-      <div class="info">
-
-        <div class="product-badges-top">
-          <span class="product-mini-badge">HERSET 精選</span>
-          {% if product.get('discount_price') or (bundle and bundle.get('compare_at')) %}
-            <span class="product-mini-badge">限時優惠中</span>
-          {% endif %}
-          {% if product['stock'] and product['stock'] > 0 %}
-            <span class="product-mini-badge">現貨供應</span>
-          {% endif %}
-        </div>
-
-        <h1 class="product-title">{{ product['name'] }}</h1>
-
-        <div class="product-sub-meta">
-          <span>品牌：HERSET BEAUTY</span>
-          <span>分類：{{ product.get('category', '商品') }}</span>
-          {% if product['stock'] and product['stock'] > 0 %}
-            <span>庫存：{{ product['stock'] }}</span>
-          {% endif %}
-        </div>
-
-        <div class="rating-row">
-          <div class="rating-stars">★★★★★</div>
-          <div class="rating-text">人氣熱銷推薦款</div>
-        </div>
-
-        <div class="price-card">
-          <div class="price-box">
-            {% if product.get('product_type') == 'bundle' %}
-              {% set cur = bundle and bundle.get('price') is not none and bundle['price'] or product['price'] %}
-              {% if bundle and bundle.get('compare_at') %}
-                <div class="price-original">NT${{ "%.0f"|format(bundle['compare_at']) }}</div>
-                <div class="price-discount">
-                  <span class="currency">NT$</span>
-                  <span class="amount">{{ "%.0f"|format(cur) }}</span>
-                </div>
-                {% if bundle['compare_at']|float > 0 %}
-                  {% set discount_rate = (cur / bundle['compare_at'] * 10)|round(1, 'floor') %}
-                  <div class="discount-tag">{{ discount_rate }}折</div>
-                {% endif %}
-              {% else %}
-                <div class="price-regular">NT${{ "%.0f"|format(cur) }}</div>
-              {% endif %}
-            {% else %}
-              {% if product.get('discount_price') %}
-                <div class="price-original">NT${{ "%.0f"|format(product['price']) }}</div>
-                <div class="price-discount">
-                  <span class="currency">NT$</span>
-                  <span class="amount">{{ "%.0f"|format(product['discount_price']) }}</span>
-                </div>
-                {% set discount_rate = (product['discount_price'] / product['price'] * 10)|round(1, 'floor') %}
-                <div class="discount-tag">{{ discount_rate }}折</div>
-              {% else %}
-                <div class="price-regular">NT${{ "%.0f"|format(product['price']) }}</div>
-              {% endif %}
-            {% endif %}
-          </div>
-          <div class="price-caption">現在下單，享受官網優惠價格與安心售後服務</div>
-        </div>
-
-        <div class="usp-list">
-          <div class="usp-item">
-            <span class="usp-icon">🚚</span>
-            <span>快速出貨</span>
-          </div>
-          <div class="usp-item">
-            <span class="usp-icon">💳</span>
-            <span>安全付款</span>
-          </div>
-          <div class="usp-item">
-            <span class="usp-icon">🌿</span>
-            <span>嚴選配方</span>
-          </div>
-          <div class="usp-item">
-            <span class="usp-icon">⭐</span>
-            <span>人氣熱銷</span>
-          </div>
-        </div>
-
-        {% if product['stock'] == 0 %}
-          <div class="stock-out-box">
-            商品已售完，補貨中！
+    {% if gallery|length == 0 %}
+      <img class="media-item active" src="{{ url_for('static', filename='noimage.png') }}" alt="{{ product['name'] }}">
+    {% else %}
+      {% for m in gallery %}
+        {% set is_yt = ('youtube.com' in m.src) or ('youtu.be' in m.src) %}
+        {% if m.type == 'image' %}
+          <img class="media-item {% if loop.first %}active{% endif %}" src="{{ m.src }}" alt="{{ product['name'] }}">
+        {% elif is_yt %}
+          {# 轉成可嵌入格式 #}
+          {% set yt_id = m.src.split('v=')[-1].split('&')[0] if 'v=' in m.src else m.src.split('/')[-1] %}
+          <div class="media-item {% if loop.first %}active{% endif %} media-iframe-wrap">
+            <iframe src="https://www.youtube.com/embed/{{ yt_id }}" frameborder="0" allowfullscreen loading="lazy"></iframe>
           </div>
         {% else %}
-          <div class="stock-live-box">
-            🔥 現貨供應中，熱銷商品建議盡早下單
-          </div>
+          <!-- 取代相簿主視圖的 <video> -->
+<video class="media-item {% if loop.first %}active{% endif %}"
+       controls playsinline preload="metadata" muted
+       poster="{{ product['image'] or (product['images'][0] if product['images'] else '') }}">
+  <source src="{{ m.src }}">
+  您的瀏覽器不支援影片播放
+</video>
+
         {% endif %}
+      {% endfor %}
+    {% endif %}
+  </div>
 
-        {% if not is_bundle %}
-          <div id="options" class="options">
-            <label class="section-title">選擇規格</label>
-            {% for opt in product['options'] %}
-              <button type="button" class="single-opt">{{ opt }}</button>
-            {% endfor %}
-          </div>
-        {% else %}
-          <a id="options"></a>
-          <div class="options">
-            <label class="section-title">選擇套組內容</label>
-          </div>
-          <div id="bundle-steps" data-total="{{ required_total or 1 }}">
-            <div class="step" data-step="1">
-              <div class="slot-head">
-                <div class="slot-title">選擇 1 / {{ required_total or 1 }}</div>
-              </div>
-
-              <select class="step-product">
-                <option value="">— 請選擇商品 —</option>
-                {% for p in pool_products %}
-                  <option value="{{ p['id'] }}">{{ p['name'] }}</option>
-                {% endfor %}
-              </select>
-
-              <div class="step-options"></div>
-            </div>
-          </div>
-        {% endif %}
-
-        <div class="qty">
-          <label class="section-title">選擇數量</label>
-          <div class="qty-box">
-            <button type="button" onclick="adjustQty(-1)">-</button>
-            <input type="number" id="qty" value="1" min="1">
-            <button type="button" onclick="adjustQty(1)">+</button>
-          </div>
+  <div class="gallery-thumbs" id="thumbs">
+    {% for m in gallery %}
+      {% set is_yt = ('youtube.com' in m.src) or ('youtu.be' in m.src) %}
+      {% if m.type == 'image' %}
+        <img data-index="{{ loop.index0 }}" src="{{ m.src }}" class="thumbnail {% if loop.first %}selected{% endif %}">
+      {% elif is_yt %}
+        <div data-index="{{ loop.index0 }}" class="thumb-video thumbnail {% if loop.first %}selected{% endif %}" title="影片">
+          ▶
         </div>
-
-        <div class="marketing-note">
-          ✓ 官網正品出貨　✓ 下單流程簡單快速　✓ 商品資訊與規格清楚透明
+      {% else %}
+        <div data-index="{{ loop.index0 }}" class="thumb-video thumbnail {% if loop.first %}selected{% endif %}" title="影片">
+          ▶
         </div>
-
-        {% set is_out_of_stock = product['stock'] == 0 %}
-        <div class="actions">
-          <button
-            type="button"
-            class="btn-add-cart"
-            onclick="handleAddToCart({{ product['id'] }})"
-            {% if is_out_of_stock %}disabled style="opacity: 0.5; cursor: not-allowed;"{% endif %}
-          >
-            加入購物車
-          </button>
-
-          <form action="/add_to_cart" method="post" onsubmit="return beforeCheckout({{ product['id'] }})">
-            <input type="hidden" name="product_id" value="{{ product['id'] }}">
-            <input type="hidden" name="qty" id="qty-input-checkout" value="1">
-            <input type="hidden" name="action" value="checkout">
-            <input type="hidden" name="option" id="selected-option-input" value="">
-            <button
-              type="submit"
-              class="btn-buy-now"
-              {% if is_out_of_stock %}disabled style="opacity: 0.5; cursor: not-allowed;"{% endif %}
-            >
-              立即結帳
-            </button>
-          </form>
-        </div>
-
-        <div class="guarantee-strip">
-          <div class="guarantee-item">滿額優惠活動</div>
-          <div class="guarantee-item">安心付款機制</div>
-          <div class="guarantee-item">客服協助服務</div>
-        </div>
-
-      </div>
-    </div>
-
+      {% endif %}
+    {% endfor %}
   </div>
 </div>
 
 
-<div class="product-detail-section">
-  <div class="product-tabs">
-    <button class="product-tab-btn active" data-tab="intro">商品介紹</button>
-    <button class="product-tab-btn" data-tab="feature">商品特色</button>
-    <button class="product-tab-btn" data-tab="spec">商品規格</button>
-  </div>
+  <!-- 右側商品資訊區塊 -->
+  <div class="info">
+    <h2>{{ product['name'] }}</h2>
 
-  <div class="product-tab-content">
-    <div id="intro" class="rich-content active">{{ (product['intro'] or '') | safe }}</div>
-    <div id="feature" class="rich-content">{{ (product['feature'] or '') | safe }}</div>
-    <div id="spec" class="rich-content">{{ (product['spec'] or '') | safe }}</div>
-    <div id="ingredient">{{ (product['ingredient'] or '') | safe }}</div>
+<!-- 商品價格區塊 -->
+    <div class="price-box">
+  {% if product.get('product_type') == 'bundle' %}
+    {# 套組價格：現價用 bundle.price（與殼商品同步），原價用 bundle.compare_at #}
+    {% set cur = bundle and bundle.get('price') is not none and bundle['price'] or product['price'] %}
+    {% if bundle and bundle.get('compare_at') %}
+      <div class="price-original">NT${{ "%.0f"|format(bundle['compare_at']) }}</div>
+      <div class="price-discount">
+        <span class="currency">NT$</span>
+        <span class="amount">{{ "%.0f"|format(cur) }}</span>
+      </div>
+      {% if bundle['compare_at']|float > 0 %}
+        {% set discount_rate = (cur / bundle['compare_at'] * 10)|round(1, 'floor') %}
+        <div class="discount-tag">{{ discount_rate }}折</div>
+      {% endif %}
+    {% else %}
+      <div class="price-regular">NT${{ "%.0f"|format(cur) }}</div>
+    {% endif %}
+
+  {% else %}
+    {# 單品價格（維持原本規則） #}
+    {% if product.get('discount_price') %}
+      <div class="price-original">NT${{ "%.0f"|format(product['price']) }}</div>
+      <div class="price-discount">
+        <span class="currency">NT$</span>
+        <span class="amount">{{ "%.0f"|format(product['discount_price']) }}</span>
+      </div>
+      {% set discount_rate = (product['discount_price'] / product['price'] * 10)|round(1, 'floor') %}
+      <div class="discount-tag">{{ discount_rate }}折</div>
+    {% else %}
+      <div class="price-regular">NT${{ "%.0f"|format(product['price']) }}</div>
+    {% endif %}
+  {% endif %}
+</div>
+
+
+    {% if product['stock'] == 0 %}
+      <div style="background-color: #ffe6e6; color: #b30000; font-weight: bold; padding: 10px; border-radius: 6px; margin-top: 10px;">
+        商品已售完，補貨中！
+      </div>
+    {% endif %}
+
+    {% if not is_bundle %}
+  <!-- 單品規格（保留原本） -->
+  <div id="options" class="options">
+    <label>選項：</label><br>
+    {% for opt in product['options'] %}
+      <button type="button" class="single-opt">{{ opt }}</button>
+    {% endfor %}
   </div>
+{% else %}
+  {# === 套組（逐步挑選） === #}
+  <a id="options"></a>
+  <div id="bundle-steps" data-total="{{ required_total or 1 }}">
+    <!-- 第 1 步，JS 會在選完口味後自動加上第 2 / 3 步… -->
+    <div class="step" data-step="1">
+      <div class="slot-head">
+        <div class="slot-title">選擇 1 / {{ required_total or 1 }}</div>
+      </div>
+
+      <select class="step-product">
+        <option value="">— 請選擇商品 —</option>
+        {% for p in pool_products %}
+          <option value="{{ p['id'] }}">{{ p['name'] }}</option>
+        {% endfor %}
+      </select>
+
+      <div class="step-options"></div>
+    </div>
+  </div>
+{% endif %}
+
+
+
+    <div class="qty">
+      <label>數量：</label>
+      <button onclick="adjustQty(-1)">-</button>
+      <input type="number" id="qty" value="1" min="1">
+      <button onclick="adjustQty(1)">+</button>
+    </div>
+
+    {% set is_out_of_stock = product['stock'] == 0 %}
+    <div class="actions">
+  <button 
+    onclick="handleAddToCart({{ product['id'] }})"
+    {% if is_out_of_stock %}disabled style="opacity: 0.5; cursor: not-allowed;"{% endif %}
+  >加入購物車</button>
+
+  <form action="/add_to_cart" method="post" style="display:inline;" onsubmit="return beforeCheckout({{ product['id'] }})">
+    <input type="hidden" name="product_id" value="{{ product['id'] }}">
+    <input type="hidden" name="qty" id="qty-input-checkout" value="1">
+    <input type="hidden" name="action" value="checkout">
+    <input type="hidden" name="option" id="selected-option-input" value="">
+    <button 
+      type="submit"
+      {% if is_out_of_stock %}disabled style="opacity: 0.5; cursor: not-allowed;"{% endif %}
+    >立即結帳</button>
+  </form>
+</div>
+
+  </div> <!-- 👈 info 結束 -->
+</div> <!-- 👈 product-container 結束 -->
+
+
+<div class="product-tabs">
+  <button class="product-tab-btn active" data-tab="intro">商品介紹</button>
+  <button class="product-tab-btn" data-tab="feature">商品特色</button>
+  <button class="product-tab-btn" data-tab="spec">商品規格</button>
+  <!--<button class="tab-btn" data-tab="ingredient">商品成分</button>-->
+</div>
+
+<div class="product-tab-content">
+  <div id="intro"   class="rich-content active">{{ (product['intro'] or '') | safe }}</div>
+<div id="feature" class="rich-content">{{ (product['feature'] or '') | safe }}</div>
+<div id="spec"    class="rich-content">{{ (product['spec'] or '') | safe }}</div>
+  <div id="ingredient">{{ (product['ingredient'] or '') | safe }}</div>
 </div>
 
 <script>
@@ -1830,21 +861,14 @@ fbq('track', 'PageView');
   let selectedOption = "";
 
   function adjustQty(delta) {
-  const qtyInput = document.getElementById('qty');
-  let current = parseInt(qtyInput.value, 10);
-  if (isNaN(current)) current = 1;
-
-  current += delta;
-  if (current < 1) current = 1;
-
-  qtyInput.value = current;
-
-  const desktopQty = document.getElementById('qty-input-checkout');
-  const mobileQty = document.getElementById('mobile-qty-input-checkout');
-
-  if (desktopQty) desktopQty.value = current;
-  if (mobileQty) mobileQty.value = current;
-}
+    const qtyInput = document.getElementById('qty');
+    let current = parseInt(qtyInput.value);
+    if (isNaN(current)) current = 1;
+    current += delta;
+    if (current < 1) current = 1;
+    qtyInput.value = current;
+    document.getElementById('qty-input-checkout').value = current;
+  }
 
   function handleAddToCart(productId){
   if (typeof gtag === 'function') {
@@ -1913,14 +937,9 @@ fbq('track', 'PageView');
 
 
 
-document.getElementById('qty').addEventListener('input', function () {
-  const val = this.value;
-  const desktopQty = document.getElementById('qty-input-checkout');
-  const mobileQty = document.getElementById('mobile-qty-input-checkout');
-
-  if (desktopQty) desktopQty.value = val;
-  if (mobileQty) mobileQty.value = val;
-});
+  document.getElementById('qty').addEventListener('input', function () {
+    document.getElementById('qty-input-checkout').value = this.value;
+  });
 
   function showTip(message) {
     const tip = document.getElementById('cart-tip');
@@ -1960,12 +979,12 @@ function pauseAllMedia(){
   });
 });
 
-window.addEventListener('DOMContentLoaded', () => {
+  window.addEventListener('DOMContentLoaded', () => {
   const optionButtons = document.querySelectorAll('.single-opt');
   if (optionButtons.length === 1) {
     optionButtons[0].classList.add('selected');
     selectedOption = optionButtons[0].innerText;
-    updateCheckoutHidden();
+    document.getElementById('selected-option-input').value = selectedOption;
   }
 });
 
@@ -1973,63 +992,40 @@ window.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('DOMContentLoaded', () => {
   const items = Array.from(document.querySelectorAll('.gallery-main .media-item'));
   const thumbs = Array.from(document.querySelectorAll('#thumbs .thumbnail, #thumbs .thumb-video'));
-  const prevBtn = document.querySelector('.gallery-arrow.prev');
-  const nextBtn = document.querySelector('.gallery-arrow.next');
-  let currentIndex = 0;
 
   function pauseMedia(el){
     if(!el) return;
-
     if(el.tagName && el.tagName.toLowerCase() === 'video'){
-      try { el.pause(); } catch(e) {}
+      try{ el.pause(); }catch(e){}
     }
-
+    // iframe（YouTube）直接重載 src 以達到暫停
     if(el.classList && el.classList.contains('media-iframe-wrap')){
       const iframe = el.querySelector('iframe');
       if(iframe){
         const src = iframe.getAttribute('src');
-        iframe.setAttribute('src', src);
+        iframe.setAttribute('src', src); // 重新掛載
       }
     }
   }
 
   function showIndex(idx){
-    if (!items.length) return;
-
-    if (idx < 0) idx = items.length - 1;
-    if (idx >= items.length) idx = 0;
-
     items.forEach((el, i) => {
       if(i === idx){
         el.classList.add('active');
-      } else {
+      }else{
         if(el.classList.contains('active')) pauseMedia(el);
         el.classList.remove('active');
       }
     });
-
-    thumbs.forEach((t, i) => {
-      t.classList.toggle('selected', i === idx);
-    });
-
-    currentIndex = idx;
+    thumbs.forEach((t, i) => t.classList.toggle('selected', i === idx));
   }
 
   thumbs.forEach((thumb, i) => {
     thumb.addEventListener('click', () => showIndex(i));
   });
 
-  if (prevBtn) {
-    prevBtn.addEventListener('click', () => showIndex(currentIndex - 1));
-  }
-
-  if (nextBtn) {
-    nextBtn.addEventListener('click', () => showIndex(currentIndex + 1));
-  }
-
-  if(items.length){
-    showIndex(0);
-  }
+  // 預設顯示第一個
+  if(items.length) showIndex(0);
 });
 
 
@@ -2040,7 +1036,7 @@ function bindSingleOptions(){
       document.querySelectorAll('.single-opt').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       selectedOption = btn.innerText;
-      updateCheckoutHidden();
+      document.getElementById('selected-option-input').value = selectedOption;
     });
   });
 }
@@ -2064,57 +1060,39 @@ function collectBundleOptionString(){
 }
 
 function updateCheckoutHidden(){
+  // 單品模式：selectedOption 已在 bindSingleOptions() 維護
+  // 套組模式：重算字串
   const isBundle = {{ 'true' if product.get('product_type') == 'bundle' else 'false' }};
-  const desktopOptionEl = document.getElementById('selected-option-input');
-  const mobileOptionEl = document.getElementById('mobile-selected-option-input');
-
-  let optionValue = '';
-
   if(isBundle){
     const r = collectBundleOptionString();
-    optionValue = r.ok ? r.text : '';
+    document.getElementById('selected-option-input').value = r.ok ? r.text : '';
   }else{
-    optionValue = selectedOption || '';
+    document.getElementById('selected-option-input').value = selectedOption || '';
   }
-
-  if (desktopOptionEl) desktopOptionEl.value = optionValue;
-  if (mobileOptionEl) mobileOptionEl.value = optionValue;
 }
 
 function beforeCheckout(productId){
-  const qty = parseInt(document.getElementById('qty').value, 10) || 1;
+  const qty = parseInt(document.getElementById('qty').value) || 1;
   const isBundle = {{ 'true' if product.get('product_type') == 'bundle' else 'false' }};
 
-  const desktopOptionEl = document.getElementById('selected-option-input');
-  const mobileOptionEl = document.getElementById('mobile-selected-option-input');
-  const desktopQtyEl = document.getElementById('qty-input-checkout');
-  const mobileQtyEl = document.getElementById('mobile-qty-input-checkout');
-
   if(!isBundle){
+    // 單品檢查
     const optionButtons = document.querySelectorAll('.single-opt');
     if(!selectedOption && optionButtons.length > 1){
       showTip("⚠️ 請先選擇商品規格");
       return false;
     }
-
-    const optionValue = selectedOption || (optionButtons[0] ? optionButtons[0].innerText : '');
-
-    if (desktopOptionEl) desktopOptionEl.value = optionValue;
-    if (mobileOptionEl) mobileOptionEl.value = optionValue;
+    document.getElementById('selected-option-input').value = selectedOption || (optionButtons[0]?.innerText || '');
   }else{
+    // 套組檢查
     const result = collectBundleOptionString();
     if(!result.ok){
       showTip("⚠️ " + result.message);
       return false;
     }
-
-    if (desktopOptionEl) desktopOptionEl.value = result.text;
-    if (mobileOptionEl) mobileOptionEl.value = result.text;
+    document.getElementById('selected-option-input').value = result.text;
   }
-
-  if (desktopQtyEl) desktopQtyEl.value = qty;
-  if (mobileQtyEl) mobileQtyEl.value = qty;
-
+  document.getElementById('qty-input-checkout').value = qty;
   return true;
 }
 
@@ -2257,30 +1235,7 @@ function collectSequentialSelection(){
 })();
 </script>
 
-<div class="mobile-buybar">
-  <button
-    type="button"
-    class="mobile-add-cart"
-    onclick="handleAddToCart({{ product['id'] }})"
-    {% if product['stock'] == 0 %}disabled style="opacity:0.5;cursor:not-allowed;"{% endif %}
-  >
-    加入購物車
-  </button>
 
-  <form action="/add_to_cart" method="post" onsubmit="return beforeCheckout({{ product['id'] }})">
-    <input type="hidden" name="product_id" value="{{ product['id'] }}">
-    <input type="hidden" name="qty" value="1" id="mobile-qty-input-checkout">
-    <input type="hidden" name="action" value="checkout">
-    <input type="hidden" name="option" value="" id="mobile-selected-option-input">
-    <button
-      type="submit"
-      class="mobile-buy-submit"
-      {% if product['stock'] == 0 %}disabled style="opacity:0.5;cursor:not-allowed;"{% endif %}
-    >
-      立即結帳
-    </button>
-  </form>
-</div>
 
 <div id="cart-tip" style="
   position: fixed;
