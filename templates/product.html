@@ -544,8 +544,9 @@ body.product-page {
 
 .price-caption {
   margin-top: 10px;
-  font-size: 13px;
-  color: #866657;
+  font-size: 12px;
+  color: #9a7a6b;
+  text-align: center;
 }
 
 /* 信任區塊 */
@@ -1030,6 +1031,7 @@ body.product-page {
 .guarantee-item {
   padding: 8px 4px;
   font-size: 11px;
+  border-radius: 10px;
   text-align: center;
 }
 
@@ -1689,9 +1691,11 @@ fbq('track', 'PageView');
         <div class="product-sub-meta">
           <span>品牌：HERSET BEAUTY</span>
           <span>分類：{{ product.get('category', '商品') }}</span>
-          {% if product['stock'] and product['stock'] > 0 %}
-            <span>庫存：{{ product['stock'] }}</span>
-          {% endif %}
+          {% if product['stock'] is not none and product['stock'] <= 10 and product['stock'] > 0 %}
+  <span style="color:#d94c55; font-weight:800;">
+    🔥 僅剩 {{ product['stock'] }} 件
+  </span>
+{% endif %}
         </div>
 
         <div class="rating-row">
