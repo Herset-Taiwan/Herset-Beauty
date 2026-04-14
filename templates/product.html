@@ -1007,12 +1007,32 @@ body.product-page {
   }
 
   .usp-list {
-    grid-template-columns: 1fr;
-  }
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);  /* ⭐ 一列4個 */
+  gap: 6px;
+}
+.usp-item {
+  justify-content: center;
+  padding: 6px 4px;
+  font-size: 11px;
+  flex-direction: column;   /* ⭐ icon在上，字在下 */
+  text-align: center;
+}
 
-  .guarantee-strip {
-    grid-template-columns: 1fr;
-  }
+.usp-icon {
+  margin: 0 auto;
+}
+
+.guarantee-strip {
+  grid-template-columns: repeat(3, 1fr);  /* ⭐ 一列3個 */
+  gap: 6px;
+}
+.guarantee-item {
+  padding: 8px 4px;
+  font-size: 11px;
+  text-align: center;
+}
+
 }
 
 @media (max-width: 768px) {
