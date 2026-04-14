@@ -559,19 +559,20 @@ body.product-page {
 .usp-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   background: #fff;
   border: 1px solid #f0e0da;
-  border-radius: 16px;
-  padding: 12px 14px;
+  border-radius: 10px;
+  padding: 6px 10px;
   color: #5d493f;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .usp-icon {
-  width: 34px;
-  height: 34px;
+  width: 22px;
+  height: 22px;
+  font-size: 12px;
   border-radius: 12px;
   background: #fff3ed;
   display: inline-flex;
@@ -1018,6 +1019,19 @@ body.product-page {
   body.product-page {
     padding-bottom: 140px;
   }
+  .usp-item {
+  padding: 5px 8px;
+  font-size: 11px;
+}
+
+.usp-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.usp-list {
+  gap: 6px;
+}
 
   .header-bar {
     padding: 0 14px;
@@ -1723,9 +1737,7 @@ fbq('track', 'PageView');
             商品已售完，補貨中！
           </div>
         {% else %}
-          <div class="stock-live-box">
-            🔥 現貨供應中，熱銷商品建議盡早下單
-          </div>
+
         {% endif %}
 
         {% if not is_bundle %}
