@@ -737,29 +737,37 @@ body.product-page {
   box-shadow: 0 18px 32px rgba(188, 45, 59, 0.28);
 }
 
-/* 保證區 */
+/* ===== 高級保證條 ===== */
 .guarantee-strip {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 18px;
+  gap: 10px;
   margin-top: 18px;
-  padding-top: 10px;
-  border-top: 1px solid #f1e3dc;
+  padding: 12px;
+  border-radius: 14px;
+
+  background: linear-gradient(135deg, #fff8f4 0%, #fffdfb 100%);
+  border: 1px solid #f1e3dc;
 }
 
+/* 單一項目 */
 .guarantee-item {
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  padding: 0;
-  text-align: center;
-  color: #8a6a5b;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
   font-size: 13px;
   font-weight: 600;
-  position: relative;
-  white-space: nowrap;
+  color: #6f4e42;
+}
+
+/* icon */
+.g-icon {
+  font-size: 14px;
+  opacity: 0.85;
 }
 .guarantee-item:not(:last-child)::after {
   content: "｜";
@@ -1068,7 +1076,19 @@ body.product-page {
   padding: 5px 8px;
   font-size: 11px;
 }
+.guarantee-strip {
+  padding: 10px 8px;
+  gap: 6px;
+}
 
+.guarantee-item {
+  font-size: 11px;
+  gap: 4px;
+}
+
+.g-icon {
+  font-size: 12px;
+}
 .usp-icon {
   width: 20px;
   height: 20px;
@@ -1856,11 +1876,20 @@ fbq('track', 'PageView');
           </form>
         </div>
 
-        <div class="guarantee-strip">
-          <div class="guarantee-item">滿額優惠活動</div>
-          <div class="guarantee-item">安心付款機制</div>
-          <div class="guarantee-item">客服協助服務</div>
-        </div>
+<div class="guarantee-strip">
+  <div class="guarantee-item">
+    <span class="g-icon">🎁</span>
+    <span>滿額享優惠</span>
+  </div>
+  <div class="guarantee-item">
+    <span class="g-icon">🔒</span>
+    <span>安全付款</span>
+  </div>
+  <div class="guarantee-item">
+    <span class="g-icon">💬</span>
+    <span>客服即時協助</span>
+  </div>
+</div>
 
       </div>
     </div>
