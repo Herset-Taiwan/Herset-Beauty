@@ -218,101 +218,132 @@ input[type="text"], input[type="number"], textarea, select{
 <!-- TinyMCE -->
 <script src="https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js"></script>
 <script>
-  tinymce.init({
-    selector: 'textarea.rich',
-    language: 'zh_TW',
-    height: 320,
-    menubar: false,
-    branding: false,
-    promotion: false,
+tinymce.init({
+  selector: 'textarea.rich',
+  language: 'zh_TW',
+  height: 320,
+  menubar: false,
+  branding: false,
+  promotion: false,
+  media_live_embeds: true,
+  automatic_uploads: true,
+  paste_data_images: true,
 
-    /* ✅ 關鍵：加入 textcolor 外掛 */
-    plugins: 'lists link table code advlist autolink charmap preview anchor searchreplace visualblocks fullscreen insertdatetime media wordcount image paste textcolor',
+  plugins: 'lists link table code advlist autolink charmap preview anchor searchreplace visualblocks fullscreen insertdatetime media wordcount image paste textcolor',
 
-    /* ✅ 關鍵：把 forecolor/backcolor 加到工具列（或會出現在三點選單） */
-    toolbar: 'undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table image media | removeformat | code',
-    
-    /* ✅ 新增：讓編輯器可以挑選並上傳影片檔 */
-  file_picker_types: 'media',
-  file_picker_callback: function (cb, value, meta) {
-    if (meta.filetype !== 'media') return;
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'video/*';
-    input.onchange = function () {
-      const file = this.files[0];
-      const formData = new FormData();
-      formData.append('file', file);
+  toolbar: 'undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table image media | removeformat | code',
 
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', '/admin0363/tinymce/upload_video');
-      xhr.onload = function () {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            const json = JSON.parse(xhr.responseText);
-            if (json && typeof json.location === 'string') {
-              cb(json.location, { source2: json.location });
-            } else {
-              alert('上傳失敗：' + xhr.responseText);
-            }
-          } catch (e) { alert('上傳回應格式錯誤'); }
-        } else {
-          alert('上傳失敗 HTTP ' + xhr.status);
-        }
+  toolbar_mode: 'sliding',
+  fontsize_formats: '12px 14px 16px 18px 20px 24px 28px 32px 36px',
+
+  content_style: `
+    body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Noto Sans TC,Microsoft JhengHei,Arial,sans-serif;line-height:1.8;}
+    img{max-width:100%;height:auto;}
+    video, iframe{display:block;width:100%;max-width:720px;aspect-ratio:16/9;height:auto;background:#000;border-radius:12px;margin:16px 0 20px;}
+  `,
+
+  images_upload_url: '/admin0363/tinymce/upload',
+
+  images_upload_handler: function (blobInfo, progress) {
+    return new Promise(function (resolve, reject) {
+      var xhr = new XMLHttpRequest();
+      xhr.withCredentials = false;
+      xhr.open('POST', '/admin0363/tinymce/upload');
+
+      xhr.upload.onprogress = function (e) {
+        progress(e.loaded / e.total * 100);
       };
-      xhr.onerror = function () { alert('上傳連線失敗'); };
+
+      xhr.onload = function () {
+        if (xhr.status < 200 || xhr.status >= 300) {
+          reject('HTTP Error: ' + xhr.status);
+          return;
+        }
+
+        var json = {};
+        try {
+          json = JSON.parse(xhr.responseText);
+        } catch (e) {
+          reject('Invalid JSON');
+          return;
+        }
+
+        if (!json || typeof json.location !== 'string') {
+          reject('Invalid JSON: ' + xhr.responseText);
+          return;
+        }
+
+        resolve(json.location);
+      };
+
+      xhr.onerror = function () {
+        reject('Image upload failed.');
+      };
+
+      var formData = new FormData();
+      formData.append('file', blobInfo.blob(), blobInfo.filename());
       xhr.send(formData);
-    };
-    input.click();
+    });
   },
 
-  /* （可選）貼 YouTube 連結即預覽 */
-  media_live_embeds: true,
+  file_picker_types: 'image media',
 
-  // 保留你原本的圖片上傳 handler（不用改）
-  images_upload_handler: function (blobInfo, progress) { /* ...原邏輯... */ }
-});
-
-    toolbar_mode: 'sliding',
-    fontsize_formats: '12px 14px 16px 18px 20px 24px 28px 32px 36px',
-    content_style: `
-  body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Noto Sans TC,Microsoft JhengHei,Arial,sans-serif;line-height:1.8;}
-  img{max-width:100%;height:auto;}
-  video, iframe{display:block;width:100%;max-width:720px;aspect-ratio:16/9;height:auto;background:#000;border-radius:12px;margin:16px 0 20px;}
-`,
-
-    /* 圖片貼上/上傳（維持你原本的） */
-    paste_data_images: true,
-    images_upload_url: '/admin0363/tinymce/upload',
-    images_upload_handler: function (blobInfo, progress) {
-      return new Promise(function (resolve, reject) {
-        var xhr = new XMLHttpRequest();
-        xhr.withCredentials = false;
-        xhr.open('POST', '/admin0363/tinymce/upload');
-        xhr.upload.onprogress = function (e) { progress(e.loaded / e.total * 100); };
-        xhr.onload = function () {
-          if (xhr.status < 200 || xhr.status >= 300) { reject('HTTP Error: ' + xhr.status); return; }
-          var json = {};
-          try { json = JSON.parse(xhr.responseText); }
-          catch(e) { reject('Invalid JSON'); return; }
-          if (!json || typeof json.location !== 'string') { reject('Invalid JSON: ' + xhr.responseText); return; }
-          resolve(json.location);
+  file_picker_callback: function (cb, value, meta) {
+    if (meta.filetype === 'image') {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = function () {
+        const file = this.files[0];
+        const reader = new FileReader();
+        reader.onload = function () {
+          cb(reader.result, { title: file.name });
         };
-        xhr.onerror = function () { reject('Image upload failed.'); };
-        var formData = new FormData();
-        formData.append('file', blobInfo.blob(), blobInfo.filename());
-        xhr.send(formData);
-      });
+        reader.readAsDataURL(file);
+      };
+      input.click();
+      return;
     }
-  });
 
-  // 送出前把編輯器內容回寫到 textarea（保留）
-  const form = document.querySelector('form');
-  if (form) {
-    form.addEventListener('submit', function () {
-      if (window.tinymce) tinymce.triggerSave();
-    });
+    if (meta.filetype === 'media') {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'video/*';
+      input.onchange = function () {
+        const file = this.files[0];
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/admin0363/tinymce/upload_video');
+
+        xhr.onload = function () {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const json = JSON.parse(xhr.responseText || '{}');
+              if (json && typeof json.location === 'string') {
+                cb(json.location, { source2: json.location });
+              } else {
+                alert('上傳失敗：' + xhr.responseText);
+              }
+            } catch (e) {
+              alert('上傳回應格式錯誤');
+            }
+          } else {
+            alert('上傳失敗 HTTP ' + xhr.status);
+          }
+        };
+
+        xhr.onerror = function () {
+          alert('上傳連線失敗');
+        };
+
+        xhr.send(formData);
+      };
+      input.click();
+    }
   }
+});
 </script>
 
 <script>
@@ -329,6 +360,33 @@ input[type="text"], input[type="number"], textarea, select{
   function removeVideoUrl(btn) {
     btn.parentElement.remove();
   }
+</script>
+
+<script>
+const form = document.querySelector('form');
+
+if (form) {
+  form.addEventListener('submit', async function (e) {
+    if (!window.tinymce) return;
+
+    e.preventDefault();
+
+    try {
+      const editors = tinymce.editors || [];
+
+      for (const editor of editors) {
+        await editor.uploadImages();   // ⭐ 關鍵：強制上傳
+      }
+
+      tinymce.triggerSave();           // 寫回 textarea
+      form.submit();                   // 再送出
+
+    } catch (err) {
+      console.error('TinyMCE 圖片上傳失敗:', err);
+      alert('圖片尚未上傳完成，請稍後再試');
+    }
+  });
+}
 </script>
 
 

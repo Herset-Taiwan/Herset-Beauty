@@ -1569,29 +1569,25 @@ def admin_update_bundle(bundle_id):
 # ✅ TinyMCE 圖片上傳端點
 @app.route('/admin0363/tinymce/upload', methods=['POST'])
 def tinymce_upload():
+    if not session.get("admin_logged_in"):
+        return jsonify({'error': 'unauthorized'}), 401
+
     file = request.files.get('file')
     if not file or not file.filename:
         return jsonify({'error': 'no file'}), 400
 
-    # 允許的副檔名
     allowed = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
     ext = (file.filename.rsplit('.', 1)[-1] or '').lower()
     if ext not in allowed:
         return jsonify({'error': 'invalid type'}), 400
 
-    # 目錄：static/uploads/rte
     save_dir = os.path.join(app.root_path, 'static', 'uploads', 'rte')
     os.makedirs(save_dir, exist_ok=True)
 
-    # 產生安全且唯一的檔名
-    filename = secure_filename(file.filename)
     filename = f"{uuid.uuid4().hex}.{ext}"
     save_path = os.path.join(save_dir, filename)
-
-    # 寫檔
     file.save(save_path)
 
-    # 回傳可直接使用的網址給 TinyMCE
     url = url_for('static', filename=f'uploads/rte/{filename}')
     return jsonify({'location': url})
 

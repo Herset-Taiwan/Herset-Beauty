@@ -236,7 +236,7 @@ tinymce.init({
   media_live_embeds: true,
 
   /* ✅ 新增 image、paste 等外掛 */
-  plugins: 'lists link table code advlist autolink charmap preview anchor searchreplace visualblocks fullscreen insertdatetime media wordcount image paste',
+  plugins: 'lists link table code advlist autolink charmap preview anchor searchreplace visualblocks fullscreen insertdatetime media wordcount image paste textcolor',
 
   /* ✅ 工具列加入圖片按鈕 */
   toolbar: 'undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | fontsizeselect | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table image media | removeformat | code',
@@ -248,10 +248,11 @@ tinymce.init({
   video, iframe{display:block;width:100%;max-width:720px;aspect-ratio:16/9;height:auto;background:#000;border-radius:12px;margin:16px 0 20px;}
 `,
 
-  /* ✅ 允許直接貼上圖片（小圖可用） */
+  /* ✅ 允許直接貼上圖片 */
   paste_data_images: true,
+  automatic_uploads: true,
 
-  /* ✅ 走後端上傳：改成你的上傳路由 */
+  /* ✅ 走後端上傳 */
   images_upload_url: '/admin0363/tinymce/upload',
 
   /* ✅ 自訂上傳處理（可帶 Token/額外欄位時好用） */
@@ -340,12 +341,27 @@ file_picker_callback: function (cb, value, meta) {
 
 <script>
   // 保持你原本提交前同步編輯器內容
-  const form = document.querySelector('form');
-  if (form) {
-    form.addEventListener('submit', function () {
-      if (window.tinymce) tinymce.triggerSave();
-    });
-  }
+const form = document.querySelector('form');
+if (form) {
+  form.addEventListener('submit', async function (e) {
+    if (!window.tinymce) return;
+
+    e.preventDefault();
+
+    try {
+      const editors = tinymce.editors || [];
+      for (const editor of editors) {
+        await editor.uploadImages();
+      }
+
+      tinymce.triggerSave();
+      form.submit();
+    } catch (err) {
+      console.error('TinyMCE 圖片上傳失敗:', err);
+      alert('圖片尚未上傳完成，請稍後再試');
+    }
+  });
+}
 </script>
 
 <script>

@@ -253,6 +253,7 @@ media_live_embeds: true,
 
 
     /* 圖片貼上/上傳（維持你原本的） */
+    automatic_uploads: true,
     paste_data_images: true,
     images_upload_url: '/admin0363/tinymce/upload',
     images_upload_handler: function (blobInfo, progress) {
@@ -279,11 +280,26 @@ media_live_embeds: true,
 
   // 送出前把編輯器內容回寫到 textarea（保留）
   const form = document.querySelector('form');
-  if (form) {
-    form.addEventListener('submit', function () {
-      if (window.tinymce) tinymce.triggerSave();
-    });
-  }
+if (form) {
+  form.addEventListener('submit', async function (e) {
+    if (!window.tinymce) return;
+
+    e.preventDefault();
+
+    try {
+      const editors = tinymce.editors || [];
+      for (const editor of editors) {
+        await editor.uploadImages();
+      }
+
+      tinymce.triggerSave();
+      form.submit();
+    } catch (err) {
+      console.error('TinyMCE 圖片上傳失敗:', err);
+      alert('圖片尚未上傳完成，請稍後再試');
+    }
+  });
+}
 </script>
 
 <script>
