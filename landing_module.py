@@ -601,14 +601,16 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
         if uploaded_secondary:
             page_data["secondary_images_json"] = existing + uploaded_secondary
 
-         # ===== 下單後圖片：保留原本 + 新增上傳 =====
+        # ===== 下單後圖片 =====
         middle_files = request.files.getlist("middle_image_files")
         uploaded_middle = upload_middle_images(middle_files)
 
+        content_images = page_data.get("content_images_json") or {}
+        after_buy = content_images.get("after_buy") or []
+
         if uploaded_middle:
-            after_buy = new_content.get("after_buy") or []
-            new_content["after_buy"] = after_buy + uploaded_middle
-            page_data["content_images_json"] = new_content
+            content_images["after_buy"] = after_buy + uploaded_middle
+            page_data["content_images_json"] = content_images
 
         page_data["created_at"] = datetime.now(TW).isoformat()
 
@@ -723,6 +725,15 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
         else:
             page_data["secondary_images_json"] = existing_secondary
 
+            # ===== 下單後圖片：保留原本 + 新增上傳 =====
+        middle_files = request.files.getlist("middle_image_files")
+        uploaded_middle = upload_middle_images(middle_files)
+
+        if uploaded_middle:
+            after_buy = new_content.get("after_buy") or []
+            new_content["after_buy"] = after_buy + uploaded_middle
+            page_data["content_images_json"] = new_content
+        
         if not page_data["name"] or not page_data["slug"]:
             flash("請填寫頁面名稱與 slug", "error")
             offers = parse_landing_offers_form(request.form, page_id)
