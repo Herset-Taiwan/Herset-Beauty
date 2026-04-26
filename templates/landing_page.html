@@ -331,6 +331,10 @@
             margin-bottom:8px;
             color:var(--accent);
         }
+        .faq-a{
+    white-space:pre-line;
+    line-height:1.8;
+}
 
         .summary{
             font-size:15px;
@@ -575,7 +579,7 @@
             {% for faq in page.faq_json %}
             <div class="faq-item">
                 <div class="faq-q">{{ faq.q }}</div>
-                <div>{{ faq.a }}</div>
+                <div class="faq-a">{{ faq.a }}</div>
             </div>
             {% endfor %}
         </div>
