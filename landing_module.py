@@ -53,6 +53,20 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
         img.save(output, format="JPEG", quality=quality, optimize=True)
         output.seek(0)
         return output.read()
+    
+    def resize_image_keep_ratio(file_bytes, max_width=1200, quality=88):
+        img = Image.open(io.BytesIO(file_bytes)).convert("RGB")
+        img = ImageOps.exif_transpose(img)
+
+        if img.width > max_width:
+            ratio = max_width / float(img.width)
+            new_height = int(img.height * ratio)
+            img = img.resize((max_width, new_height), Image.Resampling.LANCZOS)
+
+        output = io.BytesIO()
+        img.save(output, format="JPEG", quality=quality, optimize=True)
+        output.seek(0)
+        return output.read()
 
 
     def upload_bytes_to_supabase(file_bytes, original_name, folder="landing"):
@@ -125,6 +139,33 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
             except Exception as e:
                 print("SECONDARY ERROR:", str(e))
 
+        return urls
+    
+    def upload_middle_images(files):
+        urls = []
+
+        for f in files:
+            if not f or not f.filename:
+                continue
+
+            try:
+                raw = f.read()
+                if not raw:
+                    continue
+
+                img = resize_image_keep_ratio(raw, max_width=1200)
+                url = upload_bytes_to_supabase(
+                    img,
+                    "middle_" + f.filename,
+                    folder="landing/middle"
+                )
+
+                if url:
+                    urls.append(url)
+
+            except Exception as e:
+                print("MIDDLE IMAGE ERROR:", str(e))
+    
         return urls
 
     def upload_offer_images(files):
@@ -559,6 +600,15 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
         existing = page_data.get("secondary_images_json") or []
         if uploaded_secondary:
             page_data["secondary_images_json"] = existing + uploaded_secondary
+
+         # ===== 下單後圖片：保留原本 + 新增上傳 =====
+        middle_files = request.files.getlist("middle_image_files")
+        uploaded_middle = upload_middle_images(middle_files)
+
+        if uploaded_middle:
+            after_buy = new_content.get("after_buy") or []
+            new_content["after_buy"] = after_buy + uploaded_middle
+            page_data["content_images_json"] = new_content
 
         page_data["created_at"] = datetime.now(TW).isoformat()
 

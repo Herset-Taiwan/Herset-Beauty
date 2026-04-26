@@ -1091,20 +1091,44 @@
                     </div>
                 </div>
 
-                <section class="card">
+               <section class="card">
     <div class="card-header">
         <h2>下單後圖片</h2>
         <p>會顯示在「立即下單」和「FAQ」中間。</p>
     </div>
 
     <div class="card-body">
-        
+        {% set content_images = page.content_images_json or {} %}
+        {% set after_buy_images = content_images.after_buy or [] %}
 
-        <div id="afterBuyImageList" class="image-list"></div>
+        <input class="file-input"
+               type="file"
+               name="middle_image_files"
+               accept="image/*"
+               multiple>
 
-        <button type="button" class="btn btn-light" onclick="addAfterBuyImage('')">
-            ＋ 新增圖片
-        </button>
+        <span class="hint">可直接從電腦選擇圖片，可一次選多張。若不重新上傳，會保留原本圖片。</span>
+
+        <div class="secondary-grid" style="margin-top:16px;">
+            {% for img in after_buy_images %}
+            <div class="secondary-item">
+                <div class="secondary-thumb">
+                    <img src="{{ img }}" alt="下單後圖片 {{ loop.index }}">
+                </div>
+
+                <div class="secondary-meta">
+                    <span class="secondary-order">圖片 {{ loop.index }}</span>
+                    <button type="button"
+                            class="btn btn-danger remove-middle-btn"
+                            style="min-width:auto;height:34px;padding:0 10px;">
+                        刪除
+                    </button>
+                </div>
+
+                <input type="hidden" name="middle_images[]" value="{{ img }}">
+            </div>
+            {% endfor %}
+        </div>
     </div>
 </section>
 
@@ -1537,48 +1561,7 @@ function createFaqItem(){
     return div;
 }
 
-    const contentImagesData = {{ page.content_images_json or {} | tojson }};
-    const afterBuyImages = contentImagesData.after_buy || [];
-
-    function addAfterBuyImage(url) {
-        const list = document.getElementById("afterBuyImageList");
-        if (!list) return;
-
-        const row = document.createElement("div");
-        row.className = "image-row";
-
-        row.innerHTML = `
-            <div class="image-preview">
-                ${url ? `<img src="${url}" alt="下單後圖片">` : `<div class="empty-preview">尚未輸入圖片</div>`}
-            </div>
-
-            <input type="text"
-               name="middle_images[]"
-               class="after-buy-img-input"
-                   value="${url || ''}"
-                   placeholder="請輸入圖片網址，例如 /static/uploads/xxx.jpg"
-                   oninput="refreshAfterBuyPreview(this)">
-
-            <button type="button" class="btn-danger" onclick="this.closest('.image-row').remove()">
-                刪除
-            </button>
-        `;
-
-        list.appendChild(row);
-    }
-
-    function refreshAfterBuyPreview(input) {
-        const row = input.closest(".image-row");
-        const preview = row.querySelector(".image-preview");
-        const url = input.value.trim();
-
-        if (!url) {
-            preview.innerHTML = `<div class="empty-preview">尚未輸入圖片</div>`;
-            return;
-        }
-
-        preview.innerHTML = `<img src="${url}" alt="下單後圖片">`;
-    }
+    
 
 function bindFaqAdd(){
     const btn = document.getElementById("addFaqBtn");
@@ -1593,14 +1576,22 @@ function bindFaqAdd(){
         refreshFaqIndex();
     });
 }
+function bindMiddleRemove(){
+    document.querySelectorAll(".remove-middle-btn").forEach(function(btn){
+        btn.onclick = function(){
+            const item = btn.closest(".secondary-item");
+            if (item){
+                item.remove();
+            }
+        };
+    });
+}
 
 bindFaqAdd();
 bindFaqDelete();
+bindMiddleRemove();
 refreshFaqIndex();
-// ⭐ 初始化後台圖片（編輯頁才會出現）
-afterBuyImages.forEach(function(url){
-    addAfterBuyImage(url);
-});
+
 </script>
 </body>
 </html>
