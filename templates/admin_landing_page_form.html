@@ -580,6 +580,59 @@
     font-size:13px;
 }
 
+.image-list{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+}
+
+.image-row{
+    display:grid;
+    grid-template-columns:120px 1fr auto;
+    gap:12px;
+    align-items:center;
+    padding:14px;
+    border:1px solid #eadfda;
+    border-radius:14px;
+    background:#fff;
+}
+
+.image-preview{
+    width:120px;
+    height:80px;
+    border-radius:12px;
+    overflow:hidden;
+    background:#f6f1ee;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#999;
+    font-size:13px;
+}
+
+.image-preview img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+}
+
+.empty-preview{
+    padding:8px;
+    text-align:center;
+}
+
+@media (max-width: 768px){
+    .image-row{
+        grid-template-columns:1fr;
+    }
+
+    .image-preview{
+        width:100%;
+        height:160px;
+    }
+}
+
 @media (max-width:760px){
     .theme-preview-input-wrap{
         grid-template-columns:1fr;
@@ -628,6 +681,8 @@
                 padding:18px;
             }
         }
+
+
     </style>
 </head>
 <body>
@@ -920,6 +975,15 @@
                                             <label>綁定 Bundle ID</label>
                                             <input type="text" name="offer_bundle_id[]" value="{{ offer.bundle_id or '' }}">
                                         </div>
+
+                                        <div class="field">
+    <label>方案圖片</label>
+    <input type="text"
+           name="offer_image_url[]"
+           value="{{ offer.image_url or '' }}"
+           placeholder="請輸入圖片網址，例如 /static/uploads/xxx.jpg">
+    <span class="hint">會顯示在方案卡片上方，手機版也會顯示。</span>
+</div>
                                     </div>
 
                                     <div class="check-row">
@@ -977,6 +1041,14 @@
                                             <label>綁定 Bundle ID</label>
                                             <input type="text" name="offer_bundle_id[]" value="">
                                         </div>
+                                        <div class="field">
+    <label>方案圖片</label>
+    <input type="text"
+           name="offer_image_url[]"
+           value=""
+           placeholder="請輸入圖片網址，例如 /static/uploads/xxx.jpg">
+    <span class="hint">會顯示在方案卡片上方，手機版也會顯示。</span>
+</div>
                                     </div>
 
                                     <div class="check-row">
@@ -995,6 +1067,23 @@
                         </div>
                     </div>
                 </div>
+
+                <section class="card">
+    <div class="card-header">
+        <h2>下單後圖片</h2>
+        <p>會顯示在「立即下單」和「FAQ」中間。</p>
+    </div>
+
+    <div class="card-body">
+        
+
+        <div id="afterBuyImageList" class="image-list"></div>
+
+        <button type="button" class="btn btn-light" onclick="addAfterBuyImage('')">
+            ＋ 新增圖片
+        </button>
+    </div>
+</section>
 
                 <div class="card">
     <div class="card-header">
@@ -1425,6 +1514,49 @@ function createFaqItem(){
     return div;
 }
 
+    const contentImagesData = {{ page.content_images_json or {} | tojson }};
+    const afterBuyImages = contentImagesData.after_buy || [];
+
+    function addAfterBuyImage(url) {
+        const list = document.getElementById("afterBuyImageList");
+        if (!list) return;
+
+        const row = document.createElement("div");
+        row.className = "image-row";
+
+        row.innerHTML = `
+            <div class="image-preview">
+                ${url ? `<img src="${url}" alt="下單後圖片">` : `<div class="empty-preview">尚未輸入圖片</div>`}
+            </div>
+
+            <input type="text"
+               name="middle_images[]"
+               class="after-buy-img-input"
+                   value="${url || ''}"
+                   placeholder="請輸入圖片網址，例如 /static/uploads/xxx.jpg"
+                   oninput="refreshAfterBuyPreview(this)">
+
+            <button type="button" class="btn-danger" onclick="this.closest('.image-row').remove()">
+                刪除
+            </button>
+        `;
+
+        list.appendChild(row);
+    }
+
+    function refreshAfterBuyPreview(input) {
+        const row = input.closest(".image-row");
+        const preview = row.querySelector(".image-preview");
+        const url = input.value.trim();
+
+        if (!url) {
+            preview.innerHTML = `<div class="empty-preview">尚未輸入圖片</div>`;
+            return;
+        }
+
+        preview.innerHTML = `<img src="${url}" alt="下單後圖片">`;
+    }
+
 function bindFaqAdd(){
     const btn = document.getElementById("addFaqBtn");
     const list = document.getElementById("faqList");
@@ -1442,6 +1574,10 @@ function bindFaqAdd(){
 bindFaqAdd();
 bindFaqDelete();
 refreshFaqIndex();
+// ⭐ 初始化後台圖片（編輯頁才會出現）
+afterBuyImages.forEach(function(url){
+    addAfterBuyImage(url);
+});
 </script>
 </body>
 </html>

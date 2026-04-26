@@ -216,6 +216,8 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
 
         slug = slugify(form.get("slug") or form.get("name") or "")
         secondary_urls = [x.strip() for x in form.getlist("secondary_images[]") if x.strip()]
+        # ⭐ 新增：解析中間圖片
+        middle_images = [x.strip() for x in form.getlist("middle_images[]") if x.strip()]
 
         return {
             "name": (form.get("name") or "").strip(),
@@ -234,6 +236,9 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
             "is_active": form.get("is_active") == "1",
             "updated_at": datetime.now(TW).isoformat(),
             "secondary_images_json": secondary_urls,
+            "content_images_json": {
+                "after_buy": middle_images
+            },
             "slider_interval": int(form.get("slider_interval") or 3000) if str(form.get("slider_interval") or "").isdigit() else 3000,
         }
 
@@ -247,6 +252,7 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
         offer_compare_prices = form.getlist("offer_compare_at_price[]")
         offer_product_ids = form.getlist("offer_product_id[]")
         offer_bundle_ids = form.getlist("offer_bundle_id[]")
+        offer_image_urls = form.getlist("offer_image_url[]")
         offer_defaults = form.getlist("offer_is_default[]")
         offer_actives = form.getlist("offer_is_active[]")
 
@@ -279,6 +285,7 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
                 "compare_at_price": compare_at_price if compare_at_price > 0 else None,
                 "product_id": product_id or None,
                 "bundle_id": int(bundle_id_raw) if bundle_id_raw.isdigit() else None,
+                "image_url": (offer_image_urls[i] if i < len(offer_image_urls) else "").strip() or None,
                 "products_json": [],
                 "is_default": str(i) in offer_defaults,
                 "is_active": str(i) in offer_actives,
@@ -343,6 +350,7 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
         page["faq_json"] = safe_json_loads(page.get("faq_json"), [])
         page["sections_json"] = safe_json_loads(page.get("sections_json"), {})
         page["theme_json"] = safe_json_loads(page.get("theme_json"), {})
+        page["content_images_json"] = safe_json_loads(page.get("content_images_json"), {})
 
         return render_template("landing_page.html", page=page, offers=offers)
 
@@ -573,9 +581,11 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
         if request.method == "GET":
             offers = get_landing_offers(page_id, active_only=False)
             page["faq_json"] = safe_json_loads(page.get("faq_json"), [])
+            page["content_images_json"] = safe_json_loads(page.get("content_images_json"), {})
             page["sections_json"] = safe_json_loads(page.get("sections_json"), {})
             page["theme_json"] = safe_json_loads(page.get("theme_json"), {})
             page["secondary_images_json"] = safe_json_loads(page.get("secondary_images_json"), [])
+            page["content_images_json"] = safe_json_loads(page.get("content_images_json"), {})
 
             return render_template(
                 "admin_landing_page_form.html",
@@ -585,6 +595,15 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
             )
 
         page_data = parse_landing_page_form(request.form)
+
+        # ⭐ 保留原本 content_images_json（避免編輯時被清掉）
+        old_content = safe_json_loads(page.get("content_images_json"), {})
+        new_content = page_data.get("content_images_json", {})
+
+        if not new_content.get("after_buy"):
+            new_content["after_buy"] = old_content.get("after_buy", [])
+
+        page_data["content_images_json"] = new_content
 
         # ===== 主圖：一張 → 自動產生桌面 + 手機 =====
         hero_file = request.files.get("hero_image_file")
@@ -700,6 +719,7 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
                 "product_type": o.get("product_type"),
                 "product_id": o.get("product_id"),
                 "bundle_id": o.get("bundle_id"),
+                "image_url": o.get("image_url"),
                 "products_json": o.get("products_json") or [],
                 "price": o.get("price") or 0,
                 "compare_at_price": o.get("compare_at_price"),

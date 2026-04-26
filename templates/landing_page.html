@@ -202,6 +202,28 @@
             box-shadow:0 10px 24px color-mix(in srgb, var(--primary) 12%, transparent);
             background:var(--primary-soft);
         }
+        .offer-image{
+    width:100%;
+    aspect-ratio:4 / 3;
+    border-radius:14px;
+    overflow:hidden;
+    background:var(--secondary-soft);
+    margin-bottom:14px;
+}
+
+.offer-image img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+}
+
+@media (max-width: 900px){
+    .offer-image{
+        aspect-ratio:16 / 10;
+        margin-bottom:16px;
+    }
+}
 
         .offer-badge{
             display:inline-block;
@@ -318,6 +340,23 @@
             white-space:pre-line;
             color:#444;
         }
+        .middle-image-section{
+    padding-top:24px;
+    padding-bottom:48px;
+}
+
+.middle-gallery{
+    display:flex;
+    flex-direction:column;
+    gap:22px;
+}
+
+.middle-img img{
+    width:100%;
+    display:block;
+    border-radius:18px;
+    box-shadow:0 10px 28px rgba(0,0,0,.08);
+}
 
         @media (max-width: 900px) {
             .hero-grid,
@@ -347,6 +386,8 @@
 </head>
 <body>
     {% set secondary_images = page.secondary_images_json or [] %}
+    {% set content_images = page.content_images_json or {} %}
+    {% set after_buy_images = content_images.after_buy or [] %}
 
     <section class="hero">
         <div class="wrap hero-grid">
@@ -435,6 +476,15 @@
                      data-offer-id="{{ offer.id }}"
                      data-offer-name="{{ offer.offer_name }}"
                      data-offer-price="{{ offer.price|int }}">
+
+                     {% if offer.image_url %}
+<div class="offer-image">
+    <img src="{{ offer.image_url }}"
+         alt="{{ offer.offer_name }}"
+         loading="lazy"
+         decoding="async">
+</div>
+{% endif %}
                     {% if offer.badge %}
                     <div class="offer-badge">{{ offer.badge }}</div>
                     {% endif %}
@@ -495,6 +545,20 @@
             </div>
         </div>
     </section>
+
+    {% if after_buy_images %}
+    <section class="section middle-image-section">
+        <div class="wrap">
+            <div class="middle-gallery">
+                {% for img in after_buy_images %}
+                <div class="middle-img">
+                    <img src="{{ img }}" alt="商品介紹圖片 {{ loop.index }}" loading="lazy" decoding="async">
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
 
     {% if page.faq_json %}
     <section class="section">
