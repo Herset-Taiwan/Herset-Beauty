@@ -690,12 +690,7 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
         page_data = parse_landing_page_form(request.form)
 
         # ⭐ 保留原本 content_images_json（避免編輯時被清掉）
-        old_content = safe_json_loads(page.get("content_images_json"), {})
-        new_content = page_data.get("content_images_json", {})
-
-        if not new_content.get("after_buy"):
-            new_content["after_buy"] = old_content.get("after_buy", [])
-
+        new_content = page_data.get("content_images_json", {}) or {}
         page_data["content_images_json"] = new_content
 
         # ===== 主圖：一張 → 自動產生桌面 + 手機 =====

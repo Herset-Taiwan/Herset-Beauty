@@ -1109,15 +1109,15 @@
 
         <span class="hint">可直接從電腦選擇圖片，可一次選多張。若不重新上傳，會保留原本圖片。</span>
 
-        <div class="secondary-grid" style="margin-top:16px;">
+        <div class="secondary-grid" id="middleImageGrid" style="margin-top:16px;">
             {% for img in after_buy_images %}
-            <div class="secondary-item">
+            <div class="secondary-item middle-item" draggable="true">
                 <div class="secondary-thumb">
                     <img src="{{ img }}" alt="下單後圖片 {{ loop.index }}">
                 </div>
 
                 <div class="secondary-meta">
-                    <span class="secondary-order">圖片 {{ loop.index }}</span>
+                    <span class="secondary-order">排序 {{ loop.index }}</span>
                     <button type="button"
                             class="btn btn-danger remove-middle-btn"
                             style="min-width:auto;height:34px;padding:0 10px;">
@@ -1576,20 +1576,67 @@ function bindFaqAdd(){
         refreshFaqIndex();
     });
 }
+function refreshMiddleOrder(){
+    document.querySelectorAll("#middleImageGrid .middle-item").forEach(function(item, index){
+        const label = item.querySelector(".secondary-order");
+        if (label){
+            label.textContent = "排序 " + (index + 1);
+        }
+    });
+}
+
 function bindMiddleRemove(){
     document.querySelectorAll(".remove-middle-btn").forEach(function(btn){
         btn.onclick = function(){
-            const item = btn.closest(".secondary-item");
+            const item = btn.closest(".middle-item");
             if (item){
                 item.remove();
+                refreshMiddleOrder();
             }
         };
+    });
+}
+
+function bindMiddleSort(){
+    const grid = document.getElementById("middleImageGrid");
+    if (!grid) return;
+
+    let draggingItem = null;
+
+    grid.querySelectorAll(".middle-item").forEach(function(item){
+        item.addEventListener("dragstart", function(){
+            draggingItem = item;
+            item.classList.add("dragging");
+        });
+
+        item.addEventListener("dragend", function(){
+            item.classList.remove("dragging");
+            draggingItem = null;
+            refreshMiddleOrder();
+        });
+
+        item.addEventListener("dragover", function(e){
+            e.preventDefault();
+            if (!draggingItem || draggingItem === item) return;
+
+            const rect = item.getBoundingClientRect();
+            const offset = e.clientY - rect.top;
+            const insertAfter = offset > rect.height / 2;
+
+            if (insertAfter){
+                grid.insertBefore(draggingItem, item.nextSibling);
+            } else {
+                grid.insertBefore(draggingItem, item);
+            }
+        });
     });
 }
 
 bindFaqAdd();
 bindFaqDelete();
 bindMiddleRemove();
+bindMiddleSort();
+refreshMiddleOrder();
 refreshFaqIndex();
 
 </script>
