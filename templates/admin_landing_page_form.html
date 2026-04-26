@@ -814,6 +814,15 @@
                                 <label>CTA 文字</label>
                                 <input type="text" name="cta_text" value="{{ page.cta_text or '立即下單' }}">
                             </div>
+
+                            <div class="field">
+    <label>下單區標題</label>
+    <input type="text"
+           name="buy_title"
+           value="{{ page.buy_title or '' }}"
+           placeholder="例如：直接下單 / 立即購買 / 填寫資料完成訂單">
+    <span class="hint">會顯示在前台「直接下單」那一行</span>
+</div>
                             <div class="field">
                                 <label>CTA Anchor(控制按鈕點下去要跳去哪裡)</label>
                                 <input type="text" name="cta_anchor" value="{{ page.cta_anchor or '#buy' }}">
@@ -978,11 +987,21 @@
 
                                         <div class="field">
     <label>方案圖片</label>
-    <input type="text"
-           name="offer_image_url[]"
-           value="{{ offer.image_url or '' }}"
-           placeholder="請輸入圖片網址，例如 /static/uploads/xxx.jpg">
-    <span class="hint">會顯示在方案卡片上方，手機版也會顯示。</span>
+
+    {% if offer.image_url %}
+    <div class="upload-preview" style="display:block;margin-bottom:10px;">
+        <img src="{{ offer.image_url }}" alt="方案圖片">
+    </div>
+    {% endif %}
+
+    <input type="hidden" name="existing_offer_image_url[]" value="{{ offer.image_url or '' }}">
+
+    <input class="file-input"
+           type="file"
+           name="offer_image_files[]"
+           accept="image/*">
+
+    <span class="hint">可直接從電腦選擇圖片。若不重新上傳，會保留原本方案圖片。</span>
 </div>
                                     </div>
 
@@ -1043,11 +1062,15 @@
                                         </div>
                                         <div class="field">
     <label>方案圖片</label>
-    <input type="text"
-           name="offer_image_url[]"
-           value=""
-           placeholder="請輸入圖片網址，例如 /static/uploads/xxx.jpg">
-    <span class="hint">會顯示在方案卡片上方，手機版也會顯示。</span>
+
+    <input type="hidden" name="existing_offer_image_url[]" value="">
+
+    <input class="file-input"
+           type="file"
+           name="offer_image_files[]"
+           accept="image/*">
+
+    <span class="hint">可直接從電腦選擇圖片，會顯示在方案卡片上方，手機版也會顯示。</span>
 </div>
                                     </div>
 

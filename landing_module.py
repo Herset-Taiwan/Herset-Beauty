@@ -126,6 +126,35 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
                 print("SECONDARY ERROR:", str(e))
 
         return urls
+
+    def upload_offer_images(files):
+        urls = []
+
+        for f in files:
+            if not f or not f.filename:
+                urls.append("")
+                continue
+
+            try:
+                raw = f.read()
+                if not raw:
+                    urls.append("")
+                    continue
+
+                img = crop_and_resize_image(raw, 800, 600)
+                url = upload_bytes_to_supabase(
+                    img,
+                    "offer_" + f.filename,
+                    folder="landing/offers"
+                )
+
+                urls.append(url or "")
+
+            except Exception as e:
+                print("OFFER IMAGE ERROR:", str(e))
+                urls.append("")
+
+        return urls   
     
     def safe_json_loads(value, default):
         if value is None or value == "":
@@ -229,6 +258,7 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
             "description": (form.get("description") or "").strip(),
             "cta_text": (form.get("cta_text") or "立即下單").strip(),
             "cta_anchor": (form.get("cta_anchor") or "#buy").strip(),
+            "buy_title": (form.get("buy_title") or "").strip(),
             "affiliate_code": (form.get("affiliate_code") or "").strip(),
             "faq_json": faq_list,
             "sections_json": sections_json,
@@ -236,6 +266,7 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
             "is_active": form.get("is_active") == "1",
             "updated_at": datetime.now(TW).isoformat(),
             "secondary_images_json": secondary_urls,
+            
             "content_images_json": {
                 "after_buy": middle_images
             },
@@ -285,6 +316,7 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
                 "compare_at_price": compare_at_price if compare_at_price > 0 else None,
                 "product_id": product_id or None,
                 "bundle_id": int(bundle_id_raw) if bundle_id_raw.isdigit() else None,
+                
                 "image_url": (offer_image_urls[i] if i < len(offer_image_urls) else "").strip() or None,
                 "products_json": [],
                 "is_default": str(i) in offer_defaults,
@@ -563,6 +595,14 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
             return redirect("/admin0363/landing-pages")
 
         offers = parse_landing_offers_form(request.form, page_row["id"])
+
+        offer_image_files = request.files.getlist("offer_image_files[]")
+        uploaded_offer_images = upload_offer_images(offer_image_files)
+
+        for i, offer in enumerate(offers):
+            if i < len(uploaded_offer_images) and uploaded_offer_images[i]:
+                offer["image_url"] = uploaded_offer_images[i]
+
         if offers:
             supabase.table("landing_page_offers").insert(offers).execute()
 
@@ -586,6 +626,7 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
             page["theme_json"] = safe_json_loads(page.get("theme_json"), {})
             page["secondary_images_json"] = safe_json_loads(page.get("secondary_images_json"), [])
             page["content_images_json"] = safe_json_loads(page.get("content_images_json"), {})
+            page["buy_title"] = page.get("buy_title") or ""
 
             return render_template(
                 "admin_landing_page_form.html",
@@ -666,6 +707,17 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
         supabase.table("landing_page_offers").delete().eq("landing_page_id", page_id).execute()
 
         offers = parse_landing_offers_form(request.form, page_id)
+
+        offer_image_files = request.files.getlist("offer_image_files[]")
+        uploaded_offer_images = upload_offer_images(offer_image_files)
+        existing_offer_images = request.form.getlist("existing_offer_image_url[]")
+
+        for i, offer in enumerate(offers):
+            if i < len(uploaded_offer_images) and uploaded_offer_images[i]:
+                offer["image_url"] = uploaded_offer_images[i]
+            elif i < len(existing_offer_images) and existing_offer_images[i]:
+                offer["image_url"] = existing_offer_images[i]
+
         if offers:
             supabase.table("landing_page_offers").insert(offers).execute()
 

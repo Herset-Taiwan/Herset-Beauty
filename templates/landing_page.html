@@ -315,6 +315,11 @@
             opacity:.7;
             cursor:not-allowed;
         }
+        .buy-title{
+    font-size:22px;
+    font-weight:800;
+    color:var(--primary);
+}
 
         .faq-item{
             border-bottom:1px solid var(--line);
@@ -505,7 +510,9 @@
             <div style="height:24px;"></div>
 
             <div class="buy-box">
-                <h3>直接下單</h3>
+                <h3 class="buy-title">
+    {{ page.buy_title or '直接下單' }}
+</h3>
 
                 <form id="landingOrderForm">
                     <input type="hidden" name="slug" value="{{ page.slug }}">
