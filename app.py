@@ -3253,6 +3253,7 @@ def admin_affiliates_create():
             insert_data["report_password_hash"] = hashlib.sha256(
                 report_password.encode("utf-8")
             ).hexdigest()
+            insert_data["report_password_plain"] = report_password
 
         supabase.table("affiliates").insert(insert_data).execute()
 
@@ -3298,6 +3299,7 @@ def admin_affiliates_update(aid):
             update_data["report_password_hash"] = hashlib.sha256(
                 report_password.encode("utf-8")
             ).hexdigest()
+            update_data["report_password_plain"] = report_password
 
         supabase.table("affiliates").update(update_data).eq("id", aid).execute()
 
