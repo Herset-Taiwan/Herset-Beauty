@@ -500,33 +500,33 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
             return jsonify({"ok": False, "error": "請填寫收件人姓名與手機"}), 400
 
         if shipping_method == "home":
-        receiver_address = home_address or legacy_address
+            receiver_address = home_address or legacy_address
 
-        if not receiver_address:
-            return jsonify({"ok": False, "error": "請填寫宅配地址"}), 400
+            if not receiver_address:
+                return jsonify({"ok": False, "error": "請填寫宅配地址"}), 400
 
-    else:
-        if store_type in ("7-11", "711", "seven", "seven_eleven"):
-            store_type = "711"
-        elif store_type in ("family", "familymart", "全家"):
-            store_type = "family"
+        else:
+            if store_type in ("7-11", "711", "seven", "seven_eleven"):
+                store_type = "711"
+            elif store_type in ("family", "familymart", "全家"):
+                store_type = "family"
 
-        if store_type not in ("711", "family"):
-            return jsonify({"ok": False, "error": "請選擇超商類型"}), 400
+            if store_type not in ("711", "family"):
+                return jsonify({"ok": False, "error": "請選擇超商類型"}), 400
 
-        if not store_name and not store_address:
-            return jsonify({"ok": False, "error": "請填寫門市名稱或店號"}), 400
+            if not store_name and not store_address:
+                return jsonify({"ok": False, "error": "請填寫門市名稱或店號"}), 400
 
-        store_type_text = "7-11" if store_type == "711" else "全家"
+            store_type_text = "7-11" if store_type == "711" else "全家"
 
-        receiver_address = " / ".join([
-            x for x in [
-                "{} 超商取貨".format(store_type_text),
-                store_name,
-                store_address
-            ]
-            if x
-        ])
+            receiver_address = " / ".join([
+                x for x in [
+                    "{} 超商取貨".format(store_type_text),
+                    store_name,
+                    store_address
+                ]
+                if x
+            ])
 
         try:
             qty = max(1, int(qty_raw))
