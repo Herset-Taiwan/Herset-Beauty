@@ -149,6 +149,11 @@
           <input type="text" name="name" placeholder="團購主名稱" required>
           <input type="text" name="code" placeholder="專屬代碼，例如 amy" required>
           <input type="number" step="0.01" name="commission_rate" placeholder="抽成％，例如 20">
+          <input
+            type="password"
+            name="report_password"
+            placeholder="報表密碼，例如 123456"
+          >
           <select name="is_active">
             <option value="1" selected>啟用</option>
             <option value="">停用</option>
@@ -171,6 +176,11 @@
                 <input type="text" name="name" value="{{ a.name or '' }}" placeholder="團購主名稱">
                 <input type="text" name="code" value="{{ a.code or '' }}" placeholder="代碼">
                 <input type="number" step="0.01" name="commission_rate" value="{{ a.commission_rate or 0 }}" placeholder="抽成％">
+                <input
+                  type="password"
+                  name="report_password"
+                  placeholder="報表密碼，留空不修改"
+                >
                 <select name="is_active">
                   <option value="true" {% if a.is_active %}selected{% endif %}>啟用</option>
                   <option value="false" {% if not a.is_active %}selected{% endif %}>停用</option>
@@ -179,17 +189,28 @@
               </div>
             </form>
 
-           <div class="link-box">
-  <div class="link-row">
-    <span class="link-text" id="link-{{ a.id }}">
-      https://herset.co/product/你的商品ID?ref={{ a.code }}
-    </span>
+            <div class="link-box">
+              <div class="muted">商品頁分潤連結</div>
+              <div class="link-row">
+                <span class="link-text" id="product-link-{{ a.id }}">
+                  https://herset.co/product/你的商品ID?ref={{ a.code }}
+                </span>
 
-    <button type="button" class="copy-btn" onclick="copyLink('link-{{ a.id }}', this)">
-      複製
-    </button>
-  </div>
-</div>
+                <button type="button" class="copy-btn" onclick="copyLink('product-link-{{ a.id }}', this)">
+                  複製
+                </button>
+              </div>
+
+              <div class="muted" style="margin-top:12px;">團購主專屬報表網址</div>
+              <div class="link-row">
+                <span class="link-text" id="report-link-{{ a.id }}">
+                  https://herset.co/affiliate-report/{{ a.code }}
+                </span>
+
+                <button type="button" class="copy-btn" onclick="copyLink('report-link-{{ a.id }}', this)">
+                  複製
+                </button>
+              </div>
             </div>
           </div>
         {% endfor %}

@@ -3230,6 +3230,7 @@ def admin_affiliates_create():
     code = (request.form.get("code") or "").strip()
     commission_rate = request.form.get("commission_rate")
     is_active = bool(request.form.get("is_active"))
+    report_password = (request.form.get("report_password") or "").strip()
 
     if not name or not code:
         flash("請填寫團購主名稱與代碼", "error")
@@ -3241,13 +3242,22 @@ def admin_affiliates_create():
         commission_rate = 0
 
     try:
-        supabase.table("affiliates").insert({
+        insert_data = {
             "name": name,
             "code": code,
             "commission_rate": commission_rate,
             "is_active": is_active
-        }).execute()
+        }
+
+        if report_password:
+            insert_data["report_password_hash"] = hashlib.sha256(
+                report_password.encode("utf-8")
+            ).hexdigest()
+
+        supabase.table("affiliates").insert(insert_data).execute()
+
         flash("團購主已新增", "success")
+
     except Exception as e:
         app.logger.exception("[affiliates] create failed: %s", e)
         flash("新增失敗，請確認 code 是否重複或欄位名稱是否正確", "error")

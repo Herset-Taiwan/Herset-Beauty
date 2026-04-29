@@ -557,7 +557,204 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
             "order_id": order_id,
             "redirect_url": "/choose-payment?order_id={}".format(order_id)
         })
+    def get_affiliate_by_code(code):
+        code = (code or "").strip()
+        if not code:
+            return None
 
+        try:
+            rows = (
+                supabase.table("affiliates")
+                .select("*")
+                .eq("code", code)
+                .eq("is_active", True)
+                .limit(1)
+                .execute()
+                .data or []
+            )
+            return rows[0] if rows else None
+        except Exception as e:
+            print("[affiliate report] load affiliate failed:", e)
+            return None
+
+
+    def build_affiliate_landing_report_rows(affiliate_code):
+        from dateutil import parser
+
+        affiliate_code = (affiliate_code or "").strip()
+
+        try:
+            aff = get_affiliate_by_code(affiliate_code)
+        except Exception:
+            aff = None
+
+        if not aff:
+            return {
+                "affiliate": None,
+                "rows": [],
+                "grand_order_count": 0,
+                "grand_sales_total": 0,
+                "grand_commission_total": 0
+            }
+
+        commission_rate = float(aff.get("commission_rate") or 0)
+
+        try:
+            pages = (
+                supabase.table("landing_pages")
+                .select("id,name,slug,title,affiliate_code")
+                .eq("affiliate_code", affiliate_code)
+                .execute()
+                .data or []
+            )
+        except Exception as e:
+            print("[affiliate public report] load pages failed:", e)
+            pages = []
+
+        page_map = {int(p["id"]): p for p in pages if p.get("id") is not None}
+
+        try:
+            orders = (
+                supabase.table("orders")
+                .select("*")
+                .eq("affiliate_code", affiliate_code)
+                .eq("payment_status", "paid")
+                .neq("status", "cancelled")
+                .order("created_at", desc=True)
+                .execute()
+                .data or []
+            )
+        except Exception as e:
+            print("[affiliate public report] load orders failed:", e)
+            orders = []
+
+        orders = [o for o in orders if o.get("landing_page_id")]
+
+        offer_ids = list({
+            o.get("landing_offer_id")
+            for o in orders
+            if o.get("landing_offer_id")
+        })
+
+        offer_map = {}
+        if offer_ids:
+            try:
+                offer_rows = (
+                    supabase.table("landing_page_offers")
+                    .select("id,offer_name")
+                    .in_("id", offer_ids)
+                    .execute()
+                    .data or []
+                )
+                offer_map = {
+                    int(x["id"]): x
+                    for x in offer_rows
+                    if x.get("id") is not None
+                }
+            except Exception as e:
+                print("[affiliate public report] load offers failed:", e)
+
+        def format_tw_datetime(val):
+            if not val:
+                return "—"
+            try:
+                dt = parser.parse(str(val))
+                return dt.astimezone(TW).strftime("%Y-%m-%d %H:%M:%S")
+            except Exception:
+                return str(val)
+
+        rows = []
+        grand_order_count = 0
+        grand_sales_total = 0
+        grand_commission_total = 0
+
+        for o in orders:
+            landing_page_id = int(o.get("landing_page_id") or 0)
+            page = page_map.get(landing_page_id) or {}
+            offer = offer_map.get(int(o.get("landing_offer_id") or 0)) or {}
+
+            total_amount = int(o.get("total_amount") or 0)
+
+            stored_commission = o.get("commission_amount")
+            if stored_commission is None or int(stored_commission or 0) <= 0:
+                commission_amount = int(total_amount * commission_rate / 100)
+            else:
+                commission_amount = int(stored_commission or 0)
+
+            grand_order_count += 1
+            grand_sales_total += total_amount
+            grand_commission_total += commission_amount
+
+            rows.append({
+                "paid_at": format_tw_datetime(o.get("paid_at") or o.get("created_at")),
+                "order_no": o.get("order_no") or o.get("MerchantTradeNo") or o.get("id"),
+                "landing_page_name": page.get("name") or page.get("title") or "一頁式頁面",
+                "landing_page_slug": page.get("slug") or "",
+                "offer_name": offer.get("offer_name") or "—",
+                "receiver_name": o.get("receiver_name") or o.get("guest_name") or "—",
+                "total_amount": total_amount,
+                "commission_amount": commission_amount
+            })
+
+        return {
+            "affiliate": aff,
+            "rows": rows,
+            "grand_order_count": grand_order_count,
+            "grand_sales_total": grand_sales_total,
+            "grand_commission_total": grand_commission_total
+        }
+
+
+    @app.route("/affiliate-report/<code>", methods=["GET", "POST"])
+    def affiliate_public_report(code):
+        import hashlib
+
+        code = (code or "").strip()
+        affiliate = get_affiliate_by_code(code)
+
+        if not affiliate:
+            return "找不到團購主或此團購主未啟用", 404
+
+        session_key = "affiliate_report_auth_{}".format(code)
+        error = ""
+
+        if request.method == "POST":
+            password = (request.form.get("password") or "").strip()
+            password_hash = hashlib.sha256(password.encode("utf-8")).hexdigest()
+
+            saved_hash = (affiliate.get("report_password_hash") or "").strip()
+
+            if saved_hash and password_hash == saved_hash:
+                session[session_key] = True
+                return redirect("/affiliate-report/{}".format(code))
+
+            error = "密碼錯誤，請重新輸入"
+
+        if not session.get(session_key):
+            return render_template(
+                "affiliate_report_login.html",
+                affiliate=affiliate,
+                code=code,
+                error=error
+            )
+
+        report = build_affiliate_landing_report_rows(code)
+
+        return render_template(
+            "affiliate_public_report.html",
+            affiliate=affiliate,
+            rows=report["rows"],
+            grand_order_count=report["grand_order_count"],
+            grand_sales_total=report["grand_sales_total"],
+            grand_commission_total=report["grand_commission_total"]
+        )
+
+
+    @app.route("/affiliate-report/<code>/logout")
+    def affiliate_public_report_logout(code):
+        code = (code or "").strip()
+        session.pop("affiliate_report_auth_{}".format(code), None)
+        return redirect("/affiliate-report/{}".format(code))
     @app.route("/admin0363/landing-pages/report")
     def admin_landing_pages_report():
         if not session.get("admin_logged_in"):
