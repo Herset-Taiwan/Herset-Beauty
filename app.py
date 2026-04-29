@@ -3274,6 +3274,7 @@ def admin_affiliates_update(aid):
     code = (request.form.get("code") or "").strip()
     commission_rate = request.form.get("commission_rate")
     is_active = request.form.get("is_active") == "true"
+    report_password = (request.form.get("report_password") or "").strip()
 
     if not name or not code:
         flash("名稱與代碼不可空白", "error")
@@ -3285,16 +3286,26 @@ def admin_affiliates_update(aid):
         commission_rate = 0
 
     try:
-        supabase.table("affiliates").update({
+        update_data = {
             "name": name,
             "code": code,
             "commission_rate": commission_rate,
             "is_active": is_active
-        }).eq("id", aid).execute()
+        }
+
+        # 有輸入新密碼才更新；留空就保留原本密碼
+        if report_password:
+            update_data["report_password_hash"] = hashlib.sha256(
+                report_password.encode("utf-8")
+            ).hexdigest()
+
+        supabase.table("affiliates").update(update_data).eq("id", aid).execute()
+
         flash("團購主已更新", "success")
+
     except Exception as e:
         app.logger.exception("[affiliates] update failed: %s", e)
-        flash("更新失敗", "error")
+        flash("更新失敗，請確認欄位或資料表是否正確", "error")
 
     return redirect("/admin0363/affiliates")
 
