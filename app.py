@@ -4284,7 +4284,13 @@ def choose_payment():
     if not order:
         return "找不到訂單", 404
 
-    return render_template("choose_payment.html", order=order)
+    is_landing_order = bool(order.get("landing_page_id"))
+
+    return render_template(
+        "choose_payment.html",
+        order=order,
+        is_landing_order=is_landing_order
+    )
 
 # === LINE Pay 金額/幣別 helper（缺它會造成 NameError）===
 def _order_amount_currency(order):
@@ -4461,6 +4467,12 @@ def process_payment():
 
     if not order:
         return "找不到訂單", 404
+        is_landing_order = bool(order.get("landing_page_id"))
+
+    # 一頁式訂單不允許使用轉帳付款
+    if is_landing_order and method in ("bank", "transfer", "bank_transfer", "atm"):
+        flash("一頁式訂單目前不支援轉帳付款，請選擇 LINE Pay 或信用卡付款。", "error")
+        return redirect("/choose-payment?order_id={}".format(order["id"]))
 
     # 3) 解析 member_id：以訂單上的為主，否則用 session
     current_member_id = session.get("member_id")

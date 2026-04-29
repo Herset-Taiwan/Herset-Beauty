@@ -92,9 +92,11 @@
   <label><input type="radio" name="method" value="credit"> 信用卡（綠界科技）</label>
 </div>
 
+        {% if not is_landing_order %}
         <div class="radio-option">
           <label><input type="radio" name="method" value="bank"> 轉帳付款（ATM/銀行）</label>
         </div>
+        {% endif %}
     
 
       </div>
