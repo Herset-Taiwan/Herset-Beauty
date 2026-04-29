@@ -122,6 +122,56 @@
 .copy-btn:hover{
   opacity:.85;
 }
+
+.affiliate-edit-row{
+  display:grid;
+  grid-template-columns:1.1fr 1.1fr 1fr 1.1fr 90px 82px;
+  gap:10px;
+  align-items:end;
+}
+
+.affiliate-field{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+.affiliate-field label{
+  font-size:13px;
+  font-weight:700;
+  color:#6b7280;
+}
+
+.affiliate-field input,
+.affiliate-field select{
+  width:100%;
+  padding:8px 10px;
+  border:1px solid #d1d5db;
+  border-radius:8px;
+  background:#fff;
+}
+
+.affiliate-save-field{
+  display:flex;
+  align-items:end;
+}
+
+.affiliate-save-field .btn{
+  width:100%;
+  height:39px;
+}
+
+@media (max-width: 1100px){
+  .affiliate-edit-row{
+    grid-template-columns:1fr 1fr;
+  }
+}
+
+@media (max-width: 700px){
+  .affiliate-edit-row{
+    grid-template-columns:1fr;
+  }
+}
   </style>
 </head>
 <body>
@@ -171,24 +221,46 @@
       {% if affiliates %}
         {% for a in affiliates %}
           <div class="item">
-            <form method="POST" action="/admin0363/affiliates/update/{{ a.id }}">
-              <div class="row">
-                <input type="text" name="name" value="{{ a.name or '' }}" placeholder="團購主名稱">
-                <input type="text" name="code" value="{{ a.code or '' }}" placeholder="代碼">
-                <input type="number" step="0.01" name="commission_rate" value="{{ a.commission_rate or 0 }}" placeholder="抽成％">
-                <input
-                  type="text"
-                  name="report_password"
-                  value="{{ a.report_password_plain or '' }}"
-                  placeholder="報表密碼"
-                >
-                <select name="is_active">
-                  <option value="true" {% if a.is_active %}selected{% endif %}>啟用</option>
-                  <option value="false" {% if not a.is_active %}selected{% endif %}>停用</option>
-                </select>
-                <button type="submit" class="btn">儲存</button>
-              </div>
-            </form>
+<form method="POST" action="/admin0363/affiliates/update/{{ a.id }}">
+  <div class="affiliate-edit-row">
+    <div class="affiliate-field">
+      <label>團購主名稱</label>
+      <input type="text" name="name" value="{{ a.name or '' }}" placeholder="例如：牛牛">
+    </div>
+
+    <div class="affiliate-field">
+      <label>專屬代碼</label>
+      <input type="text" name="code" value="{{ a.code or '' }}" placeholder="例如：NIU-NIU">
+    </div>
+
+    <div class="affiliate-field">
+      <label>抽成百分比</label>
+      <input type="number" step="0.01" name="commission_rate" value="{{ a.commission_rate or 0 }}" placeholder="例如：10">
+    </div>
+
+    <div class="affiliate-field">
+      <label>報表密碼</label>
+      <input
+        type="text"
+        name="report_password"
+        value="{{ a.report_password_plain or '' }}"
+        placeholder="例如：0000"
+      >
+    </div>
+
+    <div class="affiliate-field">
+      <label>狀態</label>
+      <select name="is_active">
+        <option value="true" {% if a.is_active %}selected{% endif %}>啟用</option>
+        <option value="false" {% if not a.is_active %}selected{% endif %}>停用</option>
+      </select>
+    </div>
+
+    <div class="affiliate-save-field">
+      <button type="submit" class="btn">儲存</button>
+    </div>
+  </div>
+</form>
 
             <div class="link-box">
               <div class="muted">商品頁分潤連結</div>
