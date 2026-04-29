@@ -797,6 +797,32 @@ def admin_dashboard():
     order_ids = [o["id"] for o in orders_raw]
     member_ids = list({o["member_id"] for o in orders_raw if o.get("member_id")})
 
+# === 一頁式訂單 / 團購主顯示資料 ===
+    affiliate_codes = list({
+        (o.get("affiliate_code") or "").strip()
+        for o in orders_raw
+        if (o.get("affiliate_code") or "").strip()
+    })
+
+    affiliate_map = {}
+    if affiliate_codes:
+        try:
+            affiliate_rows = (
+                supabase.table("affiliates")
+                .select("code, name")
+                .in_("code", affiliate_codes)
+                .execute()
+                .data
+                or []
+            )
+            affiliate_map = {
+                (a.get("code") or "").strip(): (a.get("name") or "").strip()
+                for a in affiliate_rows
+            }
+        except Exception as e:
+            app.logger.warning(f"[admin orders] load affiliate names failed: {e}")
+            affiliate_map = {}
+
      # === 新增：一次撈出每張訂單使用的購物金（單位：分 / cents）===
     wallet_used_map = {}
     if order_ids:
@@ -838,13 +864,53 @@ def admin_dashboard():
     orders = []
     for o in orders_raw:
         o["items"] = item_group.get(o["id"], [])
-        member = member_dict.get(o["member_id"])
+        member = member_dict.get(o.get("member_id"))
+
+        receiver_name = (
+            o.get("receiver_name")
+            or o.get("guest_name")
+            or (member.get("name") if member else None)
+            or "訪客"
+        )
+
+        receiver_phone = (
+            o.get("receiver_phone")
+            or o.get("guest_phone")
+            or (member.get("phone") if member else None)
+            or "—"
+        )
+
+        # ✅ 關鍵修正：
+        # 後台訂單地址一定要優先顯示「這筆訂單下單時填的收件資訊」
+        # 不要優先抓 members.address，否則會員舊地址會蓋掉宅配 / 超商門市資料。
+        receiver_address = (
+            o.get("receiver_address")
+            or o.get("shipping_address")
+            or o.get("store_address")
+            or o.get("cvs_store_address")
+            or o.get("cvs_store_name")
+            or o.get("store_name")
+            or o.get("guest_address")
+            or (member.get("address") if member else None)
+            or "—"
+        )
+
+        affiliate_code = (o.get("affiliate_code") or "").strip()
+        affiliate_name = affiliate_map.get(affiliate_code, "")
+
+        is_landing_order = bool(o.get("landing_page_id"))
+
+        o["order_source"] = "一頁式網頁" if is_landing_order else "一般商城"
+        o["affiliate_code_text"] = affiliate_code or "—"
+        o["affiliate_name_text"] = affiliate_name or ("未指定" if is_landing_order else "—")
+
         o["member"] = {
-            "account": member["account"] if member else "guest",
-            "name": member.get("name") if member else (o.get("guest_name") or "訪客"),
-            "phone": member.get("phone") if member else (o.get("guest_phone") or "—"),
-            "address": member.get("address") if member else (o.get("guest_address") or "—"),
+            "account": member.get("account") if member else "guest",
+            "name": receiver_name,
+            "phone": receiver_phone,
+            "address": receiver_address,
         }
+
         o["is_new"] = bool(o.get("status") != "shipped" and not session.get("seen_orders"))
         try:
             utc_dt = parser.parse(o["created_at"])

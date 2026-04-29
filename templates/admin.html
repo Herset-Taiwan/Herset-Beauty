@@ -485,6 +485,18 @@
   color: #a33;
   border: 1px solid #ddd;
 }
+/* 一頁式訂單來源標籤 */
+.order-chip.source-landing {
+  background: #fce7f3;
+  color: #be185d;
+  border: 1px solid #f9a8d4;
+}
+
+.order-chip.source-normal {
+  background: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+}
 
 
 </style>
@@ -1128,6 +1140,9 @@ function filterOrders(){
         (o.member?.name||'').toLowerCase().includes(keyword) ||
         (o.member?.phone||'').toLowerCase().includes(keyword) ||
         (o.member?.address||'').toLowerCase().includes(keyword) ||
+        (o.order_source || '').toLowerCase().includes(keyword) ||
+        (o.affiliate_name_text || '').toLowerCase().includes(keyword) ||
+        (o.affiliate_code_text || '').toLowerCase().includes(keyword) ||
         // ✅ 時間字串也可搜（例如 2025-09-01）
         (o.created_local || '').toLowerCase().includes(keyword);
 
@@ -1215,6 +1230,11 @@ card.innerHTML = `
   <div class="order-head">
     <div class="order-id">
   訂單 ${esc(o.order_no || o.MerchantTradeNo || ('#' + o.id))}
+  ${
+    o.order_source === '一頁式網頁'
+      ? `<span class="order-chip source-landing" style="margin-left:8px;">一頁式下單</span>`
+      : ''
+  }
 </div>
     <div class="order-time">${esc(o.created_local||'')}</div>
 <div class="order-chips">
@@ -1288,7 +1308,7 @@ card.innerHTML = `
     </div>
   </div>
 
-  <!-- 🔽 新增：訂購人資訊 -->
+  <!-- 🔽 訂購人資訊 -->
   <div class="buyer">
     <div class="buyer-title">訂購人資訊</div>
     <div class="buyer-grid">
@@ -1296,6 +1316,17 @@ card.innerHTML = `
       <div class="buyer-item"><label>姓名：</label><span class="text">${esc(o.member?.name || '—')}</span></div>
       <div class="buyer-item"><label>電話：</label><span class="text">${esc(o.member?.phone || '—')}</span></div>
       <div class="buyer-item"><label>地址：</label><span class="text">${esc(o.member?.address || '—')}</span></div>
+      <div class="buyer-item"><label>訂單來源：</label><span class="text">${esc(o.order_source || '一般商城')}</span></div>
+
+      ${
+        o.order_source === '一頁式網頁'
+          ? `
+            <div class="buyer-item"><label>團購主：</label><span class="text">${esc(o.affiliate_name_text || '未指定')}</span></div>
+            <div class="buyer-item"><label>團購代碼：</label><span class="text">${esc(o.affiliate_code_text || '—')}</span></div>
+          `
+          : ''
+      }
+
       <div class="buyer-item"><label>訂單備註：</label><span class="text">${esc(o.member?.note || o.note || '—')}</span></div>
       <div class="buyer-item"><label>付款方式：</label><span class="text">${esc(o.payment_method || '—')}</span></div>
     </div>
