@@ -529,13 +529,33 @@
                     <input type="text" name="phone" required>
 
                     <label>Email（可不填）</label>
-                    <input type="email" name="email">
+<input type="email" name="email">
 
-                    <label>地址</label>
-                    <textarea name="address" required></textarea>
+<label>配送方式</label>
+<select name="shipping_method" id="shippingMethod">
+    <option value="home">宅配</option>
+    <option value="store">超商取貨</option>
+</select>
 
-                    <label>數量</label>
-                    <select name="qty" id="qty">
+<div id="homeAddressBox">
+    <label>地址</label>
+    <textarea name="address" id="addressInput" required></textarea>
+</div>
+
+<div id="storePickupBox" style="display:none;">
+    <label>超商類型</label>
+    <select name="store_type" id="storeType">
+        <option value="">請選擇超商</option>
+        <option value="711">7-11</option>
+        <option value="family">全家</option>
+    </select>
+
+    <label>門市名稱 / 店號</label>
+    <input type="text" name="store_name" id="storeName" placeholder="例如：台中公益門市 / 123456">
+</div>
+
+<label>數量</label>
+<select name="qty" id="qty">
                         <option value="1">1</option>
                         <option value="2">2</option>
                         <option value="3">3</option>
@@ -593,19 +613,56 @@
         const summaryText = document.getElementById("summaryText");
         const form = document.getElementById("landingOrderForm");
         const submitBtn = document.getElementById("submitBtn");
+const shippingMethod = document.getElementById("shippingMethod");
+const homeAddressBox = document.getElementById("homeAddressBox");
+const storePickupBox = document.getElementById("storePickupBox");
+const addressInput = document.getElementById("addressInput");
+const storeType = document.getElementById("storeType");
+const storeName = document.getElementById("storeName");
 
-        let currentOffer = {
+let currentOffer = {
             id: offerIdInput ? offerIdInput.value : "",
             name: "",
             price: 0
         };
 
         function refreshSummary() {
-            if (!summaryText || !qtySelect) return;
-            const qty = parseInt(qtySelect.value || "1", 10);
-            const total = (currentOffer.price || 0) * qty;
-            summaryText.innerText = `已選方案：${currentOffer.name || ""}｜數量：${qty}｜總金額：NT$ ${total}`;
-        }
+    if (!summaryText || !qtySelect) return;
+
+    const qty = parseInt(qtySelect.value || "1", 10);
+    const total = (currentOffer.price || 0) * qty;
+    const shipText = shippingMethod && shippingMethod.value === "store" ? "超商取貨" : "宅配";
+
+    summaryText.innerText = `已選方案：${currentOffer.name || ""}｜配送：${shipText}｜數量：${qty}｜總金額：NT$ ${total}`;
+}
+
+function refreshShippingFields() {
+    if (!shippingMethod || !homeAddressBox || !storePickupBox || !addressInput || !storeType || !storeName) return;
+
+    if (shippingMethod.value === "store") {
+        homeAddressBox.style.display = "none";
+        storePickupBox.style.display = "block";
+
+        addressInput.required = false;
+        storeType.required = true;
+        storeName.required = true;
+    } else {
+        homeAddressBox.style.display = "block";
+        storePickupBox.style.display = "none";
+
+        addressInput.required = true;
+        storeType.required = false;
+        storeName.required = false;
+    }
+
+    refreshSummary();
+}
+
+if (shippingMethod) {
+    shippingMethod.addEventListener("change", refreshShippingFields);
+}
+
+refreshShippingFields();
 
         offerCards.forEach(card => {
             if (card.classList.contains("active")) {

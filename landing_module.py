@@ -441,12 +441,34 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
         guest_email = (data.get("email") or "").strip()
         intended_payment_method = (data.get("payment_method") or "").strip().lower()
 
+        shipping_method = (data.get("shipping_method") or "home").strip().lower()
+        store_type = (data.get("store_type") or "").strip().lower()
+        store_name = (data.get("store_name") or "").strip()
+
+        if shipping_method not in ("home", "store"):
+            shipping_method = "home"
+
         if not slug:
             return jsonify({"ok": False, "error": "缺少頁面 slug"}), 400
+
         if not offer_id_raw.isdigit():
             return jsonify({"ok": False, "error": "方案錯誤"}), 400
-        if not receiver_name or not receiver_phone or not receiver_address:
-            return jsonify({"ok": False, "error": "請填寫完整收件資訊"}), 400
+
+        if not receiver_name or not receiver_phone:
+            return jsonify({"ok": False, "error": "請填寫收件人姓名與手機"}), 400
+
+        if shipping_method == "home":
+            if not receiver_address:
+                return jsonify({"ok": False, "error": "請填寫宅配地址"}), 400
+        else:
+            if store_type not in ("711", "family"):
+                return jsonify({"ok": False, "error": "請選擇超商類型"}), 400
+
+            if not store_name:
+                return jsonify({"ok": False, "error": "請填寫門市名稱或店號"}), 400
+
+            store_type_text = "7-11" if store_type == "711" else "全家"
+            receiver_address = "{} 超商取貨：{}".format(store_type_text, store_name)
 
         try:
             qty = max(1, int(qty_raw))
@@ -488,6 +510,9 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
             "receiver_name": receiver_name,
             "receiver_phone": receiver_phone,
             "receiver_address": receiver_address,
+            "shipping_method": shipping_method,
+            "store_type": store_type if shipping_method == "store" else None,
+            "store_name": store_name if shipping_method == "store" else None,
             "landing_page_id": page["id"],
             "landing_offer_id": offer["id"],
             "total_amount": final_total,
@@ -532,6 +557,223 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
             "order_id": order_id,
             "redirect_url": "/choose-payment?order_id={}".format(order_id)
         })
+
+    @app.route("/admin0363/landing-pages/report")
+    def admin_landing_pages_report():
+        if not session.get("admin_logged_in"):
+            return redirect("/admin0363")
+
+        from dateutil import parser
+
+        def format_tw_datetime(val):
+            if not val:
+                return "—"
+            try:
+                dt = parser.parse(str(val))
+                return dt.astimezone(TW).strftime("%Y-%m-%d %H:%M:%S")
+            except Exception:
+                return str(val)
+
+        def format_payment_method(order_row):
+            method = (
+                (order_row.get("payment_method") or "").strip().lower()
+                or (order_row.get("intended_payment_method") or "").strip().lower()
+            )
+
+            if method in ("transfer", "bank", "bank_transfer", "atm"):
+                return "轉帳付款"
+            if method in ("linepay", "line_pay", "line"):
+                return "LINE Pay"
+            if method in ("ecpay", "credit", "credit_card"):
+                return "信用卡"
+            if method:
+                return method
+
+            return "—"
+
+        page_id_raw = (request.args.get("page_id") or "").strip()
+        affiliate_code_raw = (request.args.get("affiliate_code") or "").strip()
+        date_from = (request.args.get("date_from") or "").strip()
+        date_to = (request.args.get("date_to") or "").strip()
+
+        # ===== 1. 讀取一頁式頁面 =====
+        try:
+            pages = (
+                supabase.table("landing_pages")
+                .select("id,name,slug,title,affiliate_code")
+                .order("created_at", desc=True)
+                .execute()
+                .data or []
+            )
+        except Exception as e:
+            print("[landing report] load pages failed:", e)
+            pages = []
+
+        page_map = {int(p["id"]): p for p in pages if p.get("id") is not None}
+
+        # ===== 2. 讀取團購主 =====
+        try:
+            affiliates = (
+                supabase.table("affiliates")
+                .select("name,code,commission_rate,is_active")
+                .order("created_at", desc=True)
+                .execute()
+                .data or []
+            )
+        except Exception as e:
+            print("[landing report] load affiliates failed:", e)
+            affiliates = []
+
+        affiliate_map = {
+            str(a.get("code") or ""): a
+            for a in affiliates
+            if a.get("code")
+        }
+
+        # ===== 3. 讀取一頁式訂單 =====
+        try:
+            order_q = (
+                supabase.table("orders")
+                .select("*")
+                .eq("payment_status", "paid")
+                .neq("status", "cancelled")
+                .not_.is_("landing_page_id", "null")
+                .order("created_at", desc=True)
+            )
+
+            if page_id_raw.isdigit():
+                order_q = order_q.eq("landing_page_id", int(page_id_raw))
+
+            if affiliate_code_raw:
+                order_q = order_q.eq("affiliate_code", affiliate_code_raw)
+
+            orders = order_q.execute().data or []
+
+        except Exception as e:
+            print("[landing report] load orders failed:", e)
+            orders = []
+
+        # ===== 4. 日期過濾 =====
+        filtered_orders = []
+
+        for o in orders:
+            filter_date = str(o.get("paid_at") or o.get("created_at") or "")
+
+            if date_from and filter_date[:10] < date_from:
+                continue
+
+            if date_to and filter_date[:10] > date_to:
+                continue
+
+            filtered_orders.append(o)
+
+        # ===== 5. 補方案名稱 =====
+        offer_ids = list({
+            o.get("landing_offer_id")
+            for o in filtered_orders
+            if o.get("landing_offer_id")
+        })
+
+        offer_map = {}
+
+        if offer_ids:
+            try:
+                offer_rows = (
+                    supabase.table("landing_page_offers")
+                    .select("id,offer_name")
+                    .in_("id", offer_ids)
+                    .execute()
+                    .data or []
+                )
+                offer_map = {
+                    int(x["id"]): x
+                    for x in offer_rows
+                    if x.get("id") is not None
+                }
+            except Exception as e:
+                print("[landing report] load offers failed:", e)
+                offer_map = {}
+
+        # ===== 6. 統計 =====
+        summary_map = {}
+
+        for o in filtered_orders:
+            landing_page_id = o.get("landing_page_id")
+            try:
+                landing_page_id_int = int(landing_page_id)
+            except Exception:
+                landing_page_id_int = 0
+
+            page = page_map.get(landing_page_id_int) or {}
+            page_name = page.get("name") or page.get("title") or "未命名一頁式"
+            page_slug = page.get("slug") or ""
+
+            affiliate_code = str(o.get("affiliate_code") or page.get("affiliate_code") or "").strip()
+            affiliate = affiliate_map.get(affiliate_code) or {}
+
+            commission_rate = float(affiliate.get("commission_rate") or 0)
+            total_amount = int(o.get("total_amount") or 0)
+
+            # 舊訂單如果 commission_amount 沒存，就用團購主比例即時計算
+            stored_commission = o.get("commission_amount")
+            if stored_commission is None or int(stored_commission or 0) <= 0:
+                commission_amount = int(total_amount * commission_rate / 100)
+            else:
+                commission_amount = int(stored_commission or 0)
+
+            key = "{}|{}".format(landing_page_id_int, affiliate_code)
+
+            row = summary_map.setdefault(key, {
+                "landing_page_id": landing_page_id_int,
+                "landing_page_name": page_name,
+                "landing_page_slug": page_slug,
+                "affiliate_code": affiliate_code or "未綁定",
+                "affiliate_name": affiliate.get("name") or affiliate_code or "未綁定",
+                "commission_rate": commission_rate,
+                "order_count": 0,
+                "sales_total": 0,
+                "commission_total": 0,
+                "orders": []
+            })
+
+            offer = offer_map.get(int(o.get("landing_offer_id") or 0)) or {}
+
+            row["order_count"] += 1
+            row["sales_total"] += total_amount
+            row["commission_total"] += commission_amount
+
+            row["orders"].append({
+                "id": o.get("id"),
+                "order_no": o.get("order_no") or o.get("MerchantTradeNo") or o.get("id"),
+                "paid_at": format_tw_datetime(o.get("paid_at") or o.get("created_at")),
+                "payment_method": format_payment_method(o),
+                "receiver_name": o.get("receiver_name") or o.get("guest_name") or "—",
+                "receiver_phone": o.get("receiver_phone") or o.get("guest_phone") or "—",
+                "offer_name": offer.get("offer_name") or "—",
+                "total_amount": total_amount,
+                "commission_amount": commission_amount
+            })
+
+        rows = list(summary_map.values())
+        rows.sort(key=lambda x: x["sales_total"], reverse=True)
+
+        grand_order_count = sum(r["order_count"] for r in rows)
+        grand_sales_total = sum(r["sales_total"] for r in rows)
+        grand_commission_total = sum(r["commission_total"] for r in rows)
+
+        return render_template(
+            "admin_landing_page_report.html",
+            rows=rows,
+            pages=pages,
+            affiliates=affiliates,
+            selected_page_id=page_id_raw,
+            selected_affiliate_code=affiliate_code_raw,
+            date_from=date_from,
+            date_to=date_to,
+            grand_order_count=grand_order_count,
+            grand_sales_total=grand_sales_total,
+            grand_commission_total=grand_commission_total
+        )
 
     # ======================================================
     # 後台：Landing Pages 管理

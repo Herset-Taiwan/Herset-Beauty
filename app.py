@@ -4391,12 +4391,25 @@ def process_payment():
         except Exception as e:
             app.logger.warning(f"[process_payment] 綁定 member_id 失敗：order_id={order_id}, err={e}")
 
-    # 6) 會員資料完整性檢查（必須在 member_id 決定之後）
-    if not member_id:
-        session["incomplete_profile"] = True
-        flash("請先登入並完整填寫會員資料再進行結帳。", "error")
-        return redirect("/login?next=cart")
+# 6) 會員資料完整性檢查（必須在 member_id 決定之後）
+is_landing_guest_order = bool(order.get("landing_page_id")) and not order.get("member_id")
 
+if not member_id and not is_landing_guest_order:
+    session["incomplete_profile"] = True
+    flash("請先登入並完整填寫會員資料再進行結帳。", "error")
+    return redirect("/login?next=cart")
+
+if is_landing_guest_order:
+    prof = {
+        "name": order.get("receiver_name") or order.get("guest_name"),
+        "phone": order.get("receiver_phone") or order.get("guest_phone"),
+        "address": order.get("receiver_address") or order.get("guest_address")
+    }
+
+    if not (prof.get("name") and prof.get("phone") and prof.get("address")):
+        flash("請先填寫完整收件資訊。", "error")
+        return redirect("/choose-payment?order_id={}".format(order["id"]))
+else:
     try:
         prof_res = (
             supabase.table("members")
@@ -4410,7 +4423,7 @@ def process_payment():
         prof = {}
 
     if not (prof.get("name") and prof.get("phone") and prof.get("address")):
-        session["incomplete_profile"] = True  # 你前端本來就有使用這個 flag
+        session["incomplete_profile"] = True
         flash("請先完整填寫會員資料（姓名、電話、地址）再進行結帳", "error")
         return redirect("/cart")
     
