@@ -104,6 +104,27 @@
             filter:brightness(.98);
         }
 
+        .btn-report{
+    background:linear-gradient(135deg,#fff7fb 0%,#f8eef3 100%);
+    color:#9b2f5b;
+    border:1px solid #efc9d8;
+    box-shadow:0 10px 22px rgba(155,47,91,.10);
+    gap:8px;
+}
+
+.btn-report:hover{
+    background:linear-gradient(135deg,#fff0f7 0%,#f7e4ed 100%);
+    color:#7f2349;
+    border-color:#e8a9c2;
+    box-shadow:0 14px 28px rgba(155,47,91,.16);
+}
+
+.btn-report::before{
+    content:"📊";
+    font-size:16px;
+    line-height:1;
+}
+
         .summary-row{
             display:grid;
             grid-template-columns:repeat(4, minmax(0,1fr));
@@ -450,7 +471,7 @@ tbody td.actions-col{
 
             <div class="actions">
                 <a href="/admin0363/dashboard" class="btn btn-light">回後台</a>
-                <a href="/admin0363/landing-pages/report" class="btn">團購報表</a>
+                <a href="/admin0363/landing-pages/report" class="btn btn-report">團購報表</a>
                 <a href="/admin0363/landing-pages/new" class="btn btn-primary">＋ 新增頁面</a>
             </div>
         </div>
