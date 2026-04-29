@@ -708,15 +708,27 @@
                         <p>先設定頁面名稱、網址、標題與主要視覺。</p>
                     </div>
                     <div class="card-body">
-                        <div class="grid-2">
+                        <div class="grid-3">
                             <div class="field">
                                 <label>頁面名稱</label>
                                 <input type="text" name="name" value="{{ page.name or '' }}" placeholder="例如：HERSET 夏季主打頁面" required>
                             </div>
+
                             <div class="field">
                                 <label>Slug</label>
                                 <input type="text" name="slug" value="{{ page.slug or '' }}" placeholder="例如：herset-summer" required>
                                 <span class="hint">前台網址會是：/landing/你的-slug</span>
+                            </div>
+
+                            <div class="field">
+                                <label>Affiliate Code(分潤代碼)</label>
+                                <input
+                                    type="text"
+                                    name="affiliate_code"
+                                    value="{{ page.affiliate_code or '' }}"
+                                    placeholder="例如：niu-niu、molly"
+                                >
+                                <span class="hint">請填團購主管理裡的「專屬代碼」，用來統計分潤。</span>
                             </div>
                         </div>
 
@@ -827,10 +839,7 @@
                                 <label>CTA Anchor(控制按鈕點下去要跳去哪裡)</label>
                                 <input type="text" name="cta_anchor" value="{{ page.cta_anchor or '#buy' }}">
                             </div>
-                            <div class="field">
-                                <label>Affiliate Code(分潤代碼)</label>
-                                <input type="text" name="affiliate_code" value="{{ page.affiliate_code or '' }}">
-                            </div>
+
 
                             <div class="field">
     <label>輪播秒數（毫秒）</label>
