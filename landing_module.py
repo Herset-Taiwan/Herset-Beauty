@@ -437,13 +437,55 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
 
         receiver_name = (data.get("name") or "").strip()
         receiver_phone = (data.get("phone") or "").strip()
-        receiver_address = (data.get("address") or "").strip()
         guest_email = (data.get("email") or "").strip()
         intended_payment_method = (data.get("payment_method") or "").strip().lower()
 
-        shipping_method = (data.get("shipping_method") or "home").strip().lower()
-        store_type = (data.get("store_type") or "").strip().lower()
-        store_name = (data.get("store_name") or "").strip()
+        shipping_method = (
+            data.get("shipping_method")
+            or data.get("delivery_method")
+            or data.get("shipping")
+            or "home"
+        ).strip().lower()
+
+        store_type = (
+            data.get("store_type")
+            or data.get("cvs_type")
+            or data.get("store_brand")
+            or ""
+        ).strip().lower()
+
+        store_name = (
+            data.get("store_name")
+            or data.get("cvs_store_name")
+            or data.get("store_no")
+            or data.get("store_id")
+            or ""
+        ).strip()
+
+        store_address = (
+            data.get("store_address")
+            or data.get("cvs_store_address")
+            or ""
+        ).strip()
+
+        home_address = (
+            data.get("receiver_address")
+            or data.get("shipping_address")
+            or data.get("home_address")
+            or data.get("delivery_address")
+            or ""
+        ).strip()
+
+        # 兼容你目前前端如果還是只送 address：
+        # 只有宅配才把 address 當宅配地址使用，避免超商時誤吃會員舊地址 test4。
+        legacy_address = (data.get("address") or "").strip()
+
+        if shipping_method in ("store", "cvs", "711", "family", "超商", "超商取貨"):
+            shipping_method = "store"
+        else:
+            shipping_method = "home"
+
+        receiver_address = ""
 
         if shipping_method not in ("home", "store"):
             shipping_method = "home"
@@ -458,17 +500,33 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
             return jsonify({"ok": False, "error": "請填寫收件人姓名與手機"}), 400
 
         if shipping_method == "home":
-            if not receiver_address:
-                return jsonify({"ok": False, "error": "請填寫宅配地址"}), 400
-        else:
-            if store_type not in ("711", "family"):
-                return jsonify({"ok": False, "error": "請選擇超商類型"}), 400
+        receiver_address = home_address or legacy_address
 
-            if not store_name:
-                return jsonify({"ok": False, "error": "請填寫門市名稱或店號"}), 400
+        if not receiver_address:
+            return jsonify({"ok": False, "error": "請填寫宅配地址"}), 400
 
-            store_type_text = "7-11" if store_type == "711" else "全家"
-            receiver_address = "{} 超商取貨：{}".format(store_type_text, store_name)
+    else:
+        if store_type in ("7-11", "711", "seven", "seven_eleven"):
+            store_type = "711"
+        elif store_type in ("family", "familymart", "全家"):
+            store_type = "family"
+
+        if store_type not in ("711", "family"):
+            return jsonify({"ok": False, "error": "請選擇超商類型"}), 400
+
+        if not store_name and not store_address:
+            return jsonify({"ok": False, "error": "請填寫門市名稱或店號"}), 400
+
+        store_type_text = "7-11" if store_type == "711" else "全家"
+
+        receiver_address = " / ".join([
+            x for x in [
+                "{} 超商取貨".format(store_type_text),
+                store_name,
+                store_address
+            ]
+            if x
+        ])
 
         try:
             qty = max(1, int(qty_raw))
