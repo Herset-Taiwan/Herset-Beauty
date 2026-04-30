@@ -4450,7 +4450,7 @@ def process_payment():
 
     if not method:
         flash("請選擇付款方式。", "error")
-        return redirect("/choose-payment")
+        return redirect("/choose-payment?order_id={}".format(order_id))
 
     # 2) 讀取訂單
     try:
@@ -4467,7 +4467,8 @@ def process_payment():
 
     if not order:
         return "找不到訂單", 404
-        is_landing_order = bool(order.get("landing_page_id"))
+
+    is_landing_order = bool(order.get("landing_page_id"))
 
     # 一頁式訂單不允許使用轉帳付款
     if is_landing_order and method in ("bank", "transfer", "bank_transfer", "atm"):
