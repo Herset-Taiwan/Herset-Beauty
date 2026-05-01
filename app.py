@@ -804,21 +804,29 @@ def admin_dashboard():
         if (o.get("affiliate_code") or "").strip()
     })
 
+    affiliate_code_keys = {
+        code.upper()
+        for code in affiliate_codes
+        if code
+    }
+
     affiliate_map = {}
-    if affiliate_codes:
+    if affiliate_code_keys:
         try:
             affiliate_rows = (
                 supabase.table("affiliates")
                 .select("code, name")
-                .in_("code", affiliate_codes)
                 .execute()
                 .data
                 or []
             )
+
             affiliate_map = {
-                (a.get("code") or "").strip(): (a.get("name") or "").strip()
+                (a.get("code") or "").strip().upper(): (a.get("name") or "").strip()
                 for a in affiliate_rows
+                if (a.get("code") or "").strip().upper() in affiliate_code_keys
             }
+
         except Exception as e:
             app.logger.warning(f"[admin orders] load affiliate names failed: {e}")
             affiliate_map = {}
@@ -896,7 +904,8 @@ def admin_dashboard():
         )
 
         affiliate_code = (o.get("affiliate_code") or "").strip()
-        affiliate_name = affiliate_map.get(affiliate_code, "")
+        affiliate_code_key = affiliate_code.upper()
+        affiliate_name = affiliate_map.get(affiliate_code_key, "")
 
         is_landing_order = bool(o.get("landing_page_id"))
 
@@ -4092,18 +4101,27 @@ def checkout():
 
     if affiliate_code:
         try:
-            res = (
+            affiliate_code_key = affiliate_code.upper()
+
+            aff_rows = (
                 supabase.table("affiliates")
                 .select("code, commission_rate, is_active")
-                .eq("code", affiliate_code)
                 .eq("is_active", True)
-                .limit(1)
                 .execute()
+                .data
+                or []
             )
 
-            aff = (res.data or [])
+            aff = None
+            for row in aff_rows:
+                row_code_key = str(row.get("code") or "").strip().upper()
+                if row_code_key == affiliate_code_key:
+                    aff = row
+                    break
+
             if aff:
-                rate = float(aff[0].get("commission_rate") or 0)
+                affiliate_code = str(aff.get("code") or affiliate_code).strip()
+                rate = float(aff.get("commission_rate") or 0)
                 commission_amount = int(final_total_i_after_wallet * rate / 100)
             else:
                 affiliate_code = None
@@ -5009,21 +5027,32 @@ def product_detail(product_id):
     # 這裡只用「當前網址的 ref」來決定要不要顯示 banner
     if ref:
         try:
-            aff_res = (
+            ref_key = ref.upper()
+
+            aff_rows = (
                 supabase.table("affiliates")
                 .select("name, code, is_active")
-                .eq("code", ref)
                 .eq("is_active", True)
-                .limit(1)
                 .execute()
+                .data
+                or []
             )
-            aff_row = (aff_res.data or [None])[0]
+
+            aff_row = None
+            for row in aff_rows:
+                row_code_key = str(row.get("code") or "").strip().upper()
+                if row_code_key == ref_key:
+                    aff_row = row
+                    break
+
             if aff_row:
                 affiliate_name = aff_row.get("name")
                 affiliate_code = aff_row.get("code")
+                session["affiliate_ref"] = affiliate_code
             else:
                 affiliate_name = None
                 affiliate_code = None
+
         except Exception as e:
             app.logger.warning(f"⚠️ 讀取團購主失敗 code={ref}: {e}")
             affiliate_name = None

@@ -1012,15 +1012,17 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
             else:
                 commission_amount = int(stored_commission or 0)
 
-            key = "{}|{}".format(landing_page_id_int, affiliate_code)
+            display_affiliate_code = affiliate.get("code") or affiliate_code or "未綁定"
+
+            key = "{}|{}".format(landing_page_id_int, affiliate_code_key)
 
             row = summary_map.setdefault(key, {
                 "landing_page_id": landing_page_id_int,
                 "landing_page_name": page_name,
                 "landing_page_slug": page_slug,
-                "affiliate_code": affiliate_code or "未綁定",
-                "affiliate_name": affiliate.get("name") or affiliate_code or "未綁定",
-                "commission_rate": commission_rate,
+                "affiliate_code": display_affiliate_code,
+                "affiliate_name": affiliate.get("name") or display_affiliate_code,
+               "commission_rate": commission_rate,
                 "order_count": 0,
                 "sales_total": 0,
                 "commission_total": 0,
