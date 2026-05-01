@@ -617,20 +617,27 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
         })
     def get_affiliate_by_code(code):
         code = (code or "").strip()
-        if not code:
+        code_key = code.upper()
+
+        if not code_key:
             return None
 
         try:
             rows = (
                 supabase.table("affiliates")
                 .select("*")
-                .eq("code", code)
                 .eq("is_active", True)
-                .limit(1)
                 .execute()
                 .data or []
             )
-            return rows[0] if rows else None
+
+            for row in rows:
+                row_code_key = str(row.get("code") or "").strip().upper()
+                if row_code_key == code_key:
+                    return row
+
+            return None
+
         except Exception as e:
             print("[affiliate report] load affiliate failed:", e)
             return None
@@ -640,6 +647,7 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
         from dateutil import parser
 
         affiliate_code = (affiliate_code or "").strip()
+        affiliate_code_key = affiliate_code.upper()
 
         try:
             aff = get_affiliate_by_code(affiliate_code)
@@ -655,16 +663,23 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
                 "grand_commission_total": 0
             }
 
+        real_affiliate_code = str(aff.get("code") or affiliate_code).strip()
+        real_affiliate_code_key = real_affiliate_code.upper()
         commission_rate = float(aff.get("commission_rate") or 0)
 
         try:
-            pages = (
+            all_pages = (
                 supabase.table("landing_pages")
                 .select("id,name,slug,title,affiliate_code")
-                .eq("affiliate_code", affiliate_code)
                 .execute()
                 .data or []
             )
+
+            pages = [
+                p for p in all_pages
+                if str(p.get("affiliate_code") or "").strip().upper() == real_affiliate_code_key
+            ]
+
         except Exception as e:
             print("[affiliate public report] load pages failed:", e)
             pages = []
@@ -672,16 +687,21 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
         page_map = {int(p["id"]): p for p in pages if p.get("id") is not None}
 
         try:
-            orders = (
+            all_orders = (
                 supabase.table("orders")
                 .select("*")
-                .eq("affiliate_code", affiliate_code)
                 .eq("payment_status", "paid")
                 .neq("status", "cancelled")
                 .order("created_at", desc=True)
                 .execute()
                 .data or []
             )
+
+            orders = [
+                o for o in all_orders
+                if str(o.get("affiliate_code") or "").strip().upper() == real_affiliate_code_key
+            ]
+
         except Exception as e:
             print("[affiliate public report] load orders failed:", e)
             orders = []
@@ -750,6 +770,7 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
                 "landing_page_slug": page.get("slug") or "",
                 "offer_name": offer.get("offer_name") or "—",
                 "receiver_name": o.get("receiver_name") or o.get("guest_name") or "—",
+                "receiver_phone": o.get("receiver_phone") or o.get("guest_phone") or "—",
                 "total_amount": total_amount,
                 "commission_amount": commission_amount
             })
@@ -768,12 +789,16 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
         import hashlib
 
         code = (code or "").strip()
+        code_key = code.upper()
         affiliate = get_affiliate_by_code(code)
 
         if not affiliate:
             return "找不到團購主或此團購主未啟用", 404
 
-        session_key = "affiliate_report_auth_{}".format(code)
+        real_code = str(affiliate.get("code") or code).strip()
+        real_code_key = real_code.upper()
+
+        session_key = "affiliate_report_auth_{}".format(real_code_key)
         error = ""
 
         if request.method == "POST":
@@ -784,7 +809,7 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
 
             if saved_hash and password_hash == saved_hash:
                 session[session_key] = True
-                return redirect("/affiliate-report/{}".format(code))
+                return redirect("/affiliate-report/{}".format(real_code))
 
             error = "密碼錯誤，請重新輸入"
 
@@ -796,7 +821,7 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
                 error=error
             )
 
-        report = build_affiliate_landing_report_rows(code)
+        report = build_affiliate_landing_report_rows(real_code)
 
         return render_template(
             "affiliate_public_report.html",
@@ -811,8 +836,14 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
     @app.route("/affiliate-report/<code>/logout")
     def affiliate_public_report_logout(code):
         code = (code or "").strip()
-        session.pop("affiliate_report_auth_{}".format(code), None)
-        return redirect("/affiliate-report/{}".format(code))
+        code_key = code.upper()
+
+        session.pop("affiliate_report_auth_{}".format(code_key), None)
+
+        affiliate = get_affiliate_by_code(code)
+        real_code = str(affiliate.get("code") or code).strip() if affiliate else code
+
+        return redirect("/affiliate-report/{}".format(real_code))
     @app.route("/admin0363/landing-pages/report")
     def admin_landing_pages_report():
         if not session.get("admin_logged_in"):
@@ -880,7 +911,7 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
             affiliates = []
 
         affiliate_map = {
-            str(a.get("code") or ""): a
+            str(a.get("code") or "").strip().upper(): a
             for a in affiliates
             if a.get("code")
         }
@@ -899,10 +930,14 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
             if page_id_raw.isdigit():
                 order_q = order_q.eq("landing_page_id", int(page_id_raw))
 
-            if affiliate_code_raw:
-                order_q = order_q.eq("affiliate_code", affiliate_code_raw)
-
             orders = order_q.execute().data or []
+
+            if affiliate_code_raw:
+                affiliate_code_key = affiliate_code_raw.strip().upper()
+                orders = [
+                    o for o in orders
+                    if str(o.get("affiliate_code") or "").strip().upper() == affiliate_code_key
+                ]
 
         except Exception as e:
             print("[landing report] load orders failed:", e)
@@ -964,7 +999,8 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
             page_slug = page.get("slug") or ""
 
             affiliate_code = str(o.get("affiliate_code") or page.get("affiliate_code") or "").strip()
-            affiliate = affiliate_map.get(affiliate_code) or {}
+            affiliate_code_key = affiliate_code.upper()
+            affiliate = affiliate_map.get(affiliate_code_key) or {}
 
             commission_rate = float(affiliate.get("commission_rate") or 0)
             total_amount = int(o.get("total_amount") or 0)

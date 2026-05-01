@@ -3414,6 +3414,7 @@ def admin_affiliates_report():
         return "—"
 
     q_code = (request.args.get("code") or "").strip()
+    q_code_key = q_code.upper()
     date_from = (request.args.get("date_from") or "").strip()
     date_to = (request.args.get("date_to") or "").strip()
 
@@ -3430,7 +3431,10 @@ def admin_affiliates_report():
         app.logger.exception("[affiliate report] load affiliates failed: %s", e)
         affiliates = []
 
-    aff_map = {str(a.get("code") or ""): a for a in affiliates}
+    aff_map = {
+        str(a.get("code") or "").strip().upper(): a
+        for a in affiliates
+    }
 
     # 2) 訂單
     try:
@@ -3451,10 +3455,12 @@ def admin_affiliates_report():
     filtered_orders = []
     for o in orders:
         aff_code = str(o.get("affiliate_code") or "").strip()
+        aff_code_key = aff_code.upper()
+
         if not aff_code:
             continue
 
-        if q_code and aff_code != q_code:
+        if q_code_key and aff_code_key != q_code_key:
             continue
 
         filter_date = str(o.get("paid_at") or o.get("created_at") or "")
@@ -3487,14 +3493,18 @@ def admin_affiliates_report():
 
     for o in filtered_orders:
         code = str(o.get("affiliate_code") or "").strip()
+        code_key = code.upper()
+
         if not code:
             continue
 
-        aff = aff_map.get(code) or {}
+        aff = aff_map.get(code_key) or {}
 
-        row = summary_map.setdefault(code, {
-            "affiliate_code": code,
-            "affiliate_name": aff.get("name") or code,
+        display_code = aff.get("code") or code
+
+        row = summary_map.setdefault(code_key, {
+            "affiliate_code": display_code,
+            "affiliate_name": aff.get("name") or display_code,
             "commission_rate": aff.get("commission_rate") or 0,
             "order_count": 0,
             "sales_total": 0,
