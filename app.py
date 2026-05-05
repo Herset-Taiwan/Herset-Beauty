@@ -181,8 +181,15 @@ def every8d_dest_phone(phone):
 
 
 def send_every8d_sms(phone, subject, message):
+    app.logger.warning(
+        f"[SMS DEBUG] start phone={phone}, enabled={os.getenv('SMS_ENABLED')}, "
+        f"uid_exists={bool(os.getenv('EVERY8D_UID'))}, "
+        f"pwd_exists={bool(os.getenv('EVERY8D_PWD'))}, "
+        f"api_url={os.getenv('EVERY8D_API_URL')}"
+    )
+
     if os.getenv("SMS_ENABLED", "0") != "1":
-        app.logger.info("[SMS] SMS_ENABLED 未開啟，略過發送")
+        app.logger.warning("[SMS] SMS_ENABLED 未開啟，略過發送")
         return False
 
     uid = (os.getenv("EVERY8D_UID") or "").strip()
@@ -211,7 +218,7 @@ def send_every8d_sms(phone, subject, message):
         resp = requests.post(api_url, data=payload, timeout=15)
         text = resp.text.strip()
 
-        app.logger.info(f"[SMS] Every8d response phone={phone}, status={resp.status_code}, text={text}")
+        app.logger.warning(f"[SMS] Every8d response phone={phone}, status={resp.status_code}, text={text}")
 
         if resp.status_code != 200:
             return False
@@ -256,6 +263,11 @@ def send_paid_order_sms(order):
 
     phone = get_order_phone(order)
     order_no = get_order_display_no(order)
+
+    app.logger.warning(
+    f"[SMS DEBUG] send_paid_order_sms order_id={order.get('id')}, "
+    f"phone={phone}, order_no={order_no}, sms_paid_sent_at={order.get('sms_paid_sent_at')}"
+)
 
     msg = f"HERSET BEAUTY 已收到您的訂購，訂單編號：{order_no}，我們會儘快為您處理。"
 
@@ -4865,7 +4877,9 @@ def linepay_confirm():
         order["paid_at"] = paid_at_iso
 
         try:
-            send_paid_order_sms(order)
+            app.logger.warning(f"[SMS DEBUG] before send_paid_order_sms linepay_confirm order_id={order_id}")
+            sms_ok = send_paid_order_sms(order)
+            app.logger.warning(f"[SMS DEBUG] after send_paid_order_sms linepay_confirm order_id={order_id}, sms_ok={sms_ok}")
         except Exception as e:
             app.logger.error(f"[SMS paid notify failed] order_id={order_id}, err={e}")
 
