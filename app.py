@@ -154,6 +154,162 @@ def generate_merchant_trade_no(prefix="HS", rand_len=8):
         pass
     return trade_no
 
+# ======================================================
+# Every8d 簡訊工具
+# ======================================================
+def normalize_tw_mobile(phone):
+    phone = (phone or "").strip()
+    phone = re.sub(r"\D", "", phone)
+
+    if phone.startswith("886") and len(phone) == 12:
+        phone = "0" + phone[3:]
+
+    if len(phone) == 10 and phone.startswith("09"):
+        return phone
+
+    return ""
+
+
+def every8d_dest_phone(phone):
+    phone = normalize_tw_mobile(phone)
+
+    if not phone:
+        return ""
+
+    # Every8d DEST 建議用 +886 格式
+    return "+886" + phone[1:]
+
+
+def send_every8d_sms(phone, subject, message):
+    if os.getenv("SMS_ENABLED", "0") != "1":
+        app.logger.info("[SMS] SMS_ENABLED 未開啟，略過發送")
+        return False
+
+    uid = (os.getenv("EVERY8D_UID") or "").strip()
+    pwd = (os.getenv("EVERY8D_PWD") or "").strip()
+    api_url = (os.getenv("EVERY8D_API_URL") or "").strip()
+    dest = every8d_dest_phone(phone)
+
+    if not uid or not pwd or not api_url:
+        app.logger.error("[SMS] Every8d 設定不完整")
+        return False
+
+    if not dest:
+        app.logger.error(f"[SMS] 手機格式錯誤：{phone}")
+        return False
+
+    payload = {
+        "UID": uid,
+        "PWD": pwd,
+        "SB": subject,
+        "MSG": message,
+        "DEST": dest,
+        "RETRYTIME": "1440"
+    }
+
+    try:
+        resp = requests.post(api_url, data=payload, timeout=15)
+        text = resp.text.strip()
+
+        app.logger.info(f"[SMS] Every8d response phone={phone}, status={resp.status_code}, text={text}")
+
+        if resp.status_code != 200:
+            return False
+
+        # Every8d 成功通常會回類似：9610040.00,1,1,0,batchid
+        # 失敗常見會回負數或錯誤內容，這裡先做保守判斷
+        if text.startswith("-") or "error" in text.lower():
+            return False
+
+        return True
+
+    except Exception as e:
+        app.logger.error(f"[SMS] Every8d 發送失敗：{e}")
+        return False
+
+
+def get_order_display_no(order):
+    return (
+        order.get("MerchantTradeNo")
+        or order.get("order_no")
+        or f"#{order.get('id')}"
+    )
+
+
+def get_order_phone(order):
+    return (
+        order.get("receiver_phone")
+        or order.get("guest_phone")
+        or order.get("phone")
+        or ""
+    )
+
+
+def send_paid_order_sms(order):
+    if not order:
+        return False
+
+    # 避免重複發
+    if order.get("sms_paid_sent_at"):
+        app.logger.info(f"[SMS] paid sms already sent order_id={order.get('id')}")
+        return False
+
+    phone = get_order_phone(order)
+    order_no = get_order_display_no(order)
+
+    msg = f"HERSET BEAUTY 已收到您的訂購，訂單編號：{order_no}，我們會儘快為您處理。"
+
+    ok = send_every8d_sms(
+        phone=phone,
+        subject="HERSET訂單通知",
+        message=msg
+    )
+
+    if ok:
+        try:
+            supabase.table("orders").update({
+                "sms_paid_sent_at": datetime.now(TW).isoformat()
+            }).eq("id", order["id"]).execute()
+        except Exception as e:
+            app.logger.error(f"[SMS] 更新 sms_paid_sent_at 失敗：{e}")
+
+    return ok
+
+
+def send_shipping_sms(order, shipment_info=""):
+    if not order:
+        return False
+
+    # 避免重複發
+    if order.get("sms_shipping_sent_at"):
+        app.logger.info(f"[SMS] shipping sms already sent order_id={order.get('id')}")
+        return False
+
+    phone = get_order_phone(order)
+    order_no = get_order_display_no(order)
+    shipment_info = (shipment_info or "").strip()
+
+    msg = f"HERSET BEAUTY 通知您，訂單 {order_no} 商品已出貨完成。"
+
+    if shipment_info:
+        msg += f" 寄貨資訊：{shipment_info}"
+
+    ok = send_every8d_sms(
+        phone=phone,
+        subject="HERSET出貨通知",
+        message=msg
+    )
+
+    if ok:
+        try:
+            supabase.table("orders").update({
+                "sms_shipping_sent_at": datetime.now(TW).isoformat()
+            }).eq("id", order["id"]).execute()
+        except Exception as e:
+            app.logger.error(f"[SMS] 更新 sms_shipping_sent_at 失敗：{e}")
+
+    return ok    
+
 def _money(v) -> int:
     try:
         return int(Decimal(str(v or 0)).quantize(Decimal('1'), rounding=ROUND_HALF_UP))
@@ -4443,13 +4599,27 @@ def linepay_notify():
 
     if data.get("returnCode") == "0000":
         # 成功：標記付款完成（也一併寫入 lp_transaction_id，便於之後用 tx 查單）
+        paid_at_iso = datetime.now(TW).isoformat()
+
         supabase.table("orders").update({
             "payment_status": "paid",
             "paid_trade_no": str(tx),
             "lp_transaction_id": str(tx),
             "payment_method": "linepay",
-            "paid_at": datetime.now(TW).isoformat()
+            "paid_at": paid_at_iso
         }).eq("id", order_id).execute()
+
+        order["payment_status"] = "paid"
+        order["paid_trade_no"] = str(tx)
+        order["lp_transaction_id"] = str(tx)
+        order["payment_method"] = "linepay"
+        order["paid_at"] = paid_at_iso
+
+        try:
+            send_paid_order_sms(order)
+        except Exception as e:
+            app.logger.error(f"[SMS paid notify failed] order_id={order_id}, err={e}")
+
         return "OK", 200
     else:
         # 失敗：記錄錯誤詳細以便之後人工或排程重試
@@ -4681,18 +4851,30 @@ def linepay_confirm():
         data = {"http_status": r.status_code, "text": r.text[:1000]}
 
     if data.get("returnCode") == "0000":
-    # 1) 更新訂單狀態
+        # 1) 更新訂單狀態
+        paid_at_iso = datetime.now(TW).isoformat()
+
         supabase.table("orders").update({
             "payment_status": "paid",
-            "paid_trade_no": str(transaction_id)
+            "paid_trade_no": str(transaction_id),
+            "paid_at": paid_at_iso
         }).eq("id", order_id).execute()
+
+        order["payment_status"] = "paid"
+        order["paid_trade_no"] = str(transaction_id)
+        order["paid_at"] = paid_at_iso
+
+        try:
+            send_paid_order_sms(order)
+        except Exception as e:
+            app.logger.error(f"[SMS paid notify failed] order_id={order_id}, err={e}")
 
         # 2) 推播「已付款完成」到 LINE（只在首次成功時）
         try:
             send_line_order_notify({
                 "order_no": order.get("MerchantTradeNo") or f"#{order_id}",
-                "name": order.get("receiver_name"),
-                "phone": order.get("receiver_phone"),
+                "name": order.get("receiver_name") or order.get("guest_name"),
+                "phone": order.get("receiver_phone") or order.get("guest_phone"),
                 "total": order.get("total_amount")
             }, event_type="paid")
         except Exception as e:
@@ -4958,7 +5140,39 @@ def update_order_status(order_id):
         return redirect("/admin0363/dashboard?tab=orders")
 
     # 其他狀態：照原邏輯更新
-    supabase.table("orders").update({"status": new_status_raw}).eq("id", order_id).execute()
+    shipment_info = (request.form.get("shipment_info") or "").strip()
+
+    update_data = {
+        "status": new_status_raw
+    }
+
+    if shipment_info:
+        update_data["shipment_info"] = shipment_info
+
+    # 只要後台狀態改成 shipped，就視為出貨完成
+    if new_status_raw in ("shipped", "已出貨", "已完成出貨", "出貨完成"):
+        update_data["shipped_at"] = datetime.now(TW).isoformat()
+
+    supabase.table("orders").update(update_data).eq("id", order_id).execute()
+
+    if new_status_raw in ("shipped", "已出貨", "已完成出貨", "出貨完成"):
+        try:
+            order_rows = (
+                supabase.table("orders")
+                .select("*")
+                .eq("id", order_id)
+                .limit(1)
+                .execute()
+                .data
+                or []
+            )
+            order = order_rows[0] if order_rows else {}
+
+            send_shipping_sms(order, shipment_info)
+
+        except Exception as e:
+            app.logger.error(f"[SMS shipping notify failed] order_id={order_id}, err={e}")
+
     flash(f"訂單 #{order_id} 出貨狀態已修改", "success")
     return redirect("/admin0363/dashboard?tab=orders")
 
@@ -4974,28 +5188,50 @@ def update_order_payment(order_id):
 
     # 從表單讀取可選的付款方式（可沒有；沒有就預設轉帳）
     pm_raw = (request.form.get("payment_method") or request.form.get("pm") or "").lower()
+
     # 正規化
     if pm_raw in ("atm", "bank", "bank_transfer"):
         pm_raw = "transfer"
     elif pm_raw not in ("transfer", "linepay", "ecpay"):
-        pm_raw = None  # 未提供或不在白名單
+        pm_raw = None
 
     if new_ps == "paid":
         # 這條路通常是人工入帳，預設視為轉帳；若表單有送 linepay/ecpay 就照送的
         final_pm = pm_raw or "transfer"
 
-        from datetime import datetime
         try:
-            # 如果你專案裡已經有全域 TW，就用它；否則用本地時間或自行 import pytz
-            paid_at_iso = datetime.now(TW).isoformat()  # 若沒有 TW，改成 datetime.now().isoformat()
+            paid_at_iso = datetime.now(TW).isoformat()
         except NameError:
             paid_at_iso = datetime.now().isoformat()
+
+        order_before = (
+            supabase.table("orders")
+            .select("*")
+            .eq("id", order_id)
+            .limit(1)
+            .execute()
+            .data
+            or []
+        )
+        order_before = order_before[0] if order_before else {}
+
+        already_paid = (order_before.get("payment_status") or "").lower() == "paid"
 
         supabase.table("orders").update({
             "payment_status": "paid",
             "payment_method": final_pm,
             "paid_at": paid_at_iso
         }).eq("id", order_id).execute()
+
+        order_before["payment_status"] = "paid"
+        order_before["payment_method"] = final_pm
+        order_before["paid_at"] = paid_at_iso
+
+        if not already_paid:
+            try:
+                send_paid_order_sms(order_before)
+            except Exception as e:
+                app.logger.error(f"[SMS paid notify failed] order_id={order_id}, err={e}")
 
         human = "LINE Pay 付款" if final_pm == "linepay" else ("信用卡付款" if final_pm == "ecpay" else "轉帳付款")
         flash(f"訂單 #{order_id} 已標記為：{human}", "success")
@@ -5007,13 +5243,13 @@ def update_order_payment(order_id):
             "payment_method": None,
             "paid_at": None
         }).eq("id", order_id).execute()
+
         flash(f"訂單 #{order_id} 付款狀態已修改為：未付款", "success")
 
     else:
         flash("付款狀態值不正確", "error")
 
     return redirect("/admin0363/dashboard?tab=orders")
-
 
 
 # 取代整段：商品詳情（同時支援單品 & 套組）
@@ -5214,12 +5450,26 @@ def ecpay_return():
     # ======================================================
     # ⑤ 更新訂單狀態
     # ======================================================
+    paid_at_iso = datetime.now(TW).isoformat()
+
     supabase.table("orders").update({
         "payment_status": "paid",
         "payment_method": "credit",
         "payment_time": payment_date,
-        "paid_trade_no": trade_no
+        "paid_trade_no": trade_no,
+        "paid_at": paid_at_iso
     }).eq("id", order["id"]).execute()
+
+    order["payment_status"] = "paid"
+    order["payment_method"] = "credit"
+    order["payment_time"] = payment_date
+    order["paid_trade_no"] = trade_no
+    order["paid_at"] = paid_at_iso
+
+    try:
+        send_paid_order_sms(order)
+    except Exception as e:
+        app.logger.error(f"[SMS paid notify failed] order_id={order['id']}, err={e}")
 
     # ======================================================
     # ⑥ LINE 通知（沿用你 LINE Pay 那套）
@@ -5286,12 +5536,26 @@ def handle_ecpay_result():
 
     # Step 4: 更新訂單狀態（只有成功才更新）
     if str(rtn_code) == "1":
+        paid_at_iso = datetime.now(TW).isoformat()
+
         supabase.table("orders").update({
             "payment_status": "paid",
             "payment_method": "credit",
             "payment_time": payment_date,
-            "paid_trade_no": merchant_trade_no
+            "paid_trade_no": merchant_trade_no,
+            "paid_at": paid_at_iso
         }).eq("id", order["id"]).execute()
+
+        order["payment_status"] = "paid"
+        order["payment_method"] = "credit"
+        order["payment_time"] = payment_date
+        order["paid_trade_no"] = merchant_trade_no
+        order["paid_at"] = paid_at_iso
+
+        try:
+            send_paid_order_sms(order)
+        except Exception as e:
+            app.logger.error(f"[SMS paid notify failed] order_id={order['id']}, err={e}")
 
     # ✅ 發送 LINE 已付款完成通知
         try:

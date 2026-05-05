@@ -1329,21 +1329,41 @@ card.innerHTML = `
 
       <div class="buyer-item"><label>訂單備註：</label><span class="text">${esc(o.member?.note || o.note || '—')}</span></div>
       <div class="buyer-item"><label>付款方式：</label><span class="text">${esc(o.payment_method || '—')}</span></div>
+      <div class="buyer-item"><label>寄貨資訊：</label><span class="text">${esc(o.shipment_info || '—')}</span></div>
     </div>
   </div>
 
-  <div style="margin-top:10px;display:flex;align-items:center;gap:10px;">
-    <strong>出貨狀態：</strong> ${o.status==='shipped'?'已出貨':(o.status==='paid'?'已確認付款，待出貨':'待處理')}
-    <form method="POST" action="/admin0363/orders/update_status/${o.id}">
-      <strong style="margin-left:20px;">修改狀態：</strong>
-      <select name="status" onchange="this.form.submit()">
-        <option value="pending" ${o.status==='pending'?'selected':''}>待處理</option>
-        <option value="paid" ${o.status==='paid'?'selected':''}>已確認付款，待出貨</option>
-        <option value="shipped" ${o.status==='shipped'?'selected':''}>已出貨</option>
-        <option value="cancelled_unpaid" ${o.status==='cancelled' ? 'selected' : ''}>未付款，取消訂單</option>
-      </select>
-    </form>
-  </div>
+<div style="margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+  <strong>出貨狀態：</strong>
+  ${o.status==='shipped'?'已出貨':(o.status==='paid'?'已確認付款，待出貨':(o.status==='cancelled'?'已取消':'待處理'))}
+
+  <form method="POST" action="/admin0363/orders/update_status/${o.id}"
+        style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <strong style="margin-left:20px;">修改狀態：</strong>
+
+    <select name="status">
+      <option value="pending" ${o.status==='pending'?'selected':''}>待處理</option>
+      <option value="paid" ${o.status==='paid'?'selected':''}>已確認付款，待出貨</option>
+      <option value="shipped" ${o.status==='shipped'?'selected':''}>已出貨</option>
+      <option value="cancelled_unpaid" ${o.status==='cancelled' ? 'selected' : ''}>未付款，取消訂單</option>
+    </select>
+
+    <input
+      type="text"
+      name="shipment_info"
+      value="${esc(o.shipment_info || '')}"
+      placeholder="寄貨資訊，例如：黑貓 123456789"
+      style="width:220px;padding:6px 8px;border:1px solid #ccc;border-radius:6px;"
+    >
+
+    <button
+      type="submit"
+      class="btn-solid"
+      style="padding:7px 12px;border-radius:8px;">
+      儲存狀態
+    </button>
+  </form>
+</div>
 
   <div style="margin-top:8px;display:flex;align-items:center;gap:10px;">
   <strong>付款狀態：</strong>
