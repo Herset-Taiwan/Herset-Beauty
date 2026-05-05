@@ -215,7 +215,18 @@ def send_every8d_sms(phone, subject, message):
     }
 
     try:
-        resp = requests.post(api_url, data=payload, timeout=15)
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": "HERSET-BEAUTY-SMS/1.0",
+            "Accept": "text/plain,*/*"
+        }
+
+        resp = requests.post(
+            api_url,
+            data=payload,
+            headers=headers,
+            timeout=15
+        )
         text = resp.text.strip()
 
         app.logger.warning(f"[SMS] Every8d response phone={phone}, status={resp.status_code}, text={text}")
