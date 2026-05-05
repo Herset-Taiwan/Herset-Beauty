@@ -5136,22 +5136,19 @@ def thank_you():
 #後台訂單狀態修改
 @app.route('/admin0363/orders/update_status/<int:order_id>', methods=['POST'])
 def update_order_status(order_id):
-    new_status_raw = (request.form.get("status") or "").lower()
+    from datetime import datetime as dt_datetime
 
-    # 後台安全檢查
     if not session.get("admin_logged_in"):
         return redirect("/admin0363")
+
+    new_status_raw = (request.form.get("status") or "").strip().lower()
 
     if not new_status_raw:
         return redirect("/admin0363/dashboard?tab=orders")
 
     # 「未付款，取消訂單」：同時把付款狀態打回 unpaid，並記錄取消者與時間
     if new_status_raw == "cancelled_unpaid":
-        from datetime import datetime
-        try:
-            cancelled_at_iso = datetime.now(TW).isoformat()
-        except NameError:
-            cancelled_at_iso = datetime.now(tw).strftime("%Y-%m-%d %H:%M:%S")
+        cancelled_at_iso = dt_datetime.now(TW).isoformat()
 
         supabase.table("orders").update({
             "status": "cancelled",
@@ -5161,6 +5158,7 @@ def update_order_status(order_id):
             "cancelled_by": "admin",
             "cancelled_at": cancelled_at_iso
         }).eq("id", order_id).execute()
+
         flash(f"訂單 #{order_id} 已標記為『已取消（未付款）』", "success")
         return redirect("/admin0363/dashboard?tab=orders")
 
@@ -5174,13 +5172,15 @@ def update_order_status(order_id):
     if shipment_info:
         update_data["shipment_info"] = shipment_info
 
+    shipped_statuses = ("shipped", "已出貨", "已完成出貨", "出貨完成")
+
     # 只要後台狀態改成 shipped，就視為出貨完成
-    if new_status_raw in ("shipped", "已出貨", "已完成出貨", "出貨完成"):
-        update_data["shipped_at"] = datetime.now(TW).isoformat()
+    if new_status_raw in shipped_statuses:
+        update_data["shipped_at"] = dt_datetime.now(TW).isoformat()
 
     supabase.table("orders").update(update_data).eq("id", order_id).execute()
 
-    if new_status_raw in ("shipped", "已出貨", "已完成出貨", "出貨完成"):
+    if new_status_raw in shipped_statuses:
         try:
             order_rows = (
                 supabase.table("orders")
