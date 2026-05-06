@@ -698,6 +698,34 @@ def nl2br_filter(s):
         return ''
     return Markup(s.replace('\n', '<br>\n'))
 
+
+@app.get("/debug/outbound-ip")
+def debug_outbound_ip():
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "unauthorized"}), 401
+
+    results = {}
+
+    try:
+        r = requests.get("https://api.ipify.org?format=json", timeout=10)
+        results["ipify"] = r.json()
+    except Exception as e:
+        results["ipify_error"] = str(e)
+
+    try:
+        r = requests.get("https://ifconfig.me/ip", timeout=10)
+        results["ifconfig_me"] = r.text.strip()
+    except Exception as e:
+        results["ifconfig_me_error"] = str(e)
+
+    try:
+        r = requests.get("https://checkip.amazonaws.com", timeout=10)
+        results["aws_checkip"] = r.text.strip()
+    except Exception as e:
+        results["aws_checkip_error"] = str(e)
+
+    return jsonify(results)
+
 @app.route('/')
 def index():
     category = request.args.get('category')
