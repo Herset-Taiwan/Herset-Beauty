@@ -4,6 +4,7 @@ import requests
 from uuid import uuid4, UUID
 from uuid import uuid4, UUID
 from datetime import datetime, timezone as dt_timezone
+from decimal import Decimal, ROUND_HALF_UP
 
 # --- third party
 from flask import Flask, render_template, request, redirect, session, url_for, jsonify, flash, send_from_directory, Response  # ← 沒有 Markup
@@ -775,6 +776,34 @@ def index():
     for p in products:
         p.pop("_orig_idx", None)
 
+        normalized_options = normalize_product_options(p.get("options"))
+        p["options"] = normalized_options
+        p["has_required_spec"] = len(normalized_options) > 0
+
+        priced_options = [
+            opt for opt in normalized_options
+            if opt.get("price") not in (None, "")
+        ]
+
+        if priced_options:
+            prices = []
+
+            for opt in priced_options:
+                base_price = float(opt.get("price") or 0)
+                discount_price = opt.get("discount_price")
+
+                if (
+                    discount_price not in (None, "")
+                    and float(discount_price) > 0
+                    and float(discount_price) < base_price
+                ):
+                    prices.append(float(discount_price))
+                else:
+                    prices.append(base_price)
+
+            if prices:
+                p["display_price_from"] = min(prices)
+
     cart = session.get('cart', [])
     cart_count = sum(item.get('qty', 0) for item in cart)
 
@@ -944,20 +973,59 @@ def admin_dashboard():
     product_total_pages = max(1, (product_total_count + product_page_size - 1) // product_page_size)
     products = all_products[product_start:product_end]
 
+    for p in products:
+        normalized_options = normalize_product_options(p.get("options"))
+        p["options"] = normalized_options
+        p["has_required_spec"] = len(normalized_options) > 0
+
+        priced_options = [
+            opt for opt in normalized_options
+            if opt.get("price") not in (None, "")
+        ]
+
+        if priced_options:
+            prices = []
+
+            for opt in priced_options:
+                base_price = float(opt.get("price") or 0)
+                discount_price = opt.get("discount_price")
+
+                if (
+                    discount_price not in (None, "")
+                    and float(discount_price) > 0
+                    and float(discount_price) < base_price
+                ):
+                    prices.append(float(discount_price))
+                else:
+                    prices.append(base_price)
+
+            if prices:
+                p["display_price_from"] = min(prices)
+
     # 取得所有 bundles 的對照，回填到 products
     bundle_map_rows = supabase.table("bundles").select("id, shell_product_id").execute().data or []
-    shell_to_bundle = {b["shell_product_id"]: b["id"] for b in bundle_map_rows if b.get("shell_product_id")}
+    shell_to_bundle = {
+        b["shell_product_id"]: b["id"]
+        for b in bundle_map_rows
+        if b.get("shell_product_id")
+    }
+
     for p in products:
         if p.get("product_type") == "bundle":
             p["bundle_id"] = shell_to_bundle.get(p.get("id"))
 
     # === 會員 ===
-    members = (supabase.table("members")
-           .select("id, account, username, name, phone, email, address, note, created_at, oauth_provider")
-           .order("created_at", desc=True)
-           .execute().data) or []
+    members = (
+        supabase.table("members")
+        .select("id, account, username, name, phone, email, address, note, created_at, oauth_provider")
+        .order("created_at", desc=True)
+        .execute()
+        .data
+        or []
+    )
 
     member_total_count = len(members)
+
     for m in members:
         try:
             if m.get("created_at"):
@@ -977,7 +1045,6 @@ def admin_dashboard():
             or member_keyword in (m.get("email") or "").lower()
         ]
 
-    # 會員分頁（固定在 if 外）
     member_page = int(request.args.get("member_page", 1))
     member_page_size = int(request.args.get("member_page_size", 5))
     member_total_count_filtered = len(members)
@@ -995,16 +1062,20 @@ def admin_dashboard():
     order_total_res = supabase.table("orders").select("id", count="exact").execute()
     order_total_count = order_total_res.count or 0
 
-    orders_raw = (supabase.table("orders")
-                  .select("*")
-                  .order("created_at", desc=True)
-                  .range(order_start, order_end)
-                  .execute().data or [])
+    orders_raw = (
+        supabase.table("orders")
+        .select("*")
+        .order("created_at", desc=True)
+        .range(order_start, order_end)
+        .execute()
+        .data
+        or []
+    )
 
     order_ids = [o["id"] for o in orders_raw]
     member_ids = list({o["member_id"] for o in orders_raw if o.get("member_id")})
 
-# === 一頁式訂單 / 團購主顯示資料 ===
+    # === 一頁式訂單 / 團購主顯示資料 ===
     affiliate_codes = list({
         (o.get("affiliate_code") or "").strip()
         for o in orders_raw
@@ -1038,7 +1109,6 @@ def admin_dashboard():
             app.logger.warning(f"[admin orders] load affiliate names failed: {e}")
             affiliate_map = {}
 
-     # === 新增：一次撈出每張訂單使用的購物金（單位：分 / cents）===
     wallet_used_map = {}
     if order_ids:
         wc_rows = (
@@ -1049,22 +1119,44 @@ def admin_dashboard():
             .data
             or []
         )
+
         for r in wc_rows:
             oid = r.get("related_order_id")
             if not oid:
                 continue
+
             amt = int(r.get("amount_cents") or 0)
             cur = wallet_used_map.get(oid, 0)
+
             if amt < 0:
-                # 使用購物金（負數）→ 累加絕對值
                 cur += (-amt)
             else:
-                # 退回購物金（正數）→ 扣回
                 cur -= amt
+
             wallet_used_map[oid] = max(0, cur)
 
-    order_items = supabase.table("order_items").select("*").in_("order_id", order_ids).execute().data or []
-    members_res = supabase.table("members").select("id, account, name, phone, address").in_("id", member_ids).execute().data or []
+    order_items = []
+    if order_ids:
+        order_items = (
+            supabase.table("order_items")
+            .select("*")
+            .in_("order_id", order_ids)
+            .execute()
+            .data
+            or []
+        )
+
+    members_res = []
+    if member_ids:
+        members_res = (
+            supabase.table("members")
+            .select("id, account, name, phone, address")
+            .in_("id", member_ids)
+            .execute()
+            .data
+            or []
+        )
+
     member_dict = {m["id"]: m for m in members_res}
 
     item_group = {}
@@ -1077,6 +1169,7 @@ def admin_dashboard():
         })
 
     orders = []
+
     for o in orders_raw:
         o["items"] = item_group.get(o["id"], [])
         member = member_dict.get(o.get("member_id"))
@@ -1095,9 +1188,6 @@ def admin_dashboard():
             or "—"
         )
 
-        # ✅ 關鍵修正：
-        # 後台訂單地址一定要優先顯示「這筆訂單下單時填的收件資訊」
-        # 不要優先抓 members.address，否則會員舊地址會蓋掉宅配 / 超商門市資料。
         receiver_address = (
             o.get("receiver_address")
             or o.get("shipping_address")
@@ -1128,18 +1218,22 @@ def admin_dashboard():
         }
 
         o["is_new"] = bool(o.get("status") != "shipped" and not session.get("seen_orders"))
+
         try:
             utc_dt = parser.parse(o["created_at"])
             o["created_local"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
         except Exception:
-            o["created_local"] = o["created_at"]
+            o["created_local"] = o.get("created_at")
 
-        # ★★★ 新增這兩行：把「本張訂單使用的購物金」帶到模板 ★★★
         o["wallet_used_cents"] = int(wallet_used_map.get(o["id"], 0))
-        o["wallet_used_nt"]    = o["wallet_used_cents"] // 100
+        o["wallet_used_nt"] = o["wallet_used_cents"] // 100
 
         orders.append(o)
-    unshipped_count = sum(1 for o in orders if (o.get("status") in (None, "pending", "paid")))
+
+    unshipped_count = sum(
+        1 for o in orders
+        if o.get("status") in (None, "pending", "paid")
+    )
 
     # === 留言 + 分頁 ===
     reply_status = request.args.get("reply_status", "all")
@@ -1148,36 +1242,52 @@ def admin_dashboard():
     msg_page = int(request.args.get("msg_page", 1))
     msg_page_size = int(request.args.get("msg_page_size", 10))
 
-    all_messages = (supabase.table("messages")
-                    .select("*")
-                    .order("created_at", desc=True)
-                    .execute().data or [])
+    all_messages = (
+        supabase.table("messages")
+        .select("*")
+        .order("created_at", desc=True)
+        .execute()
+        .data
+        or []
+    )
 
-    member_ids2 = list({m['member_id'] for m in all_messages})
+    member_ids2 = list({m["member_id"] for m in all_messages if m.get("member_id")})
     name_map = {}
+
     if member_ids2:
-        members_res2 = supabase.table("members").select("id, name").in_("id", member_ids2).execute().data or []
-        name_map = {m['id']: m['name'] for m in members_res2}
+        members_res2 = (
+            supabase.table("members")
+            .select("id, name")
+            .in_("id", member_ids2)
+            .execute()
+            .data
+            or []
+        )
+        name_map = {m["id"]: m["name"] for m in members_res2}
 
     for m in all_messages:
         m["member_name"] = name_map.get(m.get("member_id"), "未知")
         m["is_new"] = bool(not m.get("is_replied") and not session.get("seen_messages"))
+
         try:
             utc_dt = parser.parse(m["created_at"])
             m["local_created_at"] = utc_dt.astimezone(tz).strftime("%Y-%m-%d %H:%M")
         except Exception:
-            m["local_created_at"] = m["created_at"]
+            m["local_created_at"] = m.get("created_at")
+
     unreplied_count = sum(1 for m in all_messages if not m.get("is_replied"))
 
     filtered_messages = []
+
     for m in all_messages:
         match_status = (
-            reply_status == "all" or
-            (reply_status == "replied" and m.get("is_replied")) or
-            (reply_status == "unreplied" and not m.get("is_replied"))
+            reply_status == "all"
+            or (reply_status == "replied" and m.get("is_replied"))
+            or (reply_status == "unreplied" and not m.get("is_replied"))
         )
         match_type = (not msg_type) or (m.get("type") == msg_type)
         match_name = (not msg_keyword) or (msg_keyword in (m.get("member_name") or "").lower())
+
         if match_status and match_type and match_name:
             filtered_messages.append(m)
 
@@ -1187,26 +1297,28 @@ def admin_dashboard():
     msg_end = msg_start + msg_page_size
     paged_messages = filtered_messages[msg_start:msg_end]
 
-    # === 提示狀態 ===
     new_order_alert = any(o.get("status") in ("pending", "paid") for o in orders)
     new_message_alert = any(not m.get("is_replied") for m in all_messages)
     show_order_alert = new_order_alert and not session.get("seen_orders")
     show_message_alert = new_message_alert and not session.get("seen_messages")
 
-    # === 供「發送訊息」表單使用的會員下拉 ===
     member_options = []
     if tab == "messages":
         try:
-            member_options = (supabase.table("members")
-                              .select("id, name, account, email")
-                              .order("created_at", desc=True)
-                              .limit(5000)
-                              .execute().data) or []
+            member_options = (
+                supabase.table("members")
+                .select("id, name, account, email")
+                .order("created_at", desc=True)
+                .limit(5000)
+                .execute()
+                .data
+                or []
+            )
         except Exception:
             member_options = []
 
-    # === Render ===
     question_types = ["商品問題", "訂單問題", "其他"]
+
     response = render_template(
         "admin.html",
         tab=tab,
@@ -1226,23 +1338,20 @@ def admin_dashboard():
         order_page=order_page,
         order_total_count=order_total_count,
         question_types=question_types,
-        # 顯示用統計
         product_total_count=product_total_count,
         selected_category_counts=selected_category_counts,
         category_counts=category_counts,
         unshipped_count=unshipped_count,
         unreplied_count=unreplied_count,
-        # 會員分頁用
         member_page=member_page,
         member_total_pages=member_total_pages,
         member_page_size=member_page_size,
         member_options=member_options,
-
     )
 
-    # 進此頁後視為已讀
     session["seen_orders"] = True
     session["seen_messages"] = True
+
     return response
 
 
@@ -5730,6 +5839,93 @@ def admin_delete_order(order_id):
 def new_product():
     return render_template("new_product.html")
 
+def parse_product_options_from_form():
+    names = request.form.getlist("option_name[]")
+    prices = request.form.getlist("option_price[]")
+    discount_prices = request.form.getlist("option_discount_price[]")
+
+    options = []
+
+    for i, name in enumerate(names):
+        name = (name or "").strip()
+        if not name:
+            continue
+
+        price_raw = prices[i] if i < len(prices) else ""
+        discount_raw = discount_prices[i] if i < len(discount_prices) else ""
+
+        try:
+            price = float(str(price_raw or "0").strip())
+        except Exception:
+            price = 0.0
+
+        try:
+            discount_price = float(str(discount_raw).strip()) if str(discount_raw or "").strip() else None
+        except Exception:
+            discount_price = None
+
+        options.append({
+            "name": name,
+            "price": price,
+            "discount_price": discount_price
+        })
+
+    return options
+
+
+def normalize_product_options(options):
+    if not options:
+        return []
+
+    # 舊資料：["120ML", "50ML"]
+    if isinstance(options, list):
+        result = []
+        for opt in options:
+            if isinstance(opt, dict):
+                name = (opt.get("name") or opt.get("label") or opt.get("title") or "").strip()
+                if not name:
+                    continue
+
+                result.append({
+                    "name": name,
+                    "price": float(opt.get("price") or 0),
+                    "discount_price": float(opt.get("discount_price")) if opt.get("discount_price") not in (None, "") else None
+                })
+            else:
+                name = str(opt or "").strip()
+                if name:
+                    result.append({
+                        "name": name,
+                        "price": None,
+                        "discount_price": None
+                    })
+
+        return result
+
+    # 舊資料：字串
+    if isinstance(options, str) and options.strip():
+        return [
+            {
+                "name": s.strip(),
+                "price": None,
+                "discount_price": None
+            }
+            for s in re.split(r"[,\n、|｜/]+", options)
+            if s.strip()
+        ]
+
+    return []
+
+
+def find_selected_product_option(product, option_name):
+    option_name = (option_name or "").strip().lower()
+    options = normalize_product_options(product.get("options"))
+
+    for opt in options:
+        if (opt.get("name") or "").strip().lower() == option_name:
+            return opt
+
+    return None
 
 #新增商品
 @app.route('/add_product', methods=['POST'])
@@ -5751,7 +5947,7 @@ def add_product():
         ingredient = request.form.get('ingredient', '').strip()
         categories = request.form.getlist('categories[]')
         tags = request.form.getlist('tags')  # ✅ 多選標籤
-        options = request.form.getlist('options[]')
+        options = parse_product_options_from_form()
 
         # ✅ 影片連結（表單貼的）
         video_urls_from_form = [
@@ -5873,7 +6069,7 @@ def edit_product(product_id):
                 "feature": (request.form.get('feature') or '').strip(),
                 "spec": (request.form.get('spec') or '').strip(),
                 "ingredient": (request.form.get('ingredient') or '').strip(),
-                "options": request.form.getlist('options[]'),
+                "options": parse_product_options_from_form(),
                 "categories": request.form.getlist('categories[]'),
                 "tags": request.form.getlist('tags'),
                 "is_hidden": request.form.get("is_hidden") == "on"  # 🔻 新增：下架欄位
@@ -6259,34 +6455,12 @@ def add_to_cart():
 
 
     # ---- A) 若商品有選項但未帶 option（或帶了無效 option）：導去商品頁先選 ----
-    # 相容不同欄位：options / option_values / variants(物件陣列) / 逗號字串
-    def extract_options(p):
-        src = None
-        if isinstance(p.get('options'), list) and p['options']:
-            src = p['options']
-        elif isinstance(p.get('option_values'), list) and p['option_values']:
-            src = p['option_values']
-        elif isinstance(p.get('variants'), list) and p['variants']:
-            tmp = []
-            for v in p['variants']:
-                nm = (v.get('name') or v.get('title') or v.get('label') or '').strip()
-                if nm:
-                    tmp.append(nm)
-            src = tmp
-        elif isinstance(p.get('options'), str) and p['options'].strip():
-            import re
-            src = [s.strip() for s in re.split(r'[,\n、|｜/]+', p['options']) if s.strip()]
-        if not src:
-            return []
-        # 去重+過濾空白
-        seen, out = set(), []
-        for s in src:
-            s = (str(s) or '').strip()
-            if s and s not in seen:
-                out.append(s); seen.add(s)
-        return out
-
-    candidate_options = extract_options(product)
+    normalized_options = normalize_product_options(product.get("options"))
+    candidate_options = [
+        opt.get("name")
+        for opt in normalized_options
+        if opt.get("name")
+    ]
 
     def _norm(s):  # 大小寫/空白不敏感比對
         return (str(s or '')).strip().lower()
@@ -6324,18 +6498,37 @@ def add_to_cart():
             pass
         return redirect(product_url)
 
-    # ---- B) 價格計算（與你原本一致）----
+    # ---- B) 價格計算 ----
     is_bundle = (product.get('product_type') == 'bundle')
 
-    try:
-        orig = float(product.get('price') or 0)          # 原價
-    except Exception:
-        orig = 0.0
-    try:
-        disc = float(product.get('discount_price') or 0) # 折扣價
-    except Exception:
-        disc = 0.0
-    cur = disc if (disc and disc < orig) else orig       # 結帳用單價（先用單品邏輯）
+    selected_variant = None
+    if not is_bundle and option:
+        selected_variant = find_selected_product_option(product, option)
+
+    if selected_variant and selected_variant.get("price") not in (None, ""):
+        try:
+            orig = float(selected_variant.get("price") or 0)
+        except Exception:
+            orig = 0.0
+
+        try:
+            disc = float(selected_variant.get("discount_price") or 0)
+        except Exception:
+            disc = 0.0
+
+        cur = disc if (disc and disc < orig) else orig
+    else:
+        try:
+            orig = float(product.get('price') or 0)
+        except Exception:
+            orig = 0.0
+
+        try:
+            disc = float(product.get('discount_price') or 0)
+        except Exception:
+            disc = 0.0
+
+        cur = disc if (disc and disc < orig) else orig
 
     # 套組價覆蓋
     bundle_price = None
@@ -6381,22 +6574,32 @@ def add_to_cart():
     # 6) 新增項目
     if not matched:
         entry = {
-            'id': pid_str,
-            'product_id': pid_str,
-            'name': product.get('name'),
-            'price': cur,                           # 小計用單價
-            'original_price': orig,                 # 顯示用
-            'discount_price': (disc if (disc and disc < orig) else 0),
-            'image': product.get('image'),
-            'images': product.get('images', []),
-            'qty': qty,
-            'option': opt_str,
-            'product_type': product.get('product_type'),
+            "id": pid_str,
+            "product_id": pid_str,
+            "product_name": product.get("name") or "",
+            "name": product.get("name") or "",
+            "price": cur,                           # 小計用單價
+            "original_price": orig,                 # 顯示用原價
+            "discount_price": (disc if (disc and disc < orig) else 0),
+            "image": product.get("image"),
+            "images": product.get("images", []),
+            "qty": qty,
+            "option": opt_str,
+            "product_type": product.get("product_type") or "single",
+            "variant_name": opt_str,
+            "variant_price": cur,
+            "variant_original_price": orig,
         }
+
+        if selected_variant:
+            entry["variant_data"] = selected_variant
+
         if bundle_price is not None:
-            entry['bundle_price'] = bundle_price
+            entry["bundle_price"] = bundle_price
+
         if bundle_compare is not None:
-            entry['bundle_compare'] = bundle_compare
+            entry["bundle_compare"] = bundle_compare
+
         cart.append(entry)
 
     # 7) 寫回 session

@@ -1752,16 +1752,22 @@ fbq('track', 'PageView');
               {% endif %}
             {% else %}
               {% if product.get('discount_price') %}
-                <div class="price-original">NT${{ "%.0f"|format(product['price']) }}</div>
-                <div class="price-discount">
-                  <span class="currency">NT$</span>
-                  <span class="amount">{{ "%.0f"|format(product['discount_price']) }}</span>
-                </div>
-                {% set discount_rate = (product['discount_price'] / product['price'] * 10)|round(1, 'floor') %}
-                <div class="discount-tag">{{ discount_rate }}折</div>
-              {% else %}
-                <div class="price-regular">NT${{ "%.0f"|format(product['price']) }}</div>
-              {% endif %}
+  <div class="price-original" id="price-original">NT${{ "%.0f"|format(product['price']) }}</div>
+  <div class="price-discount" id="price-discount">
+    <span class="currency">NT$</span>
+    <span class="amount" id="price-current">{{ "%.0f"|format(product['discount_price']) }}</span>
+  </div>
+  {% set discount_rate = (product['discount_price'] / product['price'] * 10)|round(1, 'floor') %}
+  <div class="discount-tag" id="price-discount-tag">{{ discount_rate }}折</div>
+{% else %}
+  <div class="price-original" id="price-original" style="display:none;"></div>
+  <div class="price-discount" id="price-discount" style="display:none;">
+    <span class="currency">NT$</span>
+    <span class="amount" id="price-current"></span>
+  </div>
+  <div class="discount-tag" id="price-discount-tag" style="display:none;"></div>
+  <div class="price-regular" id="price-regular">NT${{ "%.0f"|format(product['price']) }}</div>
+{% endif %}
             {% endif %}
           </div>
           <div class="price-caption">現在下單，享受官網優惠價格與安心售後服務</div>
@@ -1788,13 +1794,29 @@ fbq('track', 'PageView');
         {% endif %}
 
         {% if not is_bundle %}
-          <div id="options" class="options">
-            <label class="section-title">選擇規格</label>
-            {% for opt in product['options'] %}
-              <button type="button" class="single-opt">{{ opt }}</button>
-            {% endfor %}
-          </div>
-        {% else %}
+  <div id="options" class="options">
+    <label class="section-title">選擇類型</label>
+    {% for opt in product['options'] %}
+      {% if opt is mapping %}
+        <button type="button"
+                class="single-opt"
+                data-name="{{ opt.get('name', '') }}"
+                data-price="{{ opt.get('price', '') }}"
+                data-discount-price="{{ opt.get('discount_price', '') if opt.get('discount_price') is not none else '' }}">
+          {{ opt.get('name', '') }}
+        </button>
+      {% else %}
+        <button type="button"
+                class="single-opt"
+                data-name="{{ opt }}"
+                data-price=""
+                data-discount-price="">
+          {{ opt }}
+        </button>
+      {% endif %}
+    {% endfor %}
+  </div>
+{% else %}
           <a id="options"></a>
           <div class="options">
             <label class="section-title">選擇套組內容</label>
@@ -1895,6 +1917,69 @@ fbq('track', 'PageView');
 <script>
   
   let selectedOption = "";
+
+  function toMoneyText(value) {
+  const n = Number(value || 0);
+  if (!n) return "0";
+  return Math.round(n).toString();
+}
+
+function updatePriceBySelectedButton(btn) {
+  if (!btn) return;
+
+  const price = Number(btn.dataset.price || 0);
+  const discountPrice = Number(btn.dataset.discountPrice || 0);
+
+  if (!price) return;
+
+  const originalEl = document.getElementById("price-original");
+  const discountBox = document.getElementById("price-discount");
+  const currentEl = document.getElementById("price-current");
+  const regularEl = document.getElementById("price-regular");
+  const tagEl = document.getElementById("price-discount-tag");
+
+  if (discountPrice && discountPrice < price) {
+    if (originalEl) {
+      originalEl.style.display = "";
+      originalEl.innerText = "NT$" + toMoneyText(price);
+    }
+
+    if (discountBox) {
+      discountBox.style.display = "";
+    }
+
+    if (currentEl) {
+      currentEl.innerText = toMoneyText(discountPrice);
+    }
+
+    if (regularEl) {
+      regularEl.style.display = "none";
+    }
+
+    if (tagEl) {
+      const rate = Math.floor((discountPrice / price * 10) * 10) / 10;
+      tagEl.style.display = "";
+      tagEl.innerText = rate + "折";
+    }
+  } else {
+    if (originalEl) {
+      originalEl.style.display = "none";
+    }
+
+    if (discountBox) {
+      discountBox.style.display = "none";
+    }
+
+    if (regularEl) {
+      regularEl.style.display = "";
+      regularEl.innerText = "NT$" + toMoneyText(price);
+    }
+
+    if (tagEl) {
+      tagEl.style.display = "none";
+    }
+  }
+}
 
   function adjustQty(delta) {
   const qtyInput = document.getElementById('qty');
@@ -2031,7 +2116,8 @@ window.addEventListener('DOMContentLoaded', () => {
   const optionButtons = document.querySelectorAll('.single-opt');
   if (optionButtons.length === 1) {
     optionButtons[0].classList.add('selected');
-    selectedOption = optionButtons[0].innerText;
+    selectedOption = optionButtons[0].dataset.name || optionButtons[0].innerText;
+    updatePriceBySelectedButton(optionButtons[0]);
     updateCheckoutHidden();
   }
 });
@@ -2106,7 +2192,8 @@ function bindSingleOptions(){
     btn.addEventListener('click', () => {
       document.querySelectorAll('.single-opt').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
-      selectedOption = btn.innerText;
+      selectedOption = btn.dataset.name || btn.innerText;
+      updatePriceBySelectedButton(btn);
       updateCheckoutHidden();
     });
   });

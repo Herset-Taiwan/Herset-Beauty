@@ -53,6 +53,23 @@
     flex: 1;
   }
 
+  .option-price-row {
+  display: grid;
+  grid-template-columns: 1.2fr 0.7fr 0.7fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.option-price-row input {
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .option-price-row {
+    grid-template-columns: 1fr;
+  }
+}
+
   .delete-option {
     background-color: #e91e63;
     color: white;
@@ -161,15 +178,19 @@
 <label>商品特色</label>
 <textarea name="feature" class="rich" rows="12"></textarea>
 
-<label>商品規格（可新增多個）</label>
+<label>商品類型 / 規格價格（可新增多個）</label>
+<div class="note">例如：120ML 售價 790、優惠價 690；50ML 售價 490、優惠價 390。</div>
+
 <div id="options-wrapper">
-  <div class="option-group">
-    <input type="text" name="options[]" placeholder="例：澄淨白茶感" />
+  <div class="option-group option-price-row">
+    <input type="text" name="option_name[]" placeholder="類型名稱，例如：120ML" />
+    <input type="number" name="option_price[]" placeholder="原價" step="1" min="0" />
+    <input type="number" name="option_discount_price[]" placeholder="優惠價，可空白" step="1" min="0" />
     <button type="button" class="delete-option" onclick="removeOption(this)">✕</button>
   </div>
 </div>
 
-<button type="button" onclick="addOption()">＋新增一個規格</button>
+<button type="button" onclick="addOption()">＋新增一個類型</button>
 
 <label>商品規格描述</label>
 <textarea name="spec" class="rich" rows="12"></textarea>
@@ -189,9 +210,11 @@
     function addOption() {
   const wrapper = document.getElementById('options-wrapper');
   const div = document.createElement('div');
-  div.className = 'option-group';
+  div.className = 'option-group option-price-row';
   div.innerHTML = `
-    <input type="text" name="options[]" placeholder="例：加強保濕" />
+    <input type="text" name="option_name[]" placeholder="類型名稱，例如：50ML" />
+    <input type="number" name="option_price[]" placeholder="原價" step="1" min="0" />
+    <input type="number" name="option_discount_price[]" placeholder="優惠價，可空白" step="1" min="0" />
     <button type="button" class="delete-option" onclick="removeOption(this)">✕</button>
   `;
   wrapper.appendChild(div);

@@ -78,22 +78,29 @@
     <div class="discount-tag small">{{ discount_rate }}折</div>
 
   {# ✅ 單品：仍用 discount_price 規則 #}
-  {% elif p.get('discount_price') %}
-    <div class="price-original">NT${{ "%.0f"|format(p['price']) }}</div>
-    <div class="price-discount">
-      <span class="currency">NT$</span>
-      <span class="amount">{{ "%.0f"|format(p['discount_price']) }}</span>
-    </div>
-    {% set discount_rate = (p['discount_price'] / p['price'] * 10)|round(1, 'floor') %}
-    <div class="discount-tag small">{{ discount_rate }}折</div>
+  {% elif p.get('display_price_from') %}
+  <div class="price-regular">
+    <span class="currency">NT$</span>
+    <span class="amount">{{ "%.0f"|format(p['display_price_from']) }}</span>
+    <span style="font-size:13px;margin-left:4px;">起</span>
+  </div>
 
-  {# 其他：只顯示單一價格 #}
-  {% else %}
-    <div class="price-regular">
-      <span class="currency">NT$</span>
-      <span class="amount">{{ "%.0f"|format(p['price']) }}</span>
-    </div>
-  {% endif %}
+{% elif p.get('discount_price') %}
+  <div class="price-original">NT${{ "%.0f"|format(p['price']) }}</div>
+  <div class="price-discount">
+    <span class="currency">NT$</span>
+    <span class="amount">{{ "%.0f"|format(p['discount_price']) }}</span>
+  </div>
+  {% set discount_rate = (p['discount_price'] / p['price'] * 10)|round(1, 'floor') %}
+  <div class="discount-tag small">{{ discount_rate }}折</div>
+
+{# 其他：只顯示單一價格 #}
+{% else %}
+  <div class="price-regular">
+    <span class="currency">NT$</span>
+    <span class="amount">{{ "%.0f"|format(p['price']) }}</span>
+  </div>
+{% endif %}
 </div>
 
 

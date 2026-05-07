@@ -215,6 +215,23 @@
   margin-bottom: 8px;
   align-items: center;
 }
+
+.option-price-row {
+  display: grid;
+  grid-template-columns: 1.2fr 0.7fr 0.7fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.option-price-row input {
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .option-price-row {
+    grid-template-columns: 1fr;
+  }
+}
 .option-row input {
   flex: 1;
 }
@@ -340,17 +357,32 @@
       <textarea name="ingredient" class="rich">{{ product['ingredient']|safe }}</textarea>
 
 
-      <label>商品規格（可新增多個）</label>
-      <div id="options-container" class="options-container">
-        {% for opt in product['options'] or [] %}
-  <div class="option-row">
-    <input type="text" name="options[]" value="{{ opt }}">
-    <button type="button" class="delete-option-btn" onclick="removeOption(this)">✕</button>
-  </div>
-{% endfor %}
+      <label>商品類型 / 規格價格（可新增多個）</label>
+<div style="font-size:13px;color:#777;margin-top:4px;">
+  例如：120ML 售價 790、優惠價 690；50ML 售價 490、優惠價 390。
+</div>
 
+<div id="options-container" class="options-container">
+  {% for opt in product['options'] or [] %}
+    {% if opt is mapping %}
+      <div class="option-row option-price-row">
+        <input type="text" name="option_name[]" value="{{ opt.get('name', '') }}" placeholder="類型名稱，例如：120ML">
+        <input type="number" name="option_price[]" value="{{ opt.get('price', '') }}" placeholder="原價" step="1" min="0">
+        <input type="number" name="option_discount_price[]" value="{{ opt.get('discount_price', '') if opt.get('discount_price') is not none else '' }}" placeholder="優惠價，可空白" step="1" min="0">
+        <button type="button" class="delete-option-btn" onclick="removeOption(this)">✕</button>
       </div>
-      <button type="button" class="add-option-btn" onclick="addOptionField()">＋ 新增一個規格</button>
+    {% else %}
+      <div class="option-row option-price-row">
+        <input type="text" name="option_name[]" value="{{ opt }}" placeholder="類型名稱，例如：120ML">
+        <input type="number" name="option_price[]" value="" placeholder="原價" step="1" min="0">
+        <input type="number" name="option_discount_price[]" value="" placeholder="優惠價，可空白" step="1" min="0">
+        <button type="button" class="delete-option-btn" onclick="removeOption(this)">✕</button>
+      </div>
+    {% endif %}
+  {% endfor %}
+</div>
+
+<button type="button" class="add-option-btn" onclick="addOptionField()">＋ 新增一個類型</button>
 
       <label>首頁商品圖（只會顯示一張）</label>
 <input type="file" name="cover_image_file" accept="image/*">
@@ -434,9 +466,11 @@
     function addOptionField() {
   const container = document.getElementById('options-container');
   const row = document.createElement('div');
-  row.className = 'option-row';
+  row.className = 'option-row option-price-row';
   row.innerHTML = `
-    <input type="text" name="options[]" placeholder="例：澄淨白茶感">
+    <input type="text" name="option_name[]" placeholder="類型名稱，例如：50ML">
+    <input type="number" name="option_price[]" placeholder="原價" step="1" min="0">
+    <input type="number" name="option_discount_price[]" placeholder="優惠價，可空白" step="1" min="0">
     <button type="button" class="delete-option-btn" onclick="removeOption(this)">✕</button>
   `;
   container.appendChild(row);
