@@ -264,6 +264,52 @@
   white-space:normal;
   word-break:break-word;
 }
+/* 出貨規格醒目標示 */
+.li .ship-spec{
+  grid-column:1 / -1;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-top:8px;
+  padding:10px 12px;
+  border-radius:12px;
+  background:#fff1f2;
+  border:2px solid #e11d48;
+  color:#9f1239;
+  font-size:18px;
+  font-weight:900;
+  letter-spacing:0.5px;
+}
+
+.li .ship-spec-label{
+  display:inline-flex;
+  align-items:center;
+  padding:4px 8px;
+  border-radius:999px;
+  background:#e11d48;
+  color:#fff;
+  font-size:13px;
+  font-weight:900;
+}
+
+.li .ship-spec-value{
+  font-size:22px;
+  font-weight:900;
+}
+
+.li .ship-spec-warning{
+  color:#7f1d1d;
+  font-size:13px;
+  font-weight:800;
+}
+
+.li .opt-muted{
+  grid-column:1 / -1;
+  margin-top:4px;
+  color:#8a6c66;
+  font-size:12px;
+  line-height:1.6;
+}
 
 /* 右側摘要 */
 .sum{background:#faf7f5;border:1px solid var(--line);border-radius:12px;padding:14px}
@@ -1281,17 +1327,32 @@ card.innerHTML = `
   <div class="order-grid">
     <ul class="ol">
       ${
-        (o.items||[]).map(i=>{
-          const opts = splitOptions(i.option).map(t=>`<div>${esc(t)}</div>`).join('');
-          const optHtml = opts ? `<div class="opt">${opts}</div>` : '';
-          return `<li class="li">
-                    <div class="name">${esc(i.product_name||'')}</div>
-                    <div class="qty">× ${i.qty||1}</div>
-                    <div class="price">$${i.price||0}</div>
-                    ${optHtml}
-                  </li>`;
-        }).join('') || '<li class="li"><div class="name">（此訂單無商品）</div></li>'
-      }
+  (o.items||[]).map(i=>{
+    const optionList = splitOptions(i.option);
+    const mainSpec = optionList.length ? optionList[0] : '';
+    const otherOpts = optionList.slice(1).map(t=>`<div>${esc(t)}</div>`).join('');
+
+    const specHtml = mainSpec
+      ? `<div class="ship-spec">
+           <span class="ship-spec-label">出貨規格</span>
+           <span class="ship-spec-value">${esc(mainSpec)}</span>
+           <span class="ship-spec-warning">請依此規格出貨</span>
+         </div>`
+      : '';
+
+    const otherOptHtml = otherOpts
+      ? `<div class="opt-muted">${otherOpts}</div>`
+      : '';
+
+    return `<li class="li">
+              <div class="name">${esc(i.product_name||'')}</div>
+              <div class="qty">× ${i.qty||1}</div>
+              <div class="price">$${i.price||0}</div>
+              ${specHtml}
+              ${otherOptHtml}
+            </li>`;
+  }).join('') || '<li class="li"><div class="name">（此訂單無商品）</div></li>'
+}
     </ul>
 
     <div>
