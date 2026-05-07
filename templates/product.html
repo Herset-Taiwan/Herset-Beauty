@@ -2014,13 +2014,14 @@ function updatePriceBySelectedButton(btn) {
     const optionButtons = document.querySelectorAll('.single-opt');
     if(!selectedOption){
       if(optionButtons.length === 1){
-        // 自動帶入唯一規格
-        optionButtons[0].classList.add('selected');
-        selectedOption = optionButtons[0].innerText;
-      }else if(optionButtons.length > 1){
-        showTip("⚠️ 請先選擇商品規格");
-        return;
-      }
+  // 自動帶入唯一規格
+  optionButtons[0].classList.add('selected');
+  selectedOption = optionButtons[0].dataset.name || optionButtons[0].innerText;
+  updatePriceBySelectedButton(optionButtons[0]);
+}else if(optionButtons.length > 1){
+  showTip("⚠️ 請先選擇商品類型");
+  return;
+}
     }
     optionToSend = selectedOption || '';
   }else{
@@ -2247,11 +2248,11 @@ function beforeCheckout(productId){
   if(!isBundle){
     const optionButtons = document.querySelectorAll('.single-opt');
     if(!selectedOption && optionButtons.length > 1){
-      showTip("⚠️ 請先選擇商品規格");
+      showTip("⚠️ 請先選擇商品類型");
       return false;
     }
 
-    const optionValue = selectedOption || (optionButtons[0] ? optionButtons[0].innerText : '');
+    const optionValue = selectedOption || (optionButtons[0] ? (optionButtons[0].dataset.name || optionButtons[0].innerText) : '');
 
     if (desktopOptionEl) desktopOptionEl.value = optionValue;
     if (mobileOptionEl) mobileOptionEl.value = optionValue;
