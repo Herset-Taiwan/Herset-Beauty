@@ -1913,13 +1913,17 @@ fbq('track', 'PageView');
 <div class="product-detail-section">
   <div class="product-tabs">
     <button class="product-tab-btn active" data-tab="intro">商品介紹</button>
-    <button class="product-tab-btn" data-tab="feature">商品特色</button>
+      <!-- 暫時隱藏商品特色
+  <button class="product-tab-btn" data-tab="feature">商品特色</button>
+  -->
     <button class="product-tab-btn" data-tab="spec">商品規格</button>
   </div>
 
   <div class="product-tab-content">
     <div id="intro" class="rich-content active">{{ (product['intro'] or '') | safe }}</div>
-    <div id="feature" class="rich-content">{{ (product['feature'] or '') | safe }}</div>
+      <!-- 暫時隱藏商品特色內容
+  <div id="feature" class="rich-content">{{ (product['feature'] or '') | safe }}</div>
+  -->
     <div id="spec" class="rich-content">{{ (product['spec'] or '') | safe }}</div>
     <div id="ingredient">{{ (product['ingredient'] or '') | safe }}</div>
   </div>
