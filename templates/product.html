@@ -1753,20 +1753,31 @@ fbq('track', 'PageView');
             {% else %}
               {% if product.get('discount_price') %}
   <div class="price-original" id="price-original">NT${{ "%.0f"|format(product['price']) }}</div>
+
   <div class="price-discount" id="price-discount">
     <span class="currency">NT$</span>
     <span class="amount" id="price-current">{{ "%.0f"|format(product['discount_price']) }}</span>
   </div>
+
   {% set discount_rate = (product['discount_price'] / product['price'] * 10)|round(1, 'floor') %}
   <div class="discount-tag" id="price-discount-tag">{{ discount_rate }}折</div>
+
+  <div class="price-regular" id="price-regular" style="display:none;">
+    NT${{ "%.0f"|format(product['price']) }}
+  </div>
 {% else %}
   <div class="price-original" id="price-original" style="display:none;"></div>
+
   <div class="price-discount" id="price-discount" style="display:none;">
     <span class="currency">NT$</span>
     <span class="amount" id="price-current"></span>
   </div>
+
   <div class="discount-tag" id="price-discount-tag" style="display:none;"></div>
-  <div class="price-regular" id="price-regular">NT${{ "%.0f"|format(product['price']) }}</div>
+
+  <div class="price-regular" id="price-regular">
+    NT${{ "%.0f"|format(product['price']) }}
+  </div>
 {% endif %}
             {% endif %}
           </div>
