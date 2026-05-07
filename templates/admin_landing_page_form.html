@@ -945,19 +945,26 @@
                 </div>
 
                 <div class="card">
-                    <div class="card-header">
-                        <h2>購買方案</h2>
-                        <p>這裡設定單品、雙拼組、三瓶組等方案內容。</p>
-                    </div>
-                    <div class="card-body">
-                        <div class="repeat-list">
-                            {% if offers %}
+    <div class="card-header">
+        <h2>購買方案</h2>
+        <p>這裡設定單品、雙拼組、三瓶組等方案內容，可依需求自由新增。</p>
+    </div>
+    <div class="card-body">
+        <div class="secondary-toolbar" style="margin-bottom:16px;">
+            <button type="button" class="btn btn-light" id="addOfferBtn">＋ 新增方案</button>
+        </div>
+
+        <div class="repeat-list" id="offerList">
+            {% if offers %}
                                 {% for offer in offers %}
-                                <div class="repeat-card">
-                                    <div class="repeat-head">
-                                        <div class="repeat-title">方案 {{ loop.index }}</div>
-                                        <span class="tag">{{ offer.offer_name or '未命名方案' }}</span>
-                                    </div>
+                                <div class="repeat-card offer-item">
+    <div class="repeat-head">
+        <div class="repeat-title">方案 {{ loop.index }}</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+            <span class="tag offer-tag">{{ offer.offer_name or '未命名方案' }}</span>
+            <button type="button" class="btn btn-danger removeOfferBtn" style="min-width:auto;height:36px;padding:0 12px;">刪除</button>
+        </div>
+    </div>
 
                                     <div class="grid-2">
                                         <div class="field">
@@ -1029,11 +1036,14 @@
                                 {% endfor %}
                             {% else %}
                                 {% for i in range(3) %}
-                                <div class="repeat-card">
-                                    <div class="repeat-head">
-                                        <div class="repeat-title">方案 {{ i + 1 }}</div>
-                                        <span class="tag">{{ ['單品','雙拼組','三瓶組'][i] }}</span>
-                                    </div>
+                                <div class="repeat-card offer-item">
+    <div class="repeat-head">
+        <div class="repeat-title">方案 {{ i + 1 }}</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+            <span class="tag offer-tag">{{ ['單品','雙拼組','三瓶組'][i] }}</span>
+            <button type="button" class="btn btn-danger removeOfferBtn" style="min-width:auto;height:36px;padding:0 12px;">刪除</button>
+        </div>
+    </div>
 
                                     <div class="grid-2">
                                         <div class="field">
@@ -1479,7 +1489,13 @@ if (secondaryColorPicker) secondaryColorPicker.addEventListener("input", updateT
 
 updateThemePreview();
 
+const landingForm = document.getElementById("landingForm");
 
+if (landingForm){
+    landingForm.addEventListener("submit", function(){
+        refreshOfferIndex();
+    });
+}
 
 function bindColorSync(pickerId, textId, defaultColor){
     const picker = document.getElementById(pickerId);
@@ -1518,6 +1534,153 @@ function bindColorSync(pickerId, textId, defaultColor){
 // 初始化
 bindColorSync("primary_color_picker", "primary_color_text", "#e91e63");
 bindColorSync("secondary_color_picker", "secondary_color_text", "#f7d7e3");
+
+function refreshOfferIndex(){
+    document.querySelectorAll("#offerList .offer-item").forEach(function(el, i){
+        const title = el.querySelector(".repeat-title");
+        const nameInput = el.querySelector('input[name="offer_name[]"]');
+        const tag = el.querySelector(".offer-tag");
+        const defaultCheckbox = el.querySelector('input[name="offer_is_default[]"]');
+        const activeCheckbox = el.querySelector('input[name="offer_is_active[]"]');
+
+        if (title){
+            title.innerText = "方案 " + (i + 1);
+        }
+
+        if (tag){
+            const name = nameInput ? nameInput.value.trim() : "";
+            tag.innerText = name || "未命名方案";
+        }
+
+        if (defaultCheckbox){
+            defaultCheckbox.value = String(i);
+        }
+
+        if (activeCheckbox){
+            activeCheckbox.value = String(i);
+        }
+    });
+}
+
+function bindOfferNameSync(){
+    document.querySelectorAll('#offerList input[name="offer_name[]"]').forEach(function(input){
+        input.oninput = function(){
+            refreshOfferIndex();
+        };
+    });
+}
+
+function bindOfferDelete(){
+    document.querySelectorAll(".removeOfferBtn").forEach(function(btn){
+        btn.onclick = function(){
+            const items = document.querySelectorAll("#offerList .offer-item");
+
+            if (items.length <= 1){
+                alert("至少要保留一個方案");
+                return;
+            }
+
+            const card = btn.closest(".offer-item");
+            if (card){
+                card.remove();
+                refreshOfferIndex();
+            }
+        };
+    });
+}
+
+function createOfferItem(){
+    const div = document.createElement("div");
+    div.className = "repeat-card offer-item";
+
+    div.innerHTML = `
+        <div class="repeat-head">
+            <div class="repeat-title">方案</div>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <span class="tag offer-tag">新方案</span>
+                <button type="button" class="btn btn-danger removeOfferBtn" style="min-width:auto;height:36px;padding:0 12px;">刪除</button>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="field">
+                <label>方案名稱</label>
+                <input type="text" name="offer_name[]" value="" placeholder="例如：四瓶組 / 團購限定組">
+            </div>
+            <div class="field">
+                <label>副標</label>
+                <input type="text" name="offer_subtitle[]" value="" placeholder="例如：多人囤貨最划算">
+            </div>
+        </div>
+
+        <div class="grid-3">
+            <div class="field">
+                <label>Badge</label>
+                <input type="text" name="offer_badge[]" value="" placeholder="例如：限時優惠">
+            </div>
+            <div class="field">
+                <label>價格</label>
+                <input type="number" name="offer_price[]" value="0">
+            </div>
+            <div class="field">
+                <label>原價</label>
+                <input type="number" name="offer_compare_at_price[]" value="">
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="field">
+                <label>綁定商品 Product ID</label>
+                <input type="text" name="offer_product_id[]" value="">
+            </div>
+            <div class="field">
+                <label>綁定 Bundle ID</label>
+                <input type="text" name="offer_bundle_id[]" value="">
+            </div>
+            <div class="field">
+                <label>方案圖片</label>
+
+                <input type="hidden" name="existing_offer_image_url[]" value="">
+
+                <input class="file-input"
+                       type="file"
+                       name="offer_image_files[]"
+                       accept="image/*">
+
+                <span class="hint">可直接從電腦選擇圖片，會顯示在方案卡片上方，手機版也會顯示。</span>
+            </div>
+        </div>
+
+        <div class="check-row">
+            <label class="check-item">
+                <input type="checkbox" name="offer_is_default[]" value="">
+                設為預設方案
+            </label>
+            <label class="check-item">
+                <input type="checkbox" name="offer_is_active[]" value="" checked>
+                啟用此方案
+            </label>
+        </div>
+    `;
+
+    return div;
+}
+
+function bindOfferAdd(){
+    const btn = document.getElementById("addOfferBtn");
+    const list = document.getElementById("offerList");
+
+    if (!btn || !list) return;
+
+    btn.addEventListener("click", function(){
+        const item = createOfferItem();
+        list.appendChild(item);
+
+        bindOfferDelete();
+        bindOfferNameSync();
+        refreshOfferIndex();
+    });
+}
 
 
 function refreshFaqIndex(){
@@ -1641,6 +1804,11 @@ function bindMiddleSort(){
         });
     });
 }
+
+bindOfferAdd();
+bindOfferDelete();
+bindOfferNameSync();
+refreshOfferIndex();
 
 bindFaqAdd();
 bindFaqDelete();
