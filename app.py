@@ -1860,18 +1860,41 @@ def tinymce_upload():
 
     allowed = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
     ext = (file.filename.rsplit('.', 1)[-1] or '').lower()
+
     if ext not in allowed:
         return jsonify({'error': 'invalid type'}), 400
 
-    save_dir = os.path.join(app.root_path, 'static', 'uploads', 'rte')
-    os.makedirs(save_dir, exist_ok=True)
+    tmp_path = None
 
-    filename = f"{uuid.uuid4().hex}.{ext}"
-    save_path = os.path.join(save_dir, filename)
-    file.save(save_path)
+    try:
+        safe_name = secure_filename(file.filename)
+        unique_name = "{}_{}".format(uuid.uuid4().hex, safe_name)
+        storage_path = "rte_images/{}".format(unique_name)
 
-    url = url_for('static', filename=f'uploads/rte/{filename}')
-    return jsonify({'location': url})
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            file.save(tmp.name)
+            tmp_path = tmp.name
+
+        supabase.storage.from_("images").upload(storage_path, tmp_path)
+
+        public_url = supabase.storage.from_("images").get_public_url(storage_path)
+
+        return jsonify({
+            "location": public_url
+        })
+
+    except Exception as e:
+        app.logger.exception("[tinymce upload] failed: %s", e)
+        return jsonify({
+            "error": "upload failed"
+        }), 500
+
+    finally:
+        if tmp_path:
+            try:
+                os.unlink(tmp_path)
+            except Exception:
+                pass
 
 #admin 功能管理標籤 功能管理中樞頁（Hub）
 
@@ -5961,6 +5984,219 @@ def delete_product(product_id):
 
     supabase.table("products").delete().eq("id", product_id).execute()
     return redirect('/admin0363/dashboard')
+
+#複製一般商品
+@app.route('/admin0363/products/<product_id>/clone', methods=['POST'])
+def clone_product(product_id):
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
+
+    try:
+        res = (
+            supabase.table("products")
+            .select("*")
+            .eq("id", product_id)
+            .single()
+            .execute()
+        )
+
+        product = res.data
+        if not product:
+            return "找不到商品", 404
+
+        clone_data = {
+            "name": "{} - 複製".format(product.get("name") or "未命名商品"),
+            "price": product.get("price") or 0,
+            "discount_price": product.get("discount_price"),
+            "stock": product.get("stock") or 0,
+            "image": product.get("image"),
+            "images": product.get("images") or [],
+            "videos": product.get("videos") or [],
+            "intro": product.get("intro") or "",
+            "feature": product.get("feature") or "",
+            "spec": product.get("spec") or "",
+            "ingredient": product.get("ingredient") or "",
+            "options": product.get("options") or [],
+            "categories": product.get("categories") or [],
+            "tags": product.get("tags") or [],
+            "product_type": product.get("product_type") or "single",
+            "is_hidden": True
+        }
+
+        insert_res = supabase.table("products").insert(clone_data).execute()
+        new_product = (insert_res.data or [None])[0]
+
+        flash("商品已複製，請進入編輯確認內容後再上架", "success")
+
+        if new_product and new_product.get("id"):
+            return redirect("/edit/{}".format(new_product["id"]))
+
+        return redirect("/admin0363/dashboard?tab=products")
+
+    except Exception as e:
+        app.logger.exception("[clone product] failed: %s", e)
+        return "複製商品失敗：{}".format(str(e)), 500
+
+
+#複製套組商品
+@app.route('/admin0363/bundles/<int:bundle_id>/clone', methods=['POST'])
+def clone_bundle(bundle_id):
+    if not session.get("admin_logged_in"):
+        return redirect("/admin0363")
+
+    try:
+        # 1. 讀取原套組
+        bres = (
+            supabase.table("bundles")
+            .select("*")
+            .eq("id", bundle_id)
+            .limit(1)
+            .execute()
+        )
+
+        old_bundle = (bres.data or [None])[0]
+        if not old_bundle:
+            return "找不到套組", 404
+
+        old_shell_id = old_bundle.get("shell_product_id")
+        old_shell = {}
+
+        if old_shell_id:
+            spres = (
+                supabase.table("products")
+                .select("*")
+                .eq("id", old_shell_id)
+                .limit(1)
+                .execute()
+            )
+            old_shell = (spres.data or [None])[0] or {}
+
+        # 2. 建立新的 bundles
+        bundle_clone_data = {
+            "name": "{} - 複製".format(old_bundle.get("name") or "未命名套組"),
+            "price": old_bundle.get("price") or 0,
+            "compare_at": old_bundle.get("compare_at"),
+            "stock": old_bundle.get("stock") or 0,
+            "cover_image": old_bundle.get("cover_image"),
+            "description": old_bundle.get("description") or "",
+            "active": old_bundle.get("active") if old_bundle.get("active") is not None else True,
+            "required_total": old_bundle.get("required_total") or 0,
+            "categories": old_bundle.get("categories") or old_shell.get("categories") or ["套組優惠"],
+            "tags": old_bundle.get("tags") or old_shell.get("tags") or [],
+            "videos": old_bundle.get("videos") or old_shell.get("videos") or [],
+            "is_hidden": True
+        }
+
+        new_bundle_res = supabase.table("bundles").insert(bundle_clone_data).execute()
+        new_bundle = (new_bundle_res.data or [None])[0]
+
+        if not new_bundle or not new_bundle.get("id"):
+            return "建立複製套組失敗", 500
+
+        new_bundle_id = new_bundle["id"]
+
+        # 3. 建立新的殼商品 products
+        shell_clone_data = {
+            "name": "[套組優惠] {} - 複製".format(old_bundle.get("name") or old_shell.get("name") or "未命名套組"),
+            "price": old_bundle.get("price") or old_shell.get("price") or 0,
+            "discount_price": old_shell.get("discount_price"),
+            "stock": old_bundle.get("stock") or old_shell.get("stock") or 0,
+            "image": old_bundle.get("cover_image") or old_shell.get("image") or DEFAULT_SHELL_IMAGE,
+            "images": old_shell.get("images") or [],
+            "intro": old_shell.get("intro") or "",
+            "feature": old_shell.get("feature") or "",
+            "spec": old_shell.get("spec") or "",
+            "ingredient": old_shell.get("ingredient") or "",
+            "options": old_shell.get("options") or [],
+            "categories": old_bundle.get("categories") or old_shell.get("categories") or ["套組優惠"],
+            "tags": old_bundle.get("tags") or old_shell.get("tags") or [],
+            "product_type": "bundle",
+            "videos": old_bundle.get("videos") or old_shell.get("videos") or [],
+            "is_hidden": True
+        }
+
+        new_shell_res = supabase.table("products").insert(shell_clone_data).execute()
+        new_shell = (new_shell_res.data or [None])[0]
+
+        if new_shell and new_shell.get("id"):
+            supabase.table("bundles").update({
+                "shell_product_id": new_shell["id"]
+            }).eq("id", new_bundle_id).execute()
+
+        # 4. 複製共用可選商品池 bundle_pool
+        old_pool_rows = (
+            supabase.table("bundle_pool")
+            .select("product_id")
+            .eq("bundle_id", bundle_id)
+            .execute()
+            .data
+            or []
+        )
+
+        new_pool_rows = []
+        for row in old_pool_rows:
+            if row.get("product_id"):
+                new_pool_rows.append({
+                    "bundle_id": new_bundle_id,
+                    "product_id": row.get("product_id")
+                })
+
+        if new_pool_rows:
+            supabase.table("bundle_pool").insert(new_pool_rows).execute()
+
+        # 5. 複製 bundle_slots 與 bundle_slot_pool
+        old_slots = (
+            supabase.table("bundle_slots")
+            .select("*")
+            .eq("bundle_id", bundle_id)
+            .order("slot_index")
+            .execute()
+            .data
+            or []
+        )
+
+        for old_slot in old_slots:
+            slot_clone = {
+                "bundle_id": new_bundle_id,
+                "slot_index": old_slot.get("slot_index") or 0,
+                "slot_label": old_slot.get("slot_label") or "",
+                "required_count": old_slot.get("required_count") or 1
+            }
+
+            new_slot_res = supabase.table("bundle_slots").insert(slot_clone).execute()
+            new_slot = (new_slot_res.data or [None])[0]
+
+            if not new_slot or not new_slot.get("id"):
+                continue
+
+            old_slot_pool = (
+                supabase.table("bundle_slot_pool")
+                .select("product_id")
+                .eq("bundle_id", bundle_id)
+                .eq("slot_id", old_slot.get("id"))
+                .execute()
+                .data
+                or []
+            )
+
+            new_slot_pool_rows = []
+            for row in old_slot_pool:
+                if row.get("product_id"):
+                    new_slot_pool_rows.append({
+                        "bundle_id": new_bundle_id,
+                        "slot_id": new_slot["id"],
+                        "product_id": row.get("product_id")
+                    })
+
+            if new_slot_pool_rows:
+                supabase.table("bundle_slot_pool").insert(new_slot_pool_rows).execute()
+
+        flash("套組已複製，請進入編輯確認內容後再上架", "success")
+        return redirect("/admin0363/bundles/{}/edit".format(new_bundle_id))
+
+    except Exception as e:
+        app.logger.exception("[clone bundle] failed: %s", e)
+        return "複製套組失敗：{}".format(str(e)), 500    
 
 
 @app.route('/add_to_cart', methods=['POST'])

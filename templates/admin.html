@@ -627,16 +627,36 @@
       </div>
 
       <div class="actions">
-        {% if p.get('product_type') == 'bundle' and p.get('bundle_id') %}
-  <a href="/admin0363/bundles/{{ p['bundle_id'] }}/edit">✏️ 編輯</a>
-{% else %}
-  <a href="/edit/{{ p['id'] }}">✏️ 編輯</a>
-{% endif %}
+  {% if p.get('product_type') == 'bundle' and p.get('bundle_id') %}
+    <a href="/admin0363/bundles/{{ p['bundle_id'] }}/edit">✏️ 編輯</a>
 
-        <form action="/delete/{{ p['id'] }}" method="post" style="display:inline;" onsubmit="return confirm('確定要刪除商品？')">
-          <button type="submit" style="color: #e91e63; border: none; background: none; cursor: pointer;">🗑️ 刪除</button>
-        </form>
-      </div>
+    <form action="/admin0363/bundles/{{ p['bundle_id'] }}/clone"
+          method="post"
+          style="display:inline;"
+          onsubmit="return confirm('確定要複製這個套組商品？')">
+      <button type="submit"
+              style="color:#7b1fa2;border:none;background:none;cursor:pointer;font-weight:bold;">
+        📋 複製
+      </button>
+    </form>
+  {% else %}
+    <a href="/edit/{{ p['id'] }}">✏️ 編輯</a>
+
+    <form action="/admin0363/products/{{ p['id'] }}/clone"
+          method="post"
+          style="display:inline;"
+          onsubmit="return confirm('確定要複製這個商品？')">
+      <button type="submit"
+              style="color:#7b1fa2;border:none;background:none;cursor:pointer;font-weight:bold;">
+        📋 複製
+      </button>
+    </form>
+  {% endif %}
+
+  <form action="/delete/{{ p['id'] }}" method="post" style="display:inline;" onsubmit="return confirm('確定要刪除商品？')">
+    <button type="submit" style="color: #e91e63; border: none; background: none; cursor: pointer;">🗑️ 刪除</button>
+  </form>
+</div>
     </div>
   {% endfor %}
 {% else %}
