@@ -326,6 +326,116 @@
     color:var(--primary);
 }
 
+.floating-buy-btn{
+    position:fixed;
+    right:28px;
+    bottom:28px;
+    z-index:999;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:15px 22px;
+    border-radius:999px;
+    background:linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 78%, #111));
+    color:#fff;
+    text-decoration:none;
+    font-weight:900;
+    letter-spacing:.5px;
+    box-shadow:0 16px 36px color-mix(in srgb, var(--primary) 32%, transparent);
+    transition:.2s ease;
+}
+
+.floating-buy-btn::before{
+    content:"🛒";
+    font-size:18px;
+}
+
+.floating-buy-btn:hover{
+    transform:translateY(-3px);
+    filter:brightness(.98);
+    box-shadow:0 20px 44px color-mix(in srgb, var(--primary) 38%, transparent);
+}
+
+.selected-offer-box{
+    margin:10px 0 22px;
+    padding:18px 18px;
+    border:1px solid color-mix(in srgb, var(--primary) 22%, #eadfda);
+    border-radius:16px;
+    background:linear-gradient(135deg, #fff 0%, var(--primary-soft) 100%);
+    box-shadow:0 8px 20px rgba(0,0,0,.04);
+}
+
+.selected-offer-label{
+    font-size:13px;
+    font-weight:800;
+    color:var(--muted);
+    margin-bottom:8px;
+}
+
+.selected-offer-name{
+    font-size:21px;
+    font-weight:900;
+    color:var(--accent);
+    margin-bottom:6px;
+}
+
+.selected-offer-subtitle{
+    font-size:14px;
+    color:var(--muted);
+    margin-bottom:12px;
+    line-height:1.6;
+}
+
+.selected-offer-meta{
+    display:grid;
+    grid-template-columns:repeat(4, minmax(0, 1fr));
+    gap:10px;
+}
+
+.selected-offer-meta-item{
+    padding:10px 12px;
+    border-radius:12px;
+    background:rgba(255,255,255,.76);
+    border:1px solid rgba(0,0,0,.04);
+}
+
+.selected-offer-meta-item span{
+    display:block;
+    font-size:12px;
+    color:var(--muted);
+    margin-bottom:4px;
+}
+
+.selected-offer-meta-item strong{
+    display:block;
+    font-size:15px;
+    color:var(--accent);
+}
+
+.selected-offer-total strong{
+    color:var(--primary);
+    font-size:18px;
+}
+
+@media (max-width: 768px){
+    .floating-buy-btn{
+        left:16px;
+        right:16px;
+        bottom:16px;
+        justify-content:center;
+        padding:16px 20px;
+        border-radius:18px;
+    }
+
+    body{
+        padding-bottom:78px;
+    }
+
+    .selected-offer-meta{
+        grid-template-columns:1fr 1fr;
+    }
+}
+
         .faq-item{
             border-bottom:1px solid var(--line);
             padding:16px 0;
@@ -399,6 +509,10 @@
     </style>
 </head>
 <body>
+    <a href="#buy" class="floating-buy-btn">
+        {{ page.floating_cta_text or '立即搶購' }}
+    </a>
+
     {% set secondary_images = page.secondary_images_json or [] %}
     {% set content_images = page.content_images_json or {} %}
     {% set after_buy_images = content_images.after_buy or [] %}
@@ -489,7 +603,9 @@
                 <div class="offer-card {% if loop.first %}active{% endif %}"
                      data-offer-id="{{ offer.id }}"
                      data-offer-name="{{ offer.offer_name }}"
-                     data-offer-price="{{ offer.price|int }}">
+                     data-offer-subtitle="{{ offer.subtitle or '' }}"
+                     data-offer-price="{{ offer.price|int }}"
+                     data-offer-compare="{{ offer.compare_at_price|int if offer.compare_at_price else '' }}">
 
                      {% if offer.image_url %}
 <div class="offer-image">
@@ -522,6 +638,31 @@
                 <h3 class="buy-title">
     {{ page.buy_title or '直接下單' }}
 </h3>
+
+                <div class="selected-offer-box" id="selectedOfferBox">
+                    <div class="selected-offer-label">目前已選擇方案</div>
+                    <div class="selected-offer-name" id="selectedOfferName">—</div>
+                    <div class="selected-offer-subtitle" id="selectedOfferSubtitle"></div>
+
+                    <div class="selected-offer-meta">
+                        <div class="selected-offer-meta-item">
+                            <span>單價</span>
+                            <strong id="selectedOfferPrice">NT$ 0</strong>
+                        </div>
+                        <div class="selected-offer-meta-item">
+                            <span>數量</span>
+                            <strong id="selectedOfferQty">1</strong>
+                        </div>
+                        <div class="selected-offer-meta-item">
+                            <span>配送</span>
+                            <strong id="selectedOfferShipping">宅配</strong>
+                        </div>
+                        <div class="selected-offer-meta-item selected-offer-total">
+                            <span>總金額</span>
+                            <strong id="selectedOfferTotal">NT$ 0</strong>
+                        </div>
+                    </div>
+                </div>
 
                 <form id="landingOrderForm">
                     <input type="hidden" name="slug" value="{{ page.slug }}">
@@ -615,6 +756,12 @@
         const offerIdInput = document.getElementById("offerId");
         const qtySelect = document.getElementById("qty");
         const summaryText = document.getElementById("summaryText");
+        const selectedOfferName = document.getElementById("selectedOfferName");
+        const selectedOfferSubtitle = document.getElementById("selectedOfferSubtitle");
+        const selectedOfferPrice = document.getElementById("selectedOfferPrice");
+        const selectedOfferQty = document.getElementById("selectedOfferQty");
+        const selectedOfferShipping = document.getElementById("selectedOfferShipping");
+        const selectedOfferTotal = document.getElementById("selectedOfferTotal");
         const form = document.getElementById("landingOrderForm");
         const submitBtn = document.getElementById("submitBtn");
 const shippingMethod = document.getElementById("shippingMethod");
@@ -627,17 +774,49 @@ const storeName = document.getElementById("storeName");
 let currentOffer = {
             id: offerIdInput ? offerIdInput.value : "",
             name: "",
-            price: 0
+            subtitle: "",
+            price: 0,
+            compare: ""
         };
 
-        function refreshSummary() {
-    if (!summaryText || !qtySelect) return;
+        function formatMoney(amount) {
+    return "NT$ " + Number(amount || 0).toLocaleString("zh-TW");
+}
+
+function refreshSummary() {
+    if (!qtySelect) return;
 
     const qty = parseInt(qtySelect.value || "1", 10);
     const total = (currentOffer.price || 0) * qty;
     const shipText = shippingMethod && shippingMethod.value === "store" ? "超商取貨" : "宅配";
 
-    summaryText.innerText = `已選方案：${currentOffer.name || ""}｜配送：${shipText}｜數量：${qty}｜總金額：NT$ ${total}`;
+    if (summaryText) {
+        summaryText.innerText = `已選方案：${currentOffer.name || ""}｜配送：${shipText}｜數量：${qty}｜總金額：${formatMoney(total)}`;
+    }
+
+    if (selectedOfferName) {
+        selectedOfferName.innerText = currentOffer.name || "尚未選擇方案";
+    }
+
+    if (selectedOfferSubtitle) {
+        selectedOfferSubtitle.innerText = currentOffer.subtitle || "請確認上方選擇的商品方案與數量";
+    }
+
+    if (selectedOfferPrice) {
+        selectedOfferPrice.innerText = formatMoney(currentOffer.price || 0);
+    }
+
+    if (selectedOfferQty) {
+        selectedOfferQty.innerText = String(qty);
+    }
+
+    if (selectedOfferShipping) {
+        selectedOfferShipping.innerText = shipText;
+    }
+
+    if (selectedOfferTotal) {
+        selectedOfferTotal.innerText = formatMoney(total);
+    }
 }
 
 function refreshShippingFields() {
@@ -672,16 +851,20 @@ refreshShippingFields();
             if (card.classList.contains("active")) {
                 currentOffer.id = card.dataset.offerId;
                 currentOffer.name = card.dataset.offerName;
+                currentOffer.subtitle = card.dataset.offerSubtitle || "";
                 currentOffer.price = parseInt(card.dataset.offerPrice || "0", 10);
+                currentOffer.compare = card.dataset.offerCompare || "";
             }
 
             card.addEventListener("click", function () {
                 offerCards.forEach(x => x.classList.remove("active"));
                 card.classList.add("active");
 
-                currentOffer.id = card.dataset.offerId;
+                currentOffer.id = card.dataset.offerId;                currentOffer.id = card.dataset.offerId;
                 currentOffer.name = card.dataset.offerName;
+                currentOffer.subtitle = card.dataset.offerSubtitle || "";
                 currentOffer.price = parseInt(card.dataset.offerPrice || "0", 10);
+                currentOffer.compare = card.dataset.offerCompare || "";
 
                 if (offerIdInput) {
                     offerIdInput.value = currentOffer.id;
