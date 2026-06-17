@@ -90,15 +90,12 @@
             position:relative;
             overflow:hidden;
             border-radius:20px;
-            background:#fff;
+            background:var(--secondary-soft);
             border:1px solid color-mix(in srgb, var(--secondary) 40%, #ddd);
-            aspect-ratio:16 / 9;
         }
 
         .landing-slide{
             display:none;
-            width:100%;
-            height:100%;
         }
 
         .landing-slide.is-active{
@@ -108,16 +105,9 @@
         .landing-main-slider img,
         .landing-main-slider picture img{
             width:100%;
-            height:100%;
             display:block;
-            object-fit:contain;
-            background:#fff;
-        }
-
-        .landing-main-slider picture{
-            display:block;
-            width:100%;
-            height:100%;
+            aspect-ratio:1 / 1;
+            object-fit:cover;
         }
 
         .slider-arrow{
@@ -171,12 +161,11 @@
         }
 
         .landing-thumb img{
-        width:100%;
-        height:100%;
-        object-fit:contain;
-        display:block;
-        background:#fff;
-    }
+            width:100%;
+            height:100%;
+            object-fit:cover;
+            display:block;
+        }
 
         .section{
             padding:48px 0;
@@ -500,10 +489,6 @@
 
             .hero{
                 padding:32px 0;
-            }
-
-            .landing-main-slider{
-                aspect-ratio:4 / 3;
             }
 
             .landing-thumb{
