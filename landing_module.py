@@ -1327,7 +1327,7 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
         offers = get_landing_offers(page_id, active_only=False)
         new_slug = slugify((page.get("slug") or "landing") + "-" + datetime.now(TW).strftime("%H%M%S"))
 
-        new_page = {
+                new_page = {
             "name": (page.get("name") or "") + " 複製",
             "slug": new_slug,
             "title": page.get("title"),
@@ -1335,12 +1335,21 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
             "hero_image": page.get("hero_image"),
             "hero_image_mobile": page.get("hero_image_mobile"),
             "description": page.get("description"),
+            "buy_title": page.get("buy_title"),
             "faq_json": page.get("faq_json") or [],
             "sections_json": page.get("sections_json") or {},
             "cta_text": page.get("cta_text"),
             "cta_anchor": page.get("cta_anchor"),
             "theme_json": page.get("theme_json") or {},
             "affiliate_code": page.get("affiliate_code"),
+
+            # 這兩個是你圖片沒完整帶過來的重點
+            "secondary_images_json": page.get("secondary_images_json") or [],
+            "content_images_json": page.get("content_images_json") or {},
+
+            # 輪播速度也一起複製
+            "slider_interval": page.get("slider_interval") or 3000,
+
             "is_active": False,
             "created_at": datetime.now(TW).isoformat(),
             "updated_at": datetime.now(TW).isoformat()
