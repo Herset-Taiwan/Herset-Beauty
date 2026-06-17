@@ -1327,7 +1327,7 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
         offers = get_landing_offers(page_id, active_only=False)
         new_slug = slugify((page.get("slug") or "landing") + "-" + datetime.now(TW).strftime("%H%M%S"))
 
-                new_page = {
+        new_page = {
             "name": (page.get("name") or "") + " 複製",
             "slug": new_slug,
             "title": page.get("title"),
