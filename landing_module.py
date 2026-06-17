@@ -67,6 +67,20 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
         img.save(output, format="JPEG", quality=quality, optimize=True)
         output.seek(0)
         return output.read()
+        
+    def compress_image_keep_ratio(file_bytes, max_width=1600, quality=88):
+        img = Image.open(io.BytesIO(file_bytes)).convert("RGB")
+        img = ImageOps.exif_transpose(img)
+
+        if img.width > max_width:
+            ratio = max_width / float(img.width)
+            new_height = int(img.height * ratio)
+            img = img.resize((max_width, new_height), Image.Resampling.LANCZOS)
+
+        output = io.BytesIO()
+        img.save(output, format="JPEG", quality=quality, optimize=True)
+        output.seek(0)
+        return output.read()
 
 
     def upload_bytes_to_supabase(file_bytes, original_name, folder="landing"):
@@ -126,7 +140,7 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
                 if not raw:
                     continue
 
-                img = crop_and_resize_image(raw, 1200, 1200)
+                img = compress_image_keep_ratio(raw, max_width=1600, quality=88)
                 url = upload_bytes_to_supabase(
                     img,
                     "secondary_" + f.filename,
@@ -182,7 +196,7 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
                     urls.append("")
                     continue
 
-                img = crop_and_resize_image(raw, 800, 600)
+                img = compress_image_keep_ratio(raw, max_width=1200, quality=88)
                 url = upload_bytes_to_supabase(
                     img,
                     "offer_" + f.filename,
