@@ -300,6 +300,7 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
             "cta_text": (form.get("cta_text") or "立即下單").strip(),
             "cta_anchor": (form.get("cta_anchor") or "#buy").strip(),
             "buy_title": (form.get("buy_title") or "").strip(),
+            "floating_cta_text": (form.get("floating_cta_text") or "立即搶購").strip() or "立即搶購",
             "affiliate_code": (form.get("affiliate_code") or "").strip(),
             "faq_json": faq_list,
             "sections_json": sections_json,
@@ -1214,6 +1215,7 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
             page["secondary_images_json"] = safe_json_loads(page.get("secondary_images_json"), [])
             page["content_images_json"] = safe_json_loads(page.get("content_images_json"), {})
             page["buy_title"] = page.get("buy_title") or ""
+            page["floating_cta_text"] = page.get("floating_cta_text") or "立即搶購"
 
             return render_template(
                 "admin_landing_page_form.html",
@@ -1336,6 +1338,7 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
             "hero_image_mobile": page.get("hero_image_mobile"),
             "description": page.get("description"),
             "buy_title": page.get("buy_title"),
+            "floating_cta_text": page.get("floating_cta_text") or "立即搶購",
             "faq_json": page.get("faq_json") or [],
             "sections_json": page.get("sections_json") or {},
             "cta_text": page.get("cta_text"),
