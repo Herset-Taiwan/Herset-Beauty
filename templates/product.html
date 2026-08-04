@@ -1566,6 +1566,200 @@ body.product-page {
   }
 }
 
+/* ===== Editorial product layout ===== */
+:root {
+  --ink: #26211f;
+  --espresso: #49362d;
+  --clay: #b14f3e;
+  --sand: #ebe4da;
+  --paper: #faf9f6;
+  --line: #ded5ca;
+}
+
+body.product-page {
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 4% 7%, rgba(210,177,135,.18), transparent 24rem),
+    #f7f5f1;
+}
+
+.header-bar { max-width: 1328px; margin: 28px auto 18px; }
+.back-btn, .cart-indicator {
+  border: 1px solid var(--line);
+  box-shadow: none;
+  background: rgba(255,255,255,.78);
+}
+.back-btn:hover, .cart-indicator:hover { background: #fff; box-shadow: 0 12px 30px rgba(54,38,28,.10); }
+
+.product-shell { max-width: 1400px; padding: 0 36px 76px; }
+.product-container {
+  max-width: none;
+  margin: 0;
+  gap: 0 56px;
+  grid-template-columns: minmax(0, 1.32fr) minmax(390px, .68fr);
+  grid-template-rows: auto auto;
+  align-items: start;
+}
+
+/* 將標題與購買區拆開，形成上方故事區、下方商品圖與選購導覽。 */
+.info-panel { display: contents; }
+.product-heading {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  max-width: 900px;
+  padding: 24px 0 38px;
+}
+.gallery-panel {
+  grid-column: 1;
+  grid-row: 2;
+  position: relative;
+  top: auto;
+  padding: 18px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--sand);
+}
+.gallery-panel::before {
+  content: 'HERSET / OBJECTS FOR DAILY RITUALS';
+  display: block;
+  margin: 4px 4px 19px;
+  color: #80695a;
+  font: 700 10px/1 Arial, sans-serif;
+  letter-spacing: .22em;
+}
+.gallery-main {
+  min-height: 0;
+  aspect-ratio: 4 / 4.6;
+  border-radius: 2px;
+  background: #e5ddd1;
+  box-shadow: 0 24px 46px rgba(64,45,33,.14);
+}
+.gallery-main img, .gallery-main .media-item, .media-iframe-wrap { border-radius: 2px; }
+.gallery-main::after { border-radius: 2px; }
+.label-group { top: 16px; left: 16px; }
+.label-badge { background: var(--clay); box-shadow: 0 8px 18px rgba(104,44,33,.22); text-shadow: none; }
+.gallery-arrow { background: rgba(255,255,255,.9); color: var(--ink); box-shadow: 0 8px 20px rgba(45,32,25,.14); }
+.gallery-arrow:hover { background: #fff; }
+.gallery-thumbs { margin: 18px 0 2px; gap: 10px; }
+.gallery-thumbs img, .gallery-thumbs .thumb-video { width: 62px; height: 62px; border-radius: 2px; border-color: transparent; }
+.gallery-thumbs .thumbnail.selected, .gallery-thumbs .thumb-video.selected { border-color: var(--clay); box-shadow: 0 0 0 3px rgba(177,79,62,.18); }
+
+.purchase-card {
+  grid-column: 2;
+  grid-row: 2;
+  position: sticky;
+  top: 24px;
+  padding: 30px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.90);
+  box-shadow: 0 20px 52px rgba(57,40,30,.10);
+}
+
+.product-badges-top { gap: 9px; margin-bottom: 18px; }
+.product-mini-badge { background: transparent; border-color: #cbbcaf; color: var(--espresso); }
+.info h1.product-title {
+  margin: 0;
+  font-family: Georgia, 'Noto Serif TC', 'Songti TC', serif;
+  font-size: clamp(35px, 4.05vw, 61px);
+  font-weight: 700;
+  line-height: 1.11;
+  letter-spacing: .012em;
+  color: var(--ink);
+}
+.product-sub-meta { margin-top: 16px; color: #7e716a; }
+.product-sub-meta span + span::before { content: '•'; margin-right: 11px; color: #bd8a4f; }
+.rating-row { margin-top: 15px; }
+.rating-stars { color: #c08a46; }
+
+.price-card {
+  margin: -30px -30px 26px;
+  padding: 27px 30px 24px;
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(135deg, #382b26, #634238);
+  box-shadow: none;
+}
+.price-box { gap: 12px; }
+.price-original { color: rgba(255,255,255,.55); }
+.price-discount, .price-regular { color: #fffaf4; }
+.price-discount .amount { font-size: 44px; }
+.discount-tag { background: #d0a25f; color: #392b25; box-shadow: none; }
+.price-caption { color: rgba(255,255,255,.72); text-align: left; }
+
+.usp-list { grid-template-columns: 1fr; gap: 8px; margin-top: 0; }
+.usp-item { min-height: 47px; border-color: var(--line); border-radius: 0; background: var(--paper); }
+.usp-icon { background: #f3e7d7; }
+.section-title { font-size: 15px; letter-spacing: .06em; color: var(--ink); }
+.options, .qty, .actions { margin-top: 25px; }
+.single-opt, #bundle-steps .step-options button { border-color: var(--line); border-radius: 2px; color: var(--espresso); background: #fff; }
+.single-opt.selected, #bundle-steps .step-options button.selected { background: var(--espresso); border-color: var(--espresso); color: #fff; }
+#bundle-steps .step { border-color: var(--line); border-radius: 0; background: var(--paper); }
+#bundle-steps .step select { border-color: #cfc1b5; border-radius: 2px; min-height: 46px; }
+.qty-box { border-color: var(--line); border-radius: 2px; }
+.actions { display: grid; grid-template-columns: 1fr; gap: 10px; }
+.actions form { width: 100%; }
+.btn-add-cart, .btn-buy-now { width: 100%; min-height: 56px; border-radius: 2px; letter-spacing: .06em; }
+.btn-add-cart { border-color: var(--espresso); color: var(--espresso); background: #fff; }
+.btn-buy-now { background: var(--clay); box-shadow: 0 12px 22px rgba(159,59,46,.20); }
+.guarantee-strip { margin-top: 25px; padding: 15px 0 0; border-top: 1px solid var(--line); background: transparent; }
+
+.product-detail-section {
+  max-width: 1328px;
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 62px;
+  margin: 86px auto 0;
+  padding: 0 36px 92px;
+}
+.product-tabs { position: sticky; top: 28px; display: flex; flex-direction: column; align-items: stretch; gap: 0; border: 0; }
+.product-tab-btn { padding: 15px 0; text-align: left; border-bottom: 1px solid var(--line); font: 600 18px/1.35 Georgia, 'Noto Serif TC', serif; color: #8d7c70; }
+.product-tab-btn.active { padding-left: 14px; border-bottom-color: var(--line); border-left: 3px solid var(--clay); color: var(--espresso); }
+.product-tab-content { min-height: 300px; margin: 0; padding: 50px 56px; border: 1px solid var(--line); border-radius: 0; background: rgba(255,255,255,.70); box-shadow: none; }
+
+@media (max-width: 900px) {
+  .header-bar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    margin: 0 auto;
+    padding: 12px 16px;
+    background: rgba(247,245,241,.92);
+    backdrop-filter: blur(12px);
+  }
+  .product-shell { padding: 0 16px 92px; }
+  .product-container { display: block; }
+  .info-panel { display: block; margin-top: 18px; }
+  .product-heading { padding: 8px 5px 23px; }
+  .gallery-panel { padding: 8px; border-radius: 18px; }
+  .gallery-panel::before { display: none; }
+  .gallery-main { aspect-ratio: 1 / 1; border-radius: 12px; box-shadow: none; }
+  .gallery-main img, .gallery-main .media-item, .media-iframe-wrap { border-radius: 12px; }
+  .gallery-thumbs img, .gallery-thumbs .thumb-video { width: 54px; height: 54px; }
+  .info h1.product-title { font-size: clamp(28px, 8vw, 38px); line-height: 1.18; }
+  .product-sub-meta { font-size: 13px; margin-top: 12px; }
+  .rating-row { margin-top: 12px; }
+  .purchase-card { position: static; padding: 20px; border-radius: 18px; box-shadow: 0 14px 34px rgba(57,40,30,.08); }
+  .price-card { margin: -20px -20px 20px; padding: 21px 20px; border-radius: 18px 18px 0 0; }
+  .price-discount .amount { font-size: 38px; }
+  .usp-list { grid-template-columns: 1fr 1fr; }
+  .usp-item { min-height: 43px; font-size: 11px; padding: 7px 8px; }
+  .options, .qty, .actions { margin-top: 22px; }
+  .guarantee-strip { margin-bottom: 54px; }
+  .product-detail-section { display: block; margin-top: 36px; padding: 0 16px 90px; }
+  .product-tabs { position: static; display: flex; flex-direction: row; overflow-x: auto; gap: 20px; border-bottom: 1px solid var(--line); }
+  .product-tab-btn { flex: 0 0 auto; padding: 12px 2px; font-size: 16px; }
+  .product-tab-btn.active { padding-left: 2px; border-left: 0; border-bottom-color: var(--clay); }
+  .product-tab-content { margin-top: 18px; padding: 25px 19px; border-radius: 14px; }
+}
+
+@media (max-width: 480px) {
+  .cart-text { display: none; }
+  .product-mini-badge { padding: 6px 9px; font-size: 11px; }
+  .gallery-arrow { width: 38px; height: 38px; font-size: 18px; }
+  .usp-list { grid-template-columns: 1fr; }
+}
+
   </style>
 
 <!-- FB像素Meta Pixel Code -->
@@ -1705,6 +1899,7 @@ fbq('track', 'PageView');
     <!-- 右側商品資訊 -->
     <div class="info-panel">
       <div class="info">
+        <div class="product-heading">
 
         <div class="product-badges-top">
           <span class="product-mini-badge">HERSET 精選</span>
@@ -1733,6 +1928,9 @@ fbq('track', 'PageView');
           <div class="rating-text">人氣熱銷推薦款</div>
         </div>
 
+        </div>
+
+        <div class="purchase-card">
         <div class="price-card">
           <div class="price-box">
             {% if product.get('product_type') == 'bundle' %}
@@ -1903,6 +2101,7 @@ fbq('track', 'PageView');
   </div>
 </div>
 
+        </div>
       </div>
     </div>
 
