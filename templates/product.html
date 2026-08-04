@@ -2313,10 +2313,17 @@ function renderOptionsFor(el, productId){
   }
 
   opts.forEach(o => {
+    // 商品規格可能是舊格式的字串，也可能是 { name, price, ... } 物件。
+    // 一律取可讀名稱，避免瀏覽器把物件轉成「[object Object]」。
+    const optionName = typeof o === 'object' && o !== null
+      ? (o.name || o.label || o.title || '')
+      : String(o || '');
+    if (!optionName) return;
+
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.textContent = o;
-    btn.dataset.value = o;
+    btn.textContent = optionName;
+    btn.dataset.value = optionName;
     btn.addEventListener('click', () => {
       area.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
