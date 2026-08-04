@@ -1893,6 +1893,246 @@ body.product-page {
   .product-tab-content { padding: 22px 18px; }
 }
 
+/* 商品主視覺／購買導覽版型：以畫面結構而非單純換色重組 */
+@media (min-width: 901px) {
+  .product-shell {
+    max-width: 1400px;
+    padding-left: 36px;
+    padding-right: 36px;
+  }
+
+  .product-container {
+    grid-template-columns: minmax(0, 1fr) 430px;
+    gap: 0;
+    overflow: hidden;
+    border: 1px solid rgba(87, 61, 50, .14);
+    border-radius: 36px;
+    background: rgba(255,255,255,.70);
+    box-shadow: 0 30px 90px rgba(55, 37, 27, .10);
+  }
+
+  .gallery-panel,
+  .info-panel {
+    min-width: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .gallery-panel {
+    position: relative;
+    top: auto;
+    padding: 54px 54px 34px;
+    background:
+      linear-gradient(140deg, rgba(255,255,255,.58), rgba(239,232,220,.72)),
+      #e9e1d5;
+  }
+
+  .gallery-panel::before {
+    content: 'THE HERSET EDIT';
+    display: block;
+    margin: 0 0 18px 2px;
+    color: #72584b;
+    font: 700 11px/1.2 Arial, sans-serif;
+    letter-spacing: .24em;
+  }
+
+  .gallery-panel::after {
+    content: '01';
+    position: absolute;
+    top: 27px;
+    right: 42px;
+    color: rgba(87,61,50,.42);
+    font: 400 15px/1 Georgia, serif;
+    letter-spacing: .12em;
+  }
+
+  .gallery-main {
+    aspect-ratio: 4 / 4.45;
+    border-radius: 4px;
+    background: #e9e1d5;
+    box-shadow: 0 18px 38px rgba(61,43,33,.14);
+  }
+
+  .gallery-main img,
+  .gallery-main .media-item,
+  .media-iframe-wrap {
+    border-radius: 4px;
+  }
+
+  .gallery-main::after { border-radius: 4px; }
+  .label-group { top: 16px; left: 16px; }
+  .gallery-arrow.prev { left: 18px; }
+  .gallery-arrow.next { right: 18px; }
+  .gallery-thumbs { margin-top: 20px; }
+
+  .info-panel {
+    position: relative;
+    padding: 46px 38px 40px;
+    background: rgba(255,255,255,.94);
+    border-left: 1px solid rgba(87,61,50,.12);
+  }
+
+  .info-panel::before {
+    content: 'SHOP / 01';
+    position: static;
+    display: block;
+    margin: 0 0 22px;
+    color: #9a7b64;
+    font: 700 10px/1 Arial, sans-serif;
+    letter-spacing: .2em;
+  }
+
+  .product-badges-top { margin-bottom: 20px; }
+  .info h1.product-title { font-size: clamp(30px, 2.5vw, 39px); }
+  .price-card { margin-left: -38px; margin-right: -38px; border-radius: 0; }
+  .usp-list { grid-template-columns: 1fr; }
+  .actions { display: grid; grid-template-columns: 1fr; }
+  .actions form { width: 100%; }
+  .btn-add-cart,
+  .btn-buy-now { width: 100%; }
+
+  .product-detail-section {
+    max-width: 1328px;
+    display: grid;
+    grid-template-columns: 210px minmax(0, 1fr);
+    align-items: start;
+    gap: 58px;
+    margin-top: 82px;
+    padding: 0 36px 92px;
+  }
+
+  .product-tabs {
+    position: sticky;
+    top: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    border: 0;
+  }
+
+  .product-tab-btn {
+    padding: 15px 0;
+    text-align: left;
+    border-bottom: 1px solid var(--heritage-line);
+    font-family: Georgia, 'Noto Serif TC', serif;
+    font-size: 18px;
+  }
+
+  .product-tab-btn.active {
+    padding-left: 14px;
+    border-bottom-color: var(--heritage-line);
+    border-left: 3px solid var(--heritage-clay);
+  }
+
+  .product-tab-content {
+    margin-top: 0;
+    min-height: 300px;
+    padding: 52px 56px;
+    border-radius: 2px;
+  }
+}
+
+@media (max-width: 900px) {
+  .product-container {
+    overflow: visible;
+    background: transparent;
+  }
+  .gallery-panel::before,
+  .gallery-panel::after { display: none; }
+
+  .header-bar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    margin: 0 auto;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    background: rgba(248,246,242,.88);
+    backdrop-filter: blur(14px);
+  }
+
+  .product-container { gap: 18px; }
+  .gallery-panel {
+    padding: 8px;
+    border-radius: 22px;
+    background: #ede7de;
+  }
+  .gallery-main {
+    aspect-ratio: 1 / 1;
+    min-height: 0;
+    border-radius: 16px;
+  }
+  .gallery-main img,
+  .gallery-main .media-item,
+  .media-iframe-wrap { border-radius: 16px; }
+  .gallery-arrow {
+    width: 40px;
+    height: 40px;
+    font-size: 19px;
+  }
+  .gallery-thumbs {
+    margin: 11px 1px 2px;
+    gap: 9px;
+  }
+  .gallery-thumbs img,
+  .gallery-thumbs .thumb-video {
+    width: 54px;
+    height: 54px;
+    border-radius: 10px;
+  }
+
+  .info-panel {
+    padding: 28px 20px 32px;
+    border-radius: 22px;
+    background: rgba(255,255,255,.94);
+  }
+  .info-panel::before { display: none; }
+  .product-badges-top { margin-bottom: 14px; }
+  .product-mini-badge { font-size: 11px; padding: 6px 9px; }
+  .info h1.product-title {
+    font-size: clamp(27px, 7.6vw, 35px);
+    line-height: 1.2;
+  }
+  .product-sub-meta { font-size: 13px; margin-top: 12px; }
+  .rating-row { margin-top: 12px; }
+  .price-card {
+    margin-top: 20px;
+    padding: 20px;
+    border-radius: 18px;
+  }
+  .price-discount .amount { font-size: 38px; }
+  .price-caption { font-size: 11px; }
+  .usp-list { grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+  .usp-item { min-height: 42px; font-size: 11px; padding: 6px 8px; }
+  .usp-icon { flex-basis: 24px; width: 20px; height: 20px; }
+
+  .options, .qty, .actions { margin-top: 24px; }
+  .single-opt,
+  #bundle-steps .step-options button { padding: 9px 13px; }
+  #bundle-steps .step { padding: 14px; border-radius: 14px; }
+  #bundle-steps .step select { min-height: 44px; font-size: 15px; }
+  .guarantee-strip { margin-bottom: 58px; }
+
+  .product-detail-section {
+    margin-top: 32px;
+    padding-bottom: 96px;
+  }
+  .product-tabs {
+    display: flex;
+    overflow-x: auto;
+    gap: 20px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .product-tab-btn { flex: 0 0 auto; }
+  .product-tab-content {
+    margin-top: 18px;
+    padding: 25px 19px;
+    border-radius: 18px;
+  }
+}
+
   </style>
 
 <!-- FB像素Meta Pixel Code -->
