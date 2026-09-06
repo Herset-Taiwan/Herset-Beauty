@@ -750,9 +750,9 @@
                                     <div class="upload-top">
                                         <input class="file-input" type="file" name="hero_image_file" id="hero_image_file" accept="image/*">
                                         <div class="upload-note">
-                                            只要上傳一張，後端會自動裁切成：
-                                            <br>桌機版：1920 × 900
-                                            <br>手機版：900 × 1200
+                                            上傳後會自動產生桌機版與手機版，並完整保留原圖比例、不裁切照片內容。
+                                            <br>桌機版最寬：1920 px
+                                            <br>手機版最寬：900 px
                                         </div>
                                         <div class="upload-status" id="heroUploadStatus">已選取圖片，儲存後會自動產生桌機版與手機版</div>
                                         <div class="upload-preview" id="heroPreviewWrap" {% if page.hero_image %}style="display:block;"{% endif %}>

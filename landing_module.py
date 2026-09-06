@@ -39,15 +39,17 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
 
         return base + ext
 
-    def crop_and_resize_image(file_bytes, target_width, target_height, quality=88):
+    def resize_hero_image_keep_ratio(file_bytes, max_width, quality=88):
+        """縮小主圖以利載入，但絕不裁切任何照片內容。"""
         img = Image.open(io.BytesIO(file_bytes)).convert("RGB")
         img = ImageOps.exif_transpose(img)
-        img = ImageOps.fit(
-            img,
-            (target_width, target_height),
-            method=Image.Resampling.LANCZOS,
-            centering=(0.5, 0.5)
-        )
+
+        if img.width > max_width:
+            ratio = max_width / float(img.width)
+            img = img.resize(
+                (max_width, max(1, round(img.height * ratio))),
+                Image.Resampling.LANCZOS,
+            )
 
         output = io.BytesIO()
         img.save(output, format="JPEG", quality=quality, optimize=True)
@@ -119,8 +121,9 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
         if not raw:
             return None, None
 
-        desktop = crop_and_resize_image(raw, 1920, 900)
-        mobile = crop_and_resize_image(raw, 900, 1200)
+        # 桌機與手機各保留一份適合的尺寸；兩者都完整保留原圖比例。
+        desktop = resize_hero_image_keep_ratio(raw, 1920)
+        mobile = resize_hero_image_keep_ratio(raw, 900)
 
         desktop_url = upload_bytes_to_supabase(desktop, "desktop_" + file.filename)
         mobile_url = upload_bytes_to_supabase(mobile, "mobile_" + file.filename)
