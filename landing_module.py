@@ -572,6 +572,42 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
         discount_amount = 0
         final_total = max(subtotal + shipping_fee - discount_amount, 0)
 
+        # 一頁式訂單也必須在建立時保存分潤金額，避免後續團購比例變動。
+        affiliate_code = str(
+            page.get("affiliate_code") or session.get("affiliate_ref") or ""
+        ).strip() or None
+        commission_amount = 0
+
+        if affiliate_code:
+            try:
+                affiliate_code_key = affiliate_code.upper()
+                affiliate_rows = (
+                    supabase.table("affiliates")
+                    .select("code,commission_rate,is_active")
+                    .eq("is_active", True)
+                    .execute()
+                    .data
+                    or []
+                )
+                affiliate = next(
+                    (
+                        row for row in affiliate_rows
+                        if str(row.get("code") or "").strip().upper() == affiliate_code_key
+                    ),
+                    None,
+                )
+
+                if affiliate:
+                    affiliate_code = str(affiliate.get("code") or affiliate_code).strip()
+                    commission_rate = float(affiliate.get("commission_rate") or 0)
+                    commission_amount = int(final_total * commission_rate / 100)
+                else:
+                    affiliate_code = None
+            except Exception as e:
+                app.logger.error("[landing affiliate commission] %s", e)
+                affiliate_code = None
+                commission_amount = 0
+
         merchant_trade_no = generate_merchant_trade_no()
         order_no = "LPG-" + datetime.now(TW).strftime("%Y%m%d%H%M%S") + str(random.randint(100, 999))
 
@@ -602,7 +638,8 @@ def register_landing_module(app, supabase, TW, generate_merchant_trade_no):
             "currency": "TWD",
             "order_no": order_no,
             "intended_payment_method": intended_payment_method or None,
-            "affiliate_code": page.get("affiliate_code") or session.get("affiliate_ref"),
+            "affiliate_code": affiliate_code,
+            "commission_amount": commission_amount,
             "created_at": datetime.now(TW).isoformat()
         }
 

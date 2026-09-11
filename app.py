@@ -3861,7 +3861,17 @@ def admin_affiliates_report():
         })
 
         total_amount = int(o.get("total_amount") or 0)
-        commission_amount = int(o.get("commission_amount") or 0)
+        commission_rate = float(aff.get("commission_rate") or 0)
+        stored_commission = o.get("commission_amount")
+
+        # 早期一頁式訂單沒有保存佣金，報表依當前團購比例補算。
+        needs_landing_backfill = bool(o.get("landing_page_id")) and (
+            stored_commission is None or int(stored_commission or 0) <= 0
+        )
+        if needs_landing_backfill:
+            commission_amount = int(total_amount * commission_rate / 100)
+        else:
+            commission_amount = int(stored_commission or 0)
         member = member_map.get(o.get("member_id")) or {}
 
         row["order_count"] += 1
