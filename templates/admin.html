@@ -828,7 +828,7 @@
     </select>
 
     <label>搜尋訂單：</label>
-    <input type="text" id="orderSearch" oninput="filterOrders()" placeholder="輸入訂單／綠界付款編號、會員帳號、姓名">
+    <input type="text" id="orderSearch" oninput="filterOrders()" placeholder="輸入訂單／付款交易編號、會員帳號、姓名">
 
     <label>每頁顯示：</label>
     <select id="pageSizeSelect" onchange="filterOrders()">
@@ -1183,6 +1183,17 @@ function zhStatus(s){
   if (s === 'cancelled') return '已取消';
   return '待處理';
 }
+
+function paymentTransactionLabel(order){
+  const method = String(order.payment_method || order.intended_payment_method || '').toLowerCase();
+  if (method === 'linepay' || method === 'line_pay' || method === 'line') {
+    return 'LINE Pay 付款編號';
+  }
+  if (method === 'ecpay' || method === 'credit' || method === 'credit_card') {
+    return '綠界付款編號';
+  }
+  return '付款交易編號';
+}
 function splitOptions(opt){
   if(!opt) return [];
   return String(opt).split(/\s*[|｜、,\n]\s*/).filter(Boolean);
@@ -1411,7 +1422,7 @@ card.innerHTML = `
 
       <div class="buyer-item"><label>訂單備註：</label><span class="text">${esc(o.member?.note || o.note || '—')}</span></div>
       <div class="buyer-item"><label>付款方式：</label><span class="text">${esc(o.payment_method || '—')}</span></div>
-      <div class="buyer-item"><label>綠界付款編號：</label><span class="text">${esc(o.paid_trade_no || '—')}</span></div>
+      <div class="buyer-item"><label>${paymentTransactionLabel(o)}：</label><span class="text">${esc(o.paid_trade_no || '—')}</span></div>
       <div class="buyer-item"><label>寄貨資訊：</label><span class="text">${esc(o.shipment_info || '—')}</span></div>
     </div>
   </div>
