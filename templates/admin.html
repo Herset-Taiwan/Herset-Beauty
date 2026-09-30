@@ -828,7 +828,7 @@
     </select>
 
     <label>搜尋訂單：</label>
-    <input type="text" id="orderSearch" oninput="filterOrders()" placeholder="輸入訂單編號、會員帳號、姓名">
+    <input type="text" id="orderSearch" oninput="filterOrders()" placeholder="輸入訂單／綠界付款編號、會員帳號、姓名">
 
     <label>每頁顯示：</label>
     <select id="pageSizeSelect" onchange="filterOrders()">
@@ -1199,6 +1199,7 @@ function filterOrders(){
         // ✅ 可搜商店編號 & 綠界單號
         (o.order_no || '').toLowerCase().includes(keyword) ||
         (o.MerchantTradeNo || '').toLowerCase().includes(keyword) ||
+        (o.paid_trade_no || '').toLowerCase().includes(keyword) ||
         // ✅ 仍保留以 id 搜索（管理用）
         String(o.id).includes(keyword) ||
         // ✅ 會員資訊
@@ -1410,6 +1411,7 @@ card.innerHTML = `
 
       <div class="buyer-item"><label>訂單備註：</label><span class="text">${esc(o.member?.note || o.note || '—')}</span></div>
       <div class="buyer-item"><label>付款方式：</label><span class="text">${esc(o.payment_method || '—')}</span></div>
+      <div class="buyer-item"><label>綠界付款編號：</label><span class="text">${esc(o.paid_trade_no || '—')}</span></div>
       <div class="buyer-item"><label>寄貨資訊：</label><span class="text">${esc(o.shipment_info || '—')}</span></div>
     </div>
   </div>
